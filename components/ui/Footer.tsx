@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
     <footer id="contact" className="border-t border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
-      <div className="mx-auto max-w-6xl space-y-8 px-6 py-12 sm:px-8 lg:px-10">
-        <div className="grid gap-6 md:grid-cols-3">
+      <div className="mx-auto max-w-7xl space-y-10 px-6 py-16 sm:px-8 lg:px-12">
+        <div className="grid gap-10 md:grid-cols-3">
           <div>
             <p className="text-xl font-semibold text-[var(--text)]">Janman Legal Aid</p>
             <p className="mt-3 max-w-md text-sm leading-7 text-[var(--muted)]">

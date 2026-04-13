@@ -53,7 +53,7 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+      <div className="mx-auto max-w-7xl space-y-8 px-6 sm:px-8 lg:px-12">
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl shadow-black/5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-12">
         <div className="mb-10 flex flex-col gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl shadow-black/10 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Shared login</p>
