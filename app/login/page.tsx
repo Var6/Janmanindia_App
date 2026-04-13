@@ -2,15 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { DEMO_ACCOUNTS } from "@/data/janman";
 
-const accounts = [
-  { id: "public@example.com", password: "public123", role: "Public", name: "Public User" },
-  { id: "advocate@example.com", password: "advocate123", role: "Advocate / Lawyer", name: "Advocate User" },
-  { id: "paralegal@example.com", password: "paralegal123", role: "Paralegal", name: "Paralegal User" },
-  { id: "admin@example.com", password: "admin123", role: "Admin", name: "Admin User" },
-];
-
-type Account = (typeof accounts)[number];
+type Account = (typeof DEMO_ACCOUNTS)[number];
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -20,7 +14,7 @@ export default function LoginPage() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const found = accounts.find(
+    const found = DEMO_ACCOUNTS.find(
       (account) => account.id === identifier.trim().toLowerCase() && account.password === password
     );
 
@@ -47,7 +41,7 @@ export default function LoginPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Shared login</p>
             <h1 className="mt-4 text-3xl font-semibold text-[var(--text)] sm:text-4xl">Login for Public, Advocate, Paralegal, or Admin</h1>
-            <p className="mt-3 max-w-2xl text-[var(--muted)]">Use the same login page to access the correct role panel. Demo credentials are listed below.</p>
+            <p className="mt-3 max-w-2xl text-[var(--muted)]">Use the same login page for all roles. Select one of the demo accounts below.</p>
           </div>
           <Link href="/" className="inline-flex rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--accent)]">
             Back to homepage
@@ -70,7 +64,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
-                  {user.role === "Public" && (
+                  {user.role === "Public / Citizen" && (
                     <div>
                       <h3 className="text-xl font-semibold text-[var(--text)]">Public Dashboard</h3>
                       <p className="mt-2 text-[var(--muted)]">Search for legal help, review rights guides, and request assistance from the Janman network.</p>
@@ -172,7 +166,7 @@ export default function LoginPage() {
               <p className="mt-3 text-[var(--muted)]">Use one of these accounts to see the matching UI panel for that role.</p>
             </div>
             <div className="space-y-4">
-              {accounts.map((account) => (
+              {DEMO_ACCOUNTS.map((account) => (
                 <div key={account.id} className="rounded-3xl border border-[var(--border)] bg-[var(--bg)] p-4 text-sm text-[var(--text)]">
                   <p className="font-semibold text-[var(--text)]">{account.role}</p>
                   <p className="mt-2">id: <span className="font-medium text-[var(--accent)]">{account.id}</span></p>
