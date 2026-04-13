@@ -2,33 +2,33 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DEMO_ACCOUNTS } from "@/data/janman";
+import { useSession } from "@/components/ui/SessionProvider";
 
 type Account = (typeof DEMO_ACCOUNTS)[number];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { user, login, logout } = useSession();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState<Account | null>(null);
   const [error, setError] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const found = DEMO_ACCOUNTS.find(
-      (account) => account.id === identifier.trim().toLowerCase() && account.password === password
-    );
+    const success = login(identifier, password);
 
-    if (found) {
-      setUser(found);
+    if (success) {
       setError("");
+      router.push("/dashboard");
     } else {
-      setUser(null);
       setError("Invalid credentials. Please use one of the sample demo accounts below.");
     }
   }
 
   function handleLogout() {
-    setUser(null);
+    logout();
     setIdentifier("");
     setPassword("");
     setError("");
@@ -59,8 +59,8 @@ export default function LoginPage() {
               <div className="space-y-6">
                 <div className="rounded-3xl border border-[var(--accent)]/20 bg-[var(--accent)]/10 p-6">
                   <p className="text-sm uppercase tracking-[0.24em] text-[var(--accent)]">Signed in as</p>
-                  <p className="mt-3 text-xl font-semibold text-[var(--text)]">{user.name}</p>
-                  <p className="text-[var(--muted)]">Role: {user.role}</p>
+                  <p className="mt-3 text-xl font-semibold text-[var(--text)]">{user?.name}</p>
+                  <p className="text-[var(--muted)]">Role: {user?.role}</p>
                 </div>
 
                 <div className="space-y-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -110,12 +110,23 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <button
-                  onClick={handleLogout}
-                  className="w-full rounded-full bg-[var(--surface)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-foreground)]"
-                >
-                  Logout
-                </button>
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <button
+                    onClick={() => router.push("/dashboard")}
+                    className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
+                  >
+                    Go to Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      router.push("/login");
+                    }}
+                    className="w-full rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface)]"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">

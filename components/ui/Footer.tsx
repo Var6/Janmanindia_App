@@ -11,13 +11,15 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Support</p>
-            <p className="mt-4 text-sm text-[var(--muted)]">Email: support@janman.org</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">Phone: +91 612 123 4567</p>
+            <p className="mt-4 text-sm text-[var(--muted)]">Email: communication@janmanindia.org</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Phone: +91-9953591267</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Website: www.janmanindia.org</p>
           </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Address</p>
-            <p className="mt-4 text-sm text-[var(--muted)]">Janman People’s Foundation</p>
-            <p className="text-sm text-[var(--muted)]">Patna, Bihar, India</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Offices</p>
+            <p className="mt-4 text-sm text-[var(--muted)]">Delhi: B493 Vasant Kunj Enclave, Vasant Kunj, New Delhi - 110070</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Patna: L-8, L.S Apartment, Road no 39, Anisabad, Patna</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">Purnea: Madhubani Road, Dollar House Chowk, Sipahi Tola, Purnea, Bihar - 854301</p>
           </div>
         </div>
         <div className="border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)]">
