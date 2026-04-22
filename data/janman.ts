@@ -2,10 +2,10 @@ export const SITE_TITLE = "Janman Legal Aid";
 export const SITE_SUBTITLE = "Legal support for Bihar communities through public, advocate, paralegal and admin workflows.";
 
 export const DEMO_ACCOUNTS = [
-  { id: "public@example.com", password: "public123", role: "Public / Citizen", name: "Public User" },
-  { id: "advocate@example.com", password: "advocate123", role: "Advocate / Lawyer", name: "Advocate User" },
-  { id: "paralegal@example.com", password: "paralegal123", role: "Paralegal", name: "Paralegal User" },
-  { id: "admin@example.com", password: "admin123", role: "Admin", name: "Admin User" },
+  { id: "user@dev.janmanindia.in",        password: "Dev@1234", role: "Citizen",      name: "Dev Citizen"        },
+  { id: "sw@dev.janmanindia.in",          password: "Dev@1234", role: "Social Worker", name: "Dev Social Worker"  },
+  { id: "litigation@dev.janmanindia.in",  password: "Dev@1234", role: "Litigation",   name: "Dev Litigation"     },
+  { id: "admin@dev.janmanindia.in",       password: "Dev@1234", role: "Admin",        name: "Dev Admin"          },
 ];
 
 export const USER_ROLES = [

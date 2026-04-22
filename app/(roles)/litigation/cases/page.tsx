@@ -5,12 +5,12 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 
-const STATUS_COLORS: Record<string, string> = {
-  Open: "bg-blue-100 text-blue-700",
-  Closed: "bg-gray-100 text-gray-600",
-  Escalated: "bg-orange-100 text-orange-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Dismissed: "bg-red-100 text-red-700",
+const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = {
+  Open:      { background: "var(--info-bg)",      color: "var(--info-text)"    },
+  Closed:    { background: "var(--bg-secondary)", color: "var(--muted)"        },
+  Escalated: { background: "var(--error-bg)",     color: "var(--error-text)"   },
+  Pending:   { background: "var(--warning-bg)",   color: "var(--warning-text)" },
+  Dismissed: { background: "var(--error-bg)",     color: "var(--error-text)"   },
 };
 
 export default async function LitigationCasesPage() {
@@ -34,17 +34,17 @@ export default async function LitigationCasesPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(text)">My Cases</h1>
-        <p className="text-sm text-(muted) mt-1">
+        <h1 className="text-2xl font-bold text-(--text)">My Cases</h1>
+        <p className="text-sm text-(--muted) mt-1">
           {open.length} active · {closed.length} closed · sorted by next hearing date
         </p>
       </div>
 
       <section>
-        <h2 className="font-semibold text-(text) mb-3">Active Cases</h2>
+        <h2 className="font-semibold text-(--text) mb-3">Active Cases</h2>
         {open.length === 0 ? (
-          <div className="py-16 text-center bg-(surface) rounded-2xl border border-(border)">
-            <p className="text-sm text-(muted)">{dbOk ? "No active cases assigned." : "Connect database."}</p>
+          <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
+            <p className="text-sm text-(--muted)">{dbOk ? "No active cases assigned." : "Connect database."}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -59,30 +59,41 @@ export default async function LitigationCasesPage() {
                 <Link
                   key={String(c._id)}
                   href={`/litigation/cases/${String(c._id)}`}
-                  className="block bg-(surface) rounded-2xl border border-(border) p-5 hover:border-(accent) transition-colors"
+                  className="block bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(accent) transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-(text) truncate">{c.caseTitle}</p>
-                      <p className="text-xs text-(muted) mt-0.5">
-                        {c.path === "criminal" ? "Criminal" : "High Court"} · Citizen: {citizen?.name ?? "—"} · SW: {sw?.name ?? "—"}
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {c.caseNumber && (
+                          <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
+                            style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
+                            {c.caseNumber}
+                          </span>
+                        )}
+                        <span className="text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "High Court"}</span>
+                      </div>
+                      <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
+                      <p className="text-xs text-(--muted) mt-0.5">
+                        Citizen: {citizen?.name ?? "—"} · SW: {sw?.name ?? "—"}
                       </p>
                     </div>
-                    <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-600"}`}>
+                    <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full`}
+                      style={STATUS_STYLE_LIT[c.status] as React.CSSProperties ?? { background: "var(--bg-secondary)", color: "var(--muted)" }}>
                       {c.status}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
                     {hearingDate ? (
-                      <span className={`font-medium ${daysToHearing !== null && daysToHearing <= 3 ? "text-red-600" : "text-(muted)"}`}>
+                      <span className="font-medium"
+                        style={{ color: daysToHearing !== null && daysToHearing <= 3 ? "var(--error-text)" : "var(--muted)" }}>
                         Next hearing: {hearingDate.toLocaleDateString("en-IN")}
                         {daysToHearing !== null && daysToHearing >= 0 && ` (${daysToHearing}d)`}
                       </span>
                     ) : (
-                      <span className="text-(muted)">No hearing date set</span>
+                      <span className="text-(--muted)">No hearing date set</span>
                     )}
-                    <span className="text-(muted)">{c.documents?.length ?? 0} doc(s)</span>
-                    <span className="text-(muted)">{c.caseDiary?.length ?? 0} diary entries</span>
+                    <span className="text-(--muted)">{c.documents?.length ?? 0} doc(s)</span>
+                    <span className="text-(--muted)">{c.caseDiary?.length ?? 0} diary entries</span>
                   </div>
                 </Link>
               );
@@ -93,20 +104,29 @@ export default async function LitigationCasesPage() {
 
       {closed.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(text) mb-3">Closed / Dismissed</h2>
+          <h2 className="font-semibold text-(--text) mb-3">Closed / Dismissed</h2>
           <div className="space-y-2">
-            {closed.map((c) => (
-              <Link
-                key={String(c._id)}
-                href={`/litigation/cases/${String(c._id)}`}
-                className="flex items-center justify-between px-5 py-3 bg-(surface) rounded-xl border border-(border) hover:border-(accent) transition-colors"
-              >
-                <p className="text-sm text-(muted) truncate">{c.caseTitle}</p>
-                <span className={`shrink-0 ml-3 text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[c.status] ?? "bg-gray-100 text-gray-600"}`}>
-                  {c.status}
-                </span>
-              </Link>
-            ))}
+            {closed.map((c) => {
+              const cst = STATUS_STYLE_LIT[c.status] ?? STATUS_STYLE_LIT.Closed;
+              return (
+                <Link key={String(c._id)} href={`/litigation/cases/${String(c._id)}`}
+                  className="flex items-center gap-3 px-5 py-3 rounded-xl border transition-colors"
+                  style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}>
+                  {c.caseNumber && (
+                    <span className="text-xs font-mono shrink-0 px-1.5 py-0.5 rounded"
+                      style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                      {c.caseNumber}
+                    </span>
+                  )}
+                  <p className="text-sm text-(--muted) truncate flex-1">{c.caseTitle}</p>
+                  <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full" style={cst}>
+                    {c.status}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

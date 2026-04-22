@@ -15,6 +15,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: Role;
   phone?: string;
+  avatarUrl?: string;
   isActive: boolean;
   lastLoginAt?: Date;
   citizenProfile?: {

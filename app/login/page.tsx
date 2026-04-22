@@ -2,189 +2,213 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { DEMO_ACCOUNTS } from "@/data/janman";
-import { useSession } from "@/components/ui/SessionProvider";
 
-type Account = (typeof DEMO_ACCOUNTS)[number];
+const DEV_ACCOUNTS = [
+  { role: "Citizen",        email: "user@dev.janmanindia.in",       password: "Dev@1234", dot: "var(--info)"    },
+  { role: "Social Worker",  email: "sw@dev.janmanindia.in",         password: "Dev@1234", dot: "var(--success)" },
+  { role: "Litigation",     email: "litigation@dev.janmanindia.in", password: "Dev@1234", dot: "var(--accent)"  },
+  { role: "HR",             email: "hr@dev.janmanindia.in",         password: "Dev@1234", dot: "var(--warning)" },
+  { role: "Finance",        email: "finance@dev.janmanindia.in",    password: "Dev@1234", dot: "var(--info)"    },
+  { role: "Admin",          email: "admin@dev.janmanindia.in",      password: "Dev@1234", dot: "var(--error)"   },
+  { role: "Super Admin",    email: "superadmin@dev.janmanindia.in", password: "Dev@1234", dot: "var(--muted)"   },
+];
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { user, login, logout } = useSession();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [showPw, setShowPw]         = useState(false);
+  const [error, setError]           = useState("");
+  const [loading, setLoading]       = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const success = login(identifier, password);
-
-    if (success) {
-      setError("");
-      router.push("/dashboard");
-    } else {
-      setError("Invalid credentials. Please use one of the sample demo accounts below.");
-    }
-  }
-
-  function handleLogout() {
-    logout();
-    setIdentifier("");
-    setPassword("");
+  function fill(e: string, p: string) {
+    setEmail(e);
+    setPassword(p);
     setError("");
   }
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!email.trim() || !password) { setError("Enter your email and password."); return; }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+
+      const data = await res.json() as { error?: string; redirectTo?: string };
+
+      if (!res.ok) {
+        setError(data.error ?? "Invalid credentials.");
+        return;
+      }
+
+      // Full navigation so the new auth_token cookie is active
+      window.location.href = data.redirectTo ?? "/";
+    } catch {
+      setError("Network error — please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-12">
-        <div className="mb-10 flex flex-col gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl shadow-black/10 sm:flex-row sm:items-center sm:justify-between">
+    <main className="min-h-screen bg-(--bg) text-(--text) flex flex-col">
+      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 flex-1">
+
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Shared login</p>
-            <h1 className="mt-4 text-3xl font-semibold text-[var(--text)] sm:text-4xl">Login for Public, Advocate, Paralegal, or Admin</h1>
-            <p className="mt-3 max-w-2xl text-[var(--muted)]">Use the same login page for all roles. Select one of the demo accounts below.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-(--accent)">Janman Legal Aid</p>
+            <h1 className="mt-1.5 text-2xl font-bold sm:text-3xl text-(--text)">Sign in to your dashboard</h1>
+            <p className="mt-1 text-sm text-(--muted)">One login for all roles — citizen, advocate, social worker, admin.</p>
           </div>
-          <Link href="/" className="inline-flex rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--accent)]">
-            Back to homepage
+          <Link href="/"
+            className="hidden sm:inline-flex items-center gap-2 rounded-lg border border-(--border) bg-(--surface) px-4 py-2 text-sm font-medium text-(--muted) hover:text-(--text) hover:border-(--accent) transition-all">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-3.5 h-3.5"><path d="M10 3L5 8l5 5"/></svg>
+            Home
           </Link>
         </div>
 
-        <div className="grid gap-10 lg:grid-cols-[0.85fr_0.65fr]">
-          <section className="space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl shadow-black/10">
-            <div>
-              <h2 className="text-2xl font-semibold text-[var(--text)]">Login</h2>
-              <p className="mt-3 text-[var(--muted)]">Enter one of the demo accounts to see the role-specific dashboard.</p>
-            </div>
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
 
-            {user ? (
-              <div className="space-y-6">
-                <div className="rounded-3xl border border-[var(--accent)]/20 bg-[var(--accent)]/10 p-6">
-                  <p className="text-sm uppercase tracking-[0.24em] text-[var(--accent)]">Signed in as</p>
-                  <p className="mt-3 text-xl font-semibold text-[var(--text)]">{user?.name}</p>
-                  <p className="text-[var(--muted)]">Role: {user?.role}</p>
-                </div>
+          {/* ── Login form ─────────────────────────────────────────────── */}
+          <section className="rounded-2xl border border-(--border) bg-(--surface) p-7"
+            style={{ boxShadow: "var(--shadow)" }}>
+            <h2 className="text-xl font-bold text-(--text)">Welcome back</h2>
+            <p className="mt-1 text-sm text-(--muted)">
+              Enter credentials or click a demo account on the right to fill in automatically.
+            </p>
 
-                <div className="space-y-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
-                  {user.role === "Public / Citizen" && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-[var(--text)]">Public Dashboard</h3>
-                      <p className="mt-2 text-[var(--muted)]">Search for legal help, review rights guides, and request assistance from the Janman network.</p>
-                      <ul className="mt-4 space-y-2 text-[var(--muted)]">
-                        <li>• Request legal aid</li>
-                        <li>• View Bihar scheme highlights</li>
-                        <li>• Contact a case support team</li>
-                      </ul>
-                    </div>
-                  )}
-                  {user.role === "Advocate / Lawyer" && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-[var(--text)]">Advocate Dashboard</h3>
-                      <p className="mt-2 text-[var(--muted)]">Manage client cases, review filings, and coordinate with paralegals and the admin team.</p>
-                      <ul className="mt-4 space-y-2 text-[var(--muted)]">
-                        <li>• My active cases</li>
-                        <li>• Client communication</li>
-                        <li>• Document review and hearing schedule</li>
-                      </ul>
-                    </div>
-                  )}
-                  {user.role === "Paralegal" && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-[var(--text)]">Paralegal Dashboard</h3>
-                      <p className="mt-2 text-[var(--muted)]">Coordinate outreach, support community training, and assist with case intake.</p>
-                      <ul className="mt-4 space-y-2 text-[var(--muted)]">
-                        <li>• Volunteer assignments</li>
-                        <li>• Community awareness tasks</li>
-                        <li>• Legal literacy resources</li>
-                      </ul>
-                    </div>
-                  )}
-                  {user.role === "Admin" && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-[var(--text)]">Admin Dashboard</h3>
-                      <p className="mt-2 text-[var(--muted)]">Monitor platform usage, manage users, and oversee the legal aid operations.</p>
-                      <ul className="mt-4 space-y-2 text-[var(--muted)]">
-                        <li>• User activity overview</li>
-                        <li>• Case status management</li>
-                        <li>• System alerts</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-(--text-2) mb-1.5">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full rounded-xl border border-(--border) bg-(--bg) px-4 py-2.5 text-sm text-(--text) placeholder:text-(--muted-2) outline-none transition focus:border-(--accent) focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_15%,transparent)]"
+                />
+              </div>
 
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <button
-                    onClick={() => router.push("/dashboard")}
-                    className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
-                  >
-                    Go to Dashboard
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      router.push("/login");
-                    }}
-                    className="w-full rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface)]"
-                  >
-                    Logout
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-(--text-2) mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPw ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-(--border) bg-(--bg) px-4 py-2.5 pr-11 text-sm text-(--text) placeholder:text-(--muted-2) outline-none transition focus:border-(--accent) focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_15%,transparent)]"
+                  />
+                  <button type="button"
+                    onClick={() => setShowPw((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-(--muted) hover:text-(--text) transition-colors p-1">
+                    {showPw ? (
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-4 h-4">
+                        <path d="M3 3l14 14M12.9 12.9A3 3 0 017.1 7.1M6.1 6.1A7.9 7.9 0 002 10s3.1 5.5 8 5.5a7.8 7.8 0 003.9-1.1M8.5 4.6A7.9 7.9 0 0118 10s-1.2 2.2-3.1 3.7"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-4 h-4">
+                        <path d="M2 10s3.1-5.5 8-5.5S18 10 18 10s-3.1 5.5-8 5.5S2 10 2 10z"/>
+                        <circle cx="10" cy="10" r="2.5"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="identifier" className="block text-sm font-semibold text-[var(--text)]">
-                    Email or User ID
-                  </label>
-                  <input
-                    id="identifier"
-                    value={identifier}
-                    onChange={(event) => setIdentifier(event.target.value)}
-                    className="mt-3 w-full rounded-3xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-                    placeholder="public@example.com"
-                    autoComplete="username"
-                  />
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+                  style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb,var(--error) 25%,transparent)" }}>
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0 mt-0.5">
+                    <path fillRule="evenodd" d="M8 1a7 7 0 100 14A7 7 0 008 1zM7.25 4.75a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4zm.75 7.5a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
+                  </svg>
+                  {error}
                 </div>
+              )}
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-semibold text-[var(--text)]">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="mt-3 w-full rounded-3xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                  />
-                </div>
+              {/* Submit */}
+              <button type="submit" disabled={loading}
+                className="w-full rounded-xl py-2.5 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ background: "var(--accent)" }}>
+                {loading ? "Signing in…" : "Sign in"}
+              </button>
+            </form>
 
-                {error && <p className="text-sm text-rose-500">{error}</p>}
-
-                <button
-                  type="submit"
-                  className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
-                >
-                  Sign in
-                </button>
-              </form>
-            )}
+            {/* Divider */}
+            <div className="mt-6 pt-6 border-t border-(--border) flex items-center justify-between text-sm text-(--muted)">
+              <span>New citizen?</span>
+              <Link href="/register"
+                className="font-medium text-(--accent) hover:underline underline-offset-2">
+                Register for legal aid →
+              </Link>
+            </div>
           </section>
 
-          <aside className="space-y-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl shadow-black/10">
-            <div>
-              <h2 className="text-2xl font-semibold text-[var(--text)]">Demo credentials</h2>
-              <p className="mt-3 text-[var(--muted)]">Use one of these accounts to see the matching UI panel for that role.</p>
-            </div>
-            <div className="space-y-4">
-              {DEMO_ACCOUNTS.map((account) => (
-                <div key={account.id} className="rounded-3xl border border-[var(--border)] bg-[var(--bg)] p-4 text-sm text-[var(--text)]">
-                  <p className="font-semibold text-[var(--text)]">{account.role}</p>
-                  <p className="mt-2">id: <span className="font-medium text-[var(--accent)]">{account.id}</span></p>
-                  <p>password: <span className="font-medium text-[var(--accent)]">{account.password}</span></p>
+          {/* ── Demo accounts ──────────────────────────────────────────── */}
+          <aside className="space-y-3">
+            <div className="rounded-2xl border border-(--border) bg-(--surface) p-5"
+              style={{ boxShadow: "var(--shadow)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-(--text)">Dev accounts</h2>
+                  <p className="text-xs text-(--muted) mt-0.5">Click any to fill credentials</p>
                 </div>
-              ))}
+                <span className="text-xs font-semibold px-2 py-1 rounded-full"
+                  style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
+                  DEV
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {DEV_ACCOUNTS.map((acc) => {
+                  const selected = email === acc.email;
+                  return (
+                    <button key={acc.email} type="button"
+                      onClick={() => fill(acc.email, acc.password)}
+                      className="w-full text-left rounded-xl border px-3.5 py-3 transition-all"
+                      style={{
+                        borderColor: selected ? "var(--accent)" : "var(--border)",
+                        background: selected ? "var(--accent-subtle)" : "var(--bg)",
+                      }}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: acc.dot }} />
+                        <span className="text-sm font-semibold text-(--text)">{acc.role}</span>
+                        {selected && (
+                          <span className="ml-auto text-xs font-medium px-1.5 py-0.5 rounded"
+                            style={{ background: "var(--accent-muted)", color: "var(--sidebar-active-text)" }}>
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs font-mono text-(--muted) pl-4 truncate">{acc.email}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            <p className="text-center text-xs text-(--muted)">
+              Using the dev panel?{" "}
+              <Link href="/dev" className="text-(--accent) hover:underline">Go to /dev →</Link>
+            </p>
           </aside>
         </div>
       </div>

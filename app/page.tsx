@@ -1,214 +1,280 @@
 import Link from "next/link";
-import { DEMO_ACCOUNTS, FEATURE_CARDS, SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman";
+import { DEMO_ACCOUNTS, SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman";
+import RoleCard from "@/components/shared/RoleCard";
+
+const ROLE_CONFIG = [
+  { icon: "👤", color: "var(--info-bg)",    border: "var(--info)",    label: "Citizen"       },
+  { icon: "⚖️", color: "var(--success-bg)", border: "var(--success)", label: "Advocate"      },
+  { icon: "🤝", color: "var(--accent-subtle)", border: "var(--accent)", label: "Social Worker" },
+  { icon: "🛡️", color: "var(--error-bg)",   border: "var(--error)",   label: "Admin"         },
+];
+
+const PLATFORM_FEATURES = [
+  { icon: "📋", label: "Case intake & FIR support" },
+  { icon: "🔔", label: "SOS alerts with escalation" },
+  { icon: "📅", label: "Hearing reminders via calendar" },
+  { icon: "📊", label: "Role-specific live dashboards" },
+];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      {/* HERO SECTION */}
-      <section className="border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="mx-auto max-w-7xl space-y-8 px-6 py-24 sm:px-8 lg:px-12">
-          <div className="grid gap-16 lg:grid-cols-[1.3fr_1fr]">
-            {/* Hero Content */}
-            <div className="space-y-8 flex flex-col justify-center">
-              <div className="space-y-6">
-                <span className="inline-block rounded-full bg-[var(--accent-foreground)]/25 px-5 py-2 text-sm font-semibold text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
-                  Legal aid for Bihar's most vulnerable communities
+    <main className="min-h-screen bg-(--bg) text-(--text)">
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="border-b border-(--border) bg-(--surface)">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
+          <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+
+            <div className="space-y-7">
+              <div className="space-y-4">
+                <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold ring-1"
+                  style={{ background: "var(--accent-subtle)", color: "var(--accent)", ringColor: "var(--accent-muted)" }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                  Legal aid for Bihar&apos;s most vulnerable communities
                 </span>
-                <h1 className="text-5xl font-bold tracking-tight text-[var(--text)] sm:text-6xl lg:text-7xl leading-tight">
-                  Janman Legal Aid
+
+                <h1 className="text-4xl font-extrabold tracking-tight text-(--text) sm:text-5xl lg:text-6xl leading-[1.1]">
+                  Janman<br />
+                  <span style={{ color: "var(--accent)" }}>Legal Aid</span>
                 </h1>
-                <p className="text-xl leading-8 text-[var(--muted)] max-w-2xl">{SITE_SUBTITLE}</p>
+
+                <p className="text-lg leading-relaxed text-(--muted) max-w-xl">{SITE_SUBTITLE}</p>
               </div>
-              <div className="flex flex-wrap gap-4 pt-4">
-                <Link href="/login" className="inline-flex items-center justify-center rounded-xl bg-[var(--accent)] px-8 py-4 text-base font-semibold text-[var(--accent-contrast)] transition hover:brightness-110 shadow-lg shadow-[var(--accent)]/20">
+
+              <div className="flex flex-wrap gap-3">
+                <Link href="/login"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
+                  style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
                   Login to Dashboard
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                    <path d="M3 8h10M9 4l4 4-4 4"/>
+                  </svg>
                 </Link>
-                <Link href="/community" className="inline-flex items-center justify-center rounded-xl border-2 border-[var(--border)] px-8 py-4 text-base font-semibold text-[var(--text)] transition hover:bg-[var(--surface)] hover:border-[var(--accent)]">
+                <Link href="/community"
+                  className="inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--bg) px-6 py-3 text-sm font-semibold text-(--text) hover:border-(--accent) hover:bg-(--surface) transition">
                   Explore Community
                 </Link>
               </div>
-            </div>
 
-            {/* Hero Features Box */}
-            <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--accent-foreground)]/10 to-transparent p-10 shadow-2xl shadow-black/5">
-              <div className="space-y-8">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">✨ Platform features</p>
-                  <p className="mt-3 text-lg leading-7 text-[var(--text)]">
-                    A unified workspace for citizens, advocates, paralegals and administrators to collaborate on legal support and case management.
-                  </p>
-                </div>
-                
-                <div className="space-y-4">
-                  {[
-                    { icon: "📋", label: "Case intake & tracking" },
-                    { icon: "🤝", label: "Advocate-paralegal-client collaboration" },
-                    { icon: "📚", label: "Legal rights & schemes database" },
-                    { icon: "📊", label: "Real-time status dashboards" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex gap-4 items-start">
-                      <span className="text-2xl flex-shrink-0">{item.icon}</span>
-                      <p className="text-[var(--muted)] leading-relaxed pt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
+              {/* Stats row */}
+              <div className="flex flex-wrap gap-6 pt-2 border-t border-(--border)">
+                {[
+                  { value: "7",    label: "Role types" },
+                  { value: "Bihar", label: "Focus state" },
+                  { value: "Free",  label: "Legal aid" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <p className="text-xl font-bold text-(--text)">{s.value}</p>
+                    <p className="text-xs text-(--muted)">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ROLES SECTION */}
-      <section className="bg-[var(--bg)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-7xl space-y-12 px-6 py-24 sm:px-8 lg:px-12">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">Separate journeys for each role</p>
-            <h2 className="mt-3 text-4xl font-bold text-[var(--text)] sm:text-5xl">One platform, four roles</h2>
-            <p className="mt-4 text-lg leading-8 text-[var(--muted)] max-w-2xl">
-              Public citizens, legal advocates, paralegals and administrators each get a dashboard built for their unique needs.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {USER_ROLES.map((role) => (
-              <article key={role.title} className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm hover:shadow-md hover:border-[var(--accent)]/50 transition">
-                <h3 className="text-lg font-bold text-[var(--text)]">{role.title}</h3>
-                <p className="mt-4 leading-7 text-[var(--muted)]">{role.description}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TOOLS SECTION */}
-      <section className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-7xl space-y-12 px-6 py-24 sm:px-8 lg:px-12">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">Integrated workflows</p>
-            <h2 className="mt-3 text-4xl font-bold text-[var(--text)] sm:text-5xl">Tools for community and campaigns</h2>
-            <p className="mt-4 text-lg leading-8 text-[var(--muted)] max-w-2xl">
-              Build skills and mobilize communities with integrated tools for schemes, laws, campaigns and events.
-            </p>
-          </div>
-
-          <div className="grid gap-10 lg:grid-cols-2">
-            {/* Community Tool */}
-            <article className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-10 shadow-sm">
-              <div className="bg-[var(--accent)]/10 rounded-xl px-4 py-2 inline-block mb-6">
-                <span className="text-sm font-bold text-[var(--accent)]">⚖️ Legal knowledge</span>
-              </div>
-              <h3 className="text-2xl font-bold text-[var(--text)]">Jan Sahayak Community</h3>
-              <p className="mt-4 leading-7 text-[var(--muted)]">
-                Search government schemes, understand your legal rights, and access district-level support information.
-              </p>
-              <ul className="mt-8 space-y-3 text-[var(--muted)]">
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Central and Bihar welfare schemes with eligibility checks</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Laws and rights guides: BNS, BNSS, POCSO, SC/ST Act</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Live case intake and community health monitoring</span>
-                </li>
-              </ul>
-              <Link href="/community" className="mt-10 inline-flex rounded-xl bg-[var(--accent)] px-7 py-3 text-sm font-bold text-[var(--accent-contrast)] transition hover:brightness-110">
-                Open Community Tool →
-              </Link>
-            </article>
-
-            {/* Events Tool */}
-            <article className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-10 shadow-sm">
-              <div className="bg-[var(--accent)]/10 rounded-xl px-4 py-2 inline-block mb-6">
-                <span className="text-sm font-bold text-[var(--accent)]">📢 Campaign design</span>
-              </div>
-              <h3 className="text-2xl font-bold text-[var(--text)]">Janman Events Planner</h3>
-              <p className="mt-4 leading-7 text-[var(--muted)]">
-                Plan awareness campaigns, trainings and community mobilization using guided workflows and AI support.
-              </p>
-              <ul className="mt-8 space-y-3 text-[var(--muted)]">
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Generate agendas, scripts and campaigns inspired by Indian people's movements</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Coordinate paralegal and advocate teams on one timeline</span>
-                </li>
-                <li className="flex gap-3 items-start">
-                  <span className="text-[var(--accent)] font-bold mt-0.5">→</span>
-                  <span>Track progress and document impact across districts</span>
-                </li>
-              </ul>
-              <Link href="/events" className="mt-10 inline-flex rounded-xl border-2 border-[var(--border)] px-7 py-3 text-sm font-bold text-[var(--text)] transition hover:bg-[var(--surface)] hover:border-[var(--accent)]">
-                Open Events Planner →
-              </Link>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      {/* SCHEMES & LAWS SECTION */}
-      <section className="bg-[var(--bg)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-7xl space-y-12 px-6 py-24 sm:px-8 lg:px-12">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">Quick reference</p>
-            <h2 className="mt-3 text-4xl font-bold text-[var(--text)] sm:text-5xl">Key schemes everyone should know</h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {SCHEMES.map((scheme) => (
-              <article key={scheme.name} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
-                <h3 className="font-bold text-[var(--text)]">{scheme.name}</h3>
-                <p className="mt-4 text-sm leading-6 text-[var(--muted)]">{scheme.detail}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA SECTION */}
-      <section className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-7xl space-y-10 px-6 py-24 sm:px-8 lg:px-12">
-          <div className="grid gap-16 lg:grid-cols-[1fr_1.2fr]">
-            {/* CTA Text */}
-            <div className="flex flex-col justify-center space-y-6">
+            {/* Feature card */}
+            <div className="rounded-2xl border border-(--border) p-7 space-y-6"
+              style={{ background: "linear-gradient(135deg, var(--accent-subtle) 0%, var(--surface) 60%)", boxShadow: "var(--shadow-lg)" }}>
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">Get started now</p>
-                <h2 className="mt-3 text-4xl font-bold text-[var(--text)] sm:text-5xl">Sign in to your dashboard</h2>
-                <p className="mt-4 text-lg leading-8 text-[var(--muted)] max-w-xl">
-                  Choose a demo account below to explore the platform designed for your role. Your dashboard is built to match your workflow.
+                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Platform features</p>
+                <p className="mt-2 text-sm text-(--text-2) leading-relaxed">
+                  A unified workspace for citizens, advocates, social workers, and administrators to collaborate on case management and legal support.
                 </p>
               </div>
-              <Link href="/login" className="inline-flex w-fit rounded-xl bg-[var(--accent)] px-8 py-4 text-base font-bold text-[var(--accent-contrast)] transition hover:brightness-110 shadow-lg shadow-[var(--accent)]/20">
-                Sign in now →
-              </Link>
-            </div>
-
-            {/* Demo Accounts */}
-            <div className="space-y-4">
-              {DEMO_ACCOUNTS.map((account) => (
-                <div key={account.id} className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-6">
-                  <p className="font-bold text-[var(--text)]">{account.role}</p>
-                  <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <p className="text-[var(--muted)]">Email/ID</p>
-                      <p className="mt-1 font-mono font-semibold text-[var(--accent)]">{account.id}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--muted)]">Password</p>
-                      <p className="mt-1 font-mono font-semibold text-[var(--accent)]">{account.password}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <ul className="space-y-3">
+                {PLATFORM_FEATURES.map((f) => (
+                  <li key={f.label} className="flex items-center gap-3">
+                    <span className="text-lg w-8 text-center shrink-0">{f.icon}</span>
+                    <span className="text-sm text-(--text-2)">{f.label}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="pt-2 border-t border-(--border)">
+                <p className="text-xs text-(--muted)">All roles share one platform — separate dashboards, same mission.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ── Roles ────────────────────────────────────────────────────────── */}
+      <section id="roles" className="border-b border-(--border) bg-(--bg)">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
+          <div className="mb-10 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Separate journeys for each role</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">One platform, seven roles</h2>
+            <p className="mt-3 text-(--muted) leading-relaxed">
+              Citizens, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {USER_ROLES.map((role, i) => {
+              const cfg = ROLE_CONFIG[i] ?? ROLE_CONFIG[0];
+              return (
+                <RoleCard
+                  key={role.title}
+                  icon={cfg.icon}
+                  title={role.title}
+                  description={role.description}
+                  borderColor={cfg.border}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Tools ────────────────────────────────────────────────────────── */}
+      <section className="border-b border-(--border) bg-(--surface)">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
+          <div className="mb-10 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Integrated workflows</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Tools for community and campaigns</h2>
+            <p className="mt-3 text-(--muted) leading-relaxed">
+              Mobilize communities with integrated tools for schemes, laws, campaigns and events.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {[
+              {
+                tag: "⚖️ Legal knowledge",
+                title: "Jan Sahayak Community",
+                desc: "Search government schemes, understand your legal rights, and access district-level support information.",
+                bullets: [
+                  "Central and Bihar welfare schemes with eligibility checks",
+                  "Laws and rights guides: BNS, BNSS, POCSO, SC/ST Act",
+                  "Live case intake and community health monitoring",
+                ],
+                cta: { href: "/community", label: "Open Community Tool", primary: true },
+              },
+              {
+                tag: "📢 Campaign design",
+                title: "Janman Events Planner",
+                desc: "Plan awareness campaigns and community mobilization using guided AI-powered workflows.",
+                bullets: [
+                  "Generate agendas and campaigns inspired by Indian people's movements",
+                  "Coordinate paralegal and advocate teams on one timeline",
+                  "Track progress and document impact across districts",
+                ],
+                cta: { href: "/events", label: "Open Events Planner", primary: false },
+              },
+            ].map((tool) => (
+              <article key={tool.title} className="rounded-2xl border border-(--border) bg-(--bg) p-7 flex flex-col" style={{ boxShadow: "var(--shadow-sm)" }}>
+                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold w-fit mb-5"
+                  style={{ background: "var(--accent-subtle)", color: "var(--accent)", border: "1px solid var(--accent-muted)" }}>
+                  {tool.tag}
+                </div>
+                <h3 className="text-xl font-bold text-(--text)">{tool.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-(--muted) flex-1">{tool.desc}</p>
+                <ul className="mt-5 space-y-2">
+                  {tool.bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-2.5 text-sm text-(--text-2)">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6">
+                  <Link href={tool.cta.href}
+                    className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+                      tool.cta.primary
+                        ? "text-(--accent-contrast) hover:brightness-110"
+                        : "border border-(--border) text-(--text) hover:border-(--accent) hover:bg-(--surface)"
+                    }`}
+                    style={tool.cta.primary ? { background: "var(--accent)" } : {}}>
+                    {tool.cta.label}
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                      <path d="M3 8h10M9 4l4 4-4 4"/>
+                    </svg>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Schemes ──────────────────────────────────────────────────────── */}
+      <section className="border-b border-(--border) bg-(--bg)">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
+          <div className="mb-10 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Quick reference</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Key schemes everyone should know</h2>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SCHEMES.map((scheme) => (
+              <article key={scheme.name}
+                className="rounded-2xl border border-(--border) bg-(--surface) p-5 hover:border-(--accent) transition-colors"
+                style={{ boxShadow: "var(--shadow-sm)" }}>
+                <div className="w-8 h-8 rounded-lg bg-(--accent)/10 flex items-center justify-center mb-3">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-4 h-4" style={{ color: "var(--accent)" }}>
+                    <path d="M8 1v14M3 4.5h6a2.5 2.5 0 010 5H4m0 3.5h6"/>
+                  </svg>
+                </div>
+                <h3 className="text-sm font-bold text-(--text)">{scheme.name}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-(--muted)">{scheme.detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ──────────────────────────────────────────────────────────── */}
+      <section className="bg-(--surface) border-b border-(--border)">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Get started now</p>
+                <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Sign in to your dashboard</h2>
+                <p className="mt-3 text-(--muted) leading-relaxed max-w-lg">
+                  Use a demo account to explore the platform designed for your role. Each dashboard is built to match your workflow.
+                </p>
+              </div>
+              <Link href="/login"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
+                style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
+                Sign in now
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                  <path d="M3 8h10M9 4l4 4-4 4"/>
+                </svg>
+              </Link>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {DEMO_ACCOUNTS.map((account, i) => {
+                const cfg = ROLE_CONFIG[i] ?? ROLE_CONFIG[0];
+                return (
+                  <div key={account.id}
+                    className="rounded-xl border border-(--border) bg-(--bg) p-4 hover:border-(--accent) transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">{cfg.icon}</span>
+                      <p className="text-sm font-semibold text-(--text)">{account.role}</p>
+                    </div>
+                    <p className="text-xs font-mono text-(--accent) truncate">{account.id}</p>
+                    <p className="text-xs text-(--muted) mt-0.5">Pass: <span className="font-mono">{account.password}</span></p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ───────────────────────────────────────────────────────── */}
+      <footer className="bg-(--bg) border-t border-(--border) px-5 py-8">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-(--muted)">
+          <p>© 2026 Janman Legal Aid — Bihar, India</p>
+          <div className="flex gap-5">
+            <Link href="/community" className="hover:text-(--text) transition-colors">Community</Link>
+            <Link href="/events" className="hover:text-(--text) transition-colors">Events</Link>
+            <Link href="/training" className="hover:text-(--text) transition-colors">Training</Link>
+            <Link href="/dev" className="hover:text-(--text) transition-colors">Dev</Link>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

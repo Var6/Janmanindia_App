@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify, SignJWT } from "jose";
+import { jwtVerify } from "jose";
 
 type Role =
   | "user"
@@ -55,20 +55,24 @@ async function handleDevBypass(request: NextRequest): Promise<NextResponse | nul
   const devRole = request.cookies.get("dev_role")?.value as Role | undefined;
   if (!devRole || !ALL_ROLES.includes(devRole)) return null;
 
-  // Mint a real JWT so route handlers (requireSession) also work
-  const token = await new SignJWT({ id: "dev-user-" + devRole, role: devRole, name: `Dev ${devRole}` })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("1d")
-    .sign(getSecret());
+  // If a valid auth_token exists AND its id is a real ObjectId, let normal flow handle it
+  const token = request.cookies.get("auth_token")?.value;
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, getSecret());
+      const id = (payload as { id?: string }).id ?? "";
+      if (/^[a-f\d]{24}$/i.test(id)) return null; // real ObjectId — fall through
+    } catch {
+      // expired/invalid
+    }
+    // Token present but has fake ID or is invalid — clear it and redirect to /dev
+    const res = NextResponse.redirect(new URL("/dev", request.url));
+    res.cookies.delete("auth_token");
+    return res;
+  }
 
-  const response = NextResponse.next();
-  response.cookies.set("auth_token", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24,
-  });
-  return response;
+  // No token: send to /dev so the user picks a role and gets a real JWT
+  return NextResponse.redirect(new URL("/dev", request.url));
 }
 
 export async function proxy(request: NextRequest) {
