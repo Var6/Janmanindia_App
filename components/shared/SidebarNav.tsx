@@ -205,10 +205,16 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
     .toUpperCase();
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col h-screen sticky top-0" style={{ background: "var(--sidebar)", borderRight: "1px solid var(--sidebar-border)" }}>
-      {/* Brand */}
-      <div className="px-4 py-3 border-b" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className="flex items-center gap-2.5">
+    <aside className="w-56 shrink-0 flex flex-col h-screen sticky top-0"
+      style={{
+        background: "color-mix(in srgb, var(--sidebar) 82%, transparent)",
+        backdropFilter: "blur(18px) saturate(170%)",
+        WebkitBackdropFilter: "blur(18px) saturate(170%)",
+        borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
+      }}>
+      {/* Brand — same min-h as TopBar so they line up */}
+      <div className="px-4 py-3 border-b min-h-14 flex items-center" style={{ borderColor: "var(--sidebar-border)" }}>
+        <div className="flex items-center gap-2.5 w-full">
           <img
             src="/logo.png"
             alt="Janman"
@@ -216,7 +222,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
             style={{ border: "1px solid var(--border)" }}
           />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-(--text) leading-none">Janman</p>
+            <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
             <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
           </div>
         </div>

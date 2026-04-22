@@ -21,7 +21,13 @@ export default function TopBar({ userName, role }: Props) {
   const palette = ROLE_PALETTE[role] ?? ROLE_PALETTE.superadmin;
 
   return (
-    <header className="sticky top-0 z-10 bg-(--surface)/85 backdrop-blur-sm border-b border-(--border) px-5 py-2.5 flex items-center justify-between gap-4 min-h-[48px]">
+    <header className="sticky top-0 z-10 px-5 py-3 flex items-center justify-between gap-4 min-h-14 border-b"
+      style={{
+        background: "color-mix(in srgb, var(--surface) 75%, transparent)",
+        backdropFilter: "blur(14px) saturate(160%)",
+        WebkitBackdropFilter: "blur(14px) saturate(160%)",
+        borderColor: "var(--border)",
+      }}>
       <nav className="flex items-center gap-1.5 min-w-0 text-[13px]">
         {crumbs.map((c, i) => (
           <span key={c.href} className="flex items-center gap-1.5 min-w-0">

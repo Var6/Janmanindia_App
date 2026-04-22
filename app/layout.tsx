@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+
+const sans = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const notoDevanagari = Noto_Sans_Devanagari({
+const devanagari = Noto_Sans_Devanagari({
   variable: "--font-devanagari",
   subsets: ["devanagari"],
   display: "swap",
@@ -30,11 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300">
+    <html lang="en"
+      className={`${sans.variable} ${mono.variable} ${devanagari.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300 app-bg">
         <ThemeProvider>
           <SessionProvider>
             {children}
