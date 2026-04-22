@@ -21,7 +21,7 @@ export default function TopBar({ userName, role }: Props) {
   const palette = ROLE_PALETTE[role] ?? ROLE_PALETTE.superadmin;
 
   return (
-    <header className="sticky top-0 z-10 px-5 py-3 flex items-center justify-between gap-4 min-h-14 border-b"
+    <header className="sticky top-0 z-10 px-5 flex items-center justify-between gap-4 h-14 border-b"
       style={{
         background: "color-mix(in srgb, var(--surface) 75%, transparent)",
         backdropFilter: "blur(14px) saturate(160%)",

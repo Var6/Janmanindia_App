@@ -223,12 +223,12 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
         WebkitBackdropFilter: "blur(18px) saturate(170%)",
         borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
       }}>
-      {/* Brand row — clicking the logo toggles collapse. Always visible. */}
-      <div className={`border-b min-h-14 flex items-center ${collapsed ? "justify-center px-2" : "px-3"} py-3`}
+      {/* Brand row — exact 56px height to match TopBar */}
+      <div className={`border-b h-14 flex items-center ${collapsed ? "justify-center px-2" : "px-3"}`}
         style={{ borderColor: "var(--sidebar-border)" }}>
         <button onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center gap-2.5 min-w-0 w-full rounded-lg p-0.5 hover:bg-(--sidebar-hover) transition-colors group"
+          className="flex items-center gap-2.5 min-w-0 w-full rounded-lg hover:bg-(--sidebar-hover) transition-colors group"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
           <img
             src="/logo.png"
