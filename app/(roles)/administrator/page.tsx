@@ -52,7 +52,7 @@ export default async function AdministratorDashboard() {
           { label: "Districts active", value: byDistrict.length,                     href: "/administrator/offices" },
         ].map((kpi) => (
           <Link key={kpi.label} href={kpi.href}
-            className="bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(--accent) transition-colors">
+            className="glass rounded-2xl p-5 hover:border-(--accent) transition-colors">
             <p className="text-xs text-(--muted)">{kpi.label}</p>
             <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-(--accent)" : "text-(--text)"}`}>{kpi.value}</p>
           </Link>
@@ -61,7 +61,7 @@ export default async function AdministratorDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* By category */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) p-5">
+        <section className="glass rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-(--text) text-sm">Active tickets by category</h2>
             <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">All →</Link>
@@ -90,7 +90,7 @@ export default async function AdministratorDashboard() {
         </section>
 
         {/* By district */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) p-5">
+        <section className="glass rounded-2xl p-5">
           <h2 className="font-semibold text-(--text) text-sm mb-3">Active tickets by district</h2>
           {byDistrict.length === 0 ? (
             <p className="text-xs text-(--muted) text-center py-4">No district data yet.</p>
@@ -117,7 +117,7 @@ export default async function AdministratorDashboard() {
       </div>
 
       {/* Recent open queue */}
-      <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+      <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
           <h2 className="font-semibold text-(--text)">Most urgent open tickets</h2>
           <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">Inbox →</Link>

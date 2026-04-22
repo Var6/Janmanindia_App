@@ -22,7 +22,7 @@ export default async function AppShell({ allow, children }: Props) {
   const roleLabel = ROLE_LABELS[session.role] ?? session.role;
 
   return (
-    <div className="flex h-screen bg-(--bg) overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       <SidebarNav navItems={navItems} roleLabel={roleLabel} userName={session.name} roleSlug={session.role} />
 
       <main className="flex-1 overflow-y-auto flex flex-col">

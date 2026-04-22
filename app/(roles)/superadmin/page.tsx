@@ -60,7 +60,7 @@ export default async function SuperAdminDashboard() {
           { label: "Open SOS Alerts",    value: openSos,           highlight: openSos > 0 },
           { label: "Unverified Community",value: unverifiedUsers,   highlight: unverifiedUsers > 0 },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-(--surface) rounded-2xl border border-(--border) p-5">
+          <div key={kpi.label} className="glass rounded-2xl p-5">
             <p className="text-xs text-(--muted)">{kpi.label}</p>
             <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-(--accent)" : "text-(--text)"}`}>{kpi.value}</p>
           </div>
@@ -69,7 +69,7 @@ export default async function SuperAdminDashboard() {
 
       {/* Role Breakdown */}
       {roleBreakdown.length > 0 && (
-        <section className="bg-(--surface) rounded-2xl border border-(--border) p-6">
+        <section className="glass rounded-2xl p-6">
           <h2 className="font-semibold text-(--text) mb-4">Users by Role</h2>
           <div className="flex flex-wrap gap-3">
             {roleBreakdown.map((rb) => (
@@ -84,7 +84,7 @@ export default async function SuperAdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Cases */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+        <section className="glass rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
             <h2 className="font-semibold text-(--text)">Recent Cases</h2>
             <Link href="/director/cases" className="text-xs text-(--accent) hover:underline">All cases</Link>
@@ -108,7 +108,7 @@ export default async function SuperAdminDashboard() {
         </section>
 
         {/* Recent Users */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+        <section className="glass rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
             <h2 className="font-semibold text-(--text)">Recent Registrations</h2>
             <Link href="/director/users" className="text-xs text-(--accent) hover:underline">All users</Link>

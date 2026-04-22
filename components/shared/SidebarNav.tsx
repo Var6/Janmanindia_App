@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export interface NavItem {
   href: string;
@@ -191,6 +192,16 @@ interface Props {
 
 export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: Props) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+
+  // Persist collapse state across navigations
+  useEffect(() => {
+    const saved = typeof window !== "undefined" && window.localStorage.getItem("sb_collapsed");
+    if (saved === "1") setCollapsed(true);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("sb_collapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
 
   function isActive(href: string): boolean {
     if (href === `/${roleSlug}` || href === "/training") return pathname === href;
@@ -205,38 +216,48 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
     .toUpperCase();
 
   return (
-    <aside className="w-56 shrink-0 flex flex-col h-screen sticky top-0"
+    <aside className={`${collapsed ? "w-[68px]" : "w-56"} shrink-0 flex flex-col h-screen sticky top-0 transition-[width] duration-200 ease-out`}
       style={{
-        background: "color-mix(in srgb, var(--sidebar) 82%, transparent)",
+        background: "color-mix(in srgb, var(--sidebar) 78%, transparent)",
         backdropFilter: "blur(18px) saturate(170%)",
         WebkitBackdropFilter: "blur(18px) saturate(170%)",
         borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
       }}>
-      {/* Brand — same min-h as TopBar so they line up */}
-      <div className="px-4 py-3 border-b min-h-14 flex items-center" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className="flex items-center gap-2.5 w-full">
+      {/* Brand row — matches TopBar height */}
+      <div className="px-3 py-3 border-b min-h-14 flex items-center justify-between gap-2" style={{ borderColor: "var(--sidebar-border)" }}>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <img
             src="/logo.png"
             alt="Janman"
             className="w-8 h-8 rounded-lg object-contain shrink-0"
             style={{ border: "1px solid var(--border)" }}
           />
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-            <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
+              <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
+            </div>
+          )}
         </div>
+        <button onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-(--muted) hover:text-(--text) hover:bg-(--sidebar-hover) transition-colors">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            {collapsed ? <path d="M8 6l4 4-4 4"/> : <path d="M12 6l-4 4 4 4"/>}
+          </svg>
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150"
+              title={collapsed ? item.label : undefined}
+              className={`flex items-center ${collapsed ? "justify-center px-0" : "gap-2.5 px-2.5"} py-2 rounded-lg text-[13px] font-medium transition-all duration-150`}
               style={{
                 background: active ? "var(--sidebar-active-bg)" : "transparent",
                 color: active ? "var(--sidebar-active-text)" : "var(--muted)",
@@ -257,8 +278,8 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
               <span className="shrink-0 transition-colors" style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon)" }}>
                 {ICONS[item.icon]}
               </span>
-              <span className="truncate">{item.label}</span>
-              {active && (
+              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && active && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
               )}
             </Link>
@@ -267,25 +288,31 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
       </nav>
 
       {/* User footer */}
-      <div className="px-3 py-3 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg" style={{ background: "var(--bg-secondary)" }}>
+      <div className="px-2 py-2.5 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
+        <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 px-2"} py-2 rounded-lg`}
+          style={{ background: collapsed ? "transparent" : "var(--bg-secondary)" }}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: "var(--accent-muted)", color: "var(--sidebar-active-text)" }}>
+            style={{ background: "var(--accent-muted)", color: "var(--sidebar-active-text)" }}
+            title={collapsed ? userName : undefined}>
             {initials}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
-            <p className="text-[10px] text-(--muted) mt-0.5 truncate">{roleLabel}</p>
-          </div>
-          <form action="/api/auth/logout" method="POST">
-            <button type="submit" title="Sign out"
-              className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
-                <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
-              </svg>
-            </button>
-          </form>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
+                <p className="text-[10px] text-(--muted) mt-0.5 truncate">{roleLabel}</p>
+              </div>
+              <form action="/api/auth/logout" method="POST">
+                <button type="submit" title="Sign out"
+                  className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
+                    <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
+                  </svg>
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </aside>

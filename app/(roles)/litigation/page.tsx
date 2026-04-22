@@ -65,7 +65,7 @@ export default async function LitigationDashboard() {
           { label: "Pending Appointments",   value: pendingAppointments.length },
           { label: "Location",               value: litigationUser?.litigationProfile?.location?.district ?? "—" },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-(--surface) rounded-2xl border border-(--border) p-5">
+          <div key={kpi.label} className="glass rounded-2xl p-5">
             <p className="text-xs text-(--muted)">{kpi.label}</p>
             <p className="text-2xl font-bold mt-1 text-(--accent)">{kpi.value}</p>
           </div>
@@ -74,7 +74,7 @@ export default async function LitigationDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Hearings */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+        <section className="glass rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border)">
             <h2 className="font-semibold text-(--text)">Upcoming Hearings (7 days)</h2>
           </div>
@@ -101,7 +101,7 @@ export default async function LitigationDashboard() {
         </section>
 
         {/* Pending Appointments */}
-        <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+        <section className="glass rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
             <h2 className="font-semibold text-(--text)">Appointments Awaiting Confirmation</h2>
             <Link href="/litigation/appointments" className="text-xs text-(--accent) hover:underline">View all</Link>
@@ -129,7 +129,7 @@ export default async function LitigationDashboard() {
       </div>
 
       {/* Active Cases Table */}
-      <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+      <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
           <h2 className="font-semibold text-(--text)">My Cases</h2>
           <Link href="/litigation/cases" className="text-xs text-(--accent) hover:underline">All cases</Link>
@@ -158,7 +158,7 @@ export default async function LitigationDashboard() {
 
       {/* Calendar Embed */}
       {calendarEmbedUrl && (
-        <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+        <section className="glass rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border)">
             <h2 className="font-semibold text-(--text)">My Calendar</h2>
           </div>

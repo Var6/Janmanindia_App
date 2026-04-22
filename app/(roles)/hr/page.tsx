@@ -44,7 +44,7 @@ export default async function HrDashboard() {
           { label: "Active Social Workers",  value: socialWorkers.length },
           { label: "SLA Breaches",           value: slaBreached.length,     highlight: slaBreached.length > 0 },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-(--surface) rounded-2xl border border-(--border) p-5">
+          <div key={kpi.label} className="glass rounded-2xl p-5">
             <p className="text-xs text-(--muted)">{kpi.label}</p>
             <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-red-500" : "text-(--text)"}`}>{kpi.value}</p>
           </div>
@@ -52,7 +52,7 @@ export default async function HrDashboard() {
       </div>
 
       {/* Pending Invoice Queue */}
-      <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+      <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
           <h2 className="font-semibold text-(--text)">
             Pending Invoices
@@ -113,7 +113,7 @@ export default async function HrDashboard() {
       )}
 
       {/* Attendance Overview */}
-      <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
+      <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
           <h2 className="font-semibold text-(--text)">Social Workers</h2>
           <Link href="/hr/attendance" className="text-xs text-(--accent) hover:underline">Attendance</Link>
