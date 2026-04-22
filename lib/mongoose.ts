@@ -25,3 +25,13 @@ export async function connectDB(): Promise<typeof mongoose> {
   cached.conn = await cached.promise;
   return cached.conn;
 }
+
+/** Returns false when DB is unreachable — pages can show empty state instead of crashing. */
+export async function tryConnectDB(): Promise<boolean> {
+  try {
+    await connectDB();
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
-import { connectDB } from "@/lib/mongoose";
+import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import type { ICase, IDocument } from "@/models/Case";
 
@@ -76,7 +76,8 @@ export default async function CaseWorkspacePage({
 
   const { caseId } = await params;
 
-  await connectDB();
+  const dbOk = await tryConnectDB();
+  if (!dbOk) redirect("/litigation");
 
   const caseDoc = await Case.findById(caseId)
     .populate("citizen", "name email phone")
@@ -144,7 +145,7 @@ export default async function CaseWorkspacePage({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Citizen", person: c.citizen },
-          { label: "Litigation Member", person: c.litigationMember as { name: string; email: string } },
+          { label: "Litigation Member", person: c.litigationMember as unknown as { name: string; email: string } },
           { label: "Social Worker", person: c.socialWorker ?? null },
         ].map(({ label, person }) => (
           <div key={label} className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">

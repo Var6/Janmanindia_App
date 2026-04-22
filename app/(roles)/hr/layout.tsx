@@ -7,6 +7,7 @@ const navItems = [
   { href: "/hr/invoices", label: "Invoices" },
   { href: "/hr/attendance", label: "Attendance" },
   { href: "/hr/onboarding", label: "Onboarding" },
+  { href: "/hr/offboarding", label: "Offboarding" },
 ];
 
 export default async function HrLayout({ children }: { children: React.ReactNode }) {
