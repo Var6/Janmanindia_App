@@ -223,28 +223,25 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
         WebkitBackdropFilter: "blur(18px) saturate(170%)",
         borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
       }}>
-      {/* Brand row — matches TopBar height */}
-      <div className="px-3 py-3 border-b min-h-14 flex items-center justify-between gap-2" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      {/* Brand row — clicking the logo toggles collapse. Always visible. */}
+      <div className={`border-b min-h-14 flex items-center ${collapsed ? "justify-center px-2" : "px-3"} py-3`}
+        style={{ borderColor: "var(--sidebar-border)" }}>
+        <button onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex items-center gap-2.5 min-w-0 w-full rounded-lg p-0.5 hover:bg-(--sidebar-hover) transition-colors group"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
           <img
             src="/logo.png"
-            alt="Janman"
-            className="w-8 h-8 rounded-lg object-contain shrink-0"
+            alt="Janman — toggle sidebar"
+            className="w-8 h-8 rounded-lg object-contain shrink-0 transition-transform group-hover:scale-105"
             style={{ border: "1px solid var(--border)" }}
           />
           {!collapsed && (
-            <div className="min-w-0">
+            <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
               <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
             </div>
           )}
-        </div>
-        <button onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-(--muted) hover:text-(--text) hover:bg-(--sidebar-hover) transition-colors">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-            {collapsed ? <path d="M8 6l4 4-4 4"/> : <path d="M12 6l-4 4 4 4"/>}
-          </svg>
         </button>
       </div>
 
