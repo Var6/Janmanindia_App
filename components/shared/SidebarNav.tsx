@@ -205,32 +205,32 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
     .toUpperCase();
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col h-screen sticky top-0" style={{ background: "var(--sidebar)", borderRight: "2px solid var(--sidebar-border)" }}>
+    <aside className="w-56 shrink-0 flex flex-col h-screen sticky top-0" style={{ background: "var(--sidebar)", borderRight: "1px solid var(--sidebar-border)" }}>
       {/* Brand */}
-      <div className="px-5 py-4 border-b-2" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className="flex items-center gap-3">
+      <div className="px-4 py-3 border-b" style={{ borderColor: "var(--sidebar-border)" }}>
+        <div className="flex items-center gap-2.5">
           <img
             src="/logo.png"
             alt="Janman"
-            className="w-9 h-9 rounded-xl object-contain shrink-0"
-            style={{ border: "1.5px solid var(--border)" }}
+            className="w-8 h-8 rounded-lg object-contain shrink-0"
+            style={{ border: "1px solid var(--border)" }}
           />
           <div className="min-w-0">
             <p className="text-sm font-bold text-(--text) leading-none">Janman</p>
-            <p className="text-[11px] text-(--muted) mt-0.5 truncate">{roleLabel}</p>
+            <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150"
               style={{
                 background: active ? "var(--sidebar-active-bg)" : "transparent",
                 color: active ? "var(--sidebar-active-text)" : "var(--muted)",

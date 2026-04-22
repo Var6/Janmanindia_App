@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
   text: string;
   readBy: mongoose.Types.ObjectId[];
+  editedAt?: Date;
   createdAt: Date;
 }
 
@@ -14,6 +15,7 @@ const messageSchema = new Schema<IMessage>(
     sender:       { type: Schema.Types.ObjectId, ref: "User", required: true },
     text:         { type: String, required: true, maxlength: 4000 },
     readBy:       { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    editedAt:     { type: Date },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
