@@ -8,6 +8,7 @@ const navItems: NavItem[] = [
   { href: "/administrator/offices", label: "Offices",       icon: "briefcase"   },
   { href: "/activities",            label: "Activities",    icon: "calendar"    },
   { href: "/training",              label: "Training",      icon: "book"        },
+  { href: "/chat",          label: "Chat",        icon: "chat"        },
   { href: "/grievance",             label: "Grievance",     icon: "chat"        },
   { href: "/administrator/profile", label: "My Profile",    icon: "user-circle" },
 ];

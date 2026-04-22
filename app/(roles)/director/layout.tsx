@@ -7,6 +7,7 @@ const navItems: NavItem[] = [
   { href: "/director/cases",   label: "All Cases",  icon: "briefcase" },
   { href: "/director/users",   label: "Users",      icon: "users"     },
   { href: "/director/assign",   label: "Reassign",   icon: "refresh"     },
+  { href: "/chat",          label: "Chat",        icon: "chat"        },
   { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/director/profile",  label: "My Profile", icon: "user-circle" },
 ];

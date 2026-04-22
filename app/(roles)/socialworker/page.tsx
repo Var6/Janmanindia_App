@@ -7,6 +7,7 @@ import User from "@/models/User";
 import Case from "@/models/Case";
 import SosAlert from "@/models/SosAlert";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import TodoWidget from "@/components/activities/TodoWidget";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -77,6 +78,7 @@ export default async function SocialWorkerDashboard() {
   return (
     <div className="space-y-7">
       {!dbOk && <NoDBBanner />}
+      <TodoWidget userId={session.id} />
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">

@@ -4,6 +4,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import LogisticsTicket from "@/models/LogisticsTicket";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import TodoWidget from "@/components/activities/TodoWidget";
 
 export default async function AdministratorDashboard() {
   const session = await getSessionFromCookies();
@@ -35,6 +36,7 @@ export default async function AdministratorDashboard() {
   return (
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
+      <TodoWidget userId={session.id} />
 
       <div>
         <h1 className="text-2xl font-bold text-(--text)">Administrator — Operations</h1>

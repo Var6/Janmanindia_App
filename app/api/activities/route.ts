@@ -17,6 +17,9 @@ const ASSIGN_ROLES = ["director", "superadmin", "administrator", "hr"];
 export async function GET(request: NextRequest) {
   try {
     const session = await requireSession();
+    if (session.role === "community") {
+      return NextResponse.json({ error: "Activities are staff-only" }, { status: 403 });
+    }
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -60,6 +63,9 @@ export async function GET(request: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await requireSession();
+    if (session.role === "community") {
+      return NextResponse.json({ error: "Activities are staff-only" }, { status: 403 });
+    }
     if (!mongoose.Types.ObjectId.isValid(session.id)) {
       return NextResponse.json({ error: "Invalid session — re-login" }, { status: 400 });
     }

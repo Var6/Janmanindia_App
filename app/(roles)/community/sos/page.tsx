@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CrisisPanel from "@/components/shared/CrisisPanel";
+import CommunityContactPanel from "@/components/shared/CommunityContactPanel";
 import { detectsDistress } from "@/lib/crisis";
 
 export default function SosPage() {
@@ -46,7 +47,7 @@ export default function SosPage() {
         </p>
       </div>
 
-      <CrisisPanel urgent={distress} nationalOnly />
+      {distress ? <CrisisPanel urgent nationalOnly /> : <CommunityContactPanel />}
 
       {step === "sent" ? (
         <div className="p-8 rounded-2xl bg-green-50 border border-green-200 text-center space-y-3">

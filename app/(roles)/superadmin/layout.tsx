@@ -7,6 +7,7 @@ const navItems: NavItem[] = [
   { href: "/director",      label: "Admin Panel",   icon: "settings"     },
   { href: "/hr",         label: "HR Panel",      icon: "users"        },
   { href: "/finance",          label: "Finance Panel", icon: "trending-up"  },
+  { href: "/chat",          label: "Chat",        icon: "chat"        },
   { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/superadmin/profile", label: "My Profile",    icon: "user-circle"  },
 ];

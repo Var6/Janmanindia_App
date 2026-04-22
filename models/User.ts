@@ -29,6 +29,8 @@ export interface IUser extends Document {
     verifiedBy?: mongoose.Types.ObjectId;
     verifiedAt?: Date;
     rejectionReason?: string;
+    district?: string;
+    assignedSocialWorker?: mongoose.Types.ObjectId;
   };
   socialWorkerProfile?: {
     avgResolutionTimeDays: number;
@@ -36,6 +38,7 @@ export interface IUser extends Document {
     resolvedTickets: number;
     slaBreaches: number;
     lastEodReportAt?: Date;
+    district?: string;
   };
   litigationProfile?: {
     barCouncilId?: string;
@@ -60,6 +63,8 @@ const citizenProfileSchema = new Schema(
     verifiedBy: { type: Schema.Types.ObjectId, ref: "User" },
     verifiedAt: Date,
     rejectionReason: String,
+    district: { type: String, trim: true },
+    assignedSocialWorker: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { _id: false }
 );
@@ -71,6 +76,7 @@ const socialWorkerProfileSchema = new Schema(
     resolvedTickets: { type: Number, default: 0 },
     slaBreaches: { type: Number, default: 0 },
     lastEodReportAt: Date,
+    district: { type: String, trim: true },
   },
   { _id: false }
 );

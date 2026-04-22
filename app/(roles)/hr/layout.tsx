@@ -9,7 +9,9 @@ const navItems: NavItem[] = [
   { href: "/hr/onboarding",   label: "Onboarding",  icon: "user-plus"  },
   { href: "/hr/offboarding",  label: "Offboarding", icon: "user-minus"  },
   { href: "/hr/grievances",   label: "Grievances",  icon: "alert"       },
+  { href: "/hr/helplines",    label: "Helplines",   icon: "bell"        },
   { href: "/training",        label: "Training",    icon: "book"        },
+  { href: "/chat",          label: "Chat",        icon: "chat"        },
   { href: "/grievance",       label: "My Grievance",icon: "chat"        },
   { href: "/hr/profile",      label: "My Profile",  icon: "user-circle" },
 ];

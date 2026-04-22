@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import StatusChart from "./StatusChart";
+import KanbanBoard from "./KanbanBoard";
 
 interface Activity {
   _id: string;
@@ -55,6 +56,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine" | "created">("all");
+  const [view, setView] = useState<"list" | "kanban">("list");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const canAssign = ASSIGNABLE_ROLES.includes(currentRole);
@@ -194,24 +196,37 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
         </form>
       </section>
 
-      {/* Filters */}
-      <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
-        {([
-          { k: "all",     l: `All (${items.length})` },
-          { k: "mine",    l: `Assigned to me (${items.filter((i) => i.assignee?._id === currentUserId).length})` },
-          { k: "created", l: `Created by me (${items.filter((i) => i.createdBy?._id === currentUserId).length})` },
-        ] as const).map((t) => (
-          <button key={t.k} onClick={() => setFilter(t.k)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              filter === t.k ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
-            }`}
-            style={filter === t.k ? { background: "var(--accent)" } : undefined}>
-            {t.l}
-          </button>
-        ))}
+      {/* Filters + view toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
+          {([
+            { k: "all",     l: `All (${items.length})` },
+            { k: "mine",    l: `Assigned to me (${items.filter((i) => i.assignee?._id === currentUserId).length})` },
+            { k: "created", l: `Created by me (${items.filter((i) => i.createdBy?._id === currentUserId).length})` },
+          ] as const).map((t) => (
+            <button key={t.k} onClick={() => setFilter(t.k)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filter === t.k ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
+              }`}
+              style={filter === t.k ? { background: "var(--accent)" } : undefined}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl">
+          {(["list", "kanban"] as const).map((v) => (
+            <button key={v} onClick={() => setView(v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
+                view === v ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
+              }`}
+              style={view === v ? { background: "var(--accent)" } : undefined}>
+              {v === "kanban" ? "🗂 Kanban" : "☰ List"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* List */}
+      {/* List or Kanban */}
       {loading ? (
         <div className="py-10 text-center text-sm text-(--muted)">Loading…</div>
       ) : filtered.length === 0 ? (
@@ -219,6 +234,8 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
           <p className="text-2xl mb-2">📅</p>
           <p className="text-sm text-(--muted)">No activities in this view.</p>
         </div>
+      ) : view === "kanban" ? (
+        <KanbanBoard items={filtered} onStatus={(id, status) => patch(id, { status })} busyId={busyId} />
       ) : (
         <div className="space-y-2">
           {filtered.map((a) => {

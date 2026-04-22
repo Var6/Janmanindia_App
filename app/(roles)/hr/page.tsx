@@ -5,6 +5,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import EodReport from "@/models/EodReport";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import TodoWidget from "@/components/activities/TodoWidget";
 
 export default async function HrDashboard() {
   const session = await getSessionFromCookies();
@@ -29,6 +30,7 @@ export default async function HrDashboard() {
   return (
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
+      <TodoWidget userId={session.id} />
 
       <div>
         <h1 className="text-2xl font-bold text-(--text)">HR Dashboard</h1>

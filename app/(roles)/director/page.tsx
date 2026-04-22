@@ -5,6 +5,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import TodoWidget from "@/components/activities/TodoWidget";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -70,6 +71,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-7">
       {!dbOk && <NoDBBanner />}
+      <TodoWidget userId={session.id} />
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">

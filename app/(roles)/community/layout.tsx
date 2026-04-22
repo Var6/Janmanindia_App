@@ -10,6 +10,7 @@ const navItems: NavItem[] = [
   { href: "/community/case-tracker", label: "Case Tracker", icon: "search"    },
   { href: "/training",          label: "Training",     icon: "book"      },
   { href: "/community/appointments", label: "Appointments", icon: "calendar"  },
+  { href: "/chat",          label: "Chat",        icon: "chat"        },
   { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/community/profile",      label: "My Profile",   icon: "user-circle" },
 ];
