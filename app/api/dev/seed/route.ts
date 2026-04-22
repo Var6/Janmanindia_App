@@ -12,9 +12,9 @@ const DEV_PASSWORD = "Dev@1234";
 
 const TEST_USERS = [
   {
-    name: "Dev Citizen",
-    email: "user@dev.janmanindia.in",
-    role: "user" as const,
+    name: "Dev Community",
+    email: "community@dev.janmanindia.in",
+    role: "community" as const,
     phone: "9000000001",
     citizenProfile: {
       govtIdType: "Aadhar" as const,
@@ -25,7 +25,7 @@ const TEST_USERS = [
   {
     name: "Priya Sharma",
     email: "priya@dev.janmanindia.in",
-    role: "user" as const,
+    role: "community" as const,
     phone: "9000000011",
     citizenProfile: {
       govtIdType: "VoterId" as const,
@@ -36,7 +36,7 @@ const TEST_USERS = [
   {
     name: "Rajan Mehra",
     email: "rajan@dev.janmanindia.in",
-    role: "user" as const,
+    role: "community" as const,
     phone: "9000000012",
     citizenProfile: {
       govtIdType: "Passport" as const,
@@ -105,9 +105,15 @@ const TEST_USERS = [
     phone: "9000000005",
   },
   {
-    name: "Dev Admin",
-    email: "admin@dev.janmanindia.in",
-    role: "admin" as const,
+    name: "Dev Administrator",
+    email: "administrator@dev.janmanindia.in",
+    role: "administrator" as const,
+    phone: "9000000008",
+  },
+  {
+    name: "Dev Director",
+    email: "director@dev.janmanindia.in",
+    role: "director" as const,
     phone: "9000000006",
   },
   {
@@ -149,14 +155,14 @@ export async function POST() {
 
     const byEmail = Object.fromEntries(userDocs.map((u) => [u.email, u._id as mongoose.Types.ObjectId]));
 
-    const citizenId  = byEmail["user@dev.janmanindia.in"];
+    const citizenId  = byEmail["community@dev.janmanindia.in"];
     const priyaId    = byEmail["priya@dev.janmanindia.in"];
     const rajanId    = byEmail["rajan@dev.janmanindia.in"];
     const swId       = byEmail["sw@dev.janmanindia.in"];
     const anitaId    = byEmail["anita@dev.janmanindia.in"];
     const litigId    = byEmail["litigation@dev.janmanindia.in"];
     const vikramId   = byEmail["vikram@dev.janmanindia.in"];
-    const adminId    = byEmail["admin@dev.janmanindia.in"];
+    const adminId    = byEmail["director@dev.janmanindia.in"];
 
     // ── 2. Cases ──────────────────────────────────────────────────────────────
     await Case.deleteMany({ caseNumber: /^DEV-/ });

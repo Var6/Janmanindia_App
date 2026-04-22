@@ -85,13 +85,13 @@ export default function CreateCaseForm() {
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
             <path d="M3 8h10M8 3v10"/>
           </svg>
-          Create Case for Citizen
+          Create Case for Community Member
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="rounded-2xl border p-6 space-y-4"
           style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-(--text)">Create Case for Citizen</h2>
+            <h2 className="font-semibold text-(--text)">Create Case for Community Member</h2>
             <button type="button" onClick={reset}
               className="text-xs text-(--muted) hover:text-(--text) px-2 py-1 rounded-lg hover:bg-(--bg-secondary) transition-colors">
               Cancel

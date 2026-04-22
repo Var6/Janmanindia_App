@@ -3,26 +3,28 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 type Role =
-  | "user"
+  | "community"
   | "socialworker"
   | "litigation"
   | "hr"
   | "finance"
-  | "admin"
+  | "administrator"
+  | "director"
   | "superadmin";
 
 const ROLE_HOME: Record<Role, string> = {
-  user: "/user",
+  community: "/community",
   socialworker: "/socialworker",
   litigation: "/litigation",
   hr: "/hr",
   finance: "/finance",
-  admin: "/admin",
+  administrator: "/administrator",
+  director: "/director",
   superadmin: "/superadmin",
 };
 
 const ALL_ROLES = Object.keys(ROLE_HOME) as Role[];
-const TRAINING_ROLES: Role[] = ["user", "socialworker", "litigation"];
+const TRAINING_ROLES: Role[] = ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"];
 
 const SKIP_PREFIXES = [
   "/_next/",

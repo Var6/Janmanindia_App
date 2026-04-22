@@ -5,7 +5,7 @@ import SosAlert from "@/models/SosAlert";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole("user");
+    const session = await requireRole("community");
     await connectDB();
 
     const body = await request.json();
@@ -42,11 +42,11 @@ export async function GET(_request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
 
-    if (session.role === "user") {
+    if (session.role === "community") {
       filter.raisedBy = session.id;
     } else if (session.role === "socialworker") {
       filter.status = "open";
-    } else if (!["admin", "superadmin"].includes(session.role)) {
+    } else if (!["director", "superadmin"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -64,7 +64,7 @@ export async function GET(_request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await requireRole("socialworker", "admin", "superadmin");
+    const session = await requireRole("socialworker", "director", "superadmin");
     await connectDB();
 
     const body = await request.json();

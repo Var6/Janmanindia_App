@@ -28,8 +28,8 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
     const allowed =
       session.role === "superadmin" ||
-      session.role === "admin" ||
-      (session.role === "user" && citizenId === session.id) ||
+      session.role === "director" ||
+      (session.role === "community" && citizenId === session.id) ||
       (session.role === "litigation" && lmId === session.id) ||
       (session.role === "socialworker" && swId === session.id);
 
@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const session = await requireSession();
-    if (!["litigation", "admin", "superadmin"].includes(session.role)) {
+    if (!["litigation", "director", "superadmin"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   try {
     const session = await requireSession();
-    if (!["admin", "superadmin"].includes(session.role)) {
+    if (!["director", "superadmin"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
@@ -21,14 +22,20 @@ export default async function SocialWorkerDashboard() {
 
   const dbOk = await tryConnectDB();
 
-  const [sw, pendingVerifications, openSos, activeCases] = dbOk
-    ? await Promise.all([
-        User.findById(session.id).lean(),
-        User.find({ role: "user", "citizenProfile.verificationStatus": "pending" }).limit(10).lean(),
-        SosAlert.find({ status: "open" }).limit(10).lean(),
-        Case.find({ socialWorker: session.id, status: "Open" }).limit(10).lean(),
-      ])
-    : [null, [], [], []] as const;
+  let sw: any = null;
+  let pendingVerifications: any[] = [];
+  let openSos: any[] = [];
+  let activeCases: any[] = [];
+  
+  if (dbOk && mongoose.Types.ObjectId.isValid(session.id)) {
+    const swId = new mongoose.Types.ObjectId(session.id);
+    [sw, pendingVerifications, openSos, activeCases] = await Promise.all([
+      User.findById(swId).lean(),
+      User.find({ role: "community", "citizenProfile.verificationStatus": "pending" }).limit(10).lean(),
+      SosAlert.find({ status: "open" }).limit(10).lean(),
+      Case.find({ socialWorker: swId, status: "Open" }).limit(10).lean(),
+    ]);
+  }
 
   const profile = sw?.socialWorkerProfile;
 

@@ -4,9 +4,10 @@ import SidebarNav, { type NavItem } from "@/components/shared/SidebarNav";
 
 const navItems: NavItem[] = [
   { href: "/superadmin", label: "Overview",      icon: "shield"       },
-  { href: "/admin",      label: "Admin Panel",   icon: "settings"     },
+  { href: "/director",      label: "Admin Panel",   icon: "settings"     },
   { href: "/hr",         label: "HR Panel",      icon: "users"        },
   { href: "/finance",          label: "Finance Panel", icon: "trending-up"  },
+  { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/superadmin/profile", label: "My Profile",    icon: "user-circle"  },
 ];
 

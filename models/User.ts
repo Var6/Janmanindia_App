@@ -1,12 +1,13 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export type Role =
-  | "user"
+  | "community"
   | "socialworker"
   | "litigation"
   | "hr"
   | "finance"
-  | "admin"
+  | "administrator"
+  | "director"
   | "superadmin";
 
 export interface IUser extends Document {
@@ -18,6 +19,9 @@ export interface IUser extends Document {
   avatarUrl?: string;
   isActive: boolean;
   lastLoginAt?: Date;
+  employeeId?: string;
+  joinedAt?: Date;
+  exitedAt?: Date;
   citizenProfile?: {
     govtIdUrl?: string;
     govtIdType?: "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "Other";
@@ -92,11 +96,14 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       required: true,
-      enum: ["user", "socialworker", "litigation", "hr", "finance", "admin", "superadmin"],
+      enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"],
     },
     phone: String,
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
+    employeeId: { type: String, unique: true, sparse: true, trim: true, uppercase: true },
+    joinedAt: Date,
+    exitedAt: Date,
     citizenProfile: citizenProfileSchema,
     socialWorkerProfile: socialWorkerProfileSchema,
     litigationProfile: litigationProfileSchema,

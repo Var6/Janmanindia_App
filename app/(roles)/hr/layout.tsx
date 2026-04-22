@@ -8,6 +8,9 @@ const navItems: NavItem[] = [
   { href: "/hr/attendance",   label: "Attendance",  icon: "clock"      },
   { href: "/hr/onboarding",   label: "Onboarding",  icon: "user-plus"  },
   { href: "/hr/offboarding",  label: "Offboarding", icon: "user-minus"  },
+  { href: "/hr/grievances",   label: "Grievances",  icon: "alert"       },
+  { href: "/training",        label: "Training",    icon: "book"        },
+  { href: "/grievance",       label: "My Grievance",icon: "chat"        },
   { href: "/hr/profile",      label: "My Profile",  icon: "user-circle" },
 ];
 

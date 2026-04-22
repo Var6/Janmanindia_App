@@ -563,7 +563,7 @@ export default function CaseDetailPage({ caseId, canEdit, backHref, backLabel = 
         {/* Parties row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { role: "Citizen",          person: c.citizen },
+            { role: "Community",          person: c.citizen },
             { role: "Litigation Member", person: c.litigationMember },
             { role: "Social Worker",    person: c.socialWorker },
           ].map(({ role, person }) => (

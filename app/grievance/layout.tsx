@@ -1,0 +1,23 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSessionFromCookies } from "@/lib/auth";
+
+export default async function GrievanceLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSessionFromCookies();
+  if (!session) redirect("/login");
+
+  const backHref = `/${session.role}`;
+
+  return (
+    <div className="min-h-screen bg-(--bg)">
+      <header className="sticky top-0 z-10 bg-(--surface) border-b border-(--border) px-6 py-4 flex items-center gap-4">
+        <Link href={backHref} className="text-sm text-(--muted) hover:text-(--accent) transition-colors">
+          ← Back to Dashboard
+        </Link>
+        <span className="text-(--border)">|</span>
+        <span className="text-sm font-semibold text-(--text)">Grievance Box</span>
+      </header>
+      <main className="max-w-3xl mx-auto px-6 py-8">{children}</main>
+    </div>
+  );
+}

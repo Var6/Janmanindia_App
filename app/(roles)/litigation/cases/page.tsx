@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
@@ -18,8 +19,8 @@ export default async function LitigationCasesPage() {
   if (!session || session.role !== "litigation") redirect("/login");
 
   const dbOk = await tryConnectDB();
-  const cases = dbOk
-    ? await Case.find({ litigationMember: session.id })
+  const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
+    ? await Case.find({ litigationMember: new mongoose.Types.ObjectId(session.id) })
         .populate("citizen", "name phone")
         .populate("socialWorker", "name")
         .sort({ nextHearingDate: 1, updatedAt: -1 })

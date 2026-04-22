@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       passwordHash,
-      role: "user",
+      role: "community",
       phone,
       isActive: true,
       citizenProfile: {

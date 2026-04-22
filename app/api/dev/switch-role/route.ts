@@ -3,14 +3,15 @@ import { connectDB } from "@/lib/mongoose";
 import { signToken } from "@/lib/auth";
 import User from "@/models/User";
 
-const VALID_ROLES = ["user", "socialworker", "litigation", "hr", "finance", "admin", "superadmin"];
+const VALID_ROLES = ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"];
 const ROLE_EMAIL: Record<string, string> = {
-  user:        "user@dev.janmanindia.in",
+  community:   "community@dev.janmanindia.in",
   socialworker:"sw@dev.janmanindia.in",
   litigation:  "litigation@dev.janmanindia.in",
   hr:          "hr@dev.janmanindia.in",
   finance:     "finance@dev.janmanindia.in",
-  admin:       "admin@dev.janmanindia.in",
+  administrator: "administrator@dev.janmanindia.in",
+  director:    "director@dev.janmanindia.in",
   superadmin:  "superadmin@dev.janmanindia.in",
 };
 

@@ -6,6 +6,7 @@ const navItems: NavItem[] = [
   { href: "/finance",          label: "Dashboard", icon: "home"         },
   { href: "/finance/salaries", label: "Salaries",  icon: "currency"     },
   { href: "/finance/expenses", label: "Expenses",   icon: "credit-card"  },
+  { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/finance/profile",  label: "My Profile", icon: "user-circle"  },
 ];
 

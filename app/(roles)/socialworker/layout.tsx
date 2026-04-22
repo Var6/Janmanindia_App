@@ -10,6 +10,7 @@ const navItems: NavItem[] = [
   { href: "/socialworker/reports",      label: "EOD Reports",  icon: "document"  },
   { href: "/socialworker/media-upload", label: "Media Upload", icon: "upload"    },
   { href: "/training",                   label: "Training",     icon: "book"         },
+  { href: "/grievance",       label: "Grievance",   icon: "chat"        },
   { href: "/socialworker/profile",       label: "My Profile",   icon: "user-circle"  },
 ];
 

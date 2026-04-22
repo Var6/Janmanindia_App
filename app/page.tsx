@@ -3,7 +3,7 @@ import { DEMO_ACCOUNTS, SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman
 import RoleCard from "@/components/shared/RoleCard";
 
 const ROLE_CONFIG = [
-  { icon: "👤", color: "var(--info-bg)",    border: "var(--info)",    label: "Citizen"       },
+  { icon: "👤", color: "var(--info-bg)",    border: "var(--info)",    label: "Community"       },
   { icon: "⚖️", color: "var(--success-bg)", border: "var(--success)", label: "Advocate"      },
   { icon: "🤝", color: "var(--accent-subtle)", border: "var(--accent)", label: "Social Worker" },
   { icon: "🛡️", color: "var(--error-bg)",   border: "var(--error)",   label: "Admin"         },
@@ -28,7 +28,7 @@ export default function Home() {
             <div className="space-y-7">
               <div className="space-y-4">
                 <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold ring-1"
-                  style={{ background: "var(--accent-subtle)", color: "var(--accent)", ringColor: "var(--accent-muted)" }}>
+                  style={{ background: "var(--accent-subtle)", color: "var(--accent)", ["--tw-ring-color" as string]: "var(--accent-muted)" }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                   Legal aid for Bihar&apos;s most vulnerable communities
                 </span>
@@ -50,7 +50,7 @@ export default function Home() {
                     <path d="M3 8h10M9 4l4 4-4 4"/>
                   </svg>
                 </Link>
-                <Link href="/community"
+                <Link href="/jan-sahayak"
                   className="inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--bg) px-6 py-3 text-sm font-semibold text-(--text) hover:border-(--accent) hover:bg-(--surface) transition">
                   Explore Community
                 </Link>
@@ -146,7 +146,7 @@ export default function Home() {
                   "Laws and rights guides: BNS, BNSS, POCSO, SC/ST Act",
                   "Live case intake and community health monitoring",
                 ],
-                cta: { href: "/community", label: "Open Community Tool", primary: true },
+                cta: { href: "/jan-sahayak", label: "Open Community Tool", primary: true },
               },
               {
                 tag: "📢 Campaign design",
@@ -268,7 +268,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-(--muted)">
           <p>© 2026 Janman Legal Aid — Bihar, India</p>
           <div className="flex gap-5">
-            <Link href="/community" className="hover:text-(--text) transition-colors">Community</Link>
+            <Link href="/jan-sahayak" className="hover:text-(--text) transition-colors">Community</Link>
             <Link href="/events" className="hover:text-(--text) transition-colors">Events</Link>
             <Link href="/training" className="hover:text-(--text) transition-colors">Training</Link>
             <Link href="/dev" className="hover:text-(--text) transition-colors">Dev</Link>

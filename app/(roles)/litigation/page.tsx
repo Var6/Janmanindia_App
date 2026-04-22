@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
@@ -22,20 +23,26 @@ export default async function LitigationDashboard() {
 
   const dbOk = await tryConnectDB();
 
-  const sevenDaysOut = new Date();
-  sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
+  let allCases: any[] = [];
+  let upcomingHearings: any[] = [];
+  let pendingAppointments: any[] = [];
+  let litigationUser: any = null;
 
-  const [allCases, upcomingHearings, pendingAppointments, litigationUser] = dbOk
-    ? await Promise.all([
-        Case.find({ litigationMember: session.id, status: { $in: ["Open", "Pending", "Escalated"] } })
-          .sort({ updatedAt: -1 }).limit(8).lean(),
-        Case.find({ litigationMember: session.id, nextHearingDate: { $gte: new Date(), $lte: sevenDaysOut } })
-          .sort({ nextHearingDate: 1 }).limit(5).lean(),
-        Appointment.find({ litigationMember: session.id, status: "approved_sw" })
-          .sort({ proposedDate: 1 }).limit(5).populate("citizen", "name email").lean(),
-        User.findById(session.id).lean(),
-      ])
-    : [[], [], [], null] as const;
+  if (dbOk && mongoose.Types.ObjectId.isValid(session.id)) {
+    const litigationId = new mongoose.Types.ObjectId(session.id);
+    const sevenDaysOut = new Date();
+    sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
+
+    [allCases, upcomingHearings, pendingAppointments, litigationUser] = await Promise.all([
+      Case.find({ litigationMember: litigationId, status: { $in: ["Open", "Pending", "Escalated"] } })
+        .sort({ updatedAt: -1 }).limit(8).lean(),
+      Case.find({ litigationMember: litigationId, nextHearingDate: { $gte: new Date(), $lte: sevenDaysOut } })
+        .sort({ nextHearingDate: 1 }).limit(5).lean(),
+      Appointment.find({ litigationMember: litigationId, status: "approved_sw" })
+        .sort({ proposedDate: 1 }).limit(5).populate("citizen", "name email").lean(),
+      User.findById(litigationId).lean(),
+    ]);
+  }
 
   const calendarEmbedUrl = litigationUser?.email ? getCalendarEmbedUrl(litigationUser.email) : null;
 

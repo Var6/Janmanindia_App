@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSession();
 
-    if (!["litigation", "socialworker", "admin", "superadmin"].includes(session.role)) {
+    if (!["litigation", "socialworker", "director", "superadmin"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

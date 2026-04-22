@@ -4,12 +4,13 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 
 const DEV_ACCOUNTS = [
-  { role: "Citizen",        email: "user@dev.janmanindia.in",       password: "Dev@1234", dot: "var(--info)"    },
+  { role: "Community",        email: "community@dev.janmanindia.in",       password: "Dev@1234", dot: "var(--info)"    },
   { role: "Social Worker",  email: "sw@dev.janmanindia.in",         password: "Dev@1234", dot: "var(--success)" },
   { role: "Litigation",     email: "litigation@dev.janmanindia.in", password: "Dev@1234", dot: "var(--accent)"  },
   { role: "HR",             email: "hr@dev.janmanindia.in",         password: "Dev@1234", dot: "var(--warning)" },
   { role: "Finance",        email: "finance@dev.janmanindia.in",    password: "Dev@1234", dot: "var(--info)"    },
-  { role: "Admin",          email: "admin@dev.janmanindia.in",      password: "Dev@1234", dot: "var(--error)"   },
+  { role: "Administrator",  email: "administrator@dev.janmanindia.in", password: "Dev@1234", dot: "var(--warning)" },
+  { role: "Director",       email: "director@dev.janmanindia.in",   password: "Dev@1234", dot: "var(--error)"   },
   { role: "Super Admin",    email: "superadmin@dev.janmanindia.in", password: "Dev@1234", dot: "var(--muted)"   },
 ];
 

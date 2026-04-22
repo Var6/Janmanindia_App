@@ -10,13 +10,13 @@ export async function GET(_request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
 
-    if (session.role === "user") {
+    if (session.role === "community") {
       filter.citizen = session.id;
     } else if (session.role === "socialworker") {
       filter.socialWorker = session.id;
     } else if (session.role === "litigation") {
       filter.litigationMember = session.id;
-    } else if (!["admin", "superadmin"].includes(session.role)) {
+    } else if (!["director", "superadmin"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -36,7 +36,7 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole("user");
+    const session = await requireRole("community");
     await connectDB();
 
     const body = await request.json();

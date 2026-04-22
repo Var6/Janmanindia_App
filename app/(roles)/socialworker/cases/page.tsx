@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
@@ -20,9 +21,8 @@ export default async function SWCasesPage() {
   if (!session || session.role !== "socialworker") redirect("/login");
 
   const dbOk = await tryConnectDB();
-
-  const cases = dbOk
-    ? await Case.find({ socialWorker: session.id })
+  const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
+    ? await Case.find({ socialWorker: new mongoose.Types.ObjectId(session.id) })
         .populate("citizen", "name email")
         .populate("litigationMember", "name")
         .sort({ updatedAt: -1 })
@@ -30,7 +30,7 @@ export default async function SWCasesPage() {
     : [];
 
   const pendingVerifications = dbOk
-    ? await User.find({ role: "user", "citizenProfile.verificationStatus": "pending" })
+    ? await User.find({ role: "community", "citizenProfile.verificationStatus": "pending" })
         .select("name email citizenProfile")
         .lean()
     : [];

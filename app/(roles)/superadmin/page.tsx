@@ -56,7 +56,7 @@ export default async function SuperAdminDashboard() {
           { label: "Active Users",       value: activeUsers },
           { label: "Pending Invoices",   value: pendingInvoices,   highlight: pendingInvoices > 0 },
           { label: "Open SOS Alerts",    value: openSos,           highlight: openSos > 0 },
-          { label: "Unverified Citizens",value: unverifiedUsers,   highlight: unverifiedUsers > 0 },
+          { label: "Unverified Community",value: unverifiedUsers,   highlight: unverifiedUsers > 0 },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-(--surface) rounded-2xl border border-(--border) p-5">
             <p className="text-xs text-(--muted)">{kpi.label}</p>
@@ -85,7 +85,7 @@ export default async function SuperAdminDashboard() {
         <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
             <h2 className="font-semibold text-(--text)">Recent Cases</h2>
-            <Link href="/admin/cases" className="text-xs text-(--accent) hover:underline">All cases</Link>
+            <Link href="/director/cases" className="text-xs text-(--accent) hover:underline">All cases</Link>
           </div>
           {recentCases.length === 0 ? (
             <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? "No cases yet." : "Connect database to see cases."}</p>
@@ -109,7 +109,7 @@ export default async function SuperAdminDashboard() {
         <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
           <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
             <h2 className="font-semibold text-(--text)">Recent Registrations</h2>
-            <Link href="/admin/users" className="text-xs text-(--accent) hover:underline">All users</Link>
+            <Link href="/director/users" className="text-xs text-(--accent) hover:underline">All users</Link>
           </div>
           {recentUsers.length === 0 ? (
             <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? "No users yet." : "Connect database to see users."}</p>
@@ -132,7 +132,7 @@ export default async function SuperAdminDashboard() {
       {/* Navigation to sub-panels */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { href: "/admin",    label: "Admin Panel" },
+          { href: "/director",    label: "Admin Panel" },
           { href: "/hr",       label: "HR Panel" },
           { href: "/finance",  label: "Finance Panel" },
           { href: "/dev",      label: "Dev Bypass Panel" },

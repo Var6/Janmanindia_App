@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Build filter based on role
     const filter: Record<string, unknown> = {};
 
-    if (session.role === "user") {
+    if (session.role === "community") {
       filter.citizen = session.id;
     } else if (session.role === "litigation") {
       filter.litigationMember = session.id;
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     const session = await requireSession();
 
     // Only user or admin/superadmin can create cases
-    if (!["user", "admin", "superadmin", "socialworker"].includes(session.role)) {
+    if (!["community", "director", "superadmin", "socialworker"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "path must be criminal or highcourt" }, { status: 400 });
     }
 
-    const citizenRef = session.role === "user" ? session.id : citizenId;
+    const citizenRef = session.role === "community" ? session.id : citizenId;
     if (!citizenRef) {
       return NextResponse.json({ error: "citizenId is required" }, { status: 400 });
     }

@@ -5,7 +5,7 @@ import User from "@/models/User";
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await requireRole("socialworker", "admin", "superadmin");
+    const session = await requireRole("socialworker", "director", "superadmin");
     await connectDB();
 
     const body = await request.json();
@@ -27,7 +27,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "rejectionReason is required when rejecting" }, { status: 400 });
     }
 
-    const target = await User.findOne({ _id: userId, role: "user" });
+    const target = await User.findOne({ _id: userId, role: "community" });
     if (!target) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

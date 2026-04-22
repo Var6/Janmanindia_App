@@ -38,12 +38,13 @@ export async function POST(request: NextRequest) {
     });
 
     const ROLE_HOME: Record<string, string> = {
-      user: "/user",
+      community: "/community",
       socialworker: "/socialworker",
       litigation: "/litigation",
       hr: "/hr",
       finance: "/finance",
-      admin: "/admin",
+      administrator: "/administrator",
+      director: "/director",
       superadmin: "/superadmin",
     };
 

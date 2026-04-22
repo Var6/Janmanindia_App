@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
@@ -11,20 +12,24 @@ export default async function QueriesPage() {
 
   const dbOk = await tryConnectDB();
 
-  const [pendingAppointments, recentCases] = dbOk
-    ? await Promise.all([
-        Appointment.find({ socialWorker: session.id, status: "pending_sw" })
-          .populate("citizen", "name email phone")
-          .sort({ requestedAt: -1 })
-          .lean(),
-        Case.find({ socialWorker: session.id, status: { $in: ["Open", "Escalated"] } })
-          .populate("citizen", "name")
-          .populate("litigationMember", "name")
-          .sort({ updatedAt: -1 })
-          .limit(20)
-          .lean(),
-      ])
-    : [[], []];
+  let pendingAppointments: any[] = [];
+  let recentCases: any[] = [];
+
+  if (dbOk && mongoose.Types.ObjectId.isValid(session.id)) {
+    const swId = new mongoose.Types.ObjectId(session.id);
+    [pendingAppointments, recentCases] = await Promise.all([
+      Appointment.find({ socialWorker: swId, status: "pending_sw" })
+        .populate("citizen", "name email phone")
+        .sort({ requestedAt: -1 })
+        .lean(),
+      Case.find({ socialWorker: swId, status: { $in: ["Open", "Escalated"] } })
+        .populate("citizen", "name")
+        .populate("litigationMember", "name")
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .lean(),
+    ]);
+  }
 
   return (
     <div className="space-y-8">

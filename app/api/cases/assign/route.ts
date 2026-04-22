@@ -7,7 +7,7 @@ import { createCalendarEvent } from "@/lib/gcal";
 
 export async function POST(request: NextRequest) {
   try {
-    await requireRole("admin", "superadmin");
+    await requireRole("director", "superadmin");
     await connectDB();
 
     const body = await request.json();

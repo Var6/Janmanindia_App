@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
@@ -11,6 +11,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -26,9 +32,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300">
         <ThemeProvider>
           <SessionProvider>
             {children}

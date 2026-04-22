@@ -8,14 +8,14 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Only staff roles can search citizens
-  const allowed = ["socialworker", "admin", "superadmin", "hr", "litigation", "finance"];
+  const allowed = ["socialworker", "director", "superadmin", "hr", "litigation", "finance"];
   if (!allowed.includes(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);
   const q    = searchParams.get("q")?.trim() ?? "";
-  const role = searchParams.get("role") ?? "user";
+  const role = searchParams.get("role") ?? "community";
 
   if (q.length < 2) return NextResponse.json({ users: [] });
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-type Role = "user" | "socialworker" | "litigation" | "hr" | "finance" | "admin" | "superadmin";
+type Role = "community" | "socialworker" | "litigation" | "hr" | "finance" | "administrator" | "director" | "superadmin";
 
 const ROLES: {
   role: Role;
@@ -12,12 +12,13 @@ const ROLES: {
   dot: string;
   email: string;
 }[] = [
-  { role: "user",         label: "Citizen",          home: "/user",         dot: "var(--info)",    email: "user@dev.janmanindia.in"        },
+  { role: "community",         label: "Community",          home: "/community",         dot: "var(--info)",    email: "community@dev.janmanindia.in"        },
   { role: "socialworker", label: "Social Worker",     home: "/socialworker", dot: "var(--success)", email: "sw@dev.janmanindia.in"           },
   { role: "litigation",   label: "Litigation Member", home: "/litigation",   dot: "var(--accent)",  email: "litigation@dev.janmanindia.in"   },
   { role: "hr",           label: "HR",                home: "/hr",           dot: "var(--warning)", email: "hr@dev.janmanindia.in"           },
   { role: "finance",      label: "Finance",           home: "/finance",      dot: "var(--info)",    email: "finance@dev.janmanindia.in"      },
-  { role: "admin",        label: "Admin",             home: "/admin",        dot: "var(--error)",   email: "admin@dev.janmanindia.in"        },
+  { role: "administrator",label: "Administrator",     home: "/administrator", dot: "var(--warning)", email: "administrator@dev.janmanindia.in" },
+  { role: "director",     label: "Director",          home: "/director",     dot: "var(--error)",   email: "director@dev.janmanindia.in"     },
   { role: "superadmin",   label: "Super Admin",       home: "/superadmin",   dot: "var(--muted)",   email: "superadmin@dev.janmanindia.in"   },
 ];
 

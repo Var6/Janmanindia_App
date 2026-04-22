@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 
-const TRAINING_ROLES = ["user", "socialworker", "litigation"];
+const TRAINING_ROLES = ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"];
 
 export default async function TrainingLayout({ children }: { children: React.ReactNode }) {
   const session = await getSessionFromCookies();
