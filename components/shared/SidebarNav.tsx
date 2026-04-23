@@ -223,8 +223,8 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
         WebkitBackdropFilter: "blur(18px) saturate(170%)",
         borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
       }}>
-      {/* Brand row — exact 56px height to match TopBar */}
-      <div className={`border-b h-14 flex items-center ${collapsed ? "justify-center px-2" : "px-3"}`}
+      {/* Brand row — h-20 to match TopBar */}
+      <div className={`border-b h-17 flex items-center ${collapsed ? "justify-center px-2" : "px-3"}`}
         style={{ borderColor: "var(--sidebar-border)" }}>
         <button onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -233,7 +233,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
           <img
             src="/logo.png"
             alt="Janman — toggle sidebar"
-            className="w-8 h-8 rounded-lg object-contain shrink-0 transition-transform group-hover:scale-105"
+            className="w-10 h-10 rounded-lg object-contain shrink-0 transition-transform group-hover:scale-105"
             style={{ border: "1px solid var(--border)" }}
           />
           {!collapsed && (

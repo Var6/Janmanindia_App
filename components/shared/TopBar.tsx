@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 
 const ROLE_PALETTE: Record<string, { bg: string; fg: string }> = {
   community:     { bg: "color-mix(in srgb, #3b82f6 14%, transparent)", fg: "#1e40af" },
@@ -20,31 +21,48 @@ export default function TopBar({ userName, role }: Props) {
   const crumbs = breadcrumb(pathname);
   const palette = ROLE_PALETTE[role] ?? ROLE_PALETTE.superadmin;
 
+  // Last crumb = current page title (large). Earlier crumbs = small parent path.
+  const current = crumbs[crumbs.length - 1];
+  const parents = crumbs.slice(0, -1);
+
   return (
-    <header className="sticky top-0 z-10 px-5 flex items-center justify-between gap-4 h-14 border-b"
+    <header className="sticky top-0 z-10 border-b h-17 flex items-center justify-between gap-4 px-3 pb-5"
       style={{
         background: "color-mix(in srgb, var(--surface) 75%, transparent)",
         backdropFilter: "blur(14px) saturate(160%)",
         WebkitBackdropFilter: "blur(14px) saturate(160%)",
-        borderColor: "var(--border)",
+        borderColor: "var(--sidebar-border)",
       }}>
-      <nav className="flex items-center gap-1.5 min-w-0 text-[13px]">
-        {crumbs.map((c, i) => (
-          <span key={c.href} className="flex items-center gap-1.5 min-w-0">
-            {i > 0 && <span className="text-(--muted)/60 select-none">›</span>}
-            <span className={i === crumbs.length - 1 ? "font-semibold text-(--text) truncate" : "text-(--muted) truncate"}>
-              {c.label}
-            </span>
-          </span>
-        ))}
-      </nav>
+      <div className="min-w-0 flex-1">
+        {/* Always render the small line — falls back to the role label when there are no parent crumbs.
+            Keeps the topbar a consistent height across nested and root pages. */}
+        <nav className="flex items-center gap-1 text-[11px] text-(--muted) leading-none mb-1.5 ">
+          {parents.length > 0 ? (
+            <>
+              {parents.map((c, i) => (
+                <span key={c.href} className="flex items-center gap-1">
+                  {i > 0 && <span className="opacity-40">›</span>}
+                  <span className="truncate">{c.label}</span>
+                </span>
+              ))}
+              <span className="opacity-40">›</span>
+            </>
+          ) : (
+            <span className="uppercase tracking-widest opacity-70 ">Janman Legal Aid</span>
+          )}
+        </nav>
+        <h1 className="text-lg sm:text-xl font-bold text-(--text) tracking-tight truncate leading-none">
+          {current?.label ?? "Home"}
+        </h1>
+      </div>
 
       <div className="flex items-center gap-2.5 shrink-0">
-        <span className="hidden sm:inline text-[12px] text-(--muted) truncate max-w-50">{userName}</span>
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap"
+        <span className="hidden sm:inline text-[12px] text-(--text) font-medium truncate max-w-45 pb-8">{userName}</span>
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap"
           style={{ background: palette.bg, color: palette.fg }}>
           {role}
         </span>
+        <ThemeToggle />
       </div>
     </header>
   );
