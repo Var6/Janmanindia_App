@@ -107,7 +107,7 @@ const userSchema = new Schema<IUser>(
     phone: String,
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
-    employeeId: { type: String, unique: true, sparse: true, trim: true, uppercase: true },
+    employeeId: { type: String, unique: true, sparse: true, trim: true },
     joinedAt: Date,
     exitedAt: Date,
     citizenProfile: citizenProfileSchema,
