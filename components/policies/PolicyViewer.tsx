@@ -74,9 +74,9 @@ export default function PolicyViewer({ policies, downloads }: Props) {
       <div className="relative">
         <input value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder={`Search the ${active.title.toLowerCase()}…`}
-          className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl glass focus:outline-none focus:border-(--accent)" />
+          className="w-full pl-3.5 pr-10 py-2.5 text-sm rounded-xl glass focus:outline-none focus:border-(--accent)" />
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-(--muted)">
+          className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-(--muted) pointer-events-none">
           <circle cx="9" cy="9" r="5.5"/><line x1="13.5" y1="13.5" x2="18" y2="18"/>
         </svg>
       </div>
