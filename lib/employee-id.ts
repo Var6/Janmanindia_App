@@ -1,30 +1,18 @@
 import User from "@/models/User";
 
-const ROLE_PREFIX: Record<string, string> = {
-  socialworker:  "SW",
-  litigation:    "LT",
-  hr:            "HR",
-  finance:       "FN",
-  administrator: "AM",
-  director:      "DR",
-  superadmin:    "SA",
-  community:     "CM",
-};
-
 /**
- * Generate the next sequential Employee Code:  JPF/SW/yr26/01
+ * Generate the next sequential Employee Code:  JPF/JNA/26/01
  *
- *   JPF   — Janman People's Foundation
- *   SW    — role abbreviation (SW, LT, HR, FN, AM, DR, SA, CM)
- *   yr26  — last two digits of the joining year, prefixed with `yr`
- *   01    — zero-padded sequence within that role + year
+ *   JPF      — Janman People's Foundation (constant)
+ *   {PROJECT}— 3-letter project code chosen by HR (e.g. JNA, DLF, COR). Forced uppercase.
+ *   {YY}     — last 2 digits of the joining year
+ *   {NN}     — joining sequence within that project + year, zero-padded to at least 2 digits
  */
-export async function nextEmployeeId(role: string): Promise<string> {
-  const code = ROLE_PREFIX[role] ?? "EM";
+export async function nextEmployeeId(projectCode: string): Promise<string> {
+  const project = sanitizeProjectCode(projectCode);
   const yy = String(new Date().getFullYear() % 100).padStart(2, "0");
-  const stem = `JPF/${code}/yr${yy}/`;
+  const stem = `JPF/${project}/${yy}/`;
 
-  // The existing IDs use `/` as a delimiter — escape it for the Mongo regex.
   const last = await User.findOne({ employeeId: { $regex: `^${stem.replace(/\//g, "\\/")}` } })
     .sort({ employeeId: -1 })
     .select("employeeId")
@@ -37,4 +25,13 @@ export async function nextEmployeeId(role: string): Promise<string> {
     if (!isNaN(n)) next = n + 1;
   }
   return `${stem}${String(next).padStart(2, "0")}`;
+}
+
+/** Normalise a project code: keep A–Z only, uppercase, exactly 3 chars. */
+export function sanitizeProjectCode(raw: string): string {
+  const cleaned = (raw || "").toUpperCase().replace(/[^A-Z]/g, "");
+  if (cleaned.length !== 3) {
+    throw new Error("Project code must be exactly 3 letters (A–Z), e.g. JNA, DLF, COR");
+  }
+  return cleaned;
 }

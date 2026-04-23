@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { requireRole, hashPassword } from "@/lib/auth";
 import User from "@/models/User";
-import { nextEmployeeId } from "@/lib/employee-id";
+import { nextEmployeeId, sanitizeProjectCode } from "@/lib/employee-id";
 
 const STAFF_ROLES = ["socialworker", "litigation", "hr", "finance", "administrator", "director"];
 
@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   try {
     await requireRole("hr", "director", "superadmin");
     const body = await req.json();
-    const { name, email, password, role, phone, barCouncilId, district, city } = body as {
-      name?: string; email?: string; password?: string; role?: string; phone?: string;
+    const { name, email, password, role, phone, project, barCouncilId, district, city } = body as {
+      name?: string; email?: string; password?: string; role?: string; phone?: string; project?: string;
       barCouncilId?: string; district?: string; city?: string;
     };
 
@@ -26,12 +26,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
+    let projectCode: string;
+    try {
+      projectCode = sanitizeProjectCode(project ?? "");
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    }
+
     await connectDB();
     const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
 
     const passwordHash = await hashPassword(password);
-    const employeeId = await nextEmployeeId(role);
+    const employeeId = await nextEmployeeId(projectCode);
 
     const userData: Record<string, unknown> = {
       name: name.trim(),

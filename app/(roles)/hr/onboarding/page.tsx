@@ -71,6 +71,7 @@ export default function OnboardingPage() {
           password: fd.get("password"),
           role: fd.get("role"),
           phone: fd.get("phone"),
+          project: fd.get("project"),
           barCouncilId: fd.get("barCouncilId"),
           district: fd.get("district"),
           city: fd.get("city"),
@@ -188,6 +189,17 @@ export default function OnboardingPage() {
               <label className="block text-sm font-medium text-(--text) mb-1.5">Temporary Password <span className="text-red-500">*</span></label>
               <input name="password" type="password" required minLength={8} placeholder="Min 8 characters"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">
+                Project Code <span className="text-red-500">*</span>
+                <span className="ml-1 text-[11px] font-normal text-(--muted)">3 letters · used in Employee ID</span>
+              </label>
+              <input name="project" required maxLength={3} pattern="[A-Za-z]{3}"
+                placeholder="JNA"
+                onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toUpperCase().replace(/[^A-Z]/g, ""); }}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm uppercase tracking-widest font-mono focus:outline-none focus:border-(--accent)" />
+              <p className="text-[11px] text-(--muted) mt-1 italic">e.g. JNA · DLF · COR — generates JPF/JNA/26/01</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">Bar Council ID <span className="text-xs text-(--muted)">(Litigation)</span></label>
