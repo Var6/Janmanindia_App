@@ -2,9 +2,10 @@ import type { NavItem } from "@/components/shared/SidebarNav";
 
 /** Items every authenticated user sees (regardless of role). */
 const SHARED_ITEMS: NavItem[] = [
-  { href: "/chat",      label: "Chat",      icon: "chat"     },
-  { href: "/grievance", label: "Grievance", icon: "alert"    },
-  { href: "/training",  label: "Training",  icon: "book"     },
+  { href: "/chat",      label: "Chat",      icon: "chat"      },
+  { href: "/grievance", label: "Grievance", icon: "alert"     },
+  { href: "/training",  label: "Training",  icon: "book"      },
+  { href: "/policies",  label: "Policies",  icon: "shield"    },
 ];
 
 /** Role-specific items, ordered top-to-bottom in the sidebar. */
