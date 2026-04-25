@@ -5,6 +5,7 @@ import TrainingMaterial from "@/models/TrainingMaterial";
 import UploadForm from "@/components/training/UploadForm";
 import MaterialList from "@/components/training/MaterialList";
 import ApprovalQueue from "@/components/training/ApprovalQueue";
+import OfflineSessions from "@/components/training/OfflineSessions";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import type { TrainingMaterial as TrainingMaterialT } from "@/components/training/types";
 
@@ -83,6 +84,11 @@ export default async function TrainingPage() {
       </div>
 
       {canReview && pending.length > 0 && <ApprovalQueue materials={pending} />}
+
+      <OfflineSessions
+        currentUserId={session.id}
+        canCreate={["socialworker", "hr", "director", "superadmin"].includes(session.role)}
+      />
 
       {canUpload && <UploadForm />}
 

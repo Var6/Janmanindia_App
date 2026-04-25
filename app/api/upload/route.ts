@@ -3,8 +3,16 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { getSessionFromCookies } from "@/lib/auth";
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+// Images for avatars / case photos, PDFs + Office docs for case files, IDs, CVs.
+const ALLOWED_TYPES = [
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+];
+const MAX_BYTES = 15 * 1024 * 1024; // 15 MB — accommodates scanned PDFs
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -20,10 +28,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: "Only JPG, PNG, WebP or GIF allowed" }, { status: 400 });
+      return NextResponse.json({ error: "Only images, PDFs, or Word/Excel files are allowed" }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "File must be under 5 MB" }, { status: 400 });
+      return NextResponse.json({ error: "File must be under 15 MB" }, { status: 400 });
     }
 
     const ext = file.name.split(".").pop() ?? "jpg";

@@ -27,7 +27,7 @@ export default async function EscalatePage() {
       <div>
         <h1 className="text-2xl font-bold text-(text)">Escalate SOS Alerts</h1>
         <p className="text-sm text-(muted) mt-1">
-          Review incoming SOS alerts from citizens. Confirm and escalate genuine emergencies to higher officials.
+          Review incoming SOS alerts from community members. Confirm and escalate genuine emergencies to higher officials.
         </p>
       </div>
 

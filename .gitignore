@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# privileged seeds (director + administrator only — keep out of git)
+/scripts/seed-privileged.mjs

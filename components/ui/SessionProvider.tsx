@@ -46,10 +46,10 @@ function createProfile(account: (typeof DEMO_ACCOUNTS)[number]): SessionProfile 
     password: account.password,
     about: "A committed member of the Janman platform.",
     avatarUrl: `https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=80`,
-    assignedLawyer: account.role === "Public / Citizen" ? "Advocate Rajesh Kumar" : undefined,
-    assignedParalegal: account.role === "Public / Citizen" ? "Paralegal Sunita Devi" : undefined,
-    nextCourtDate: account.role === "Public / Citizen" ? "2025-04-24" : undefined,
-    nextAction: account.role === "Public / Citizen" ? "Upload affidavit draft" : undefined,
+    assignedLawyer: account.role === "Public / Community" ? "Advocate Rajesh Kumar" : undefined,
+    assignedParalegal: account.role === "Public / Community" ? "Paralegal Sunita Devi" : undefined,
+    nextCourtDate: account.role === "Public / Community" ? "2025-04-24" : undefined,
+    nextAction: account.role === "Public / Community" ? "Upload affidavit draft" : undefined,
   };
 }
 

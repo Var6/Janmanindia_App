@@ -38,7 +38,9 @@ export interface ICase extends Document {
   caseNumber: string;
   status: CaseStatus;
   path: CasePath;
-  citizen: mongoose.Types.ObjectId;
+  /** eCourts-style short code (e.g. "WP(C)", "FIR", "MACT", "POCSO"). */
+  caseType?: string;
+  community: mongoose.Types.ObjectId;
   litigationMember?: mongoose.Types.ObjectId;
   socialWorker?: mongoose.Types.ObjectId;
   nextHearingDate?: Date;
@@ -170,7 +172,8 @@ const caseSchema = new Schema<ICase>(
       default: "Open",
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
-    citizen: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    caseType: { type: String, trim: true, index: true },
+    community: { type: Schema.Types.ObjectId, ref: "User", required: true },
     litigationMember: { type: Schema.Types.ObjectId, ref: "User" },
     socialWorker: { type: Schema.Types.ObjectId, ref: "User" },
     nextHearingDate: Date,
@@ -185,7 +188,7 @@ const caseSchema = new Schema<ICase>(
 
 // Indexes
 caseSchema.index({ status: 1 });
-caseSchema.index({ citizen: 1 });
+caseSchema.index({ community: 1 });
 caseSchema.index({ litigationMember: 1, status: 1 });
 caseSchema.index({ nextHearingDate: 1 });
 caseSchema.index({ "documents.ocrStatus": 1 });

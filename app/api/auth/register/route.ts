@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       role: "community",
       phone,
       isActive: true,
-      citizenProfile: {
+      communityProfile: {
         govtIdUrl,
         govtIdType,
         verificationStatus: "pending",

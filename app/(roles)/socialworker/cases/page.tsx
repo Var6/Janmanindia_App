@@ -23,15 +23,15 @@ export default async function SWCasesPage() {
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Case.find({ socialWorker: new mongoose.Types.ObjectId(session.id) })
-        .populate("citizen", "name email")
+        .populate("community", "name email")
         .populate("litigationMember", "name")
         .sort({ updatedAt: -1 })
         .lean()
     : [];
 
   const pendingVerifications = dbOk
-    ? await User.find({ role: "community", "citizenProfile.verificationStatus": "pending" })
-        .select("name email citizenProfile")
+    ? await User.find({ role: "community", "communityProfile.verificationStatus": "pending" })
+        .select("name email communityProfile")
         .lean()
     : [];
 
@@ -63,7 +63,7 @@ export default async function SWCasesPage() {
               <div key={String(u._id)} className="px-5 py-3 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-(--text)">{u.name}</p>
-                  <p className="text-xs text-(--muted)">{u.email} · {u.citizenProfile?.govtIdType}</p>
+                  <p className="text-xs text-(--muted)">{u.email} · {u.communityProfile?.govtIdType}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <form method="POST" action="/api/users/verify-id">
@@ -105,15 +105,13 @@ export default async function SWCasesPage() {
         ) : (
           <div className="space-y-3">
             {cases.map((c) => {
-              const citizen = c.citizen as unknown as { name: string; email: string } | null;
+              const community = c.community as unknown as { name: string; email: string } | null;
               const lawyer  = c.litigationMember as unknown as { name: string } | null;
               const st      = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
               return (
                 <Link key={String(c._id)} href={`/socialworker/cases/${c._id}`}
-                  className="block rounded-2xl border p-5 transition-all"
-                  style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-xs)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}>
+                  className="block rounded-2xl border border-(--border) hover:border-(--accent) p-5 transition-all"
+                  style={{ background: "var(--surface)", boxShadow: "var(--shadow-xs)" }}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -127,7 +125,7 @@ export default async function SWCasesPage() {
                       </div>
                       <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        {citizen && <>Citizen: <span className="font-medium">{citizen.name}</span></>}
+                        {community && <>Community: <span className="font-medium">{community.name}</span></>}
                         {lawyer  && <> · Lawyer: {lawyer.name}</>}
                         {!lawyer && <> · <span style={{ color: "var(--warning-text)" }}>Lawyer unassigned</span></>}
                       </p>

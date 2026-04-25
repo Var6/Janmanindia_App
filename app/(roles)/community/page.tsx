@@ -45,8 +45,8 @@ export default async function CommunityDashboard() {
   if (dbOk && mongoose.Types.ObjectId.isValid(session.id)) {
     const userId = new mongoose.Types.ObjectId(session.id);
     [cases, appointments] = await Promise.all([
-      Case.find({ citizen: userId }).sort({ updatedAt: -1 }).limit(10).lean() as unknown as Promise<CaseLean[]>,
-      Appointment.find({ citizen: userId }).sort({ requestedAt: -1 }).limit(5).lean() as unknown as Promise<AptLean[]>,
+      Case.find({ community: userId }).sort({ updatedAt: -1 }).limit(10).lean() as unknown as Promise<CaseLean[]>,
+      Appointment.find({ community: userId }).sort({ requestedAt: -1 }).limit(5).lean() as unknown as Promise<AptLean[]>,
     ]);
   }
 

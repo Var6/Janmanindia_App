@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Timeline, type TimelineEntry } from "@/components/ui/timeline";
+import CarePlansPanel from "@/components/shared/CarePlansPanel";
+import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -14,7 +16,7 @@ type PopulatedCase = {
   caseNumber: string;
   status: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed";
   path: "criminal" | "highcourt";
-  citizen?: { _id: string; name: string; email: string; phone?: string };
+  community?: { _id: string; name: string; email: string; phone?: string };
   litigationMember?: { _id: string; name: string; email: string };
   socialWorker?: { _id: string; name: string; email: string };
   nextHearingDate?: string;
@@ -138,7 +140,7 @@ function buildTimeline(c: PopulatedCase, canEdit: boolean, onDiaryAdded: () => v
       <p className="text-xs text-(--muted)">
         #{c.caseNumber} &middot; {c.path === "criminal" ? "Criminal" : "High Court"} &middot; Opened {fmtDate(c.createdAt)}
       </p>
-      {c.citizen && <p className="text-xs text-(--muted) mt-1">Citizen: <span className="font-medium text-(--text)">{c.citizen.name}</span> &middot; {c.citizen.email}</p>}
+      {c.community && <p className="text-xs text-(--muted) mt-1">Community: <span className="font-medium text-(--text)">{c.community.name}</span> &middot; {c.community.email}</p>}
     </EventCard>
   );
 
@@ -459,12 +461,13 @@ function FirAlert({ caseData }: { caseData: PopulatedCase }) {
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
-  canEdit: boolean;       // true for litigation members
-  backHref: string;       // breadcrumb back link
+  canEdit: boolean;          // true for litigation members
+  canManageCarePlan?: boolean; // true for social workers
+  backHref: string;          // breadcrumb back link
   backLabel?: string;
 }
 
-export default function CaseDetailPage({ caseId, canEdit, backHref, backLabel = "Cases" }: Props) {
+export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = false, backHref, backLabel = "Cases" }: Props) {
   const [caseData, setCaseData]   = useState<PopulatedCase | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -563,7 +566,7 @@ export default function CaseDetailPage({ caseId, canEdit, backHref, backLabel = 
         {/* Parties row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { role: "Community",          person: c.citizen },
+            { role: "Community",          person: c.community },
             { role: "Litigation Member", person: c.litigationMember },
             { role: "Social Worker",    person: c.socialWorker },
           ].map(({ role, person }) => (
@@ -599,6 +602,16 @@ export default function CaseDetailPage({ caseId, canEdit, backHref, backLabel = 
 
       {/* Progress stepper */}
       <CaseProgressStepper caseData={c} />
+
+      {/* Individual Care Plans (counselling, shelter, medical referrals — SW-led) */}
+      {c.community?._id && (
+        <CarePlansPanel caseId={c._id} communityId={c.community._id} canManage={canManageCarePlan} />
+      )}
+
+      {/* Document upload (litigation members manage milestones + add evidence) */}
+      {canEdit && (
+        <CaseDocsUpload caseId={c._id} caseType={c.path} onUploaded={() => { setTimelineKey(k => k + 1); fetchCase(); }} />
+      )}
 
       {/* Timeline heading */}
       <div>

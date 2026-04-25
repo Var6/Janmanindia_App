@@ -3,16 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-type Citizen = { _id: string; name: string; email: string; phone?: string };
+type Community = { _id: string; name: string; email: string; phone?: string };
 
 export default function CreateCaseForm() {
   const router = useRouter();
 
   const [open, setOpen]           = useState(false);
   const [query, setQuery]         = useState("");
-  const [results, setResults]     = useState<Citizen[]>([]);
+  const [results, setResults]     = useState<Community[]>([]);
   const [searching, setSearching] = useState(false);
-  const [citizen, setCitizen]     = useState<Citizen | null>(null);
+  const [community, setCommunity]     = useState<Community | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
   const [path, setPath]           = useState<"criminal" | "highcourt">("criminal");
   const [submitting, setSubmitting] = useState(false);
@@ -20,7 +20,7 @@ export default function CreateCaseForm() {
   const debounceRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!query || query.length < 2 || citizen) {
+    if (!query || query.length < 2 || community) {
       setResults([]);
       return;
     }
@@ -37,13 +37,13 @@ export default function CreateCaseForm() {
         setSearching(false);
       }
     }, 300);
-  }, [query, citizen]);
+  }, [query, community]);
 
   function reset() {
     setOpen(false);
     setQuery("");
     setResults([]);
-    setCitizen(null);
+    setCommunity(null);
     setCaseTitle("");
     setPath("criminal");
     setError("");
@@ -51,7 +51,7 @@ export default function CreateCaseForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!citizen) { setError("Please select a citizen first."); return; }
+    if (!community) { setError("Please select a community first."); return; }
     if (!caseTitle.trim()) { setError("Case title is required."); return; }
     setSubmitting(true);
     setError("");
@@ -59,7 +59,7 @@ export default function CreateCaseForm() {
       const res = await fetch("/api/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseTitle: caseTitle.trim(), path, citizenId: citizen._id }),
+        body: JSON.stringify({ caseTitle: caseTitle.trim(), path, communityId: community._id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -105,19 +105,19 @@ export default function CreateCaseForm() {
             </div>
           )}
 
-          {/* Citizen search */}
+          {/* Community search */}
           <div>
             <label className="block text-sm font-medium text-(--text) mb-1.5">
-              Search Citizen <span style={{ color: "var(--error)" }}>*</span>
+              Search Community <span style={{ color: "var(--error)" }}>*</span>
             </label>
-            {citizen ? (
+            {community ? (
               <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border"
                 style={{ background: "var(--bg)", borderColor: "var(--accent)" }}>
                 <div>
-                  <p className="text-sm font-medium text-(--text)">{citizen.name}</p>
-                  <p className="text-xs text-(--muted)">{citizen.email}</p>
+                  <p className="text-sm font-medium text-(--text)">{community.name}</p>
+                  <p className="text-xs text-(--muted)">{community.email}</p>
                 </div>
-                <button type="button" onClick={() => { setCitizen(null); setQuery(""); }}
+                <button type="button" onClick={() => { setCommunity(null); setQuery(""); }}
                   className="text-xs hover:underline" style={{ color: "var(--error)" }}>
                   Change
                 </button>
@@ -144,7 +144,7 @@ export default function CreateCaseForm() {
                     style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
                     {results.map((u) => (
                       <button key={u._id} type="button"
-                        onClick={() => { setCitizen(u); setQuery(""); setResults([]); }}
+                        onClick={() => { setCommunity(u); setQuery(""); setResults([]); }}
                         className="w-full text-left px-4 py-3 text-sm transition-colors"
                         style={{ borderBottom: "1px solid var(--border)" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
@@ -156,7 +156,7 @@ export default function CreateCaseForm() {
                   </div>
                 )}
                 {query.length >= 2 && !searching && results.length === 0 && (
-                  <p className="text-xs text-(--muted) mt-1">No citizens found matching "{query}".</p>
+                  <p className="text-xs text-(--muted) mt-1">No community members found matching "{query}".</p>
                 )}
               </div>
             )}
@@ -193,7 +193,7 @@ export default function CreateCaseForm() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting || !citizen || !caseTitle.trim()}
+          <button type="submit" disabled={submitting || !community || !caseTitle.trim()}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {submitting ? "Creating…" : "Create Case"}

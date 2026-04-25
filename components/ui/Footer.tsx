@@ -6,7 +6,7 @@ export default function Footer() {
           <div>
             <p className="text-xl font-semibold text-[var(--text)]">Janman Legal Aid</p>
             <p className="mt-3 max-w-md text-sm leading-7 text-[var(--muted)]">
-              A shared legal aid platform connecting citizens, advocates, paralegals, and admins across Bihar.
+              A shared legal aid platform connecting community members, advocates, paralegals, and admins across Bihar.
             </p>
           </div>
           <div>

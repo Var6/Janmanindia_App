@@ -40,7 +40,7 @@ export default async function LitigationDashboard() {
       Case.find({ litigationMember: litigationId, nextHearingDate: { $gte: new Date(), $lte: sevenDaysOut } })
         .sort({ nextHearingDate: 1 }).limit(5).lean(),
       Appointment.find({ litigationMember: litigationId, status: "approved_sw" })
-        .sort({ proposedDate: 1 }).limit(5).populate("citizen", "name email").lean(),
+        .sort({ proposedDate: 1 }).limit(5).populate("community", "name email").lean(),
       User.findById(litigationId).lean(),
     ]);
   }
@@ -113,10 +113,10 @@ export default async function LitigationDashboard() {
           ) : (
             <div className="divide-y divide-(--border)">
               {pendingAppointments.map((apt) => {
-                const citizen = apt.citizen as unknown as { name: string; email: string };
+                const community = apt.community as unknown as { name: string; email: string };
                 return (
                   <div key={String(apt._id)} className="px-6 py-4">
-                    <p className="text-sm font-medium text-(--text)">{citizen?.name}</p>
+                    <p className="text-sm font-medium text-(--text)">{community?.name}</p>
                     <p className="text-xs text-(--muted) mt-0.5">
                       {new Date(apt.proposedDate).toLocaleDateString("en-IN")} · {apt.reason}
                     </p>

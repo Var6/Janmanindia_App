@@ -33,13 +33,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const update: Record<string, unknown> = {
-      "citizenProfile.verificationStatus": status,
-      "citizenProfile.verifiedBy": session.id,
-      "citizenProfile.verifiedAt": new Date(),
+      "communityProfile.verificationStatus": status,
+      "communityProfile.verifiedBy": session.id,
+      "communityProfile.verifiedAt": new Date(),
     };
 
     if (status === "rejected") {
-      update["citizenProfile.rejectionReason"] = rejectionReason;
+      update["communityProfile.rejectionReason"] = rejectionReason;
     }
 
     await User.updateOne({ _id: userId }, update);

@@ -22,7 +22,7 @@ export interface IUser extends Document {
   employeeId?: string;
   joinedAt?: Date;
   exitedAt?: Date;
-  citizenProfile?: {
+  communityProfile?: {
     govtIdUrl?: string;
     govtIdType?: "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "Other";
     verificationStatus: "pending" | "verified" | "rejected";
@@ -31,6 +31,13 @@ export interface IUser extends Document {
     rejectionReason?: string;
     district?: string;
     assignedSocialWorker?: mongoose.Types.ObjectId;
+    /** Para Legal Volunteer flow — community member opts in, social worker decides. */
+    plvStatus?: "none" | "requested" | "approved" | "rejected";
+    plvMotivation?: string;
+    plvRequestedAt?: Date;
+    plvDecidedBy?: mongoose.Types.ObjectId;
+    plvDecidedAt?: Date;
+    plvRejectionReason?: string;
   };
   socialWorkerProfile?: {
     avgResolutionTimeDays: number;
@@ -48,7 +55,7 @@ export interface IUser extends Document {
   };
 }
 
-const citizenProfileSchema = new Schema(
+const communityProfileSchema = new Schema(
   {
     govtIdUrl: String,
     govtIdType: {
@@ -65,6 +72,12 @@ const citizenProfileSchema = new Schema(
     rejectionReason: String,
     district: { type: String, trim: true },
     assignedSocialWorker: { type: Schema.Types.ObjectId, ref: "User" },
+    plvStatus:           { type: String, enum: ["none", "requested", "approved", "rejected"], default: "none" },
+    plvMotivation:       { type: String, trim: true },
+    plvRequestedAt:      Date,
+    plvDecidedBy:        { type: Schema.Types.ObjectId, ref: "User" },
+    plvDecidedAt:        Date,
+    plvRejectionReason:  String,
   },
   { _id: false }
 );
@@ -110,7 +123,7 @@ const userSchema = new Schema<IUser>(
     employeeId: { type: String, unique: true, sparse: true, trim: true },
     joinedAt: Date,
     exitedAt: Date,
-    citizenProfile: citizenProfileSchema,
+    communityProfile: communityProfileSchema,
     socialWorkerProfile: socialWorkerProfileSchema,
     litigationProfile: litigationProfileSchema,
   },
@@ -120,7 +133,7 @@ const userSchema = new Schema<IUser>(
 // Indexes
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ "litigationProfile.location.district": 1, "litigationProfile.activeCaseCount": 1 });
-userSchema.index({ "citizenProfile.verificationStatus": 1 });
+userSchema.index({ "communityProfile.verificationStatus": 1 });
 
 const User: Model<IUser> =
   mongoose.models.User ?? mongoose.model<IUser>("User", userSchema);

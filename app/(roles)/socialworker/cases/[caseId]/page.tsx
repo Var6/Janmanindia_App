@@ -16,6 +16,7 @@ export default async function SWCaseDetailPage({
     <CaseDetailPage
       caseId={caseId}
       canEdit={false}
+      canManageCarePlan={true}
       backHref="/socialworker/cases"
       backLabel="Cases"
     />

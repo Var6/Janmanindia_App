@@ -28,7 +28,7 @@ export default async function AdminCasesPage() {
   const dbOk  = await tryConnectDB();
   const cases = dbOk
     ? await Case.find({})
-        .populate("citizen", "name")
+        .populate("community", "name")
         .populate("litigationMember", "name")
         .populate("socialWorker", "name")
         .sort({ updatedAt: -1 })
@@ -86,14 +86,14 @@ export default async function AdminCasesPage() {
 
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {cases.map((c) => {
-              const citizen = c.citizen as unknown as { name: string } | null;
+              const community = c.community as unknown as { name: string } | null;
               const lawyer  = c.litigationMember as unknown as { name: string } | null;
               const st      = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
               return (
                 <div key={String(c._id)}
                   className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-3 transition-colors hover:bg-(--bg)">
 
-                  {/* Case title + number + citizen */}
+                  {/* Case title + number + community */}
                   <Link href={`/director/cases/${String(c._id)}`} className="min-w-0 group">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
@@ -104,7 +104,7 @@ export default async function AdminCasesPage() {
                     <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
                       {c.caseTitle}
                     </p>
-                    <p className="text-xs text-(--muted)">{citizen?.name ?? "—"}</p>
+                    <p className="text-xs text-(--muted)">{community?.name ?? "—"}</p>
                   </Link>
 
                   <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "HC"}</span>

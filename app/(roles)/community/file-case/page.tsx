@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
+import { CASE_TYPES, lookupCaseType } from "@/lib/case-types";
 
 export default function FileCasePage() {
   const router = useRouter();
@@ -16,9 +17,11 @@ export default function FileCasePage() {
     setLoading(true);
     setError("");
     const fd = new FormData(e.currentTarget);
+    const caseType = String(fd.get("caseType") ?? "");
     const body = {
       caseTitle:   fd.get("caseTitle"),
-      path:        fd.get("path"),
+      caseType,
+      path:        lookupCaseType(caseType)?.path,
       description: fd.get("description"),
     };
     try {
@@ -82,12 +85,20 @@ export default function FileCasePage() {
           <Field
             label="Type of case"
             required
-            hint="Pick one. If unsure, choose Criminal — your social worker will guide you."
+            hint="Pick the closest match. If you're not sure, pick FIR or 'Other' — your social worker will reclassify after review."
+            example="FIR for refused complaint · POCSO for child abuse · MACT for road accident · WP(C) for writ petition"
           >
-            <Select name="path" required defaultValue="">
-              <option value="" disabled>Choose…</option>
-              <option value="criminal">Criminal — FIR, complaint, abuse, theft, harassment</option>
-              <option value="highcourt">High Court — appeal, writ petition, PIL</option>
+            <Select name="caseType" required defaultValue="">
+              <option value="" disabled>Choose a case type…</option>
+              {CASE_TYPES.map((g) => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.types.map((t) => (
+                    <option key={t.code + g.group} value={t.code}>
+                      {t.code} — {t.name}{t.hi ? ` · ${t.hi}` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </Select>
           </Field>
 

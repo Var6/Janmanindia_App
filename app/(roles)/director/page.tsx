@@ -25,7 +25,7 @@ export default async function AdminDashboard() {
     ? await Promise.all([
         Case.find({}).sort({ updatedAt: -1 }).limit(15)
           .populate("litigationMember", "name")
-          .populate("citizen", "name")
+          .populate("community", "name")
           .lean(),
         User.find({ role: "litigation", isActive: true })
           .select("name litigationProfile.activeCaseCount litigationProfile.location")
@@ -124,14 +124,14 @@ export default async function AdminDashboard() {
             <div className="divide-y divide-(--border)">
               {allCases.slice(0, 8).map((c) => {
                 const lm = c.litigationMember as unknown as { name: string } | null;
-                const citizen = c.citizen as unknown as { name: string } | null;
+                const community = c.community as unknown as { name: string } | null;
                 const sc = STATUS_STYLES[c.status] ?? { bg: "var(--bg)", text: "var(--muted)" };
                 return (
                   <div key={String(c._id)} className="px-5 py-3 flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5 truncate">
-                        {citizen?.name ?? "—"} · {lm ? lm.name : <span style={{ color: "var(--warning-text)" }}>Unassigned</span>}
+                        {community?.name ?? "—"} · {lm ? lm.name : <span style={{ color: "var(--warning-text)" }}>Unassigned</span>}
                       </p>
                     </div>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"

@@ -19,11 +19,11 @@ export default async function QueriesPage() {
     const swId = new mongoose.Types.ObjectId(session.id);
     [pendingAppointments, recentCases] = await Promise.all([
       Appointment.find({ socialWorker: swId, status: "pending_sw" })
-        .populate("citizen", "name email phone")
+        .populate("community", "name email phone")
         .sort({ requestedAt: -1 })
         .lean(),
       Case.find({ socialWorker: swId, status: { $in: ["Open", "Escalated"] } })
-        .populate("citizen", "name")
+        .populate("community", "name")
         .populate("litigationMember", "name")
         .sort({ updatedAt: -1 })
         .limit(20)
@@ -38,7 +38,7 @@ export default async function QueriesPage() {
       <div>
         <h1 className="text-2xl font-bold text-(text)">Queries &amp; Communications</h1>
         <p className="text-sm text-(muted) mt-1">
-          Appointment requests from citizens and open case communications. SLA: resolve within 7–14 days.
+          Appointment requests from community members and open case communications. SLA: resolve within 7–14 days.
         </p>
       </div>
 
@@ -59,15 +59,15 @@ export default async function QueriesPage() {
         ) : (
           <div className="space-y-3">
             {pendingAppointments.map((apt) => {
-              const citizen = apt.citizen as unknown as { name: string; email: string; phone?: string } | null;
+              const community = apt.community as unknown as { name: string; email: string; phone?: string } | null;
               const daysAgo = Math.floor((Date.now() - new Date(apt.requestedAt).getTime()) / 86400000);
               const overSla = daysAgo >= 7;
               return (
                 <div key={String(apt._id)} className={`rounded-2xl border p-5 ${overSla ? "bg-red-50 border-red-200" : "bg-(surface) border-(border)"}`}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <p className="font-medium text-(text)">{citizen?.name ?? "Unknown"}</p>
-                      <p className="text-xs text-(muted)">{citizen?.email}{citizen?.phone ? ` · ${citizen.phone}` : ""}</p>
+                      <p className="font-medium text-(text)">{community?.name ?? "Unknown"}</p>
+                      <p className="text-xs text-(muted)">{community?.email}{community?.phone ? ` · ${community.phone}` : ""}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-(muted)">{daysAgo}d ago</p>
@@ -107,7 +107,7 @@ export default async function QueriesPage() {
         ) : (
           <div className="space-y-3">
             {recentCases.map((c) => {
-              const citizen = c.citizen as unknown as { name: string } | null;
+              const community = c.community as unknown as { name: string } | null;
               const lawyer = c.litigationMember as unknown as { name: string } | null;
               return (
                 <div key={String(c._id)} className="bg-(surface) rounded-2xl border border-(border) p-5">
@@ -115,7 +115,7 @@ export default async function QueriesPage() {
                     <div>
                       <p className="font-medium text-(text)">{c.caseTitle}</p>
                       <p className="text-xs text-(muted) mt-0.5">
-                        Citizen: {citizen?.name ?? "—"} · Lawyer: {lawyer?.name ?? "Unassigned"}
+                        Community: {community?.name ?? "—"} · Lawyer: {lawyer?.name ?? "Unassigned"}
                       </p>
                     </div>
                     <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">{c.status}</span>

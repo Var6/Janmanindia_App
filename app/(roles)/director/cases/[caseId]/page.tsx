@@ -18,6 +18,7 @@ export default async function AdminCaseDetailPage({
     <CaseDetailPage
       caseId={caseId}
       canEdit={false}
+      canManageCarePlan={true}
       backHref="/director/cases"
       backLabel="All Cases"
     />

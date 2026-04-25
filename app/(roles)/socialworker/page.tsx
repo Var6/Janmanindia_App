@@ -32,7 +32,7 @@ export default async function SocialWorkerDashboard() {
     const swId = new mongoose.Types.ObjectId(session.id);
     [sw, pendingVerifications, openSos, activeCases] = await Promise.all([
       User.findById(swId).lean(),
-      User.find({ role: "community", "citizenProfile.verificationStatus": "pending" }).limit(10).lean(),
+      User.find({ role: "community", "communityProfile.verificationStatus": "pending" }).limit(10).lean(),
       SosAlert.find({ status: "open" }).limit(10).lean(),
       Case.find({ socialWorker: swId, status: "Open" }).limit(10).lean(),
     ]);
@@ -145,12 +145,12 @@ export default async function SocialWorkerDashboard() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
-                      <p className="text-xs text-(--muted) truncate">{u.citizenProfile?.govtIdType ?? "—"} · {u.email}</p>
+                      <p className="text-xs text-(--muted) truncate">{u.communityProfile?.govtIdType ?? "—"} · {u.email}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    {u.citizenProfile?.govtIdUrl && (
-                      <a href={u.citizenProfile.govtIdUrl} target="_blank" rel="noopener noreferrer"
+                    {u.communityProfile?.govtIdUrl && (
+                      <a href={u.communityProfile.govtIdUrl} target="_blank" rel="noopener noreferrer"
                         className="text-xs px-2.5 py-1.5 rounded-lg border border-(--border) text-(--text) hover:border-(--accent) transition-colors">
                         View ID
                       </a>
@@ -249,7 +249,7 @@ export default async function SocialWorkerDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { href: "/socialworker/reports",      label: "Submit EOD Report", icon: "📄" },
-          { href: "/socialworker/media-upload",  label: "Upload Media",      icon: "📤" },
+          { href: "/socialworker/media-scanning", label: "Scan Media",       icon: "📤" },
           { href: "/socialworker/queries",       label: "Queries Inbox",     icon: "💬" },
         ].map((link) => (
           <Link key={link.href} href={link.href}

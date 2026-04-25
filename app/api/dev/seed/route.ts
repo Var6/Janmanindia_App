@@ -16,7 +16,7 @@ const TEST_USERS = [
     email: "community@dev.janmanindia.in",
     role: "community" as const,
     phone: "9000000001",
-    citizenProfile: {
+    communityProfile: {
       govtIdType: "Aadhar" as const,
       govtIdUrl: "https://example.com/dev-id.pdf",
       verificationStatus: "verified" as const,
@@ -27,7 +27,7 @@ const TEST_USERS = [
     email: "priya@dev.janmanindia.in",
     role: "community" as const,
     phone: "9000000011",
-    citizenProfile: {
+    communityProfile: {
       govtIdType: "VoterId" as const,
       govtIdUrl: "https://example.com/priya-id.pdf",
       verificationStatus: "pending" as const,
@@ -38,7 +38,7 @@ const TEST_USERS = [
     email: "rajan@dev.janmanindia.in",
     role: "community" as const,
     phone: "9000000012",
-    citizenProfile: {
+    communityProfile: {
       govtIdType: "Passport" as const,
       govtIdUrl: "https://example.com/rajan-id.pdf",
       verificationStatus: "verified" as const,
@@ -155,7 +155,7 @@ export async function POST() {
 
     const byEmail = Object.fromEntries(userDocs.map((u) => [u.email, u._id as mongoose.Types.ObjectId]));
 
-    const citizenId  = byEmail["community@dev.janmanindia.in"];
+    const communityId  = byEmail["community@dev.janmanindia.in"];
     const priyaId    = byEmail["priya@dev.janmanindia.in"];
     const rajanId    = byEmail["rajan@dev.janmanindia.in"];
     const swId       = byEmail["sw@dev.janmanindia.in"];
@@ -173,7 +173,7 @@ export async function POST() {
         caseNumber: "DEV-CRM-001",
         status: "Open",
         path: "criminal",
-        citizen: citizenId,
+        community: communityId,
         litigationMember: litigId,
         socialWorker: swId,
         nextHearingDate: new Date("2026-05-10"),
@@ -217,7 +217,7 @@ export async function POST() {
         caseNumber: "DEV-HC-001",
         status: "Pending",
         path: "highcourt",
-        citizen: priyaId,
+        community: priyaId,
         litigationMember: vikramId,
         socialWorker: anitaId,
         nextHearingDate: new Date("2026-05-22"),
@@ -250,7 +250,7 @@ export async function POST() {
         caseNumber: "DEV-CRM-002",
         status: "Escalated",
         path: "criminal",
-        citizen: rajanId,
+        community: rajanId,
         litigationMember: litigId,
         socialWorker: swId,
         nextHearingDate: new Date("2026-04-30"),
@@ -281,7 +281,7 @@ export async function POST() {
         caseNumber: "DEV-CRM-003",
         status: "Closed",
         path: "criminal",
-        citizen: citizenId,
+        community: communityId,
         litigationMember: litigId,
         socialWorker: swId,
         caseDiary: [
@@ -318,7 +318,7 @@ export async function POST() {
 
     await Appointment.insertMany([
       {
-        citizen: citizenId,
+        community: communityId,
         socialWorker: swId,
         litigationMember: litigId,
         requestedAt: new Date("2026-04-18"),
@@ -329,7 +329,7 @@ export async function POST() {
         litigationNotes: "Schedule confirmed for Monday 10 AM.",
       },
       {
-        citizen: priyaId,
+        community: priyaId,
         socialWorker: anitaId,
         requestedAt: new Date("2026-04-20"),
         proposedDate: new Date("2026-05-02T14:00:00"),
@@ -338,7 +338,7 @@ export async function POST() {
         swNotes: "Approved. Awaiting litigation confirmation.",
       },
       {
-        citizen: rajanId,
+        community: rajanId,
         socialWorker: swId,
         requestedAt: new Date("2026-04-21"),
         proposedDate: new Date("2026-05-05T11:00:00"),
@@ -391,7 +391,7 @@ export async function POST() {
       {
         submittedBy: anitaId,
         date: new Date("2026-04-19"),
-        summary: "Community outreach camp at Dharavi. 12 new citizens registered. Dev seed.",
+        summary: "Community outreach camp at Dharavi. 12 new community members registered. Dev seed.",
         hoursWorked: 9,
         ticketsWorkedOn: [],
         expenses: [
@@ -408,7 +408,7 @@ export async function POST() {
 
     await SosAlert.insertMany([
       {
-        raisedBy: citizenId,
+        raisedBy: communityId,
         location: "Karol Bagh, New Delhi — near Metro Gate 4",
         description: "Threatening behaviour by landlord's men outside residence. Dev seed.",
         mediaUrls: ["https://example.com/sos-media-001.jpg"],

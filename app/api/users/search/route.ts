@@ -7,15 +7,16 @@ export async function GET(request: NextRequest) {
   const session = await getSessionFromCookies();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Only staff roles can search citizens
-  const allowed = ["socialworker", "director", "superadmin", "hr", "litigation", "finance"];
-  if (!allowed.includes(session.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const { searchParams } = new URL(request.url);
   const q    = searchParams.get("q")?.trim() ?? "";
   const role = searchParams.get("role") ?? "community";
+
+  // Privacy: community members can only look up other staff (not other community
+  // members or privileged roles). Staff can look up anyone.
+  const COMMUNITY_VISIBLE_ROLES = ["socialworker", "litigation", "hr", "finance"];
+  if (session.role === "community" && !COMMUNITY_VISIBLE_ROLES.includes(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (q.length < 2) return NextResponse.json({ users: [] });
 
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
 
   const filter: Record<string, unknown> = {
     role,
+    isActive: true,
     $or: [
       { name:  { $regex: q, $options: "i" } },
       { email: { $regex: q, $options: "i" } },
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
   };
 
   const users = await User.find(filter)
-    .select("name email phone")
+    .select("name email phone role")
     .limit(10)
     .lean();
 

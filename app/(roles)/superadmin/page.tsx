@@ -27,13 +27,13 @@ export default async function SuperAdminDashboard() {
         User.countDocuments({ isActive: true }),
         EodReport.countDocuments({ invoiceStatus: "pending" }),
         SosAlert.countDocuments({ status: "open" }),
-        User.countDocuments({ "citizenProfile.verificationStatus": "pending" }),
+        User.countDocuments({ "communityProfile.verificationStatus": "pending" }),
         User.aggregate<{ _id: string; count: number }>([
           { $group: { _id: "$role", count: { $sum: 1 } } },
           { $sort: { _id: 1 } },
         ]),
         Case.find({}).sort({ createdAt: -1 }).limit(5)
-          .populate("citizen", "name").populate("litigationMember", "name").lean(),
+          .populate("community", "name").populate("litigationMember", "name").lean(),
         User.find({}).sort({ createdAt: -1 }).limit(5)
           .select("name email role isActive createdAt").lean(),
       ])
@@ -94,12 +94,12 @@ export default async function SuperAdminDashboard() {
           ) : (
             <div className="divide-y divide-(--border)">
               {recentCases.map((c) => {
-                const citizen = c.citizen as unknown as { name: string } | null;
+                const community = c.community as unknown as { name: string } | null;
                 const lm = c.litigationMember as unknown as { name: string } | null;
                 return (
                   <div key={String(c._id)} className="px-6 py-3">
                     <p className="text-sm font-medium text-(--text)">{c.caseTitle}</p>
-                    <p className="text-xs text-(--muted) mt-0.5">{citizen?.name} · {lm ? lm.name : "Unassigned"} · {c.status}</p>
+                    <p className="text-xs text-(--muted) mt-0.5">{community?.name} · {lm ? lm.name : "Unassigned"} · {c.status}</p>
                   </div>
                 );
               })}

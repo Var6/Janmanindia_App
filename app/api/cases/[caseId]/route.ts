@@ -14,7 +14,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     await connectDB();
 
     const caseDoc = await Case.findById(caseId)
-      .populate("citizen", "name email phone")
+      .populate("community", "name email phone")
       .populate("litigationMember", "name email")
       .populate("socialWorker", "name email")
       .lean();
@@ -22,14 +22,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // Access control
-    const citizenId = String(caseDoc.citizen?._id ?? caseDoc.citizen);
+    const communityId = String(caseDoc.community?._id ?? caseDoc.community);
     const lmId = String(caseDoc.litigationMember?._id ?? caseDoc.litigationMember ?? "");
     const swId = String(caseDoc.socialWorker?._id ?? caseDoc.socialWorker ?? "");
 
     const allowed =
       session.role === "superadmin" ||
       session.role === "director" ||
-      (session.role === "community" && citizenId === session.id) ||
+      (session.role === "community" && communityId === session.id) ||
       (session.role === "litigation" && lmId === session.id) ||
       (session.role === "socialworker" && swId === session.id);
 
@@ -62,22 +62,66 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const body = await request.json();
     const allowedFields = ["status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath"];
     const update: Record<string, unknown> = {};
+    const pushOps: Record<string, unknown> = {};
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) update[field] = body[field];
     }
 
-    // Handle diary entry via this route
     if (body.diaryEntry) {
-      update["$push"] = {
-        caseDiary: {
-          date: new Date(body.diaryEntry.date),
-          findings: body.diaryEntry.findings,
-          writtenBy: session.id,
-        },
+      pushOps.caseDiary = {
+        date: new Date(body.diaryEntry.date),
+        findings: body.diaryEntry.findings,
+        writtenBy: session.id,
       };
       delete update.diaryEntry;
     }
+
+    // Document upload routed by category. Empty/general → documents[];
+    // criminal-path categories → relevant criminal sub-doc; high-court step
+    // names → highCourtPath.<step>.{filed, filedAt, doc}.
+    if (body.addDocument) {
+      const { label, url, category } = body.addDocument as { label: string; url: string; category?: string };
+      if (!label || !url) {
+        return NextResponse.json({ error: "addDocument.label and addDocument.url are required" }, { status: 400 });
+      }
+      const docPayload = {
+        label,
+        url,
+        uploadedBy: session.id,
+        uploadedAt: new Date(),
+        ocrStatus: "pending" as const,
+      };
+      const cat = (category ?? "general").toLowerCase();
+      if (cat === "general" || !cat) {
+        pushOps.documents = docPayload;
+      } else if (cat === "fir") {
+        update["criminalPath.firFiled"] = true;
+        update["criminalPath.firDoc"] = docPayload;
+      } else if (cat === "charge") {
+        update["criminalPath.chargesFramed"] = true;
+        pushOps["criminalPath.chargeDocs"] = docPayload;
+      } else if (cat === "cognizance") {
+        update["criminalPath.cognizanceOrderDoc"] = docPayload;
+      } else if (cat === "evidence") {
+        pushOps["criminalPath.trial.evidenceDocs"] = docPayload;
+      } else if (cat === "forensic") {
+        pushOps["criminalPath.trial.forensicDocs"] = docPayload;
+      } else if (["petitionfiled", "supportingaffidavit", "admission", "counteraffidavit", "rejoinder", "pleaclose", "inducement"].includes(cat)) {
+        const stepKey = cat === "petitionfiled"        ? "petitionFiled"
+                      : cat === "supportingaffidavit"  ? "supportingAffidavit"
+                      : cat === "counteraffidavit"     ? "counterAffidavit"
+                      : cat === "pleaclose"            ? "pleaClose"
+                      : cat;
+        update[`highCourtPath.${stepKey}.filed`]   = true;
+        update[`highCourtPath.${stepKey}.filedAt`] = new Date();
+        update[`highCourtPath.${stepKey}.doc`]     = docPayload;
+      } else {
+        pushOps.documents = docPayload;
+      }
+    }
+
+    if (Object.keys(pushOps).length > 0) update["$push"] = pushOps;
 
     const updated = await Case.findByIdAndUpdate(caseId, update, { new: true });
 
@@ -85,12 +129,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (body.nextHearingDate && updated) {
       try {
         const lmUser = await User.findById(updated.litigationMember).lean();
-        const citizenUser = await User.findById(updated.citizen).lean();
+        const communityUser = await User.findById(updated.community).lean();
         const swUser = updated.socialWorker
           ? await User.findById(updated.socialWorker).lean()
           : null;
 
-        const attendees = [lmUser?.email, citizenUser?.email, swUser?.email].filter(
+        const attendees = [lmUser?.email, communityUser?.email, swUser?.email].filter(
           Boolean
         ) as string[];
 

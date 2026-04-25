@@ -3,7 +3,7 @@ const SCHEMES = [
     category: "Right to Information",
     title: "RTI Act, 2005",
     description:
-      "Every citizen has the right to request information from public authorities within 30 days. File online at rtionline.gov.in or submit a written application with ₹10 fee.",
+      "Every community has the right to request information from public authorities within 30 days. File online at rtionline.gov.in or submit a written application with ₹10 fee.",
     steps: ["Identify the public authority", "Draft your application clearly", "Pay ₹10 fee (BPL applicants exempt)", "Submit and track at rtionline.gov.in"],
     link: "https://rtionline.gov.in",
     color: "blue",

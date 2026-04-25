@@ -20,7 +20,7 @@ export default async function CaseTrackerPage() {
 
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
-    ? await Case.find({ citizen: new mongoose.Types.ObjectId(session.id) }).sort({ updatedAt: -1 }).lean()
+    ? await Case.find({ community: new mongoose.Types.ObjectId(session.id) }).sort({ updatedAt: -1 }).lean()
     : [];
 
   return (
@@ -63,10 +63,8 @@ export default async function CaseTrackerPage() {
               <Link
                 key={String(c._id)}
                 href={`/community/case-tracker/${c._id}`}
-                className="block rounded-2xl border p-5 transition-all hover:shadow-md group"
-                style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-xs)" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+                className="block rounded-2xl border border-(--border) hover:border-(--accent) p-5 transition-all hover:shadow-md group"
+                style={{ background: "var(--surface)", boxShadow: "var(--shadow-xs)" }}
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="min-w-0">

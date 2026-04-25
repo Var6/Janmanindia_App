@@ -55,7 +55,7 @@ export default function RegisterPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-(--text)">Register for Legal Aid</h1>
           <p className="text-sm text-(--muted) mt-1">
-            Create a citizen account. Your ID will be reviewed by a social worker before activation.
+            Create a community account. Your ID will be reviewed by a social worker before activation.
           </p>
         </div>
 

@@ -21,7 +21,7 @@ export default async function LitigationCasesPage() {
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Case.find({ litigationMember: new mongoose.Types.ObjectId(session.id) })
-        .populate("citizen", "name phone")
+        .populate("community", "name phone")
         .populate("socialWorker", "name")
         .sort({ nextHearingDate: 1, updatedAt: -1 })
         .lean()
@@ -50,7 +50,7 @@ export default async function LitigationCasesPage() {
         ) : (
           <div className="space-y-3">
             {open.map((c) => {
-              const citizen = c.citizen as unknown as { name: string; phone?: string } | null;
+              const community = c.community as unknown as { name: string; phone?: string } | null;
               const sw = c.socialWorker as unknown as { name: string } | null;
               const hearingDate = c.nextHearingDate ? new Date(c.nextHearingDate) : null;
               const daysToHearing = hearingDate
@@ -75,7 +75,7 @@ export default async function LitigationCasesPage() {
                       </div>
                       <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        Citizen: {citizen?.name ?? "—"} · SW: {sw?.name ?? "—"}
+                        Community: {community?.name ?? "—"} · SW: {sw?.name ?? "—"}
                       </p>
                     </div>
                     <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full`}
@@ -111,10 +111,8 @@ export default async function LitigationCasesPage() {
               const cst = STATUS_STYLE_LIT[c.status] ?? STATUS_STYLE_LIT.Closed;
               return (
                 <Link key={String(c._id)} href={`/litigation/cases/${String(c._id)}`}
-                  className="flex items-center gap-3 px-5 py-3 rounded-xl border transition-colors"
-                  style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}>
+                  className="flex items-center gap-3 px-5 py-3 rounded-xl border border-(--border) hover:border-(--accent) transition-colors"
+                  style={{ background: "var(--surface)" }}>
                   {c.caseNumber && (
                     <span className="text-xs font-mono shrink-0 px-1.5 py-0.5 rounded"
                       style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>

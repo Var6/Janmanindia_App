@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type MediaItem = { url: string; label: string; district: string; addedAt: string };
 
-export default function MediaUploadPage() {
+export default function MediaScanningPage() {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -40,9 +40,9 @@ export default function MediaUploadPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(text)">Media Upload</h1>
+        <h1 className="text-2xl font-bold text-(text)">Media Scanning</h1>
         <p className="text-sm text-(muted) mt-1">
-          Upload photos, videos, or news clippings documenting local injustice. These become part of the case study materials.
+          Scan and submit photos, videos, or news clippings that document local injustice. Approved items become part of the case study materials.
         </p>
       </div>
 
@@ -102,13 +102,13 @@ export default function MediaUploadPage() {
           disabled={submitting}
           className="w-full py-2.5 rounded-xl bg-(accent) text-(accent-contrast) text-sm font-semibold hover:opacity-90 disabled:opacity-60"
         >
-          {submitting ? "Uploading…" : "Upload Media"}
+          {submitting ? "Scanning…" : "Scan & Submit Media"}
         </button>
       </form>
 
       {items.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(text) mb-3">Uploaded This Session</h2>
+          <h2 className="font-semibold text-(text) mb-3">Scanned This Session</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {items.map((item, i) => (
               <div key={i} className="bg-(surface) rounded-xl border border-(border) p-4">

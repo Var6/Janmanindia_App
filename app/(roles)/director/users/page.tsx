@@ -20,7 +20,7 @@ export default async function AdminUsersPage() {
 
   const dbOk = await tryConnectDB();
   const users = dbOk
-    ? await User.find({}).select("name email role isActive createdAt citizenProfile.verificationStatus").sort({ createdAt: -1 }).lean()
+    ? await User.find({}).select("name email role isActive createdAt communityProfile.verificationStatus").sort({ createdAt: -1 }).lean()
     : [];
 
   const byRole = users.reduce<Record<string, number>>((acc, u) => {

@@ -12,7 +12,7 @@ export default async function LitigationAppointmentsPage() {
   const dbOk = await tryConnectDB();
   const appointments = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Appointment.find({ litigationMember: new mongoose.Types.ObjectId(session.id) })
-        .populate("citizen", "name email phone")
+        .populate("community", "name email phone")
         .populate("socialWorker", "name")
         .sort({ proposedDate: 1 })
         .lean()
@@ -41,15 +41,15 @@ export default async function LitigationAppointmentsPage() {
           </h2>
           <div className="space-y-3">
             {pending.map((apt) => {
-              const citizen = apt.citizen as unknown as { name: string; email: string; phone?: string } | null;
+              const community = apt.community as unknown as { name: string; email: string; phone?: string } | null;
               const sw = apt.socialWorker as unknown as { name: string } | null;
               return (
                 <div key={String(apt._id)} className="bg-(surface) rounded-2xl border border-(accent)/30 p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <p className="font-medium text-(text)">{citizen?.name ?? "—"}</p>
+                      <p className="font-medium text-(text)">{community?.name ?? "—"}</p>
                       <p className="text-xs text-(muted)">
-                        {citizen?.email}{citizen?.phone ? ` · ${citizen.phone}` : ""}
+                        {community?.email}{community?.phone ? ` · ${community.phone}` : ""}
                       </p>
                       <p className="text-xs text-(muted) mt-0.5">Via Social Worker: {sw?.name ?? "—"}</p>
                     </div>
@@ -82,11 +82,11 @@ export default async function LitigationAppointmentsPage() {
           <h2 className="font-semibold text-(text) mb-3">Confirmed ({confirmed.length})</h2>
           <div className="space-y-2">
             {confirmed.map((apt) => {
-              const citizen = apt.citizen as unknown as { name: string } | null;
+              const community = apt.community as unknown as { name: string } | null;
               return (
                 <div key={String(apt._id)} className="flex items-center justify-between px-5 py-3 bg-(surface) rounded-xl border border-green-200">
                   <div>
-                    <p className="text-sm font-medium text-(text)">{citizen?.name ?? "—"}</p>
+                    <p className="text-sm font-medium text-(text)">{community?.name ?? "—"}</p>
                     <p className="text-xs text-(muted)">{apt.reason}</p>
                   </div>
                   <p className="text-sm text-(muted) shrink-0">

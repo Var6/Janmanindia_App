@@ -23,15 +23,15 @@ export async function GET() {
 
     await connectDB();
     const me = await User.findById(session.id)
-      .select("citizenProfile")
-      .populate<{ citizenProfile: { assignedSocialWorker?: PopulatedSW; district?: string } | undefined }>(
-        "citizenProfile.assignedSocialWorker",
+      .select("communityProfile")
+      .populate<{ communityProfile: { assignedSocialWorker?: PopulatedSW; district?: string } | undefined }>(
+        "communityProfile.assignedSocialWorker",
         "name phone email"
       )
       .lean();
 
-    const sw = (me?.citizenProfile?.assignedSocialWorker ?? null) as unknown as PopulatedSW | null;
-    const district = me?.citizenProfile?.district;
+    const sw = (me?.communityProfile?.assignedSocialWorker ?? null) as unknown as PopulatedSW | null;
+    const district = me?.communityProfile?.district;
 
     let helpline = null;
     if (district) {

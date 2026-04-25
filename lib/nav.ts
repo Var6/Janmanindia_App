@@ -2,10 +2,11 @@ import type { NavItem } from "@/components/shared/SidebarNav";
 
 /** Items every authenticated user sees (regardless of role). */
 const SHARED_ITEMS: NavItem[] = [
-  { href: "/chat",      label: "Chat",      icon: "chat"      },
-  { href: "/grievance", label: "Grievance", icon: "alert"     },
-  { href: "/training",  label: "Training",  icon: "book"      },
-  { href: "/policies",  label: "Policies",  icon: "shield"    },
+  { href: "/appointments", label: "Appointments", icon: "calendar"  },
+  { href: "/chat",         label: "Chat",         icon: "chat"      },
+  { href: "/grievance",    label: "Grievance",    icon: "alert"     },
+  { href: "/training",     label: "Training",     icon: "book"      },
+  { href: "/policies",     label: "Policies",     icon: "shield"    },
 ];
 
 /** Role-specific items, ordered top-to-bottom in the sidebar. */
@@ -19,12 +20,14 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/community/appointments", label: "Appointments", icon: "calendar"    },
   ],
   socialworker: [
-    { href: "/socialworker",                label: "Dashboard",    icon: "home"      },
-    { href: "/socialworker/cases",          label: "Cases",        icon: "briefcase" },
-    { href: "/socialworker/queries",        label: "Queries",      icon: "search"    },
-    { href: "/socialworker/escalate",       label: "Escalate",     icon: "alert"     },
-    { href: "/socialworker/reports",        label: "EOD Reports",  icon: "document"  },
-    { href: "/socialworker/media-upload",   label: "Media Upload", icon: "upload"    },
+    { href: "/socialworker",                label: "Dashboard",      icon: "home"        },
+    { href: "/socialworker/cases",          label: "Cases",          icon: "briefcase"   },
+    { href: "/socialworker/care-plans",     label: "Care Plans",     icon: "user-circle" },
+    { href: "/socialworker/queries",        label: "Queries",        icon: "search"      },
+    { href: "/socialworker/plv-requests",   label: "PLV Requests",   icon: "users"       },
+    { href: "/socialworker/escalate",       label: "Escalate",       icon: "alert"       },
+    { href: "/socialworker/reports",        label: "EOD Reports",    icon: "document"    },
+    { href: "/socialworker/media-scanning", label: "Media Scanning", icon: "upload"      },
   ],
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
@@ -80,8 +83,11 @@ const PROFILE_ITEM = (role: string): NavItem => ({
 /** Build the full sidebar for a given role. */
 export function navItemsFor(role: string): NavItem[] {
   const base = ROLE_ITEMS[role] ?? [];
-  const utility = role === "community" ? [{ href: "/logistics", label: "Logistics", icon: "briefcase" as const }] : STAFF_ITEMS;
-  return [...base, ...utility, ...SHARED_ITEMS, PROFILE_ITEM(role)];
+  // Community gets no logistics tile (they don't need org-internal logistics).
+  const utility = role === "community" ? [] : STAFF_ITEMS;
+  // Finance team doesn't need training in their sidebar — they manage money, not learning.
+  const shared = role === "finance" ? SHARED_ITEMS.filter(i => i.href !== "/training") : SHARED_ITEMS;
+  return [...base, ...utility, ...shared, PROFILE_ITEM(role)];
 }
 
 export const ROLE_LABELS: Record<string, string> = {

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, unknown> = {};
 
     if (session.role === "community") {
-      filter.citizen = session.id;
+      filter.community = session.id;
     } else if (session.role === "litigation") {
       filter.litigationMember = session.id;
     } else if (session.role === "socialworker") {
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate("citizen", "name email")
+        .populate("community", "name email")
         .populate("litigationMember", "name")
         .populate("socialWorker", "name")
         .lean(),
@@ -61,23 +61,33 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { caseTitle, path, citizenId } = body as {
+    const { caseTitle, path: rawPath, caseType, communityId } = body as {
       caseTitle: string;
-      path: "criminal" | "highcourt";
-      citizenId?: string;
+      path?: "criminal" | "highcourt";
+      caseType?: string;
+      communityId?: string;
     };
 
-    if (!caseTitle || !path) {
-      return NextResponse.json({ error: "caseTitle and path are required" }, { status: 400 });
+    if (!caseTitle) {
+      return NextResponse.json({ error: "caseTitle is required" }, { status: 400 });
     }
 
+    // Resolve workflow path: explicit `path` wins; otherwise derive from caseType
+    let path: "criminal" | "highcourt" | undefined = rawPath;
+    if (!path && caseType) {
+      const { lookupCaseType } = await import("@/lib/case-types");
+      path = lookupCaseType(caseType)?.path;
+    }
+    if (!path) {
+      return NextResponse.json({ error: "Either path or a recognised caseType is required" }, { status: 400 });
+    }
     if (!["criminal", "highcourt"].includes(path)) {
       return NextResponse.json({ error: "path must be criminal or highcourt" }, { status: 400 });
     }
 
-    const citizenRef = session.role === "community" ? session.id : citizenId;
-    if (!citizenRef) {
-      return NextResponse.json({ error: "citizenId is required" }, { status: 400 });
+    const communityRef = session.role === "community" ? session.id : communityId;
+    if (!communityRef) {
+      return NextResponse.json({ error: "communityId is required" }, { status: 400 });
     }
 
     // Generate unique case number
@@ -88,7 +98,8 @@ export async function POST(request: NextRequest) {
       caseTitle,
       caseNumber,
       path,
-      citizen: citizenRef,
+      caseType: caseType?.trim() || undefined,
+      community: communityRef,
       status: "Open",
       documents: [],
       caseDiary: [],

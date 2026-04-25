@@ -77,7 +77,7 @@ export default function Home() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Platform features</p>
                 <p className="mt-2 text-sm text-(--text-2) leading-relaxed">
-                  A unified workspace for citizens, advocates, social workers, and administrators to collaborate on case management and legal support.
+                  A unified workspace for community members, advocates, social workers, and administrators to collaborate on case management and legal support.
                 </p>
               </div>
               <ul className="space-y-3">
@@ -103,7 +103,7 @@ export default function Home() {
             <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Separate journeys for each role</p>
             <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">One platform, seven roles</h2>
             <p className="mt-3 text-(--muted) leading-relaxed">
-              Citizens, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.
+              Community members, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.
             </p>
           </div>
 

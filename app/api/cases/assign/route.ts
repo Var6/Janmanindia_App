@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const caseDoc = await Case.findById(caseId)
-      .populate("citizen", "name email")
+      .populate("community", "name email")
       .populate("socialWorker", "name email");
 
     if (!caseDoc) {
@@ -99,11 +99,11 @@ export async function POST(request: NextRequest) {
     // Step 4: Create Google Calendar event if hearing date set
     if (hearingDate) {
       try {
-        const citizen = caseDoc.citizen as unknown as { email?: string } | null;
+        const community = caseDoc.community as unknown as { email?: string } | null;
         const swDoc = caseDoc.socialWorker as unknown as { email?: string } | null;
         const attendees = [
           assignedUser.email,
-          citizen?.email,
+          community?.email,
           swDoc?.email,
         ].filter(Boolean) as string[];
 
