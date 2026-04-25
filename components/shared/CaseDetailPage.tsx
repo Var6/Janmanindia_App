@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Timeline, type TimelineEntry } from "@/components/ui/timeline";
-import CarePlansPanel from "@/components/shared/CarePlansPanel";
 import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
+import IcpForm from "@/components/icp/IcpForm";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -473,6 +473,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
   const [error, setError]         = useState("");
   const [hearingDate, setHearingDate] = useState<string | undefined>();
   const [timelineKey, setTimelineKey] = useState(0);
+  const [tab, setTab] = useState<"legal" | "icp">("legal");
 
   async function fetchCase() {
     try {
@@ -597,16 +598,47 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
         )}
       </div>
 
+      {/* Tab nav */}
+      <div className="flex items-center gap-1 p-1 rounded-xl border w-fit"
+        style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        {([
+          ["legal", "Legal Progress"],
+          ["icp",   "Individual Care Plan"],
+        ] as const).map(([k, label]) => {
+          const sel = tab === k;
+          return (
+            <button key={k} type="button" onClick={() => setTab(k)}
+              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+              style={{
+                background: sel ? "var(--accent)" : "transparent",
+                color: sel ? "var(--accent-contrast)" : "var(--muted)",
+              }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "icp" ? (
+        c.community?._id ? (
+          <IcpForm caseId={c._id} canEdit={canManageCarePlan} />
+        ) : (
+          <p className="text-sm text-(--muted) px-1">No community member linked to this case yet.</p>
+        )
+      ) : (
+        <LegalProgressBlock />
+      )}
+    </div>
+  );
+
+  function LegalProgressBlock() {
+    return (
+      <div className="space-y-6">
       {/* FIR alert */}
       <FirAlert caseData={c} />
 
       {/* Progress stepper */}
       <CaseProgressStepper caseData={c} />
-
-      {/* Individual Care Plans (counselling, shelter, medical referrals — SW-led) */}
-      {c.community?._id && (
-        <CarePlansPanel caseId={c._id} communityId={c.community._id} canManage={canManageCarePlan} />
-      )}
 
       {/* Document upload (litigation members manage milestones + add evidence) */}
       {canEdit && (
@@ -632,6 +664,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
           <p className="text-sm text-(--muted)">No events recorded yet.</p>
         </div>
       )}
-    </div>
-  );
+      </div>
+    );
+  }
 }
