@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import VoiceRecorder from "@/components/shared/VoiceRecorder";
 
 interface User { _id: string; name: string; role: string; employeeId?: string }
 interface Conversation {
@@ -13,6 +14,8 @@ interface Conversation {
 interface Message {
   _id: string;
   text: string;
+  audioUrl?: string;
+  audioDurationSec?: number;
   createdAt: string;
   editedAt?: string;
   sender: { _id: string; name: string; role: string };
@@ -134,6 +137,26 @@ export default function ChatApp({ currentUserId }: Props) {
         setMessages((prev) => [...prev, d.message]);
         lastTsRef.current = d.message.createdAt;
         setText("");
+      }
+    } finally { setSending(false); }
+  }
+
+  async function sendVoice(audioUrl: string, durationSec: number) {
+    if (!activeId) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/chat/conversations/${activeId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioUrl, audioDurationSec: durationSec, text: "" }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error ?? "Voice send failed");
+      } else {
+        const d = await res.json();
+        setMessages((prev) => [...prev, d.message]);
+        lastTsRef.current = d.message.createdAt;
       }
     } finally { setSending(false); }
   }
@@ -352,8 +375,13 @@ export default function ChatApp({ currentUserId }: Props) {
                           </div>
                         ) : (
                           <>
-                            <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>
+                            {m.audioUrl && (
+                              <audio controls preload="metadata" src={m.audioUrl}
+                                className="block max-w-full mb-1" style={{ minWidth: "12rem" }} />
+                            )}
+                            {m.text && <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>}
                             <p className="text-[10px] opacity-60 mt-0.5 text-right">
+                              {m.audioUrl && typeof m.audioDurationSec === "number" && `🎤 ${m.audioDurationSec}s · `}
                               {new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                               {m.editedAt && " · edited"}
                             </p>
@@ -366,9 +394,10 @@ export default function ChatApp({ currentUserId }: Props) {
               })}
             </div>
 
-            <form onSubmit={send} className="p-2 border-t border-(--border) flex gap-2">
+            <form onSubmit={send} className="p-2 border-t border-(--border) flex gap-2 items-center">
+              <VoiceRecorder compact disabled={sending} onUploaded={sendVoice} />
               <input value={text} onChange={(e) => setText(e.target.value)}
-                placeholder="Type a message…" disabled={sending} maxLength={4000}
+                placeholder="Type a message or tap 🎤 to record…" disabled={sending} maxLength={4000}
                 className="flex-1 px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
               <button type="submit" disabled={sending || !text.trim()}
                 className="px-3 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast) disabled:opacity-40"

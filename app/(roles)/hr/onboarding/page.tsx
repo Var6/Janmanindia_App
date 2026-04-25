@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/components/hr/OnboardingDocsFields";
 
 type StaffUser = {
   _id: string; name: string; email: string; phone?: string; role: string;
@@ -37,6 +38,7 @@ export default function OnboardingPage() {
   const [success, setSuccess] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [assetsByEmployee, setAssetsByEmployee] = useState<Record<string, Asset[]>>({});
+  const [docs, setDocs] = useState<OnboardingDocs>(EMPTY_DOCS);
 
   const loadStaff = useCallback(async () => {
     setLoading(true);
@@ -62,6 +64,13 @@ export default function OnboardingPage() {
     setError(""); setSuccess("");
     const fd = new FormData(e.currentTarget);
     try {
+      const onboardingPayload =
+        docs.panUrl || docs.aadharUrl || docs.cvUrl ||
+        docs.priorExperience || docs.bankAccount.accountNumber ||
+        docs.academicDocs.length || docs.otherDocs.length || docs.emergencyContact.name
+          ? docs
+          : undefined;
+
       const res = await fetch("/api/hr/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,6 +84,7 @@ export default function OnboardingPage() {
           barCouncilId: fd.get("barCouncilId"),
           district: fd.get("district"),
           city: fd.get("city"),
+          onboardingDocs: onboardingPayload,
         }),
       });
       const d = await res.json();
@@ -86,6 +96,7 @@ export default function OnboardingPage() {
         setTab("active");
         setExpanded(d.user._id);
         (e.target as HTMLFormElement).reset();
+        setDocs(EMPTY_DOCS);
       }
     } catch {
       setError("Network error.");
@@ -217,6 +228,8 @@ export default function OnboardingPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
           </div>
+
+          <OnboardingDocsFields value={docs} onChange={setDocs} />
 
           <button type="submit" disabled={submitting}
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-(--accent-contrast) disabled:opacity-60"

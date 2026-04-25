@@ -10,6 +10,18 @@ export type Role =
   | "director"
   | "superadmin";
 
+export interface IOnboardingDocs {
+  panUrl?: string;
+  aadharUrl?: string;
+  bankAccount?: { holder?: string; accountNumber?: string; ifsc?: string; bankName?: string };
+  cvUrl?: string;
+  academicDocs?: { label: string; url: string }[];
+  priorExperience?: string;
+  emergencyContact?: { name?: string; phone?: string; relation?: string };
+  otherDocs?: { label: string; url: string }[];
+  submittedAt?: Date;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -22,6 +34,7 @@ export interface IUser extends Document {
   employeeId?: string;
   joinedAt?: Date;
   exitedAt?: Date;
+  onboardingDocs?: IOnboardingDocs;
   communityProfile?: {
     govtIdUrl?: string;
     govtIdType?: "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "Other";
@@ -107,6 +120,30 @@ const litigationProfileSchema = new Schema(
   { _id: false }
 );
 
+const onboardingDocsSchema = new Schema(
+  {
+    panUrl:    { type: String, trim: true },
+    aadharUrl: { type: String, trim: true },
+    bankAccount: {
+      holder:        { type: String, trim: true },
+      accountNumber: { type: String, trim: true },
+      ifsc:          { type: String, trim: true, uppercase: true },
+      bankName:      { type: String, trim: true },
+    },
+    cvUrl: { type: String, trim: true },
+    academicDocs: [{ label: String, url: String }],
+    priorExperience: { type: String, trim: true },
+    emergencyContact: {
+      name:     { type: String, trim: true },
+      phone:    { type: String, trim: true },
+      relation: { type: String, trim: true },
+    },
+    otherDocs:   [{ label: String, url: String }],
+    submittedAt: Date,
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
@@ -126,6 +163,7 @@ const userSchema = new Schema<IUser>(
     communityProfile: communityProfileSchema,
     socialWorkerProfile: socialWorkerProfileSchema,
     litigationProfile: litigationProfileSchema,
+    onboardingDocs: onboardingDocsSchema,
   },
   { timestamps: true }
 );

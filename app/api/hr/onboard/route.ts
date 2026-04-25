@@ -11,9 +11,21 @@ export async function POST(req: NextRequest) {
   try {
     await requireRole("hr", "director", "superadmin");
     const body = await req.json();
-    const { name, email, password, role, phone, project, barCouncilId, district, city } = body as {
+    const {
+      name, email, password, role, phone, project, barCouncilId, district, city,
+      onboardingDocs,
+    } = body as {
       name?: string; email?: string; password?: string; role?: string; phone?: string; project?: string;
       barCouncilId?: string; district?: string; city?: string;
+      onboardingDocs?: {
+        panUrl?: string; aadharUrl?: string;
+        bankAccount?: { holder?: string; accountNumber?: string; ifsc?: string; bankName?: string };
+        cvUrl?: string;
+        academicDocs?: { label: string; url: string }[];
+        priorExperience?: string;
+        emergencyContact?: { name?: string; phone?: string; relation?: string };
+        otherDocs?: { label: string; url: string }[];
+      };
     };
 
     if (!name?.trim() || !email?.trim() || !password) {
@@ -62,6 +74,13 @@ export async function POST(req: NextRequest) {
     if (role === "socialworker") {
       userData.socialWorkerProfile = {
         avgResolutionTimeDays: 0, openTickets: 0, resolvedTickets: 0, slaBreaches: 0,
+      };
+    }
+
+    if (onboardingDocs) {
+      userData.onboardingDocs = {
+        ...onboardingDocs,
+        submittedAt: new Date(),
       };
     }
 

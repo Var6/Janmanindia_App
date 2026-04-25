@@ -135,12 +135,16 @@ const appointmentSchema = new mongoose.Schema(
     community: mongoose.Schema.Types.ObjectId,
     socialWorker: mongoose.Schema.Types.ObjectId,
     litigationMember: mongoose.Schema.Types.ObjectId,
+    requester: mongoose.Schema.Types.ObjectId,
+    requestee: mongoose.Schema.Types.ObjectId,
     requestedAt: { type: Date, default: Date.now },
     proposedDate: Date,
+    endDate: Date,
     status: { type: String, default: "pending_sw" },
     reason: String,
     swNotes: String,
     litigationNotes: String,
+    responseNotes: String,
   },
   { timestamps: true }
 );
@@ -148,6 +152,7 @@ const appointmentSchema = new mongoose.Schema(
 const eodReportSchema = new mongoose.Schema(
   {
     submittedBy: mongoose.Schema.Types.ObjectId,
+    submitterRole: String,
     date: Date,
     summary: String,
     hoursWorked: Number,
@@ -155,7 +160,24 @@ const eodReportSchema = new mongoose.Schema(
     expenses: [{ description: String, amount: Number, receiptUrl: String }],
     invoiceUrl: String,
     invoiceStatus: { type: String, default: "pending" },
+    hrVerifiedBy: mongoose.Schema.Types.ObjectId,
+    hrVerifiedAt: Date,
+    hrNotes: String,
+    finalApprovedBy: mongoose.Schema.Types.ObjectId,
+    finalApprovedAt: Date,
+    approvalNotes: String,
+    rejectionReason: String,
     reviewedBy: mongoose.Schema.Types.ObjectId,
+  },
+  { timestamps: true }
+);
+
+const headLawyerSchema = new mongoose.Schema(
+  {
+    district: { type: String, unique: true },
+    user: mongoose.Schema.Types.ObjectId,
+    assignedBy: mongoose.Schema.Types.ObjectId,
+    notes: String,
   },
   { timestamps: true }
 );
@@ -375,6 +397,63 @@ const Conversation     = mongoose.models.Conversation     ?? mongoose.model("Con
 const Message          = mongoose.models.Message          ?? mongoose.model("Message", messageSchema);
 const CarePlan         = mongoose.models.CarePlan         ?? mongoose.model("CarePlan", carePlanSchema);
 const TrainingSession  = mongoose.models.TrainingSession  ?? mongoose.model("TrainingSession", trainingSessionSchema);
+const HeadLawyer       = mongoose.models.HeadLawyer       ?? mongoose.model("HeadLawyer", headLawyerSchema);
+
+// Project + Expense — finance ledger
+const projectSchema = new mongoose.Schema(
+  {
+    code:        { type: String, unique: true, uppercase: true },
+    name:        String,
+    description: String,
+    status:      { type: String, default: "active" },
+    startDate:   Date,
+    endDate:     Date,
+    totalBudget: { type: Number, default: 0 },
+    allocations: [{
+      source: String,
+      amount: Number,
+      receivedAt: Date,
+      notes: String,
+    }],
+    manager:   mongoose.Schema.Types.ObjectId,
+    createdBy: mongoose.Schema.Types.ObjectId,
+  },
+  { timestamps: true }
+);
+const expenseDecisionSchema = new mongoose.Schema({
+  by: mongoose.Schema.Types.ObjectId,
+  at: { type: Date, default: Date.now },
+  notes: String,
+}, { _id: false });
+const expenseSchema = new mongoose.Schema(
+  {
+    project:       mongoose.Schema.Types.ObjectId,
+    category:      String,
+    title:         String,
+    description:   String,
+    amount:        Number,
+    currency:      { type: String, default: "INR" },
+    receiptUrl:    String,
+    vendor:        String,
+    incurredAt:    Date,
+    status:        { type: String, default: "submitted" },
+    submittedBy:   mongoose.Schema.Types.ObjectId,
+    submittedRole: String,
+    submittedAt:   { type: Date, default: Date.now },
+    hrVerification:    expenseDecisionSchema,
+    directorApproval:  expenseDecisionSchema,
+    payment:           expenseDecisionSchema,
+    rejection: {
+      stage: String,
+      by: mongoose.Schema.Types.ObjectId,
+      at: Date,
+      notes: String,
+    },
+  },
+  { timestamps: true }
+);
+const Project = mongoose.models.Project ?? mongoose.model("Project", projectSchema);
+const Expense = mongoose.models.Expense ?? mongoose.model("Expense", expenseSchema);
 
 // ── Run ─────────────────────────────────────────────────────────────────────
 async function run() {
@@ -778,15 +857,26 @@ async function run() {
   ]);
   console.log(`Appointments: ${appts.length} inserted`);
 
-  // EOD Reports — invoice review by superadmin in committed seed
+  // EOD Reports — mix of SW and litigation invoices showing the new approval flow
   await EodReport.deleteMany({ summary: /dev seed/i });
   const eods = await EodReport.insertMany([
-    { submittedBy: swId,    date: new Date("2026-04-21"), summary: "Visited 3 clients in Karol Bagh area. Filed FIR paperwork for DEV-CRM-001. Dev seed.", hoursWorked: 8, ticketsWorkedOn: [case1Id], expenses: [{ description: "Auto fare to Karol Bagh PS", amount: 120 }, { description: "Document photocopies", amount: 45 }], invoiceStatus: "pending" },
-    { submittedBy: swId,    date: new Date("2026-04-20"), summary: "Coordination meeting with litigation team. Client follow-up calls. Dev seed.", hoursWorked: 7, ticketsWorkedOn: [case1Id, case2Id], expenses: [{ description: "Metro travel", amount: 60 }], invoiceUrl: "https://example.com/invoice-sw-apr20.pdf", invoiceStatus: "approved", reviewedBy: superId },
-    { submittedBy: anitaId, date: new Date("2026-04-21"), summary: "Home visit to Priya Sharma. Collected eviction notice and rent receipts. Dev seed.", hoursWorked: 6, ticketsWorkedOn: [case2Id], expenses: [{ description: "Cab to client location", amount: 180 }, { description: "Notarisation fee", amount: 200 }], invoiceStatus: "pending" },
-    { submittedBy: anitaId, date: new Date("2026-04-19"), summary: "Community outreach camp at Dharavi. 12 new community members registered. Dev seed.", hoursWorked: 9, ticketsWorkedOn: [], expenses: [{ description: "Pamphlet printing", amount: 350 }, { description: "Travel", amount: 90 }], invoiceStatus: "rejected", reviewedBy: superId },
+    // SW pending — HR will verify+approve in one step
+    { submittedBy: swId,    submitterRole: "socialworker", date: new Date("2026-04-21"), summary: "Visited 3 clients in Karol Bagh area. Filed FIR paperwork for DEV-CRM-001. Dev seed.", hoursWorked: 8, ticketsWorkedOn: [case1Id], expenses: [{ description: "Auto fare to Karol Bagh PS", amount: 120 }, { description: "Document photocopies", amount: 45 }], invoiceStatus: "pending" },
+    // SW approved
+    { submittedBy: swId,    submitterRole: "socialworker", date: new Date("2026-04-20"), summary: "Coordination meeting with litigation team. Client follow-up calls. Dev seed.", hoursWorked: 7, ticketsWorkedOn: [case1Id, case2Id], expenses: [{ description: "Metro travel", amount: 60 }], invoiceUrl: "https://example.com/invoice-sw-apr20.pdf", invoiceStatus: "approved", hrVerifiedBy: hrId, hrVerifiedAt: new Date("2026-04-21"), finalApprovedBy: hrId, finalApprovedAt: new Date("2026-04-21"), reviewedBy: hrId },
+    { submittedBy: anitaId, submitterRole: "socialworker", date: new Date("2026-04-21"), summary: "Home visit to Priya Sharma. Collected eviction notice and rent receipts. Dev seed.", hoursWorked: 6, ticketsWorkedOn: [case2Id], expenses: [{ description: "Cab to client location", amount: 180 }, { description: "Notarisation fee", amount: 200 }], invoiceStatus: "pending" },
+    { submittedBy: anitaId, submitterRole: "socialworker", date: new Date("2026-04-19"), summary: "Community outreach camp at Dharavi. 12 new community members registered. Dev seed.", hoursWorked: 9, ticketsWorkedOn: [], expenses: [{ description: "Pamphlet printing", amount: 350 }, { description: "Travel", amount: 90 }], invoiceStatus: "rejected", rejectionReason: "Pamphlet printing exceeds policy cap. Resubmit with vendor invoice.", reviewedBy: hrId },
+    // Litigation pending — HR will forward to head lawyer
+    { submittedBy: litigId, submitterRole: "litigation", date: new Date("2026-04-22"), summary: "Court attendance for DEV-CRM-001 chargesheet review at Patiala House. Dev seed.", hoursWorked: 6, ticketsWorkedOn: [case1Id], expenses: [{ description: "Cab to court", amount: 320 }, { description: "Court filing fee", amount: 600 }], invoiceStatus: "pending" },
+    // Litigation HR-verified — sitting in head lawyer queue
+    { submittedBy: vikramId, submitterRole: "litigation", date: new Date("2026-04-20"), summary: "Drafted writ rejoinder for DEV-HC-001 + Andheri court filing. Dev seed.", hoursWorked: 8, ticketsWorkedOn: [case2Id], expenses: [{ description: "Court fee", amount: 1200 }, { description: "Photocopy + binding", amount: 220 }], invoiceStatus: "hr_verified", hrVerifiedBy: hrId, hrVerifiedAt: new Date("2026-04-22"), hrNotes: "Receipts attached. Forward to head lawyer." },
   ]);
-  console.log(`EOD Reports:  ${eods.length} inserted`);
+  console.log(`EOD Reports:  ${eods.length} inserted (mix of SW + litigation, multiple stages)`);
+
+  // Head Lawyer assignments — Dev Litigation heads Delhi (so they can approve litigation invoices from Delhi)
+  await HeadLawyer.deleteMany({ notes: /dev seed/i });
+  await HeadLawyer.create({ district: "Delhi", user: litigId, assignedBy: superId, notes: "Dev seed" });
+  console.log("Head Lawyers:  Dev Litigation → Delhi (Mumbai litigation invoices fall back to director)");
 
   // SOS Alerts
   await SosAlert.deleteMany({ description: /dev seed/i });
@@ -1060,6 +1150,127 @@ async function run() {
     }
   );
   console.log("PLV requests:  Priya pending, Rajan approved");
+
+  // Projects + expense ledger — superadmin creates, administrator submits,
+  // pipeline shown across submitted / hr_verified / director_approved / paid / rejected.
+  await Project.deleteMany({ code: { $in: ["JNA", "DLF", "COR"] } });
+  const projects = await Project.insertMany([
+    {
+      code: "JNA", name: "Janman Bihar — Legal Aid Pilot",
+      description: "Pilot project across Patna and surrounding districts. Free FIR + writ assistance for marginalised community members.",
+      status: "active", startDate: new Date("2026-01-15"),
+      totalBudget: 1500000,
+      allocations: [
+        { source: "Tata Trusts grant",      amount: 1000000, receivedAt: new Date("2026-01-10"), notes: "Year-1 disbursement. Dev seed." },
+        { source: "Azim Premji Foundation", amount:  500000, receivedAt: new Date("2026-03-01"), notes: "Top-up for outreach. Dev seed." },
+      ],
+      manager: superId, createdBy: superId,
+    },
+    {
+      code: "DLF", name: "Delhi Field Operations",
+      description: "Court-attendance, FIR follow-ups, and survivor support across Delhi NCR.",
+      status: "active", startDate: new Date("2026-02-01"),
+      totalBudget: 800000,
+      allocations: [
+        { source: "Ford Foundation", amount: 800000, receivedAt: new Date("2026-01-25"), notes: "Annual. Dev seed." },
+      ],
+      manager: superId, createdBy: superId,
+    },
+    {
+      code: "COR", name: "Core Organisation",
+      description: "Central HR, finance, and admin overheads — Patna HQ.",
+      status: "active", startDate: new Date("2026-01-01"),
+      totalBudget: 600000,
+      allocations: [
+        { source: "Internal reserves", amount: 600000, receivedAt: new Date("2026-01-01"), notes: "Operating fund. Dev seed." },
+      ],
+      manager: superId, createdBy: superId,
+    },
+  ]);
+  console.log(`Projects:      ${projects.length} inserted`);
+
+  const projJna = projects.find(p => p.code === "JNA");
+  const projDlf = projects.find(p => p.code === "DLF");
+  const projCor = projects.find(p => p.code === "COR");
+
+  // Pull administrator from DB if seeded earlier (privileged seed runs at end of FIRST run);
+  // on second+ run they exist by now and we wire expense submitters to them.
+  const adminUser = await User.findOne({ email: "administrator@dev.janmanindia.in" }).lean();
+  const adminId = adminUser?._id ?? hrId;
+
+  await Expense.deleteMany({ description: /dev seed/i });
+  const expenses = await Expense.insertMany([
+    // Submitted — admin awaits HR verify
+    { project: projCor._id, category: "admin", title: "AC repair — Patna office",
+      description: "AC unit serviced + gas refilled. Dev seed.",
+      amount: 4200, vendor: "Cool Air Services", incurredAt: new Date("2026-04-22"),
+      status: "submitted",
+      submittedBy: adminId,
+      submittedRole: "administrator", submittedAt: new Date("2026-04-23") },
+
+    { project: projCor._id, category: "admin", title: "Stationery refill",
+      description: "Pens, registers, printer paper. Dev seed.",
+      amount: 1850, vendor: "Bharat Stationery", incurredAt: new Date("2026-04-20"),
+      status: "submitted",
+      submittedBy: adminId,
+      submittedRole: "administrator", submittedAt: new Date("2026-04-21") },
+
+    // HR-verified — director awaits
+    { project: projJna._id, category: "training", title: "RTI training venue + refreshments",
+      description: "Hall booking, mic, biscuits + tea for 40 attendees. Dev seed.",
+      amount: 8500, vendor: "Patna Community Hall", incurredAt: new Date("2026-04-15"),
+      status: "hr_verified",
+      submittedBy: anitaId, submittedRole: "socialworker", submittedAt: new Date("2026-04-18"),
+      hrVerification: { by: hrId, at: new Date("2026-04-19"), notes: "Receipts attached." } },
+
+    // Director-approved — finance can pay
+    { project: projDlf._id, category: "travel", title: "Court travel — Tihar visits",
+      description: "3 trips to Tihar Road for DEV-CRM-002 follow-up. Dev seed.",
+      amount: 3200, vendor: "Ola", incurredAt: new Date("2026-04-12"),
+      status: "director_approved",
+      submittedBy: litigId, submittedRole: "litigation", submittedAt: new Date("2026-04-14"),
+      hrVerification:   { by: hrId,    at: new Date("2026-04-15") },
+      directorApproval: { by: superId, at: new Date("2026-04-16"), notes: "Within travel cap." } },
+
+    // Paid — flows into spent
+    { project: projJna._id, category: "exploration", title: "Field scoping — Purnia district",
+      description: "2-day field visit, 3 staff. Identified 18 cases. Dev seed.",
+      amount: 12400, vendor: "Travel + lodging", incurredAt: new Date("2026-03-28"),
+      status: "paid",
+      submittedBy: swId, submittedRole: "socialworker", submittedAt: new Date("2026-04-01"),
+      hrVerification:   { by: hrId,      at: new Date("2026-04-02") },
+      directorApproval: { by: superId,   at: new Date("2026-04-03") },
+      payment:          { by: financeId, at: new Date("2026-04-05"), notes: "Paid via NEFT." } },
+
+    { project: projCor._id, category: "admin", title: "Office furniture — 4 chairs",
+      description: "Replacements after old chairs broke. Dev seed.",
+      amount: 6800, vendor: "Furniture World", incurredAt: new Date("2026-03-15"),
+      status: "paid",
+      submittedBy: adminId,
+      submittedRole: "administrator", submittedAt: new Date("2026-03-16"),
+      hrVerification:   { by: hrId,      at: new Date("2026-03-17") },
+      directorApproval: { by: superId,   at: new Date("2026-03-18") },
+      payment:          { by: financeId, at: new Date("2026-03-20") } },
+
+    { project: projDlf._id, category: "staff", title: "Stipend — March outreach volunteers",
+      description: "₹500 stipend × 5 volunteers. Dev seed.",
+      amount: 2500, incurredAt: new Date("2026-03-31"),
+      status: "paid",
+      submittedBy: hrId, submittedRole: "hr", submittedAt: new Date("2026-04-01"),
+      hrVerification:   { by: hrId,      at: new Date("2026-04-01") },
+      directorApproval: { by: superId,   at: new Date("2026-04-02") },
+      payment:          { by: financeId, at: new Date("2026-04-03") } },
+
+    // Rejected — for completeness
+    { project: projCor._id, category: "other", title: "Diwali snacks for office",
+      description: "Sweets for staff. Dev seed.",
+      amount: 1200, incurredAt: new Date("2026-04-05"),
+      status: "rejected",
+      submittedBy: adminId,
+      submittedRole: "administrator", submittedAt: new Date("2026-04-06"),
+      rejection: { stage: "hr", by: hrId, at: new Date("2026-04-07"), notes: "Personal — not eligible under any project budget." } },
+  ]);
+  console.log(`Expenses:      ${expenses.length} inserted (submitted/verified/approved/paid/rejected mix)`);
 
   console.log(`\nAll done. Password for all dev users: ${DEV_PASSWORD}`);
 

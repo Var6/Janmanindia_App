@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { CASE_TYPES, lookupCaseType } from "@/lib/case-types";
 
 type Community = { _id: string; name: string; email: string; phone?: string };
 
@@ -14,7 +15,7 @@ export default function CreateCaseForm() {
   const [searching, setSearching] = useState(false);
   const [community, setCommunity]     = useState<Community | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
-  const [path, setPath]           = useState<"criminal" | "highcourt">("criminal");
+  const [caseType, setCaseType]   = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
   const debounceRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -28,7 +29,7 @@ export default function CreateCaseForm() {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res  = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=user`);
+        const res  = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=community`);
         const data = await res.json();
         setResults(data.users ?? []);
       } catch {
@@ -45,21 +46,29 @@ export default function CreateCaseForm() {
     setResults([]);
     setCommunity(null);
     setCaseTitle("");
-    setPath("criminal");
+    setCaseType("");
     setError("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!community) { setError("Please select a community first."); return; }
+    if (!community) { setError("Please select a community member first."); return; }
     if (!caseTitle.trim()) { setError("Case title is required."); return; }
+    if (!caseType) { setError("Pick a case type so we can route the workflow."); return; }
+    const meta = lookupCaseType(caseType);
+    if (!meta) { setError("That case type isn't recognised — pick one from the list."); return; }
     setSubmitting(true);
     setError("");
     try {
       const res = await fetch("/api/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseTitle: caseTitle.trim(), path, communityId: community._id }),
+        body: JSON.stringify({
+          caseTitle: caseTitle.trim(),
+          caseType,
+          path: meta.path,
+          communityId: community._id,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -174,26 +183,31 @@ export default function CreateCaseForm() {
             />
           </div>
 
-          {/* Path */}
+          {/* Case type */}
           <div>
-            <label className="block text-sm font-medium text-(--text) mb-1.5">Case Type</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["criminal", "highcourt"] as const).map((p) => (
-                <button key={p} type="button"
-                  onClick={() => setPath(p)}
-                  className="py-2.5 px-4 rounded-xl border text-sm font-medium transition-all"
-                  style={{
-                    borderColor:  path === p ? "var(--accent)" : "var(--border)",
-                    background:   path === p ? "color-mix(in srgb,var(--accent) 10%,transparent)" : "var(--bg)",
-                    color:        path === p ? "var(--accent)" : "var(--muted)",
-                  }}>
-                  {p === "criminal" ? "Criminal" : "High Court"}
-                </button>
+            <label className="block text-sm font-medium text-(--text) mb-1.5">
+              Case Type <span style={{ color: "var(--error)" }}>*</span>
+            </label>
+            <select value={caseType} onChange={(e) => setCaseType(e.target.value)} required
+              className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+              <option value="" disabled>Choose a case type…</option>
+              {CASE_TYPES.map((g) => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.types.map((t) => (
+                    <option key={t.code + g.group} value={t.code}>
+                      {t.code} — {t.name}{t.hi ? ` · ${t.hi}` : ""}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
-            </div>
+            </select>
+            <p className="text-[11px] text-(--muted) mt-1">
+              We'll route the workflow (criminal / high court) automatically based on the selected type.
+            </p>
           </div>
 
-          <button type="submit" disabled={submitting || !community || !caseTitle.trim()}
+          <button type="submit" disabled={submitting || !community || !caseTitle.trim() || !caseType}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {submitting ? "Creating…" : "Create Case"}

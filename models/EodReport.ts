@@ -1,7 +1,16 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+/**
+ * Invoice approval flow:
+ *   pending  →  HR verifies        →  hr_verified
+ *   hr_verified  →  head lawyer / director approves  →  approved
+ *   any state may end at  →  rejected
+ *
+ * For social workers HR verifies AND approves in a single step (skips head-lawyer hop).
+ */
 export interface IEodReport extends Document {
   submittedBy: mongoose.Types.ObjectId;
+  submitterRole?: "socialworker" | "litigation" | string;
   date: Date;
   summary: string;
   hoursWorked: number;
@@ -12,8 +21,17 @@ export interface IEodReport extends Document {
     receiptUrl?: string;
   }[];
   invoiceUrl?: string;
-  invoiceStatus: "pending" | "approved" | "rejected";
-  reviewedBy?: mongoose.Types.ObjectId;
+  invoiceStatus: "pending" | "hr_verified" | "approved" | "rejected";
+  hrVerifiedBy?: mongoose.Types.ObjectId;
+  hrVerifiedAt?: Date;
+  hrNotes?: string;
+  finalApprovedBy?: mongoose.Types.ObjectId;
+  finalApprovedAt?: Date;
+  approvalNotes?: string;
+  rejectionReason?: string;
+  reviewedBy?: mongoose.Types.ObjectId; // legacy — kept for back-compat in older UIs
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const expenseSchema = new Schema(
@@ -36,10 +54,18 @@ const eodReportSchema = new Schema<IEodReport>(
     invoiceUrl: String,
     invoiceStatus: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "hr_verified", "approved", "rejected"],
       default: "pending",
     },
-    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    submitterRole:    { type: String, trim: true },
+    hrVerifiedBy:     { type: Schema.Types.ObjectId, ref: "User" },
+    hrVerifiedAt:     Date,
+    hrNotes:          String,
+    finalApprovedBy:  { type: Schema.Types.ObjectId, ref: "User" },
+    finalApprovedAt:  Date,
+    approvalNotes:    String,
+    rejectionReason:  String,
+    reviewedBy:       { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

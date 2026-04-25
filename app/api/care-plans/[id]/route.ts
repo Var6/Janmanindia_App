@@ -57,7 +57,8 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       });
     }
     if (completeGoal) {
-      const g = plan.goals.id(completeGoal);
+      const goals = plan.goals as unknown as mongoose.Types.DocumentArray<typeof plan.goals[number]>;
+      const g = goals.id(completeGoal);
       if (g) {
         g.completed = true;
         g.completedAt = new Date();

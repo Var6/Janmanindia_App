@@ -56,7 +56,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     const body = await req.json();
     const text = String(body.text ?? "").trim();
-    if (!text) return NextResponse.json({ error: "Empty message" }, { status: 400 });
+    const audioUrl = body.audioUrl ? String(body.audioUrl) : undefined;
+    const audioDurationSec = typeof body.audioDurationSec === "number" ? Math.max(0, Math.floor(body.audioDurationSec)) : undefined;
+
+    if (!text && !audioUrl) return NextResponse.json({ error: "Empty message" }, { status: 400 });
     if (text.length > 4000) return NextResponse.json({ error: "Too long" }, { status: 400 });
 
     await connectDB();
@@ -68,11 +71,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       conversation: conv._id,
       sender: me,
       text,
+      audioUrl,
+      audioDurationSec,
       readBy: [me],
     });
 
     conv.lastMessageAt = new Date();
-    conv.lastMessagePreview = text.slice(0, 200);
+    conv.lastMessagePreview = audioUrl
+      ? `🎤 Voice (${audioDurationSec ?? 0}s)${text ? ` · ${text.slice(0, 120)}` : ""}`
+      : text.slice(0, 200);
     await conv.save();
 
     const populated = await msg.populate("sender", "name role");

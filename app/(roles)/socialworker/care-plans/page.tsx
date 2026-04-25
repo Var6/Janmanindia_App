@@ -45,8 +45,8 @@ export default async function SWCarePlansIndex() {
         </p>
       </div>
 
-      <Section title="Active" plans={active} />
-      {others.length > 0 && <Section title="On hold / completed / cancelled" plans={others} />}
+      <Section title="Active" plans={active as unknown as PlanLean[]} />
+      {others.length > 0 && <Section title="On hold / completed / cancelled" plans={others as unknown as PlanLean[]} />}
 
       {plans.length === 0 && (
         <div className="py-16 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>

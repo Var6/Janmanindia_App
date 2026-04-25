@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
     const report = await EodReport.create({
       submittedBy: session.id,
+      submitterRole: session.role,
       date: new Date(body.date),
       summary: body.summary.trim(),
       hoursWorked: body.hoursWorked,
