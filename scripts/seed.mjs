@@ -28,6 +28,14 @@ if (existsSync(ENV_LOCAL) && !process.env.MONGODB_URI) {
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, "");
   }
 }
+// HARD STOP: this seed creates throwaway accounts with a known password and
+// must never run against the production database. Bootstrap real users via
+// scripts/bootstrap-superadmin.mjs and HR onboarding instead.
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_SEED !== "yes") {
+  console.error("Refusing to run dev seed in NODE_ENV=production. Set ALLOW_DEV_SEED=yes only if you really mean to.");
+  process.exit(1);
+}
+
 const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://localhost:27017/janmandb";
 const DEV_PASSWORD = "Dev@1234";
 

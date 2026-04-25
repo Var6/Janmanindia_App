@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "curl -s -X POST http://localhost:3000/api/dev/seed | jq . || curl -s -X POST http://localhost:3000/api/dev/seed"
+    "seed": "node scripts/seed.mjs",
+    "bootstrap-superadmin": "node scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@vercel/blob": "^2.3.3",
     "airtable": "^0.12.2",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.38.0",

@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
 
 # vercel
 .vercel
@@ -42,3 +43,10 @@ next-env.d.ts
 
 # privileged seeds (director + administrator only — keep out of git)
 /scripts/seed-privileged.mjs
+
+# local-only credentials cheatsheet — keep on developer machines, never commit
+/CREDENTIALS.txt
+
+# uploaded files — local-FS dev fallback only; production uses Vercel Blob
+/public/uploads/*
+!/public/uploads/.gitkeep

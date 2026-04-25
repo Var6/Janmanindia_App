@@ -5,7 +5,10 @@ import { cookies } from "next/headers";
 const COOKIE_NAME = "auth_token";
 
 function getSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET ?? "changeme-at-least-32-chars-long!!";
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("JWT_SECRET environment variable must be set to a string of at least 32 characters.");
+  }
   return new TextEncoder().encode(secret);
 }
 

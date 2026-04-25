@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+import { put } from "@vercel/blob";
 import { getSessionFromCookies } from "@/lib/auth";
 
 // Images for avatars / case photos, PDFs + Office docs for case files / IDs / CVs,
@@ -15,7 +16,7 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "audio/webm", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a",
 ];
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB — accommodates scanned PDFs and longer voice notes
+const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -37,15 +38,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be under 25 MB" }, { status: 400 });
     }
 
-    const ext = file.name.split(".").pop() ?? "jpg";
+    const ext = file.name.split(".").pop() ?? "bin";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
+    // Production: Vercel Blob (BLOB_READ_WRITE_TOKEN is auto-injected on Vercel
+    // when a Blob store is connected to the project).
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(`uploads/${filename}`, file, {
+        access: "public",
+        contentType: file.type,
+      });
+      return NextResponse.json({ url: blob.url });
+    }
+
+    // Local dev fallback: write under /public/uploads/ so the file is served
+    // by Next's static handler. Will not survive serverless deploys — this
+    // path is dev-only.
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
-
     const bytes = await file.arrayBuffer();
     await writeFile(path.join(uploadsDir, filename), Buffer.from(bytes));
-
     return NextResponse.json({ url: `/uploads/${filename}` });
   } catch (err) {
     console.error("Upload error:", err);

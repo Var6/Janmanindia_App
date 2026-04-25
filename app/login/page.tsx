@@ -7,25 +7,12 @@ import Field, { Input } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import AnimatedShinyText from "@/components/ui/AnimatedShinyText";
 
-const DEV_ACCOUNTS = [
-  { role: "Community",      email: "community@dev.janmanindia.in",     password: "Dev@1234", dot: "#3b82f6" },
-  { role: "Social Worker",  email: "sw@dev.janmanindia.in",            password: "Dev@1234", dot: "#16a34a" },
-  { role: "Litigation",     email: "litigation@dev.janmanindia.in",    password: "Dev@1234", dot: "#6366f1" },
-  { role: "HR",             email: "hr@dev.janmanindia.in",            password: "Dev@1234", dot: "#f59e0b" },
-  { role: "Finance",        email: "finance@dev.janmanindia.in",       password: "Dev@1234", dot: "#14b8a6" },
-  { role: "Administrator",  email: "administrator@dev.janmanindia.in", password: "Dev@1234", dot: "#ef4444" },
-  { role: "Director",       email: "director@dev.janmanindia.in",      password: "Dev@1234", dot: "#a855f7" },
-  { role: "Super Admin",    email: "superadmin@dev.janmanindia.in",    password: "Dev@1234", dot: "#6b7280" },
-];
-
 export default function LoginPage() {
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]   = useState(false);
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
-
-  function fill(e: string, p: string) { setEmail(e); setPassword(p); setError(""); }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,7 +53,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
+        <div className="max-w-xl mx-auto">
           {/* Login card */}
           <section className="relative overflow-hidden rounded-2xl glass p-7">
             <Spotlight color="var(--accent)" />
@@ -129,50 +116,6 @@ export default function LoginPage() {
               </div>
             </div>
           </section>
-
-          {/* Dev accounts */}
-          <aside className="space-y-3">
-            <div className="glass rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-sm font-bold text-(--text)">Dev accounts</h2>
-                  <p className="text-xs text-(--muted) mt-0.5">Tap one to autofill</p>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide"
-                  style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
-                  Dev only
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                {DEV_ACCOUNTS.map((acc) => {
-                  const selected = email === acc.email;
-                  return (
-                    <button key={acc.email} type="button" onClick={() => fill(acc.email, acc.password)}
-                      className="w-full text-left rounded-xl border px-3 py-2 transition-all"
-                      style={{
-                        borderColor: selected ? "var(--accent)" : "color-mix(in srgb, var(--border) 60%, transparent)",
-                        background: selected
-                          ? "color-mix(in srgb, var(--accent) 12%, transparent)"
-                          : "color-mix(in srgb, var(--bg) 50%, transparent)",
-                      }}>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: acc.dot }} />
-                        <span className="text-sm font-semibold text-(--text)">{acc.role}</span>
-                        {selected && <span className="ml-auto text-xs" style={{ color: "var(--accent)" }}>✓</span>}
-                      </div>
-                      <p className="mt-0.5 text-[11px] font-mono text-(--muted) pl-4 truncate">{acc.email}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <p className="text-center text-xs text-(--muted)">
-              Or jump straight in via{" "}
-              <Link href="/dev" className="font-semibold" style={{ color: "var(--accent)" }}>/dev →</Link>
-            </p>
-          </aside>
         </div>
       </div>
     </main>
