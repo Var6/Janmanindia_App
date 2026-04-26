@@ -32,6 +32,10 @@ const SKIP_PREFIXES = [
   "/login",
   "/register",
   "/favicon.ico",
+  // Dev-branch only — the routes themselves are env-gated and refuse to act
+  // on the production host, so leaving these in the skip list is safe.
+  "/dev",
+  "/api/dev/",
 ];
 
 function getSecret(): Uint8Array {
