@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const path = searchParams.get("path");
+    const q = searchParams.get("q")?.trim();
     const limit = Math.min(Number(searchParams.get("limit") ?? "50"), 100);
     const skip = Number(searchParams.get("skip") ?? "0");
 
@@ -28,6 +29,13 @@ export async function GET(request: NextRequest) {
 
     if (status) filter.status = status;
     if (path) filter.path = path;
+
+    // Free-text search across caseNumber + caseTitle for typeahead pickers.
+    if (q && q.length >= 1) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(escaped, "i");
+      filter.$or = [{ caseNumber: re }, { caseTitle: re }];
+    }
 
     const [cases, total] = await Promise.all([
       Case.find(filter)
