@@ -80,7 +80,7 @@ interface Props {
 }
 
 export default function EodReportsPanel({
-  title = "EOD Reports & Invoices",
+  title = "Daily Report & Invoices",
   subtitle = "Submit your daily work report and expense claims for HR review.",
 }: Props) {
   const [reports, setReports]     = useState<Report[]>([]);
@@ -128,7 +128,7 @@ export default function EodReportsPanel({
       const safeName = (detail.submittedBy?.name ?? "report").replace(/[^a-z0-9]+/gi, "_");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `EOD_${safeName}_${dateStr}.pdf`;
+      a.href = url; a.download = `DailyReport_${safeName}_${dateStr}.pdf`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } finally {
@@ -197,7 +197,7 @@ export default function EodReportsPanel({
       } else {
         const d = await res.json();
         setReports((prev) => [d.report, ...prev]);
-        setSuccess("EOD report submitted successfully.");
+        setSuccess("Daily report submitted successfully.");
         setShowForm(false);
         setExpenses([{ description: "", amount: "" }]);
         setTimeout(() => setSuccess(""), 4000);
@@ -235,7 +235,7 @@ export default function EodReportsPanel({
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-2xl border p-6 space-y-5"
           style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-          <h2 className="font-semibold text-(--text)">End-of-Day Report</h2>
+          <h2 className="font-semibold text-(--text)">Daily Report</h2>
 
           {error && (
             <div className="p-3 rounded-lg text-sm"

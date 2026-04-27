@@ -212,12 +212,12 @@ export default async function FinanceDashboard() {
         )}
       </section>
 
-      {/* Existing EOD invoices summary (legacy view) */}
+      {/* Approved daily report invoices */}
       {eodApproved.length > 0 && (
         <section className="rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <header className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-semibold text-(--text)">Recent approved EOD invoices</h2>
-            <p className="text-xs text-(--muted) mt-0.5">From social workers and litigation members. These run on the separate invoice flow.</p>
+            <h2 className="font-semibold text-(--text)">Recent approved daily report invoices</h2>
+            <p className="text-xs text-(--muted) mt-0.5">From litigation members. These run on the separate invoice flow.</p>
           </header>
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {eodApproved.map(r => {

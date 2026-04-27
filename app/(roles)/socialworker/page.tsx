@@ -86,10 +86,10 @@ export default async function SocialWorkerDashboard() {
           <h1 className="text-2xl font-bold text-(--text)">Social Worker Dashboard</h1>
           <p className="text-sm text-(--muted) mt-0.5">Welcome back, {session.name}</p>
         </div>
-        <Link href="/socialworker/reports"
+        <Link href="/socialworker/daily-reports"
           className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-(--accent-contrast) hover:brightness-110 transition shrink-0"
           style={{ background: "var(--accent)" }}>
-          + EOD Report
+          + Daily Report
         </Link>
       </div>
 
@@ -248,7 +248,7 @@ export default async function SocialWorkerDashboard() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { href: "/socialworker/reports",      label: "Submit EOD Report", icon: "📄" },
+          { href: "/socialworker/daily-reports", label: "Daily Report",      icon: "📄" },
           { href: "/socialworker/media-scanning", label: "Scan Media",       icon: "📤" },
           { href: "/socialworker/queries",       label: "Queries Inbox",     icon: "💬" },
         ].map((link) => (

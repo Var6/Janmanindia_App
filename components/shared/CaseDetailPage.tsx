@@ -621,7 +621,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
 
       {tab === "icp" ? (
         c.community?._id ? (
-          <IcpForm caseId={c._id} canEdit={canManageCarePlan} />
+          <IcpForm caseId={c._id} canEdit={canManageCarePlan} caseNumber={c.caseNumber} caseTitle={c.caseTitle} />
         ) : (
           <p className="text-sm text-(--muted) px-1">No community member linked to this case yet.</p>
         )

@@ -48,7 +48,7 @@ export default async function FinanceSalariesPage() {
       <div>
         <h1 className="text-2xl font-bold text-(text)">Salaries</h1>
         <p className="text-sm text-(muted) mt-1">
-          Monthly salary overview based on approved EOD reports for {monthStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}.
+          Monthly salary overview based on approved daily reports for {monthStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export default async function FinanceSalariesPage() {
 
           <div className="p-4 rounded-xl bg-(accent)/5 border border-(accent)/20">
             <p className="text-xs text-(muted)">
-              Salary is calculated as <strong>Approved Hours × Hourly Rate + Approved Expenses</strong>. Only HR-approved EOD reports are counted. Contact Admin to adjust rates or disburse payments.
+              Salary is calculated as <strong>Approved Hours × Hourly Rate + Approved Expenses</strong>. Only HR-approved daily reports are counted. Contact Admin to adjust rates or disburse payments.
             </p>
           </div>
         </>

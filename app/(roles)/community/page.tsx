@@ -77,6 +77,13 @@ export default async function CommunityDashboard() {
           <p className="text-xs text-(--muted) mt-2">A social worker reviews and assigns a lawyer.</p>
         </BentoCard>
 
+        <BentoCard href="/community/speak-to-us" accent="#7c3aed"
+          icon="🎤"
+          title="Speak to Us"
+          description="Can't type? Record your voice — our team will listen and reach out.">
+          <p className="text-xs text-(--muted) mt-2">Works even if your account is not yet verified.</p>
+        </BentoCard>
+
         <BentoCard href="/community/sos" accent="#dc2626"
           icon="🚨"
           title="Emergency SOS"

@@ -61,7 +61,7 @@ export default function DailyReportsIndex() {
         <div>
           <h1 className="text-2xl font-bold text-(--text)">Daily Reports</h1>
           <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-            One end-of-day report per working day — covers cases handled, scheme linkages, counselling, legal-aid follow-ups,
+            One daily report per working day — covers cases handled, scheme linkages, counselling, legal-aid follow-ups,
             urgent escalations and supervisor review. Auto-derived counters keep filling minimal.
           </p>
         </div>

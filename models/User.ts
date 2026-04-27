@@ -28,6 +28,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: Role;
   phone?: string;
+  linkedinUrl?: string;
   avatarUrl?: string;
   isActive: boolean;
   lastLoginAt?: Date;
@@ -165,6 +166,7 @@ const userSchema = new Schema<IUser>(
       enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"],
     },
     phone: String,
+    linkedinUrl: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
     employeeId: { type: String, unique: true, sparse: true, trim: true },

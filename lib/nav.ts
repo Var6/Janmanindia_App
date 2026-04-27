@@ -12,12 +12,13 @@ const SHARED_ITEMS: NavItem[] = [
 /** Role-specific items, ordered top-to-bottom in the sidebar. */
 const ROLE_ITEMS: Record<string, NavItem[]> = {
   community: [
-    { href: "/community",              label: "Dashboard",    icon: "home"        },
-    { href: "/community/file-case",    label: "File a Case",  icon: "file-plus"   },
-    { href: "/community/sos",          label: "SOS",          icon: "bell"        },
-    { href: "/community/rtps",         label: "RTPS",         icon: "file-text"   },
-    { href: "/community/case-tracker", label: "Case Tracker", icon: "search"      },
-    { href: "/community/appointments", label: "Appointments", icon: "calendar"    },
+    { href: "/community",                label: "Dashboard",    icon: "home"        },
+    { href: "/community/file-case",      label: "File a Case",  icon: "file-plus"   },
+    { href: "/community/speak-to-us",    label: "Speak to Us",  icon: "mic"         },
+    { href: "/community/sos",            label: "SOS",          icon: "bell"        },
+    { href: "/community/rtps",           label: "RTPS",         icon: "file-text"   },
+    { href: "/community/case-tracker",   label: "Case Tracker", icon: "search"      },
+    { href: "/community/appointments",   label: "Appointments", icon: "calendar"    },
   ],
   socialworker: [
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
@@ -27,13 +28,13 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/socialworker/queries",         label: "Queries",        icon: "search"      },
     { href: "/socialworker/plv-requests",    label: "PLV Requests",   icon: "users"       },
     { href: "/socialworker/escalate",        label: "Escalate",       icon: "alert"       },
-    { href: "/socialworker/reports",         label: "EOD Reports",    icon: "document"    },
+    { href: "/socialworker/voice-messages",  label: "Voice Messages", icon: "mic"         },
     { href: "/socialworker/media-scanning",  label: "Media Scanning", icon: "upload"      },
   ],
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
     { href: "/litigation/cases",        label: "Cases",        icon: "briefcase" },
-    { href: "/litigation/reports",      label: "EOD Reports",  icon: "document"  },
+    { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
     { href: "/litigation/invoices",     label: "Invoice Approvals", icon: "receipt" },
     { href: "/litigation/appointments", label: "Appointments", icon: "calendar"  },
   ],

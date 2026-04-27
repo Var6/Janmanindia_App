@@ -185,11 +185,11 @@ export default function EodReportPdfDocument({ report }: Props) {
             <Text style={s.brand}>Janman People&apos;s Foundation</Text>
             <Text style={s.brandSub}>Jan Nyay Abhiyan — Bihar</Text>
           </View>
-          <Text style={[s.brandSub, { textAlign: "right" }]}>End-of-Day Report &amp; Expense Invoice</Text>
+          <Text style={[s.brandSub, { textAlign: "right" }]}>Daily Report &amp; Expense Invoice</Text>
         </View>
         <View style={s.divider} />
 
-        <Text style={s.title}>EOD Report — {fmtDate(report.date)}</Text>
+        <Text style={s.title}>Daily Report — {fmtDate(report.date)}</Text>
         <Text style={s.subtitle}>
           Report ID: {report._id ?? "—"} · Generated {new Date().toLocaleString("en-IN")}
         </Text>

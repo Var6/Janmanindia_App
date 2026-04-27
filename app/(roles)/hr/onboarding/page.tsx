@@ -5,7 +5,7 @@ import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/compone
 import { checkOnboardingDocs, missingOnboardingDocs, onboardingCompleteness, type OnboardingDocsLike } from "@/lib/onboarding-docs";
 
 type StaffUser = {
-  _id: string; name: string; email: string; phone?: string; role: string;
+  _id: string; name: string; email: string; phone?: string; linkedinUrl?: string; role: string;
   isActive: boolean; employeeId?: string; joinedAt?: string; createdAt: string;
   onboardingDocs?: OnboardingDocsLike;
 };
@@ -82,6 +82,7 @@ export default function OnboardingPage() {
           password: fd.get("password"),
           role: fd.get("role"),
           phone: fd.get("phone"),
+          linkedinUrl: fd.get("linkedinUrl") || undefined,
           project: fd.get("project"),
           barCouncilId: fd.get("barCouncilId"),
           district: fd.get("district"),
@@ -187,6 +188,11 @@ export default function OnboardingPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">LinkedIn Profile URL <span className="text-xs text-(--muted)">(optional)</span></label>
+              <input name="linkedinUrl" type="url" placeholder="https://linkedin.com/in/username"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">Role <span className="text-red-500">*</span></label>
               <select name="role" required defaultValue=""
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)">
@@ -275,6 +281,10 @@ export default function OnboardingPage() {
                       <p className="text-xs text-(--muted) mt-0.5">
                         {s.email}{s.phone ? ` · ${s.phone}` : ""}
                         {s.joinedAt ? ` · Joined ${new Date(s.joinedAt).toLocaleDateString("en-IN")}` : ""}
+                        {s.linkedinUrl && (
+                          <> · <a href={s.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                            className="underline underline-offset-2 hover:text-(--accent)">LinkedIn</a></>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

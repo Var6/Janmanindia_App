@@ -12,10 +12,10 @@ export async function POST(req: NextRequest) {
     await requireRole("hr", "director", "superadmin");
     const body = await req.json();
     const {
-      name, email, password, role, phone, project, barCouncilId, district, city,
+      name, email, password, role, phone, linkedinUrl, project, barCouncilId, district, city,
       onboardingDocs,
     } = body as {
-      name?: string; email?: string; password?: string; role?: string; phone?: string; project?: string;
+      name?: string; email?: string; password?: string; role?: string; phone?: string; linkedinUrl?: string; project?: string;
       barCouncilId?: string; district?: string; city?: string;
       onboardingDocs?: {
         panUrl?: string; aadharUrl?: string;
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       passwordHash,
       role,
       phone: phone?.trim(),
+      linkedinUrl: linkedinUrl?.trim() || undefined,
       isActive: true,
       employeeId,
       joinedAt: new Date(),

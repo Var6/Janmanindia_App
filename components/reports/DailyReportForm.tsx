@@ -113,6 +113,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
   const [error, setError]   = useState("");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [supervisorRemarks, setSupervisorRemarks] = useState(initialReport?.supervisorRemarks ?? "");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => { if (initialReport) setReport(initialReport); }, [initialReport]);
 
@@ -210,7 +211,33 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
     }
   }
 
-  function handlePrint() { if (typeof window !== "undefined") window.print(); }
+  async function handleDownloadPdf() {
+    if (downloading) return;
+    setDownloading(true); setError("");
+    try {
+      const [{ pdf }, { default: DailyReportPdfDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./DailyReportPdfDocument"),
+      ]);
+      // Build the snapshot the PDF should reflect — same merge as save() does.
+      const snapshotSummary = { ...derived, ...(report.summary ?? {}) };
+      const pdfReport = { ...report, summary: snapshotSummary };
+      const blob = await pdf(<DailyReportPdfDocument report={pdfReport} />).toBlob();
+      const safe = (s?: string) => (s ?? "").replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "");
+      const date = (report.reportDate ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+      const who = safe(report.preparedBy?.employeeId) || safe(report.preparedBy?.name) || "report";
+      const fname = `DailyReport_${who}_${date}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "PDF generation failed");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="daily-report space-y-6">
@@ -243,10 +270,10 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={handlePrint} type="button"
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+          <button onClick={handleDownloadPdf} type="button" disabled={downloading}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            🖨 Print / Save as PDF
+            {downloading ? "Building PDF…" : "⬇ Download PDF"}
           </button>
           {canEdit && (
             <>

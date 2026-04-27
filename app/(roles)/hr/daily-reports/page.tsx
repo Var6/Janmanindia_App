@@ -35,7 +35,7 @@ export default async function HrDailyReportsPage() {
       <div>
         <h1 className="text-2xl font-bold text-(--text)">Daily Reports — Supervisor Review</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Read social workers' submitted end-of-day reports, add remarks, and mark them reviewed. Click a row to open the full report (printable / downloadable as PDF).
+          Read social workers' submitted daily reports, add remarks, and mark them reviewed. Click a row to open the full report (printable / downloadable as PDF).
         </p>
       </div>
 

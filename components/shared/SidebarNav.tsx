@@ -181,6 +181,14 @@ const ICONS = {
       <path d="M4.5 17c0-2.485 2.462-4.5 5.5-4.5s5.5 2.015 5.5 4.5"/>
     </svg>
   ),
+  mic: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <rect x="7" y="2" width="6" height="10" rx="3"/>
+      <path d="M4 10a6 6 0 0012 0"/>
+      <line x1="10" y1="16" x2="10" y2="19"/>
+      <line x1="7" y1="19" x2="13" y2="19"/>
+    </svg>
+  ),
 } satisfies Record<string, React.ReactNode>;
 
 interface Props {

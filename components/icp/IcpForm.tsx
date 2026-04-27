@@ -8,19 +8,23 @@ type IcpDoc = Record<string, any> & { _id?: string; _draft?: boolean; case: stri
 
 interface Props {
   caseId: string;
-  /** SW / director / superadmin can edit. Everyone else gets a read-only printable view. */
+  /** SW / director / superadmin can edit. Everyone else gets a read-only downloadable view. */
   canEdit: boolean;
+  /** Optional case metadata used in the generated PDF header + filename. */
+  caseNumber?: string;
+  caseTitle?: string;
 }
 
 const SECTION_BORDER = { borderColor: "var(--border)" };
 const SECTION_BG = { background: "var(--surface)" };
 
-export default function IcpForm({ caseId, canEdit }: Props) {
+export default function IcpForm({ caseId, canEdit, caseNumber, caseTitle }: Props) {
   const [icp, setIcp] = useState<IcpDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -65,8 +69,27 @@ export default function IcpForm({ caseId, canEdit }: Props) {
     } finally { setSaving(false); }
   }
 
-  function handlePrint() {
-    if (typeof window !== "undefined") window.print();
+  async function handleDownloadPdf() {
+    if (!icp || downloading) return;
+    setDownloading(true); setError("");
+    try {
+      const [{ pdf }, { default: IcpPdfDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./IcpPdfDocument"),
+      ]);
+      const blob = await pdf(<IcpPdfDocument icp={icp} caseNumber={caseNumber} caseTitle={caseTitle} />).toBlob();
+      const safe = (s?: string) => (s ?? "").replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "");
+      const fname = `ICP_${safe(caseNumber) || safe(icp.beneficiaryName) || caseId}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "PDF generation failed");
+    } finally {
+      setDownloading(false);
+    }
   }
 
   if (loading) return <p className="text-sm text-(--muted)">Loading individual care plan…</p>;
@@ -107,10 +130,10 @@ export default function IcpForm({ caseId, canEdit }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button type="button" onClick={handlePrint}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+          <button type="button" onClick={handleDownloadPdf} disabled={downloading}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            🖨 Print / Save as PDF
+            {downloading ? "Building PDF…" : "⬇ Download PDF"}
           </button>
           {canEdit && (
             <>

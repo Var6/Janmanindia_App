@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
-import EodReport from "@/models/EodReport";
+import DailyReport from "@/models/DailyReport";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 
 export default async function HrAttendancePage() {
@@ -21,13 +21,13 @@ export default async function HrAttendancePage() {
         User.find({ role: "socialworker", isActive: true })
           .select("name email lastLoginAt socialWorkerProfile")
           .lean(),
-        EodReport.find({ date: { $gte: todayStart, $lte: todayEnd } })
-          .select("submittedBy")
+        DailyReport.find({ reportDate: { $gte: todayStart, $lte: todayEnd } })
+          .select("preparedBy")
           .lean(),
       ])
     : [[], []];
 
-  const submittedIds = new Set(todayReports.map((r) => String(r.submittedBy)));
+  const submittedIds = new Set(todayReports.map((r) => String(r.preparedBy)));
 
   const present = socialWorkers.filter((sw) => {
     const lastLogin = sw.lastLoginAt ? new Date(sw.lastLoginAt) : null;
@@ -45,7 +45,7 @@ export default async function HrAttendancePage() {
 
       <div>
         <h1 className="text-2xl font-bold text-(text)">Attendance — {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h1>
-        <p className="text-sm text-(muted) mt-1">Social worker presence based on last login and EOD report submission.</p>
+        <p className="text-sm text-(muted) mt-1">Social worker presence based on last login and daily report submission.</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -59,7 +59,7 @@ export default async function HrAttendancePage() {
         </div>
         <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200 text-yellow-700">
           <p className="text-2xl font-bold">{missingEod.length}</p>
-          <p className="text-xs mt-0.5">Missing EOD report</p>
+          <p className="text-xs mt-0.5">Missing daily report</p>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default async function HrAttendancePage() {
 
       {missingEod.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(text) mb-3">Missing EOD Report Today</h2>
+          <h2 className="font-semibold text-(text) mb-3">Missing Daily Report Today</h2>
           <div className="bg-(surface) rounded-2xl border border-yellow-200 overflow-hidden">
             <div className="divide-y divide-(border)">
               {missingEod.map((sw) => (
@@ -104,7 +104,7 @@ export default async function HrAttendancePage() {
                       SLA breaches: {sw.socialWorkerProfile?.slaBreaches ?? 0} · Open tickets: {sw.socialWorkerProfile?.openTickets ?? 0}
                     </p>
                   </div>
-                  <span className="text-xs font-semibold text-yellow-600">No EOD</span>
+                  <span className="text-xs font-semibold text-yellow-600">No Report</span>
                 </div>
               ))}
             </div>
@@ -123,7 +123,7 @@ export default async function HrAttendancePage() {
                     <p className="text-sm font-medium text-(text)">{sw.name}</p>
                     <p className="text-xs text-(muted)">
                       Last login: {sw.lastLoginAt ? new Date(sw.lastLoginAt).toLocaleTimeString("en-IN") : "—"}
-                      {submittedIds.has(String(sw._id)) ? " · EOD submitted ✓" : " · EOD pending"}
+                      {submittedIds.has(String(sw._id)) ? " · Report submitted ✓" : " · Report pending"}
                     </p>
                   </div>
                   <span className="text-xs font-semibold text-green-600">Present</span>
