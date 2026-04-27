@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { put } from "@vercel/blob";
+import crypto from "node:crypto";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSessionFromCookies } from "@/lib/auth";
 
 // Images for avatars / case photos, PDFs + Office docs for case files / IDs / CVs,
@@ -17,6 +18,23 @@ const ALLOWED_TYPES = [
   "audio/webm", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a",
 ];
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+
+// ── R2 (Cloudflare) — used in production. S3-compatible, zero egress. ────────
+const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
+const R2_BUCKET        = process.env.R2_BUCKET;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY;
+const R2_PUBLIC_BASE   = process.env.R2_PUBLIC_URL_BASE?.replace(/\/+$/, ""); // strip trailing /
+
+const r2Configured = Boolean(R2_ACCOUNT_ID && R2_BUCKET && R2_ACCESS_KEY_ID && R2_SECRET && R2_PUBLIC_BASE);
+
+const r2 = r2Configured
+  ? new S3Client({
+      region: "auto",
+      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET! },
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -38,22 +56,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be under 25 MB" }, { status: 400 });
     }
 
-    const ext = file.name.split(".").pop() ?? "bin";
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    // Filename: <unguessable>-<original-ext>. Sanitise the extension only;
+    // we never expose the original filename to the public URL.
+    const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 6) || "bin";
+    const filename = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}.${ext}`;
 
-    // Production: Vercel Blob (BLOB_READ_WRITE_TOKEN is auto-injected on Vercel
-    // when a Blob store is connected to the project).
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      const blob = await put(`uploads/${filename}`, file, {
-        access: "public",
-        contentType: file.type,
-      });
-      return NextResponse.json({ url: blob.url });
+    // Production: Cloudflare R2 via S3 SDK.
+    if (r2 && R2_BUCKET && R2_PUBLIC_BASE) {
+      const key = `uploads/${filename}`;
+      const bytes = Buffer.from(await file.arrayBuffer());
+      await r2.send(new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key,
+        Body: bytes,
+        ContentType: file.type,
+        ContentLength: bytes.length,
+        // Cache for a year — uploaded objects are content-addressed by their
+        // unguessable filename, so they're effectively immutable.
+        CacheControl: "public, max-age=31536000, immutable",
+      }));
+      return NextResponse.json({ url: `${R2_PUBLIC_BASE}/${key}` });
     }
 
-    // Local dev fallback: write under /public/uploads/ so the file is served
-    // by Next's static handler. Will not survive serverless deploys — this
-    // path is dev-only.
+    // Local dev fallback: write to /public/uploads/ so Next's static handler
+    // serves it. Will not survive serverless deploys — dev-only path.
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
     const bytes = await file.arrayBuffer();

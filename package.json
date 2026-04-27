@@ -11,8 +11,9 @@
     "bootstrap-superadmin": "node scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1037.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@types/bcryptjs": "^2.4.6",
-    "@vercel/blob": "^2.3.3",
     "airtable": "^0.12.2",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.38.0",
