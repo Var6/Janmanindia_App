@@ -37,13 +37,19 @@ export interface IUser extends Document {
   onboardingDocs?: IOnboardingDocs;
   communityProfile?: {
     govtIdUrl?: string;
-    govtIdType?: "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "Other";
+    govtIdType?: "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "RationCard" | "Other";
     verificationStatus: "pending" | "verified" | "rejected";
     verifiedBy?: mongoose.Types.ObjectId;
     verifiedAt?: Date;
     rejectionReason?: string;
     district?: string;
+    village?: string;
     assignedSocialWorker?: mongoose.Types.ObjectId;
+    /** Optional voice introduction the SW listens to before assignment —
+     *  helpful for community members who can't read or write. */
+    voiceIntroUrl?: string;
+    voiceIntroDurationSec?: number;
+    preferredLanguage?: string;
     /** Para Legal Volunteer flow — community member opts in, social worker decides. */
     plvStatus?: "none" | "requested" | "approved" | "rejected";
     plvMotivation?: string;
@@ -73,7 +79,7 @@ const communityProfileSchema = new Schema(
     govtIdUrl: String,
     govtIdType: {
       type: String,
-      enum: ["Aadhar", "VoterId", "Passport", "DrivingLicense", "Other"],
+      enum: ["Aadhar", "VoterId", "Passport", "DrivingLicense", "RationCard", "Other"],
     },
     verificationStatus: {
       type: String,
@@ -84,7 +90,11 @@ const communityProfileSchema = new Schema(
     verifiedAt: Date,
     rejectionReason: String,
     district: { type: String, trim: true },
+    village: { type: String, trim: true },
     assignedSocialWorker: { type: Schema.Types.ObjectId, ref: "User" },
+    voiceIntroUrl: { type: String, trim: true },
+    voiceIntroDurationSec: { type: Number, min: 0 },
+    preferredLanguage: { type: String, trim: true },
     plvStatus:           { type: String, enum: ["none", "requested", "approved", "rejected"], default: "none" },
     plvMotivation:       { type: String, trim: true },
     plvRequestedAt:      Date,
