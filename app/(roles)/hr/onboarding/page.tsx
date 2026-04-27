@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/components/hr/OnboardingDocsFields";
+import { checkOnboardingDocs, missingOnboardingDocs, onboardingCompleteness, type OnboardingDocsLike } from "@/lib/onboarding-docs";
 
 type StaffUser = {
   _id: string; name: string; email: string; phone?: string; role: string;
   isActive: boolean; employeeId?: string; joinedAt?: string; createdAt: string;
+  onboardingDocs?: OnboardingDocsLike;
 };
 
 type Asset = {
@@ -250,6 +252,9 @@ export default function OnboardingPage() {
               const open = expanded === s._id;
               const assets = assetsByEmployee[s._id] ?? [];
               const outstanding = assets.filter((a) => a.status === "assigned").length;
+              const docCompletion = onboardingCompleteness(s.onboardingDocs);
+              const docsMissing = missingOnboardingDocs(s.onboardingDocs);
+              const isDocComplete = docsMissing.length === 0;
               return (
                 <div key={s._id} className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
                   <button onClick={() => toggleExpand(s._id)}
@@ -272,7 +277,17 @@ export default function OnboardingPage() {
                         {s.joinedAt ? ` · Joined ${new Date(s.joinedAt).toLocaleDateString("en-IN")}` : ""}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isDocComplete && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"
+                          style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
+                          ⚠ {docsMissing.length} doc{docsMissing.length === 1 ? "" : "s"} missing · {docCompletion.pct}%
+                        </span>
+                      )}
+                      {isDocComplete && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+                          style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>✓ docs complete</span>
+                      )}
                       {open && outstanding > 0 && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                           style={{ background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }}>
@@ -285,6 +300,9 @@ export default function OnboardingPage() {
 
                   {open && (
                     <div className="border-t border-(--border) p-5 space-y-4">
+                      {/* Onboarding documents — show what's missing + inline editor */}
+                      <StaffDocsBlock staff={s} onSaved={loadStaff} />
+
                       <h3 className="text-sm font-semibold text-(--text)">Assigned Assets</h3>
                       {assets.length === 0 ? (
                         <p className="text-xs text-(--muted)">No assets assigned yet.</p>
@@ -344,4 +362,123 @@ export default function OnboardingPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Per-staff onboarding-docs block. Reads the user's existing docs from /api/hr/staff/[id]/docs
+ * (which has the freshest copy), shows a checklist of what's missing, and lets HR edit.
+ */
+function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [docs, setDocs] = useState<OnboardingDocs>(() => normaliseDocs(staff.onboardingDocs));
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const checks = checkOnboardingDocs(docs);
+  const missing = checks.filter(c => !c.present);
+  const completion = onboardingCompleteness(docs);
+
+  async function save() {
+    setSaving(true); setMsg(null);
+    try {
+      const res = await fetch(`/api/hr/staff/${staff._id}/docs`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onboardingDocs: docs }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg({ ok: false, text: data.error ?? "Save failed." });
+      } else {
+        setMsg({ ok: true, text: "Saved." });
+        setEditing(false);
+        onSaved();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border p-3 space-y-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-(--text)">Onboarding documents</h3>
+          <p className="text-xs text-(--muted) mt-0.5">
+            {completion.present}/{completion.total} collected ({completion.pct}%)
+          </p>
+        </div>
+        <button onClick={() => { setEditing(s => !s); setMsg(null); }}
+          className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+          style={{ background: editing ? "var(--bg-secondary)" : "var(--accent)", color: editing ? "var(--muted)" : "var(--accent-contrast)" }}>
+          {editing ? "Cancel" : (missing.length === 0 ? "Edit" : "Complete profile")}
+        </button>
+      </div>
+
+      {missing.length > 0 && !editing && (
+        <ul className="space-y-1">
+          {missing.map(m => (
+            <li key={m.key} className="text-xs flex items-center gap-2 text-(--text)">
+              <span style={{ color: "var(--warning-text)" }}>⚠</span>
+              {m.label}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {missing.length === 0 && !editing && (
+        <p className="text-xs" style={{ color: "var(--success-text)" }}>✓ All required documents collected.</p>
+      )}
+
+      {msg && (
+        <p className="text-xs px-3 py-1.5 rounded-lg"
+          style={{ background: msg.ok ? "var(--success-bg)" : "var(--error-bg)", color: msg.ok ? "var(--success-text)" : "var(--error-text)" }}>
+          {msg.text}
+        </p>
+      )}
+
+      {editing && (
+        <div className="space-y-3">
+          <OnboardingDocsFields value={docs} onChange={setDocs}
+            title="Documentation" intro="Upload or paste in details that are missing. Saved straight to this staff member's profile."
+          />
+          <div className="flex items-center gap-2">
+            <button onClick={save} disabled={saving}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50"
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+              {saving ? "Saving…" : "Save documents"}
+            </button>
+            <button onClick={() => { setEditing(false); setDocs(normaliseDocs(staff.onboardingDocs)); }}
+              className="px-3 py-1.5 rounded-lg text-xs"
+              style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Make a sparse server document safe for the controlled OnboardingDocsFields form. */
+function normaliseDocs(d?: OnboardingDocsLike | null): OnboardingDocs {
+  return {
+    panUrl:    d?.panUrl,
+    aadharUrl: d?.aadharUrl,
+    bankAccount: {
+      holder:        d?.bankAccount?.holder,
+      accountNumber: d?.bankAccount?.accountNumber,
+      ifsc:          d?.bankAccount?.ifsc,
+      bankName:      d?.bankAccount?.bankName,
+    },
+    cvUrl: d?.cvUrl,
+    academicDocs: (d?.academicDocs ?? []).map(x => ({ label: x.label ?? "", url: x.url ?? "" })),
+    priorExperience: d?.priorExperience,
+    emergencyContact: {
+      name:     d?.emergencyContact?.name,
+      phone:    d?.emergencyContact?.phone,
+      relation: d?.emergencyContact?.relation,
+    },
+    otherDocs: (d?.otherDocs ?? []).map(x => ({ label: x.label ?? "", url: x.url ?? "" })),
+  };
 }

@@ -44,6 +44,9 @@ next-env.d.ts
 # privileged seeds (director + administrator only — keep out of git)
 /scripts/seed-privileged.mjs
 
+# real-team seed — contains real names, phones, role mappings; never commit
+/scripts/seed-team.mjs
+
 # local-only credentials cheatsheet — keep on developer machines, never commit
 /CREDENTIALS.txt
 
