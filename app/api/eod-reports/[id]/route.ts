@@ -6,6 +6,53 @@ import HeadLawyer from "@/models/HeadLawyer";
 import User from "@/models/User";
 import mongoose from "mongoose";
 
+const SUPERVISOR_ROLES = ["hr", "director", "superadmin"] as const;
+
+/**
+ * GET /api/eod-reports/[id] — full report detail (with populated submitter
+ * + reviewers). The submitting SW / litigation member sees their own;
+ * HR / Director / Superadmin see anyone's; head lawyers see invoices from
+ * their district.
+ */
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await requireSession();
+    const { id } = await ctx.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+    await connectDB();
+
+    const report = await EodReport.findById(id)
+      .populate("submittedBy",     "name email role employeeId litigationProfile socialWorkerProfile")
+      .populate("hrVerifiedBy",    "name email role")
+      .populate("finalApprovedBy", "name email role")
+      .populate("reviewedBy",      "name email role")
+      .lean();
+    if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const submitterId = String((report.submittedBy as { _id?: unknown })?._id ?? report.submittedBy);
+    let allowed = submitterId === session.id || SUPERVISOR_ROLES.includes(session.role as typeof SUPERVISOR_ROLES[number]);
+
+    // Litigation head lawyers can read invoices from their district.
+    if (!allowed && session.role === "litigation") {
+      const myHeads = await HeadLawyer.find({ user: new mongoose.Types.ObjectId(session.id) }).select("district").lean();
+      const districts = myHeads.map(h => h.district);
+      const submitter = report.submittedBy as { litigationProfile?: { location?: { district?: string } } } | null;
+      const subDistrict = submitter?.litigationProfile?.location?.district;
+      if (subDistrict && districts.includes(subDistrict)) allowed = true;
+    }
+
+    if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    return NextResponse.json({ report });
+  } catch (e) {
+    if (e instanceof Response) return e;
+    console.error("GET /api/eod-reports/[id]", e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireSession();

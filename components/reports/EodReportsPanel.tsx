@@ -14,14 +14,30 @@ type Report = {
   date: string;
   summary: string;
   hoursWorked: number;
-  invoiceStatus: string;
+  invoiceStatus: "pending" | "hr_verified" | "approved" | "rejected";
   expenses: { description: string; amount: number; receiptUrl?: string }[];
 };
 
-const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
-  pending:  { bg: "var(--warning-bg)",  text: "var(--warning-text)"  },
-  approved: { bg: "var(--success-bg)",  text: "var(--success-text)"  },
-  rejected: { bg: "var(--error-bg)",    text: "var(--error-text)"    },
+type PersonRef = { _id?: string; name?: string; email?: string; role?: string; employeeId?: string };
+type ReportDetail = Report & {
+  submittedBy?: PersonRef | null;
+  submitterRole?: string;
+  hrVerifiedBy?: PersonRef | null;
+  hrVerifiedAt?: string;
+  hrNotes?: string;
+  finalApprovedBy?: PersonRef | null;
+  finalApprovedAt?: string;
+  approvalNotes?: string;
+  rejectionReason?: string;
+  reviewedBy?: PersonRef | null;
+  createdAt?: string;
+};
+
+const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  pending:     { bg: "var(--warning-bg)",  text: "var(--warning-text)", label: "Awaiting HR" },
+  hr_verified: { bg: "var(--info-bg)",     text: "var(--info-text)",    label: "Awaiting Approval" },
+  approved:    { bg: "var(--success-bg)",  text: "var(--success-text)", label: "Approved" },
+  rejected:    { bg: "var(--error-bg)",    text: "var(--error-text)",   label: "Rejected" },
 };
 
 function UploadIcon() {
@@ -73,6 +89,52 @@ export default function EodReportsPanel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
   const [success, setSuccess]     = useState("");
+  const [openDetail, setOpenDetail] = useState<string | null>(null);
+  const [detailById, setDetailById] = useState<Record<string, ReportDetail>>({});
+  const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function fetchDetail(id: string) {
+    if (detailById[id]) return detailById[id];
+    setLoadingDetailId(id);
+    try {
+      const res = await fetch(`/api/eod-reports/${id}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      setDetailById(prev => ({ ...prev, [id]: data.report }));
+      return data.report as ReportDetail;
+    } finally {
+      setLoadingDetailId(null);
+    }
+  }
+
+  async function toggleDetail(id: string) {
+    if (openDetail === id) { setOpenDetail(null); return; }
+    setOpenDetail(id);
+    fetchDetail(id);
+  }
+
+  async function downloadPdf(id: string) {
+    setDownloadingId(id);
+    try {
+      const detail = (detailById[id] ?? (await fetchDetail(id))) as ReportDetail | null;
+      if (!detail) return;
+      const [{ pdf }, { default: EodReportPdfDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./EodReportPdfDocument"),
+      ]);
+      const blob = await pdf(<EodReportPdfDocument report={detail} />).toBlob();
+      const dateStr = new Date(detail.date).toISOString().slice(0, 10);
+      const safeName = (detail.submittedBy?.name ?? "report").replace(/[^a-z0-9]+/gi, "_");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `EOD_${safeName}_${dateStr}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
   const [expenses, setExpenses]   = useState<Expense[]>([{ description: "", amount: "" }]);
   const fileInputRefs             = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -321,6 +383,8 @@ export default function EodReportsPanel({
           {reports.map((r) => {
             const st    = STATUS_STYLE[r.invoiceStatus] ?? STATUS_STYLE.pending;
             const total = r.expenses.reduce((sum, ex) => sum + ex.amount, 0);
+            const open  = openDetail === r._id;
+            const detail = detailById[r._id];
             return (
               <div key={r._id} className="rounded-2xl border p-5"
                 style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-xs)" }}>
@@ -333,9 +397,9 @@ export default function EodReportsPanel({
                       {r.hoursWorked} hrs worked · {r.expenses.length} expense{r.expenses.length !== 1 ? "s" : ""} · ₹{total.toLocaleString("en-IN")}
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full capitalize"
+                  <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
                     style={{ background: st.bg, color: st.text }}>
-                    Invoice {r.invoiceStatus}
+                    {st.label}
                   </span>
                 </div>
                 <p className="text-sm text-(--muted) line-clamp-2 mb-3">{r.summary}</p>
@@ -359,11 +423,98 @@ export default function EodReportsPanel({
                     ))}
                   </div>
                 )}
+
+                <div className="mt-4 pt-3 border-t flex items-center gap-2 flex-wrap"
+                  style={{ borderColor: "var(--border)" }}>
+                  <button onClick={() => toggleDetail(r._id)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                    style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
+                    {open ? "Hide approval detail" : (loadingDetailId === r._id ? "Loading…" : "View approval detail")}
+                  </button>
+                  <button onClick={() => downloadPdf(r._id)} disabled={downloadingId === r._id}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
+                    style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                    {downloadingId === r._id ? "Building PDF…" : "⬇ Download PDF"}
+                  </button>
+                </div>
+
+                {open && detail && (
+                  <ApprovalTimeline detail={detail} />
+                )}
               </div>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── approval timeline ──────────────────────────────────────────────── */
+function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
+  const stages: { label: string; person?: string; at?: string; notes?: string; tone: "muted" | "info" | "success" | "error" }[] = [];
+  stages.push({
+    label: "Submitted",
+    person: detail.submittedBy?.name,
+    at: detail.createdAt,
+    tone: "muted",
+  });
+  if (detail.hrVerifiedBy || detail.hrVerifiedAt) {
+    stages.push({
+      label: detail.invoiceStatus === "approved" && detail.submitterRole === "socialworker" ? "HR verified & approved" : "HR verified",
+      person: detail.hrVerifiedBy?.name,
+      at: detail.hrVerifiedAt,
+      notes: detail.hrNotes,
+      tone: "info",
+    });
+  }
+  if (detail.finalApprovedBy || detail.finalApprovedAt) {
+    stages.push({
+      label: "Final approval (paid)",
+      person: detail.finalApprovedBy?.name,
+      at: detail.finalApprovedAt,
+      notes: detail.approvalNotes,
+      tone: "success",
+    });
+  }
+  if (detail.invoiceStatus === "rejected") {
+    stages.push({
+      label: "Rejected",
+      person: detail.reviewedBy?.name,
+      notes: detail.rejectionReason ?? "No reason recorded",
+      tone: "error",
+    });
+  }
+
+  const dot = (tone: typeof stages[number]["tone"]) =>
+    tone === "info"    ? "var(--info)"
+  : tone === "success" ? "var(--success)"
+  : tone === "error"   ? "var(--error)"
+  :                      "var(--muted)";
+
+  return (
+    <div className="mt-4 pt-3 border-t space-y-3" style={{ borderColor: "var(--border)" }}>
+      <p className="text-xs font-semibold text-(--text)">Approval pipeline</p>
+
+      <ol className="space-y-2.5">
+        {stages.map((st, i) => (
+          <li key={i} className="flex items-start gap-2.5">
+            <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: dot(st.tone) }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-(--text)">{st.label}</p>
+              <p className="text-[11px] text-(--muted)">
+                {st.person ?? "—"}{st.at ? ` · ${new Date(st.at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+              </p>
+              {st.notes && (
+                <p className="text-[11px] text-(--text-2) mt-1 italic px-2 py-1 rounded"
+                  style={{ background: "var(--bg)" }}>
+                  {st.notes}
+                </p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
