@@ -2,9 +2,71 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Appointment from "@/models/Appointment";
+import User from "@/models/User";
 import mongoose from "mongoose";
+import { createEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 
 const DEFAULT_DURATION_MIN = 30;
+
+/** Best-effort: push a new appointment to the requester's Google Calendar (if they
+ *  connected). Saves the eventId on the appointment so we can update/delete it
+ *  later. Always swallows errors — calendar sync should never block the API. */
+async function syncToGoogleCalendar(
+  appointmentId: string,
+  requesterId: string,
+  requesteeId: string,
+  start: Date,
+  end: Date,
+  reason: string,
+): Promise<void> {
+  try {
+    const [requester, requestee] = await Promise.all([
+      User.findById(requesterId).select("+googleRefreshToken googleEmail name email").lean(),
+      User.findById(requesteeId).select("googleEmail name email").lean(),
+    ]);
+    if (!requester?.googleRefreshToken) return; // not connected — silently skip
+
+    const attendeeEmail = requestee?.googleEmail || requestee?.email;
+    const eventId = await createEvent(requester.googleRefreshToken, {
+      summary: `Janman: ${reason || "Appointment"}`,
+      description: `Appointment with ${requestee?.name ?? "team member"}\n\nManage at https://app.janmanindia.org/appointments`,
+      start, end,
+      attendeeEmails: attendeeEmail ? [attendeeEmail] : undefined,
+    });
+    if (eventId) {
+      await Appointment.updateOne({ _id: appointmentId }, { $set: { googleEventId: eventId } });
+    }
+  } catch (err) {
+    console.error("syncToGoogleCalendar failed:", err);
+  }
+}
+
+/** Update the existing Google Calendar event (used on reschedule). */
+async function updateGoogleCalendar(appointmentId: string, requesterId: string, start: Date, end: Date): Promise<void> {
+  try {
+    const apt = await Appointment.findById(appointmentId).select("googleEventId").lean();
+    if (!apt?.googleEventId) return;
+    const requester = await User.findById(requesterId).select("+googleRefreshToken").lean();
+    if (!requester?.googleRefreshToken) return;
+    await updateEvent(requester.googleRefreshToken, apt.googleEventId, { start, end });
+  } catch (err) {
+    console.error("updateGoogleCalendar failed:", err);
+  }
+}
+
+/** Delete the Google Calendar event (used on cancel). */
+async function deleteGoogleCalendar(appointmentId: string, requesterId: string): Promise<void> {
+  try {
+    const apt = await Appointment.findById(appointmentId).select("googleEventId").lean();
+    if (!apt?.googleEventId) return;
+    const requester = await User.findById(requesterId).select("+googleRefreshToken").lean();
+    if (!requester?.googleRefreshToken) return;
+    await deleteEvent(requester.googleRefreshToken, apt.googleEventId);
+    await Appointment.updateOne({ _id: appointmentId }, { $unset: { googleEventId: "" } });
+  } catch (err) {
+    console.error("deleteGoogleCalendar failed:", err);
+  }
+}
 
 /**
  * Returns true if the given user already has an accepted/pending appointment
@@ -121,6 +183,7 @@ export async function POST(request: NextRequest) {
         proposedDate, endDate, reason,
         status: "pending",
       });
+      void syncToGoogleCalendar(String(appointment._id), session.id, requesteeId, proposedDate, endDate, reason);
       return NextResponse.json({ appointment }, { status: 201 });
     }
 
@@ -191,6 +254,8 @@ export async function PATCH(request: NextRequest) {
       apt.status = "pending";
       if (notes) apt.responseNotes = notes;
       await apt.save();
+      const reqId = apt.requester ? String(apt.requester) : (apt.community ? String(apt.community) : "");
+      if (reqId) void updateGoogleCalendar(String(apt._id), reqId, apt.proposedDate, apt.endDate ?? new Date(apt.proposedDate.getTime() + DEFAULT_DURATION_MIN * 60_000));
       return NextResponse.json({ appointment: apt });
     }
 
@@ -209,6 +274,8 @@ export async function PATCH(request: NextRequest) {
       if (!isRequester) return NextResponse.json({ error: "Only the requester can cancel" }, { status: 403 });
       apt.status = "cancelled";
       await apt.save();
+      const reqId = apt.requester ? String(apt.requester) : (apt.community ? String(apt.community) : "");
+      if (reqId) void deleteGoogleCalendar(String(apt._id), reqId);
       return NextResponse.json({ appointment: apt });
     }
 

@@ -32,6 +32,9 @@ export interface IUser extends Document {
   avatarUrl?: string;
   isActive: boolean;
   lastLoginAt?: Date;
+  googleRefreshToken?: string;
+  googleEmail?: string;
+  googleConnectedAt?: Date;
   employeeId?: string;
   joinedAt?: Date;
   exitedAt?: Date;
@@ -169,6 +172,9 @@ const userSchema = new Schema<IUser>(
     linkedinUrl: { type: String, trim: true },
     avatarUrl:   { type: String, trim: true },
     isActive: { type: Boolean, default: true },
+    googleRefreshToken: { type: String, select: false },
+    googleEmail:        { type: String, trim: true },
+    googleConnectedAt:  { type: Date },
     lastLoginAt: Date,
     employeeId: { type: String, unique: true, sparse: true, trim: true },
     joinedAt: Date,

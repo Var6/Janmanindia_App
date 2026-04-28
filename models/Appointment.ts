@@ -16,6 +16,7 @@ export interface IAppointment extends Document {
   swNotes?: string;
   litigationNotes?: string;
   responseNotes?: string;
+  googleEventId?: string;
 }
 
 const appointmentSchema = new Schema<IAppointment>(
@@ -37,6 +38,7 @@ const appointmentSchema = new Schema<IAppointment>(
     swNotes: String,
     litigationNotes: String,
     responseNotes: String,
+    googleEventId: { type: String, index: true },
   },
   { timestamps: true }
 );
