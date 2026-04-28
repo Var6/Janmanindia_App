@@ -1,0 +1,50 @@
+const { a } = require("framer-motion/client");
+
+function Leagal_case(){
+    if(!Fir){
+        complaint_case;
+        enquiry_evidence;
+        Pre_cognizance_summon;
+        cognizance;
+        summon;
+        appearence_of_accused;
+        before_Charge_evidence;
+        charge;
+        after_charge_evidence;
+        Defence_Witness;
+        Prosecution_Witness;
+        Exusion_explain;
+        argument;
+        if(!acquital){
+            conviction;
+            hearing_for_sentence_judgement;
+            case_closed;
+        }
+        case_closed;
+    }
+    Investigation;
+    if(!chargesheet){
+        Final_form;
+        Notice_to_informant;
+        if(!Not_Accepted_Finaal_form ){
+            case_closed;
+        }
+    }
+    cognizance;
+    appearence_of_accused;
+    if(!accused_appears){
+        warrant;
+    }
+    framing_of_charges;
+    discharge;
+    Proseution_Witness;
+    defense_withness;
+    Exusion_explain;
+    argument;
+    if(!acquital){
+        conviction;
+        hearing_for_sentence_judgement;
+        case_closed;
+    }
+    case_closed;
+}

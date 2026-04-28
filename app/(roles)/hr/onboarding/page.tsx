@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/components/hr/OnboardingDocsFields";
 import { checkOnboardingDocs, missingOnboardingDocs, onboardingCompleteness, type OnboardingDocsLike } from "@/lib/onboarding-docs";
+import AvatarUpload from "@/components/shared/AvatarUpload";
 
 type StaffUser = {
-  _id: string; name: string; email: string; phone?: string; linkedinUrl?: string; role: string;
+  _id: string; name: string; email: string; phone?: string; linkedinUrl?: string; avatarUrl?: string; role: string;
   isActive: boolean; employeeId?: string; joinedAt?: string; createdAt: string;
   onboardingDocs?: OnboardingDocsLike;
 };
@@ -40,7 +41,8 @@ export default function OnboardingPage() {
   const [success, setSuccess] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [assetsByEmployee, setAssetsByEmployee] = useState<Record<string, Asset[]>>({});
-  const [docs, setDocs] = useState<OnboardingDocs>(EMPTY_DOCS);
+  const [docs, setDocs]       = useState<OnboardingDocs>(EMPTY_DOCS);
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string | undefined>();
 
   const loadStaff = useCallback(async () => {
     setLoading(true);
@@ -83,6 +85,7 @@ export default function OnboardingPage() {
           role: fd.get("role"),
           phone: fd.get("phone"),
           linkedinUrl: fd.get("linkedinUrl") || undefined,
+          avatarUrl: newAvatarUrl || undefined,
           project: fd.get("project"),
           barCouncilId: fd.get("barCouncilId"),
           district: fd.get("district"),
@@ -100,6 +103,7 @@ export default function OnboardingPage() {
         setExpanded(d.user._id);
         (e.target as HTMLFormElement).reset();
         setDocs(EMPTY_DOCS);
+        setNewAvatarUrl(undefined);
       }
     } catch {
       setError("Network error.");
@@ -170,6 +174,18 @@ export default function OnboardingPage() {
       {tab === "onboard" ? (
         <form onSubmit={handleOnboard} className="bg-(--surface) rounded-2xl border border-(--border) p-6 space-y-5">
           <h2 className="font-semibold text-(--text)">New Staff Account</h2>
+
+          {/* Profile photo */}
+          <div className="pb-2 border-b" style={{ borderColor: "var(--border)" }}>
+            <p className="text-sm font-medium text-(--text) mb-3">Profile Photo <span className="text-xs text-(--muted) font-normal">(optional)</span></p>
+            <AvatarUpload
+              currentUrl={newAvatarUrl}
+              name="New Staff"
+              size={80}
+              onUploaded={(url) => setNewAvatarUrl(url)}
+              onRemoved={() => setNewAvatarUrl(undefined)}
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -265,6 +281,20 @@ export default function OnboardingPage() {
                 <div key={s._id} className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
                   <button onClick={() => toggleExpand(s._id)}
                     className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-(--accent-subtle) transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Avatar thumbnail */}
+                      <div style={{
+                        width: 40, height: 40, flexShrink: 0, borderRadius: "50%",
+                        overflow: "hidden", border: "1.5px solid var(--border)",
+                        background: "var(--bg-secondary)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 14, fontWeight: 700, color: "var(--accent)",
+                      }}>
+                        {s.avatarUrl
+                          ? <img src={s.avatarUrl} alt={s.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : s.name.split(" ").slice(0,2).map((w: string) => w[0]).join("").toUpperCase()
+                        }
+                      </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-(--text)">{s.name}</p>
@@ -287,6 +317,7 @@ export default function OnboardingPage() {
                         )}
                       </p>
                     </div>
+                    </div>{/* end avatar+info flex row */}
                     <div className="flex items-center gap-2 shrink-0">
                       {!isDocComplete && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"

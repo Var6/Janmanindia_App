@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await User.find(filter)
-      .select("name email phone linkedinUrl role isActive employeeId joinedAt exitedAt createdAt onboardingDocs")
+      .select("name email phone linkedinUrl avatarUrl role isActive employeeId joinedAt exitedAt createdAt onboardingDocs")
       .sort({ createdAt: -1 })
       .lean();
 

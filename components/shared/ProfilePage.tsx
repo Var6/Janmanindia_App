@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import AvatarUpload from "@/components/shared/AvatarUpload";
 
 type UserProfile = {
   _id: string;
@@ -34,8 +35,6 @@ export default function ProfilePage() {
   const [savingInfo, setSavingInfo]  = useState(false);
 
   const [avatarUrl, setAvatarUrl]    = useState<string | undefined>();
-  const [uploading, setUploading]    = useState(false);
-  const fileRef                      = useRef<HTMLInputElement>(null);
 
   const [curPw, setCurPw]            = useState("");
   const [newPw, setNewPw]            = useState("");
@@ -59,32 +58,24 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleAvatarChange(file: File) {
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const uploadRes  = await fetch("/api/upload", { method: "POST", body: form });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) { alert(uploadData.error ?? "Upload failed"); return; }
+  async function saveAvatarUrl(url: string) {
+    setAvatarUrl(url);
+    setProfile((p) => p ? { ...p, avatarUrl: url } : p);
+    await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarUrl: url }),
+    });
+  }
 
-      const patchRes = await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarUrl: uploadData.url }),
-      });
-      if (patchRes.ok) {
-        setAvatarUrl(uploadData.url);
-        setProfile((p) => p ? { ...p, avatarUrl: uploadData.url } : p);
-      } else {
-        const d = await patchRes.json();
-        alert(d.error ?? "Failed to save avatar");
-      }
-    } catch {
-      alert("Network error");
-    } finally {
-      setUploading(false);
-    }
+  async function removeAvatar() {
+    setAvatarUrl(undefined);
+    setProfile((p) => p ? { ...p, avatarUrl: undefined } : p);
+    await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarUrl: "" }),
+    });
   }
 
   async function handleInfoSubmit(e: React.FormEvent) {
@@ -158,37 +149,13 @@ export default function ProfilePage() {
       <section className="rounded-2xl border p-6"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
         <h2 className="font-semibold text-(--text) mb-4">Profile Photo</h2>
-        <div className="flex items-center gap-5">
-          <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center text-xl font-bold"
-              style={{ borderColor: "var(--accent)", background: "var(--bg-secondary)", color: "var(--accent)" }}>
-              {avatarUrl
-                ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-                : initials(displayName)
-              }
-            </div>
-            {uploading && (
-              <div className="absolute inset-0 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(0,0,0,0.45)", color: "#fff" }}>
-                <Spinner sm />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <input type="file" accept="image/jpeg,image/png,image/webp" ref={fileRef} className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarChange(f); e.target.value = ""; }} />
-            <button onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-60"
-              style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--bg)" }}>
-              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M7 3a2 2 0 00-1.732 1H4a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.268A2 2 0 0013 3H7zm3 3a4 4 0 110 8 4 4 0 010-8zm0 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"/>
-              </svg>
-              {uploading ? "Uploading…" : "Change photo"}
-            </button>
-            <p className="text-xs text-(--muted)">JPG, PNG or WebP · max 5 MB</p>
-          </div>
-        </div>
+        <AvatarUpload
+          currentUrl={avatarUrl}
+          name={displayName}
+          size={100}
+          onUploaded={saveAvatarUrl}
+          onRemoved={removeAvatar}
+        />
       </section>
 
       {/* Personal info */}
