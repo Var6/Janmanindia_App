@@ -56,6 +56,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   administrator: [
     { href: "/administrator",          label: "Dashboard",    icon: "home"      },
+    { href: "/administrator/assign",   label: "Assign Tasks", icon: "refresh"   },
     { href: "/administrator/expenses", label: "My Expenses",  icon: "currency"  },
     { href: "/administrator/tickets",  label: "Ticket Inbox", icon: "alert"     },
     { href: "/administrator/offices",  label: "Offices",      icon: "briefcase" },

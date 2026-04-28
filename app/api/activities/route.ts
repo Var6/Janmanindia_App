@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Activity, { type ActivityCategory, type ActivityPriority } from "@/models/Activity";
+import TaskAssignment from "@/models/TaskAssignment";
 
 const VALID_CATEGORIES: ActivityCategory[] = [
   "fieldwork", "meeting", "court", "training", "documentation",
@@ -29,7 +30,11 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, unknown> = {};
     const isPrivileged = ASSIGN_ROLES.includes(session.role);
 
-    if (assigneeParam && assigneeParam !== "me") {
+    if (assigneeParam === "all") {
+      // Return all tasks — privileged only
+      if (!isPrivileged) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      // no filter — fetch everything
+    } else if (assigneeParam && assigneeParam !== "me") {
       if (!isPrivileged) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -105,6 +110,16 @@ export async function POST(req: NextRequest) {
       createdBy: new mongoose.Types.ObjectId(session.id),
       dueDate: dueDate ? new Date(dueDate) : undefined,
     });
+
+    // Record assignment when task is assigned to someone other than self
+    if (String(assigneeId) !== session.id) {
+      await TaskAssignment.create({
+        activity: activity._id,
+        assignedTo: assigneeId,
+        assignedBy: new mongoose.Types.ObjectId(session.id),
+        note: (body as { note?: string }).note?.trim() || undefined,
+      });
+    }
 
     return NextResponse.json({ activity }, { status: 201 });
   } catch (err) {

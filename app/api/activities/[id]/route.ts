@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Activity, { type ActivityStatus, type ActivityPriority } from "@/models/Activity";
+import TaskAssignment from "@/models/TaskAssignment";
 
 const ASSIGN_ROLES = ["director", "superadmin", "administrator", "hr"];
 
-/** PATCH /api/activities/[id] — update status, notes, priority, dueDate.
- *  Only the assignee, creator, or a privileged role may update. */
+/** PATCH /api/activities/[id] — update status, notes, priority, dueDate, or reassign. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireSession();
@@ -17,9 +17,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { status, notes, priority, dueDate, title, description } = body as {
+    const { status, notes, priority, dueDate, title, description, assignee, note } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
       dueDate?: string; title?: string; description?: string;
+      assignee?: string; note?: string;
     };
 
     await connectDB();
@@ -42,6 +43,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       activity.status = status;
       if (status === "in_progress" && !activity.startedAt) activity.startedAt = new Date();
       if (status === "done")        activity.completedAt = new Date();
+    }
+
+    // Reassignment — privileged only
+    if (assignee && mongoose.Types.ObjectId.isValid(assignee) && assignee !== String(activity.assignee)) {
+      if (!isPrivileged) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const previousAssignee = activity.assignee;
+      activity.assignee = new mongoose.Types.ObjectId(assignee);
+      await TaskAssignment.create({
+        activity: activity._id,
+        assignedTo: activity.assignee,
+        assignedBy: new mongoose.Types.ObjectId(session.id),
+        previousAssignee,
+        note: note?.trim() || undefined,
+      });
     }
 
     await activity.save();
