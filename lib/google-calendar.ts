@@ -11,9 +11,15 @@ const SCOPES = [
 function getOAuthClient(): OAuth2Client {
   const clientId     = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri  = process.env.GOOGLE_REDIRECT_URI;
+  // Derive the redirect URI from the running app's URL so dev uses localhost
+  // automatically. Fall back to the explicit env var only if NEXT_PUBLIC_APP_URL
+  // isn't set — keeps prod-only deployments working without extra config.
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  const redirectUri = base
+    ? `${base}/api/auth/google/callback`
+    : process.env.GOOGLE_REDIRECT_URI;
   if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Google OAuth env vars not set (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI)");
+    throw new Error("Google OAuth env vars not set (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXT_PUBLIC_APP_URL)");
   }
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }

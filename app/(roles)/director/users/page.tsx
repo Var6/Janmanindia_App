@@ -12,7 +12,19 @@ const ROLE_COLORS: Record<string, string> = {
   finance: "bg-emerald-100 text-emerald-700",
   director: "bg-orange-100 text-orange-700",
   superadmin: "bg-red-100 text-red-700",
+  pending: "bg-amber-100 text-amber-700",
 };
+
+const ASSIGNABLE_ROLES = [
+  "community",
+  "socialworker",
+  "litigation",
+  "hr",
+  "finance",
+  "administrator",
+  "director",
+  "superadmin",
+] as const;
 
 export default async function AdminUsersPage() {
   const session = await getSessionFromCookies();
@@ -27,6 +39,9 @@ export default async function AdminUsersPage() {
     acc[u.role] = (acc[u.role] ?? 0) + 1;
     return acc;
   }, {});
+
+  // Pending Google sign-ups (@janmanindia.org first-timers awaiting role assignment).
+  const pendingUsers = users.filter((u) => u.role === "pending");
 
   return (
     <div className="space-y-6">
@@ -45,6 +60,48 @@ export default async function AdminUsersPage() {
           </div>
         ))}
       </div>
+
+      {pendingUsers.length > 0 && (
+        <section className="rounded-2xl overflow-hidden border"
+          style={{ background: "var(--warning-bg)", borderColor: "color-mix(in srgb,var(--warning) 30%,transparent)" }}>
+          <div className="px-5 py-3 border-b flex items-center gap-2"
+            style={{ borderColor: "color-mix(in srgb,var(--warning) 25%,transparent)" }}>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--warning)" }} />
+            <h2 className="font-semibold text-sm" style={{ color: "var(--warning-text)" }}>
+              Pending Google sign-ups ({pendingUsers.length})
+            </h2>
+            <span className="text-xs" style={{ color: "var(--warning-text)" }}>
+              · waiting for you to pick a role before they can use the app
+            </span>
+          </div>
+          <div className="divide-y" style={{ borderColor: "color-mix(in srgb,var(--warning) 20%,transparent)" }}>
+            {pendingUsers.map((u) => (
+              <div key={String(u._id)} className="px-5 py-3 flex items-center gap-4 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-(text)">{u.name}</p>
+                  <p className="text-xs text-(muted)">{u.email}</p>
+                </div>
+                <form method="POST" action="/api/users/set-role" className="flex items-center gap-2">
+                  <input type="hidden" name="id" value={String(u._id)} />
+                  <select name="role" required defaultValue=""
+                    className="px-3 py-1.5 rounded-lg border text-xs"
+                    style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                    <option value="" disabled>Pick a role…</option>
+                    {ASSIGNABLE_ROLES.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <button type="submit"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-90"
+                    style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                    Assign role
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {users.length === 0 ? (
         <div className="py-16 text-center bg-(surface) rounded-2xl border border-(border)">

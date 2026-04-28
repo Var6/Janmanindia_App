@@ -1,18 +1,52 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import Field, { Input } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import AnimatedShinyText from "@/components/ui/AnimatedShinyText";
 
+const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
+  google_denied: "Google sign-in was cancelled.",
+  google_invalid_state: "Sign-in session expired — please try again.",
+  google_token_invalid: "We couldn't verify your Google account. Please try again.",
+  google_unavailable: "Google sign-in is not configured. Use email and password instead.",
+  google_callback_error: "Sign-in failed unexpectedly. Please try again or use email and password.",
+  db_connect_failed: "Database is unreachable. Please try again in a moment.",
+  db_lookup_failed: "Could not look up your account. Please try again.",
+  db_upsert_failed: "Could not save your account details. Please try again.",
+  token_sign_failed: "Could not finish sign-in. Please try again.",
+  account_deactivated: "Your account is deactivated. Contact a superadmin.",
+};
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
+  const searchParams = useSearchParams();
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]   = useState(false);
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = searchParams.get("error");
+    const detail = searchParams.get("detail");
+    if (code && GOOGLE_ERROR_MESSAGES[code]) {
+      // Append the raw error message in dev so we can diagnose without
+      // hunting through the terminal.
+      const base = GOOGLE_ERROR_MESSAGES[code];
+      setError(detail ? `${base}\n\n[${code}] ${detail}` : base);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,7 +100,28 @@ export default function LoginPage() {
                 One login for every role — community member, social worker, advocate, HR, finance, administrator, director.
               </p>
 
-              <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+              {/* Google sign-in — janmanindia.org workspace lands on /pending until
+                  a superadmin assigns a role; any other Gmail becomes a community
+                  member automatically. */}
+              <a href="/api/auth/login-google"
+                className="mt-7 flex items-center justify-center gap-3 w-full rounded-xl py-3 text-sm font-semibold transition-colors"
+                style={{ background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)" }}>
+                <svg viewBox="0 0 24 24" className="w-4 h-4">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.75h3.57c2.08-1.92 3.28-4.74 3.28-8.07z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.75c-.99.66-2.26 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0012 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.12a6.6 6.6 0 010-4.24V7.04H2.18a11 11 0 000 9.92l3.66-2.84z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.04l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
+                </svg>
+                Sign in with Google
+              </a>
+
+              <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-(--muted)">
+                <div className="flex-1 h-px bg-(--border)" />
+                <span>or use email</span>
+                <div className="flex-1 h-px bg-(--border)" />
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <Field label="Email" required
                   hint="Use the email your account was created with."
                   example="priya.sharma@example.com">
@@ -94,10 +149,10 @@ export default function LoginPage() {
                 </Field>
 
                 {error && (
-                  <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+                  <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm whitespace-pre-line"
                     style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb,var(--error) 25%,transparent)" }}>
                     <span className="text-base shrink-0">⚠</span>
-                    {error}
+                    <span className="wrap-break-word">{error}</span>
                   </div>
                 )}
 

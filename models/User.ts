@@ -8,7 +8,9 @@ export type Role =
   | "finance"
   | "administrator"
   | "director"
-  | "superadmin";
+  | "superadmin"
+  /** First-time sign-in via Google Workspace; awaits a superadmin to assign a real role. */
+  | "pending";
 
 export interface IOnboardingDocs {
   panUrl?: string;
@@ -25,7 +27,10 @@ export interface IOnboardingDocs {
 export interface IUser extends Document {
   name: string;
   email: string;
-  passwordHash: string;
+  /** Optional — Google-Workspace-only sign-ups have no password. */
+  passwordHash?: string;
+  /** Stable Google account ID (`sub` claim) for users who signed in via Google. */
+  googleSub?: string;
   role: Role;
   phone?: string;
   linkedinUrl?: string;
@@ -162,11 +167,14 @@ const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
+    // Optional so users who only sign in via Google don't need a password on file.
+    // Email/password login route guards against missing hashes.
+    passwordHash: { type: String },
+    googleSub: { type: String, index: true, sparse: true },
     role: {
       type: String,
       required: true,
-      enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"],
+      enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin", "pending"],
     },
     phone: String,
     linkedinUrl: { type: String, trim: true },
@@ -191,6 +199,12 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ "litigationProfile.location.district": 1, "litigationProfile.activeCaseCount": 1 });
 userSchema.index({ "communityProfile.verificationStatus": 1 });
+
+// In dev, drop the cached model on hot reload so schema edits actually take
+// effect without a manual server restart. In prod we keep the cache for speed.
+if (process.env.NODE_ENV !== "production" && mongoose.models.User) {
+  mongoose.deleteModel("User");
+}
 
 const User: Model<IUser> =
   mongoose.models.User ?? mongoose.model<IUser>("User", userSchema);

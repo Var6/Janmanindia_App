@@ -16,6 +16,9 @@ interface Props {
 export default async function AppShell({ allow, children }: Props) {
   const session = await getSessionFromCookies();
   if (!session) redirect("/login");
+  // First-time @janmanindia.org sign-ins land on /pending until a superadmin
+  // assigns them a real role. They have no dashboard to render.
+  if (session.role === "pending") redirect("/pending");
   if (allow && !allow.includes(session.role)) {
     redirect(`/${session.role}`);
   }

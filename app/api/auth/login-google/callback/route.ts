@@ -19,9 +19,17 @@ const ROLE_HOME: Record<Role, string> = {
   pending: "/pending",
 };
 
-function loginRedirect(base: string, error: string): NextResponse {
+function loginRedirect(base: string, error: string, detail?: unknown): NextResponse {
   const url = new URL("/login", base);
   url.searchParams.set("error", error);
+  if (detail) {
+    const msg =
+      detail instanceof Error ? detail.message :
+      typeof detail === "string" ? detail :
+      JSON.stringify(detail);
+    // Trim aggressively so a long stack doesn't blow up the URL.
+    url.searchParams.set("detail", msg.slice(0, 200));
+  }
   const res = NextResponse.redirect(url);
   res.cookies.delete(STATE_COOKIE);
   return res;
@@ -61,52 +69,80 @@ export async function GET(req: NextRequest) {
       email.split("@")[0];
     const picture = typeof claims.picture === "string" ? claims.picture : undefined;
 
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error("[google-login] connectDB failed:", err);
+      return loginRedirect(baseUrl, "db_connect_failed", err);
+    }
 
     const isWorkspace = email.endsWith(`@${WORKSPACE_DOMAIN}`);
 
-    let user = await User.findOne({ googleSub: sub });
-    if (!user) user = await User.findOne({ email });
+    let user;
+    try {
+      user = await User.findOne({ googleSub: sub });
+      if (!user) user = await User.findOne({ email });
+    } catch (err) {
+      console.error("[google-login] User lookup failed:", err);
+      return loginRedirect(baseUrl, "db_lookup_failed", err);
+    }
 
-    if (user) {
-      if (!user.isActive) {
-        return loginRedirect(baseUrl, "account_deactivated");
+    try {
+      if (user) {
+        if (!user.isActive) {
+          return loginRedirect(baseUrl, "account_deactivated");
+        }
+        const updates: Record<string, unknown> = {
+          lastLoginAt: new Date(),
+          googleSub: sub,
+        };
+        if (!user.name && fullName) updates.name = fullName;
+        if (!user.avatarUrl && picture) updates.avatarUrl = picture;
+        await User.updateOne({ _id: user._id }, { $set: updates });
+      } else {
+        const initialRole: Role = isWorkspace ? "pending" : "community";
+        user = await User.create({
+          name: fullName,
+          email,
+          googleSub: sub,
+          role: initialRole,
+          isActive: true,
+          lastLoginAt: new Date(),
+          avatarUrl: picture,
+          ...(initialRole === "community"
+            ? { communityProfile: { verificationStatus: "pending" } }
+            : {}),
+        });
       }
-      const updates: Record<string, unknown> = {
-        lastLoginAt: new Date(),
-        googleSub: sub,
-      };
-      if (!user.name && fullName) updates.name = fullName;
-      if (!user.avatarUrl && picture) updates.avatarUrl = picture;
-      await User.updateOne({ _id: user._id }, { $set: updates });
-    } else {
-      const initialRole: Role = isWorkspace ? "pending" : "community";
-      user = await User.create({
-        name: fullName,
-        email,
-        googleSub: sub,
-        role: initialRole,
-        isActive: true,
-        lastLoginAt: new Date(),
-        avatarUrl: picture,
-        ...(initialRole === "community"
-          ? { communityProfile: { verificationStatus: "pending" } }
-          : {}),
-      });
+    } catch (err) {
+      console.error("[google-login] User upsert failed:", err);
+      return loginRedirect(baseUrl, "db_upsert_failed", err);
     }
 
     // Need to read the refresh-token field (select:false by default) to know
     // whether to auto-redirect this @janmanindia.org user through the calendar
     // consent screen — first-time staff land on /api/auth/google/connect and
     // grant calendar access in one flow before reaching their dashboard.
-    const calendarStatus = await User.findById(user._id).select("+googleRefreshToken").lean();
-    const needsCalendarConsent = isWorkspace && !calendarStatus?.googleRefreshToken;
+    let needsCalendarConsent = false;
+    try {
+      const calendarStatus = await User.findById(user._id).select("+googleRefreshToken").lean();
+      needsCalendarConsent = isWorkspace && !calendarStatus?.googleRefreshToken;
+    } catch (err) {
+      console.error("[google-login] Calendar status check failed (non-fatal):", err);
+      // Non-fatal — fall through and skip the calendar chain.
+    }
 
-    const token = await signToken({
-      id: String(user._id),
-      role: user.role,
-      name: user.name,
-    });
+    let token: string;
+    try {
+      token = await signToken({
+        id: String(user._id),
+        role: user.role,
+        name: user.name,
+      });
+    } catch (err) {
+      console.error("[google-login] signToken failed:", err);
+      return loginRedirect(baseUrl, "token_sign_failed", err);
+    }
 
     // Auto-chain into the calendar consent flow for workspace users who haven't
     // granted calendar access yet — /api/auth/google/connect requires the
@@ -127,10 +163,10 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     // Log the full stack and any mongoose validation details so we can see
     // exactly what blew up in the dev terminal.
-    console.error("Google login callback failed:", err);
+    console.error("[google-login] uncaught:", err);
     if (err && typeof err === "object" && "errors" in err) {
       console.error("Validation errors:", JSON.stringify((err as { errors: unknown }).errors, null, 2));
     }
-    return loginRedirect(baseUrl, "google_callback_error");
+    return loginRedirect(baseUrl, "google_callback_error", err);
   }
 }

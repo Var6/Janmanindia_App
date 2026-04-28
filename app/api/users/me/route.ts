@@ -39,17 +39,21 @@ export async function PATCH(request: NextRequest) {
     if (body.phone?.trim())         updates.phone     = body.phone.trim();
     if ("avatarUrl" in body)        updates.avatarUrl = body.avatarUrl || null;
 
-    // Password change — requires current password
+    // Password change. Google-only accounts (no passwordHash on file) can set
+    // their first password without supplying a "current" one — they have no
+    // password to verify against, and the session itself is the auth.
     if (body.newPassword) {
-      if (!body.currentPassword) {
-        return NextResponse.json({ error: "Current password is required to set a new one" }, { status: 400 });
-      }
       if (body.newPassword.length < 8) {
         return NextResponse.json({ error: "New password must be at least 8 characters" }, { status: 400 });
       }
-      const valid = await comparePassword(body.currentPassword, user.passwordHash);
-      if (!valid) {
-        return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
+      if (user.passwordHash) {
+        if (!body.currentPassword) {
+          return NextResponse.json({ error: "Current password is required to set a new one" }, { status: 400 });
+        }
+        const valid = await comparePassword(body.currentPassword, user.passwordHash);
+        if (!valid) {
+          return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
+        }
       }
       updates.passwordHash = await hashPassword(body.newPassword);
     }

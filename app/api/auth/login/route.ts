@@ -23,6 +23,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Account is deactivated" }, { status: 403 });
     }
 
+    // Google-only accounts have no password on file. Don't leak that fact —
+    // return the same generic "Invalid credentials" message so attackers can't
+    // enumerate which emails are SSO-only.
+    if (!user.passwordHash) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
     const valid = await comparePassword(password, user.passwordHash);
     if (!valid) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
@@ -46,6 +53,7 @@ export async function POST(request: NextRequest) {
       administrator: "/administrator",
       director: "/director",
       superadmin: "/superadmin",
+      pending: "/pending",
     };
 
     const response = NextResponse.json({
