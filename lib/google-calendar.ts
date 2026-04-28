@@ -2,8 +2,10 @@ import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 
 const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
+  "openid",
   "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/calendar.events",
 ];
 
 function getOAuthClient(): OAuth2Client {
@@ -45,6 +47,33 @@ export async function exchangeCodeForTokens(code: string): Promise<{
   if (!data.email) throw new Error("Could not read user email from Google");
 
   return { refreshToken: tokens.refresh_token, email: data.email };
+}
+
+/** Sign-in flow exchange — returns full user profile + tokens. The refresh
+ *  token may be undefined on subsequent sign-ins (Google only issues it once
+ *  per consent), in which case we keep the previously stored one. */
+export async function exchangeCodeForProfile(code: string): Promise<{
+  refreshToken?: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  sub?: string;
+}> {
+  const client = getOAuthClient();
+  const { tokens } = await client.getToken(code);
+  client.setCredentials(tokens);
+
+  const oauth2 = google.oauth2({ version: "v2", auth: client });
+  const { data } = await oauth2.userinfo.get();
+  if (!data.email) throw new Error("Could not read user email from Google");
+
+  return {
+    refreshToken: tokens.refresh_token ?? undefined,
+    email: data.email,
+    name: data.name ?? undefined,
+    picture: data.picture ?? undefined,
+    sub: data.id ?? undefined,
+  };
 }
 
 /** Returns an authenticated Calendar API client for a user's refresh token. */

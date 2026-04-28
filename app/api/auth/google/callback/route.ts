@@ -4,7 +4,8 @@ import { connectDB } from "@/lib/mongoose";
 import User from "@/models/User";
 import { exchangeCodeForTokens } from "@/lib/google-calendar";
 
-/** GET /api/auth/google/callback — Google redirects here with ?code=...&state=<userId> */
+/** GET /api/auth/google/callback — "Connect Google Calendar" from the profile page.
+ *  For first-time Google sign-in, the unified flow lives at /api/auth/login-google/callback. */
 export async function GET(req: NextRequest) {
   const session = await getSessionFromCookies();
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
@@ -16,7 +17,6 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const errorParam = searchParams.get("error");
 
-  // Pick the right profile page to bounce back to based on role.
   const profileUrl = new URL(`/${session.role}/profile`, baseUrl);
 
   if (errorParam) {
