@@ -26,7 +26,7 @@ export default function TopBar({ userName, role }: Props) {
   const parents = crumbs.slice(0, -1);
 
   return (
-    <header className="sticky top-0 z-10 border-b h-14 flex items-center justify-between gap-4 px-3"
+    <header className="sticky top-0 z-10 border-b h-17 flex items-center justify-between gap-4 px-4"
       style={{
         background: "color-mix(in srgb, var(--surface) 75%, transparent)",
         backdropFilter: "blur(14px) saturate(160%)",
