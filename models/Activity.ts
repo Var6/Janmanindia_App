@@ -18,6 +18,10 @@ export interface IActivity extends Document {
   startedAt?: Date;
   completedAt?: Date;
   notes?: string;
+  /** Google Calendar event id when synced. */
+  googleEventId?: string;
+  /** Whose calendar the event lives on (so we know which user's refresh token to use for updates/deletes). */
+  googleEventOwner?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +43,8 @@ const activitySchema = new Schema<IActivity>(
     startedAt:   Date,
     completedAt: Date,
     notes:       String,
+    googleEventId:    { type: String, index: true },
+    googleEventOwner: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Activity, { type ActivityCategory, type ActivityPriority } from "@/models/Activity";
 import TaskAssignment from "@/models/TaskAssignment";
+import { syncActivityCreate } from "@/lib/activity-calendar-sync";
 
 const VALID_CATEGORIES: ActivityCategory[] = [
   "fieldwork", "meeting", "court", "training", "documentation",
@@ -120,6 +121,10 @@ export async function POST(req: NextRequest) {
         note: (body as { note?: string }).note?.trim() || undefined,
       });
     }
+
+    // Sync to Google Calendar (best-effort — assignee's calendar if connected,
+    // else creator's, else skip).
+    void syncActivityCreate(String(activity._id));
 
     return NextResponse.json({ activity }, { status: 201 });
   } catch (err) {

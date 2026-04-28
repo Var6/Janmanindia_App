@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Activity, { type ActivityStatus, type ActivityPriority } from "@/models/Activity";
 import TaskAssignment from "@/models/TaskAssignment";
+import { syncActivityUpdate, syncActivityReassign, syncActivityDelete } from "@/lib/activity-calendar-sync";
 
 const ASSIGN_ROLES = ["director", "superadmin", "administrator", "hr"];
 
@@ -46,20 +47,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Reassignment — privileged only
+    let didReassign = false;
+    let previousAssigneeId: mongoose.Types.ObjectId | null = null;
     if (assignee && mongoose.Types.ObjectId.isValid(assignee) && assignee !== String(activity.assignee)) {
       if (!isPrivileged) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      const previousAssignee = activity.assignee;
+      previousAssigneeId = activity.assignee;
       activity.assignee = new mongoose.Types.ObjectId(assignee);
       await TaskAssignment.create({
         activity: activity._id,
         assignedTo: activity.assignee,
         assignedBy: new mongoose.Types.ObjectId(session.id),
-        previousAssignee,
+        previousAssignee: previousAssigneeId,
         note: note?.trim() || undefined,
       });
+      didReassign = true;
     }
 
     await activity.save();
+
+    // Sync calendar event after save (best-effort).
+    if (didReassign && previousAssigneeId) {
+      void syncActivityReassign(String(activity._id), previousAssigneeId);
+    } else {
+      void syncActivityUpdate(String(activity._id));
+    }
+
     return NextResponse.json({ activity });
   } catch (err) {
     if (err instanceof Response) return err;
@@ -85,6 +97,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Delete the calendar event first (uses the saved owner+eventId), then the activity.
+    await syncActivityDelete(String(activity._id));
     await activity.deleteOne();
     return NextResponse.json({ ok: true });
   } catch (err) {
