@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 
 export interface NavItem {
   href: string;
@@ -200,6 +200,7 @@ interface Props {
 
 export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: Props) {
   const pathname = usePathname();
+  const router   = useRouter();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
 
@@ -219,6 +220,11 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
       .then((d) => { if (d.user?.avatarUrl) setAvatarUrl(d.user.avatarUrl); })
       .catch(() => {});
   }, []);
+
+  const handleLogout = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.push("/");
+  }, [router]);
 
   function isActive(href: string): boolean {
     if (href === `/${roleSlug}` || href === "/training") return pathname === href;
@@ -318,15 +324,13 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
                 <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
                 <p className="text-[10px] text-(--muted) mt-0.5 truncate">{roleLabel}</p>
               </div>
-              <form action="/api/auth/logout" method="POST">
-                <button type="submit" title="Sign out"
-                  className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                    <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
-                    <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
-                  </svg>
-                </button>
-              </form>
+              <button type="button" onClick={handleLogout} title="Sign out"
+                className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
+                  <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
+                </svg>
+              </button>
             </>
           )}
         </div>
