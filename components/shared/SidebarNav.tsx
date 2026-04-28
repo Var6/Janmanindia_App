@@ -203,6 +203,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
   const router   = useRouter();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [unreadChat, setUnreadChat] = useState(0);
 
   // Persist collapse state across navigations
   useEffect(() => {
@@ -220,6 +221,21 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
       .then((d) => { if (d.user?.avatarUrl) setAvatarUrl(d.user.avatarUrl); })
       .catch(() => {});
   }, []);
+
+  // Poll for unread chat messages every 30s; refresh whenever path changes (so
+  // it drops back to 0 when user enters /chat and marks reads).
+  useEffect(() => {
+    let cancelled = false;
+    const tick = () => {
+      fetch("/api/chat/unread")
+        .then((r) => r.json())
+        .then((d) => { if (!cancelled && typeof d.total === "number") setUnreadChat(d.total); })
+        .catch(() => {});
+    };
+    tick();
+    const t = setInterval(tick, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [pathname]);
 
   const handleLogout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -295,11 +311,23 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
                 }
               }}
             >
-              <span className="shrink-0 transition-colors" style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon)" }}>
+              <span className="shrink-0 transition-colors relative" style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon)" }}>
                 {ICONS[item.icon]}
+                {item.href === "/chat" && unreadChat > 0 && collapsed && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
+                    style={{ background: "var(--error, #dc2626)", color: "white" }}>
+                    {unreadChat > 99 ? "99+" : unreadChat}
+                  </span>
+                )}
               </span>
               {!collapsed && <span className="truncate">{item.label}</span>}
-              {!collapsed && active && (
+              {!collapsed && item.href === "/chat" && unreadChat > 0 && (
+                <span className="ml-auto min-w-4.5 h-4.5 rounded-full text-[10px] font-bold flex items-center justify-center px-1.5 shrink-0"
+                  style={{ background: "var(--error, #dc2626)", color: "white" }}>
+                  {unreadChat > 99 ? "99+" : unreadChat}
+                </span>
+              )}
+              {!collapsed && active && item.href !== "/chat" && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
               )}
             </Link>

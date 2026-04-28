@@ -92,14 +92,25 @@ const PROFILE_ITEM = (role: string): NavItem => ({
   icon: "user-circle",
 });
 
-/** Build the full sidebar for a given role. */
+/** Build the full sidebar for a given role.
+ *  Dashboard always pinned to top; everything else sorted alphabetically by label;
+ *  My Profile pinned to bottom. */
 export function navItemsFor(role: string): NavItem[] {
   const base = ROLE_ITEMS[role] ?? [];
-  // Community gets no logistics tile (they don't need org-internal logistics).
   const utility = role === "community" ? [] : STAFF_ITEMS;
-  // Finance team doesn't need training in their sidebar — they manage money, not learning.
   const shared = role === "finance" ? SHARED_ITEMS.filter(i => i.href !== "/training") : SHARED_ITEMS;
-  return [...base, ...utility, ...shared, PROFILE_ITEM(role)];
+
+  const all = [...base, ...utility, ...shared];
+  const dashboardItem = all.find((i) => i.label === "Dashboard" || i.label === "Overview");
+  const rest = all
+    .filter((i) => i !== dashboardItem)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return [
+    ...(dashboardItem ? [dashboardItem] : []),
+    ...rest,
+    PROFILE_ITEM(role),
+  ];
 }
 
 export const ROLE_LABELS: Record<string, string> = {

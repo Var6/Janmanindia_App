@@ -86,6 +86,8 @@ export default function ChatApp({ currentUserId }: Props) {
     lastTsRef.current = null;
     setEditingId(null);
     loadMessages(activeId);
+    // Mark conversation as read so the sidebar badge clears
+    fetch(`/api/chat/conversations/${activeId}/read`, { method: "POST" }).catch(() => {});
 
     let timer: ReturnType<typeof setTimeout> | null = null;
     const tick = () => {

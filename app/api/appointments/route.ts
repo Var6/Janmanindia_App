@@ -156,12 +156,14 @@ export async function PATCH(request: NextRequest) {
     const session = await requireSession();
     await connectDB();
     const body = await request.json();
-    const { appointmentId, action, litigationMemberId, notes, decision } = body as {
+    const { appointmentId, action, litigationMemberId, notes, decision, proposedDate, endDate } = body as {
       appointmentId: string;
-      action: "approve_sw" | "reject_sw" | "confirm_litigation" | "reject_litigation" | "respond" | "cancel";
+      action: "approve_sw" | "reject_sw" | "confirm_litigation" | "reject_litigation" | "respond" | "cancel" | "reschedule";
       litigationMemberId?: string;
       notes?: string;
       decision?: "approve" | "reject";
+      proposedDate?: string;
+      endDate?: string;
     };
 
     if (!appointmentId || !action) {
@@ -170,6 +172,27 @@ export async function PATCH(request: NextRequest) {
 
     const apt = await Appointment.findById(appointmentId);
     if (!apt) return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
+
+    if (action === "reschedule") {
+      // Either party (requester or requestee) may propose a new time. The
+      // appointment goes back to "pending" so the other side must accept.
+      const isParty =
+        String(apt.requester ?? "") === session.id ||
+        String(apt.requestee ?? "") === session.id ||
+        String(apt.community ?? "") === session.id ||
+        String(apt.socialWorker ?? "") === session.id ||
+        String(apt.litigationMember ?? "") === session.id;
+      if (!isParty) return NextResponse.json({ error: "Only the requester or recipient can reschedule" }, { status: 403 });
+      if (!proposedDate) return NextResponse.json({ error: "proposedDate is required" }, { status: 400 });
+      const newStart = new Date(proposedDate);
+      if (isNaN(newStart.getTime())) return NextResponse.json({ error: "Invalid proposedDate" }, { status: 400 });
+      apt.proposedDate = newStart;
+      apt.endDate = endDate ? new Date(endDate) : new Date(newStart.getTime() + DEFAULT_DURATION_MIN * 60_000);
+      apt.status = "pending";
+      if (notes) apt.responseNotes = notes;
+      await apt.save();
+      return NextResponse.json({ appointment: apt });
+    }
 
     if (action === "respond") {
       if (String(apt.requestee) !== session.id) {
