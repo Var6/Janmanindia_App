@@ -123,13 +123,19 @@ export async function GET(req: NextRequest) {
     // whether to auto-redirect this @janmanindia.org user through the calendar
     // consent screen — first-time staff land on /api/auth/google/connect and
     // grant calendar access in one flow before reaching their dashboard.
+    //
+    // Skipped in dev because the calendar OAuth client and the login OAuth
+    // client are different in this project, and the calendar one rarely has
+    // localhost redirect URIs registered. Users can connect calendar from
+    // their profile page when they need it.
     let needsCalendarConsent = false;
-    try {
-      const calendarStatus = await User.findById(user._id).select("+googleRefreshToken").lean();
-      needsCalendarConsent = isWorkspace && !calendarStatus?.googleRefreshToken;
-    } catch (err) {
-      console.error("[google-login] Calendar status check failed (non-fatal):", err);
-      // Non-fatal — fall through and skip the calendar chain.
+    if (process.env.NODE_ENV === "production") {
+      try {
+        const calendarStatus = await User.findById(user._id).select("+googleRefreshToken").lean();
+        needsCalendarConsent = isWorkspace && !calendarStatus?.googleRefreshToken;
+      } catch (err) {
+        console.error("[google-login] Calendar status check failed (non-fatal):", err);
+      }
     }
 
     let token: string;
