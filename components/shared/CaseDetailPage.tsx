@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Timeline, type TimelineEntry } from "@/components/ui/timeline";
 import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
 import IcpForm from "@/components/icp/IcpForm";
+import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -637,8 +638,14 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
       {/* FIR alert */}
       <FirAlert caseData={c} />
 
-      {/* Progress stepper */}
-      <CaseProgressStepper caseData={c} />
+      {/* Git-graph workflow */}
+      <CaseWorkflowGraph
+        path={c.path}
+        criminalPath={c.criminalPath as any}
+        highCourtPath={c.highCourtPath as any}
+        firFiled={c.criminalPath?.firFiled}
+        createdAt={c.createdAt}
+      />
 
       {/* Document upload (litigation members manage milestones + add evidence) */}
       {canEdit && (
