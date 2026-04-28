@@ -201,6 +201,7 @@ interface Props {
 export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: Props) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
 
   // Persist collapse state across navigations
   useEffect(() => {
@@ -210,6 +211,14 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
   useEffect(() => {
     if (typeof window !== "undefined") window.localStorage.setItem("sb_collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
+
+  // Fetch current user's avatar independently so it updates after profile uploads
+  useEffect(() => {
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((d) => { if (d.user?.avatarUrl) setAvatarUrl(d.user.avatarUrl); })
+      .catch(() => {});
+  }, []);
 
   function isActive(href: string): boolean {
     if (href === `/${roleSlug}` || href === "/training") return pathname === href;
@@ -296,10 +305,12 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
       <div className="px-2 py-2.5 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
         <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 px-2"} py-2 rounded-lg`}
           style={{ background: collapsed ? "transparent" : "var(--bg-secondary)" }}>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: "var(--accent-muted)", color: "var(--sidebar-active-text)" }}
+          <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold"
+            style={{ background: avatarUrl ? "transparent" : "var(--accent-muted)", color: "var(--sidebar-active-text)" }}
             title={collapsed ? userName : undefined}>
-            {initials}
+            {avatarUrl
+              ? <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+              : initials}
           </div>
           {!collapsed && (
             <>

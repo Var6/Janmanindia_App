@@ -167,6 +167,7 @@ const userSchema = new Schema<IUser>(
     },
     phone: String,
     linkedinUrl: { type: String, trim: true },
+    avatarUrl:   { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
     employeeId: { type: String, unique: true, sparse: true, trim: true },

@@ -35,9 +35,9 @@ export async function PATCH(request: NextRequest) {
 
     const updates: Record<string, unknown> = {};
 
-    if (body.name?.trim())  updates.name      = body.name.trim();
-    if (body.phone?.trim()) updates.phone     = body.phone.trim();
-    if (body.avatarUrl)     updates.avatarUrl = body.avatarUrl;
+    if (body.name?.trim())          updates.name      = body.name.trim();
+    if (body.phone?.trim())         updates.phone     = body.phone.trim();
+    if ("avatarUrl" in body)        updates.avatarUrl = body.avatarUrl || null;
 
     // Password change — requires current password
     if (body.newPassword) {
