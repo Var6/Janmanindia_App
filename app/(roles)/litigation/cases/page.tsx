@@ -5,6 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import CreateCaseForm from "@/components/shared/CreateCaseForm";
 
 const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = {
   Open:      { background: "var(--info-bg)",      color: "var(--info-text)"    },
@@ -34,11 +35,14 @@ export default async function LitigationCasesPage() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
 
-      <div>
-        <h1 className="text-2xl font-bold text-(--text)">My Cases</h1>
-        <p className="text-sm text-(--muted) mt-1">
-          {open.length} active · {closed.length} closed · sorted by next hearing date
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-(--text)">My Cases</h1>
+          <p className="text-sm text-(--muted) mt-1">
+            {open.length} active · {closed.length} closed · sorted by next hearing date
+          </p>
+        </div>
+        <CreateCaseForm />
       </div>
 
       <section>

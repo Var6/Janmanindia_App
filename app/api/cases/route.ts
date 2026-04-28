@@ -61,8 +61,9 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSession();
 
-    // Only user or admin/superadmin can create cases
-    if (!["community", "director", "superadmin", "socialworker"].includes(session.role)) {
+    // Community members, social workers, litigation lawyers, and admins can create cases.
+    // Litigation lawyers are auto-assigned as the case's litigationMember below.
+    if (!["community", "director", "superadmin", "socialworker", "litigation"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -108,6 +109,9 @@ export async function POST(request: NextRequest) {
       path,
       caseType: caseType?.trim() || undefined,
       community: communityRef,
+      // Litigation lawyers who file their own cases get auto-assigned so the case
+      // shows up in their list and they can update it without a separate hand-off.
+      ...(session.role === "litigation" ? { litigationMember: session.id } : {}),
       status: "Open",
       documents: [],
       caseDiary: [],

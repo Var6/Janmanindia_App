@@ -93,6 +93,15 @@ function EventCard({ color, label, children }: {
 
 function DocLink({ doc }: { doc: DocMeta }) {
   const ocr = OCR_STYLE[doc.ocrStatus ?? "pending"] ?? OCR_STYLE.pending;
+  // Derive a sensible filename for the browser to suggest on download.
+  const downloadName = (() => {
+    try {
+      const tail = decodeURIComponent(new URL(doc.url, "http://x").pathname.split("/").pop() ?? "");
+      return tail || doc.label;
+    } catch {
+      return doc.label;
+    }
+  })();
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-t first:border-0"
       style={{ borderColor: "var(--border)" }}>
@@ -105,12 +114,32 @@ function DocLink({ doc }: { doc: DocMeta }) {
         </svg>
         <span className="truncate">{doc.label}</span>
       </a>
-      {doc.ocrStatus && (
-        <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-          style={{ background: ocr.bg, color: ocr.text }}>
-          OCR: {doc.ocrStatus}
-        </span>
-      )}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <a href={doc.url} target="_blank" rel="noopener noreferrer" title="Preview"
+          aria-label="Preview document"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:bg-(--bg-secondary)"
+          style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+            <path d="M1.5 8s2.5-5 6.5-5 6.5 5 6.5 5-2.5 5-6.5 5S1.5 8 1.5 8z"/>
+            <circle cx="8" cy="8" r="2"/>
+          </svg>
+        </a>
+        <a href={doc.url} download={downloadName} title="Download"
+          aria-label="Download document"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:bg-(--bg-secondary)"
+          style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+            <path d="M8 2v8m0 0l-3-3m3 3l3-3"/>
+            <path d="M2.5 12.5v1A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5v-1"/>
+          </svg>
+        </a>
+        {doc.ocrStatus && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: ocr.bg, color: ocr.text }}>
+            OCR: {doc.ocrStatus}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
