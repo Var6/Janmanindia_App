@@ -16,16 +16,16 @@ export default async function HrDashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [pendingInvoices, socialWorkers, slaBreached] = dbOk
+  const [pendingInvoices, socialWorkers] = dbOk
     ? await Promise.all([
         EodReport.find({ invoiceStatus: "pending" }).sort({ createdAt: -1 }).limit(10)
           .populate("submittedBy", "name email").lean(),
         User.find({ role: "socialworker", isActive: true })
           .select("name email socialWorkerProfile lastLoginAt").lean(),
-        User.find({ role: "socialworker", "socialWorkerProfile.slaBreaches": { $gt: 0 } })
-          .select("name email socialWorkerProfile").lean(),
       ])
-    : [[], [], []] as const;
+    : [[], []] as const;
+  // Derive SLA breaches from the same dataset — saves a separate Atlas round-trip.
+  const slaBreached = socialWorkers.filter((sw) => (sw.socialWorkerProfile?.slaBreaches ?? 0) > 0);
 
   return (
     <div className="space-y-8">

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
+import { tryConnectDB } from "@/lib/mongoose";
+import User from "@/models/User";
 import SidebarNav from "@/components/shared/SidebarNav";
 import TopBar from "@/components/shared/TopBar";
 import { navItemsFor, ROLE_LABELS } from "@/lib/nav";
@@ -21,9 +23,17 @@ export default async function AppShell({ allow, children }: Props) {
   const navItems = navItemsFor(session.role);
   const roleLabel = ROLE_LABELS[session.role] ?? session.role;
 
+  // Pre-load the avatar on the server so the sidebar doesn't need a client fetch
+  // to render the user photo on first paint.
+  let avatarUrl: string | undefined;
+  if (await tryConnectDB()) {
+    const user = await User.findById(session.id).select("avatarUrl").lean();
+    avatarUrl = user?.avatarUrl ?? undefined;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <SidebarNav navItems={navItems} roleLabel={roleLabel} userName={session.name} roleSlug={session.role} />
+      <SidebarNav navItems={navItems} roleLabel={roleLabel} userName={session.name} roleSlug={session.role} initialAvatarUrl={avatarUrl} />
 
       <main className="flex-1 overflow-y-auto flex flex-col">
         <TopBar userName={session.name} role={session.role} />

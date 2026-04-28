@@ -196,13 +196,14 @@ interface Props {
   roleLabel: string;
   userName: string;
   roleSlug: string;
+  initialAvatarUrl?: string;
 }
 
-export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: Props) {
+export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, initialAvatarUrl }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
   const [collapsed, setCollapsed] = useState<boolean>(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initialAvatarUrl);
   const [unreadChat, setUnreadChat] = useState(0);
 
   // Persist collapse state across navigations
@@ -214,19 +215,26 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
     if (typeof window !== "undefined") window.localStorage.setItem("sb_collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
-  // Fetch current user's avatar independently so it updates after profile uploads
+  // Refresh avatar when window regains focus (handles "uploaded a new photo, switch tabs back").
   useEffect(() => {
-    fetch("/api/users/me")
-      .then((r) => r.json())
-      .then((d) => { if (d.user?.avatarUrl) setAvatarUrl(d.user.avatarUrl); })
-      .catch(() => {});
+    if (typeof window === "undefined") return;
+    const onFocus = () => {
+      fetch("/api/users/me")
+        .then((r) => r.json())
+        .then((d) => setAvatarUrl(d.user?.avatarUrl ?? undefined))
+        .catch(() => {});
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  // Poll for unread chat messages every 30s; refresh whenever path changes (so
-  // it drops back to 0 when user enters /chat and marks reads).
+  // Poll unread chat messages — only when tab is visible. Refresh on path change
+  // so the badge drops to 0 right after entering /chat (which marks reads).
   useEffect(() => {
+    if (typeof document === "undefined") return;
     let cancelled = false;
     const tick = () => {
+      if (document.hidden) return;
       fetch("/api/chat/unread")
         .then((r) => r.json())
         .then((d) => { if (!cancelled && typeof d.total === "number") setUnreadChat(d.total); })
@@ -234,7 +242,9 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug }: 
     };
     tick();
     const t = setInterval(tick, 30000);
-    return () => { cancelled = true; clearInterval(t); };
+    const onVis = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { cancelled = true; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
   }, [pathname]);
 
   const handleLogout = useCallback(async () => {
