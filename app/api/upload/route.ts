@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Strip codec params (e.g. "audio/webm;codecs=opus" → "audio/webm") before checking
+    const baseType = file.type.split(";")[0].trim().toLowerCase();
+    if (!ALLOWED_TYPES.includes(baseType)) {
       return NextResponse.json({ error: "Only images, PDFs, Word/Excel, or audio files are allowed" }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
         Bucket: R2_BUCKET,
         Key: key,
         Body: bytes,
-        ContentType: file.type,
+        ContentType: baseType,
         ContentLength: bytes.length,
         // Cache for a year — uploaded objects are content-addressed by their
         // unguessable filename, so they're effectively immutable.
