@@ -4,6 +4,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import UserActions from "./UserActions";
 
 const ROLE_COLORS: Record<string, string> = {
   community: "bg-blue-100 text-blue-700",
@@ -77,7 +78,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-(--text)">User Management</h1>
         <p className="text-sm text-(--muted) mt-1">
-          {activeUsers.length} active · {pastUsers.length} past employee{pastUsers.length === 1 ? "" : "s"} · {allUsers.length} total accounts.
+          {activeUsers.length} active · {pastUsers.length} NPA · {allUsers.length} total accounts.
         </p>
       </div>
 
@@ -140,7 +141,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)" }}>
         {TAB_FILTERS.map((t) => {
           const count = t === "active" ? activeUsers.length : t === "past" ? pastUsers.length : allUsers.length;
-          const label = t === "active" ? "Active" : t === "past" ? "Past employees" : "All";
+          const label = t === "active" ? "Active" : t === "past" ? "NPA" : "All";
           const href = `/director/users?tab=${t}${roleFilter ? `&role=${roleFilter}` : ""}`;
           return (
             <Link key={t} href={href}
@@ -164,81 +165,85 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       {visibleUsers.length === 0 ? (
         <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
           <p className="text-sm text-(--muted)">
-            {dbOk ? (tab === "past" ? "No past employees yet." : "No users match this view.") : "Connect database."}
+            {dbOk ? (tab === "past" ? "No NPA users yet." : "No users match this view.") : "Connect database."}
           </p>
         </div>
       ) : (
         <div className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] px-5 py-3 border-b border-(--border) text-xs font-semibold text-(--muted) uppercase tracking-wide"
-            style={{ background: "var(--bg-secondary)" }}>
-            <span>User</span>
-            <span className="px-4">{tab === "past" ? "Last role" : "Role"}</span>
-            <span className="px-4">{tab === "past" ? "Exited" : "Status"}</span>
-            <span className="px-4">Action</span>
-          </div>
-          <div className="divide-y divide-(--border)">
-            {visibleUsers.map((u) => {
-              const exitedAt = u.exitedAt ? new Date(u.exitedAt) : null;
-              const tenure = u.joinedAt && exitedAt
-                ? Math.max(1, Math.round((exitedAt.getTime() - new Date(u.joinedAt).getTime()) / (30 * 86400000)))
-                : null;
-              return (
-                <div key={String(u._id)} className="grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 hover:bg-(--bg) transition-colors">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-(--text) truncate">
-                      {u.name}
-                      {u.employeeId && (
-                        <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                          {u.employeeId}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="text-xs font-semibold text-(--muted) uppercase tracking-wide"
+                  style={{ background: "var(--bg-secondary)" }}>
+                  <th className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: "var(--border)" }}>User</th>
+                  <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+                    {tab === "past" ? "Last role" : "Role"}
+                  </th>
+                  <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+                    {tab === "past" ? "NPA since" : "Status"}
+                  </th>
+                  <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleUsers.map((u, i) => {
+                  const exitedAt = u.exitedAt ? new Date(u.exitedAt) : null;
+                  const tenure = u.joinedAt && exitedAt
+                    ? Math.max(1, Math.round((exitedAt.getTime() - new Date(u.joinedAt).getTime()) / (30 * 86400000)))
+                    : null;
+                  const isLast = i === visibleUsers.length - 1;
+                  const cellBorder = isLast ? "" : "border-b";
+                  return (
+                    <tr key={String(u._id)} className="hover:bg-(--bg) transition-colors align-middle">
+                      <td className={`px-5 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-(--text) truncate">
+                            {u.name}
+                            {u.employeeId && (
+                              <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded"
+                                style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                                {u.employeeId}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-(--muted)">{u.email}</p>
+                        </div>
+                      </td>
+                      <td className={`px-4 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
+                        <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[u.role] ?? "bg-gray-100 text-gray-600"}`}>
+                          {ROLE_LABEL[u.role] ?? u.role}
                         </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-(--muted)">{u.email}</p>
-                  </div>
-                  <span className={`mx-4 text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[u.role] ?? "bg-gray-100 text-gray-600"}`}>
-                    {ROLE_LABEL[u.role] ?? u.role}
-                  </span>
-                  {!u.isActive ? (
-                    <span className="mx-4 text-xs text-(--muted)">
-                      {exitedAt
-                        ? exitedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                        : "—"}
-                      {tenure ? <span className="block text-[10px] opacity-70">~{tenure} mo</span> : null}
-                    </span>
-                  ) : (
-                    <span className="mx-4 text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                      Active
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2 px-4 flex-wrap">
-                    {/* Set-role dropdown — submits straight to /api/users/set-role
-                        on change. Hidden submit lets non-JS browsers still post. */}
-                    {u.isActive && u.role !== "pending" && (
-                      <form method="POST" action="/api/users/set-role"
-                        className="flex items-center gap-1">
-                        <input type="hidden" name="id" value={String(u._id)} />
-                        <select name="role" defaultValue={u.role}
-                          className="px-2 py-1 rounded-lg border text-xs"
-                          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                          {ASSIGNABLE_ROLES.map((r) => (
-                            <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>
-                          ))}
-                        </select>
-                        <button type="submit" className="text-xs font-semibold text-(--accent) hover:underline">
-                          Set
-                        </button>
-                      </form>
-                    )}
-                    <form method="POST" action={`/api/users/toggle?id=${String(u._id)}&active=${u.isActive ? "false" : "true"}`}>
-                      <button type="submit" className={`text-xs font-semibold hover:underline ${u.isActive ? "text-red-500" : "text-green-600"}`}>
-                        {u.isActive ? "Mark past employee" : "Reinstate"}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className={`px-4 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
+                        {!u.isActive ? (
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 uppercase tracking-wide">NPA</span>
+                            <span className="text-[10px] text-(--muted)">
+                              {exitedAt ? exitedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                              {tenure ? ` · ~${tenure} mo` : ""}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                            Active
+                          </span>
+                        )}
+                      </td>
+                      <td className={`px-4 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
+                        <UserActions
+                          userId={String(u._id)}
+                          userName={u.name}
+                          currentRole={u.role}
+                          isActive={u.isActive}
+                          roles={ASSIGNABLE_ROLES}
+                          roleLabels={ROLE_LABEL}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
