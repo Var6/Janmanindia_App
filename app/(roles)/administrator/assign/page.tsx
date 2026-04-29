@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type Priority = "low" | "medium" | "high";
@@ -197,72 +198,68 @@ export default function AdminAssignPage() {
               }}>{formMsg.ok ? "✓ " : "✗ "}{formMsg.text}</div>
             )}
 
-            <div className="space-y-3">
-              <input required value={title} onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title *" maxLength={200}
-                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
-                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            <div className="space-y-4">
+              <Field label="Task title" required htmlFor="atk-title"
+                hint="Short, action-oriented — what should the assignee do?"
+                example="Visit Sangam Vihar shelter for follow-up">
+                <Input id="atk-title" required value={title} onChange={(e) => setTitle(e.target.value)}
+                  placeholder="What needs doing?" maxLength={200} />
+              </Field>
 
-              <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
-                placeholder="Description (optional)" rows={2}
-                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
-                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+              <Field label="Details" htmlFor="atk-desc"
+                hint="Background context, names, prior steps. Optional."
+                example="Met family on 4 Apr; need to verify Aadhaar and submit FIR copy.">
+                <Textarea id="atk-desc" value={desc} onChange={(e) => setDesc(e.target.value)}
+                  placeholder="Anything the assignee should know before starting" rows={3} />
+              </Field>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-(--muted) mb-1">Category</label>
-                  <select value={category} onChange={(e) => setCategory(e.target.value as Category)}
-                    className="w-full px-3 py-2 rounded-xl border text-sm"
-                    style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                <Field label="Category" htmlFor="atk-category">
+                  <Select id="atk-category" value={category}
+                    onChange={(e) => setCategory(e.target.value as Category)}>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-(--muted) mb-1">Priority</label>
-                  <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}
-                    className="w-full px-3 py-2 rounded-xl border text-sm"
-                    style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                  </Select>
+                </Field>
+                <Field label="Priority" htmlFor="atk-priority">
+                  <Select id="atk-priority" value={priority}
+                    onChange={(e) => setPriority(e.target.value as Priority)}>
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
-                  </select>
-                </div>
+                  </Select>
+                </Field>
               </div>
 
-              <div>
-                <label className="block text-xs text-(--muted) mb-1">Primary assignee *</label>
-                <select required value={assigneeId} onChange={(e) => {
+              <Field label="Primary assignee" required htmlFor="atk-assignee"
+                hint="Whoever owns the task. They'll see it on their dashboard and Google Calendar.">
+                <Select id="atk-assignee" required value={assigneeId} onChange={(e) => {
                   const newPrimary = e.target.value;
                   setAssigneeId(newPrimary);
                   // Drop the new primary from the co-assignee list if it's there.
                   if (newPrimary) setCoAssigneeIds((prev) => prev.filter((id) => id !== newPrimary));
-                }}
-                  className="w-full px-3 py-2 rounded-xl border text-sm"
-                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                }}>
                   <option value="">— Select staff member —</option>
                   {staff.map((u) => (
                     <option key={u._id} value={u._id}>
                       {u.name} ({ROLE_LABELS[u.role] ?? u.role}{u.employeeId ? ` · ${u.employeeId}` : ""})
                     </option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </Field>
 
-              <div>
-                <label className="block text-xs text-(--muted) mb-1">
-                  Also assign to <span className="opacity-70">(optional — co-assignees get the task on their calendar too)</span>
-                </label>
+              <Field label="Also assign to"
+                hint="Optional. Co-assignees get the task on their dashboard and Google Calendar — useful for joint visits or paired training.">
                 <div className="rounded-xl border max-h-44 overflow-y-auto"
                   style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
                   {staff.filter((u) => u._id !== assigneeId).length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-(--muted)">No other staff to add.</p>
+                    <p className="px-3 py-2 text-xs text-(--muted) italic">No other staff to add.</p>
                   ) : (
                     <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
                       {staff.filter((u) => u._id !== assigneeId).map((u) => {
                         const checked = coAssigneeIds.includes(u._id);
                         return (
                           <li key={u._id}>
-                            <label className="flex items-center gap-2.5 px-3 py-2 text-xs cursor-pointer hover:bg-(--bg-secondary)">
+                            <label className="flex items-center gap-2.5 px-3.5 py-2 text-xs cursor-pointer hover:bg-(--bg-secondary) transition-colors">
                               <input type="checkbox" checked={checked}
                                 onChange={() => toggleCoAssignee(u._id)}
                                 className="accent-(--accent)" />
@@ -277,33 +274,35 @@ export default function AdminAssignPage() {
                   )}
                 </div>
                 {coAssigneeIds.length > 0 && (
-                  <p className="text-[11px] text-(--muted) mt-1">
+                  <p className="text-[11px] text-(--text-2) mt-1.5 font-medium">
                     {coAssigneeIds.length} co-assignee{coAssigneeIds.length === 1 ? "" : "s"} selected
                   </p>
                 )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-xs text-(--muted) mb-1">Due date</label>
-                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border text-sm"
-                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-              </div>
+              <Field label="Due date" htmlFor="atk-due"
+                hint="When the task should be done by. Leave blank if there's no hard deadline."
+                example="Friday this week">
+                <Input id="atk-due" type="date" value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)} />
+              </Field>
 
-              <div>
-                <label className="block text-xs text-(--muted) mb-1">Assignment note (optional)</label>
-                <input value={note} onChange={(e) => setNote(e.target.value)}
-                  placeholder="e.g. Follow up with client on Tuesday"
-                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
-                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-              </div>
+              <Field label="Assignment note" htmlFor="atk-note"
+                hint="A short message attached to the assignment record. The assignee will see it on their task feed."
+                example="Please coordinate with Anita before visiting the shelter.">
+                <Input id="atk-note" value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="One-line context or instruction" />
+              </Field>
             </div>
 
-            <button type="submit" disabled={submitting}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
-              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {submitting ? "Assigning…" : "Assign Task"}
-            </button>
+            <div className="pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+              <button type="submit" disabled={submitting}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:brightness-110 disabled:opacity-60"
+                style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 14px -4px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
+                {submitting ? "Assigning…" : "Assign task"}
+              </button>
+            </div>
           </form>
 
           {/* Activities list */}

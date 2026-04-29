@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 
 type FoundUser = { _id: string; name: string; email: string; role: string };
 
@@ -127,35 +128,57 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border p-5 space-y-3"
+    <form onSubmit={submit} className="rounded-2xl border p-6 space-y-5"
       style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-(--text)">Book an appointment</h3>
+        <div>
+          <h3 className="text-base font-bold text-(--text)">Book an appointment</h3>
+          <p className="text-xs text-(--muted) mt-0.5">
+            Find a teammate, propose a time, and we'll check both calendars before sending the request.
+          </p>
+        </div>
         <button type="button" onClick={() => { setOpen(false); reset(); }}
-          className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+          className="text-xs px-2.5 py-1 rounded-lg shrink-0"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
       </div>
 
-      {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{error}</p>}
-      {success && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>{success}</p>}
+      {error && (
+        <p className="text-xs px-3 py-2 rounded-xl flex items-start gap-2"
+          style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+          <span aria-hidden>⚠</span>
+          <span>{error}</span>
+        </p>
+      )}
+      {success && (
+        <p className="text-xs px-3 py-2 rounded-xl flex items-start gap-2"
+          style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
+          <span aria-hidden>✓</span>
+          <span>{success}</span>
+        </p>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <select value={role} onChange={e => { setRole(e.target.value); setPicked(null); }}
-          className="px-3 py-2 rounded-lg border text-sm"
-          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-          {visible.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </select>
-        <input value={q} onChange={e => { setQ(e.target.value); setPicked(null); }}
-          placeholder="Search by name or email…"
-          className="px-3 py-2 rounded-lg border text-sm"
-          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Who do you want to meet?" required htmlFor="appt-role"
+          hint="Pick the role first — we'll only search inside that role.">
+          <Select id="appt-role" value={role}
+            onChange={e => { setRole(e.target.value); setPicked(null); }}>
+            {visible.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </Select>
+        </Field>
+        <Field label="Search by name or email" htmlFor="appt-q"
+          example="Anita Kumar  or  anita@janmanindia.org">
+          <Input id="appt-q" value={q}
+            onChange={e => { setQ(e.target.value); setPicked(null); }}
+            placeholder="Type at least 2 letters" />
+        </Field>
       </div>
 
       {results.length > 0 && !picked && (
-        <ul className="rounded-xl border overflow-hidden divide-y" style={{ borderColor: "var(--border)" }}>
+        <ul className="rounded-xl border overflow-hidden divide-y -mt-2" style={{ borderColor: "var(--border)" }}>
           {results.map(u => (
             <li key={u._id}>
               <button type="button" onClick={() => { setPicked(u); setQ(u.name); setResults([]); }}
-                className="w-full text-left px-3 py-2 hover:bg-(--bg-secondary) transition-colors">
+                className="w-full text-left px-3.5 py-2.5 hover:bg-(--bg-secondary) transition-colors">
                 <p className="text-sm font-medium text-(--text)">{u.name}</p>
                 <p className="text-xs text-(--muted)">{u.email} · {u.role}</p>
               </button>
@@ -165,105 +188,116 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
       )}
 
       {picked && (
-        <div className="rounded-xl border p-3 flex items-center justify-between gap-3"
+        <div className="rounded-xl border p-3.5 flex items-center justify-between gap-3"
           style={{ borderColor: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)" }}>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-(--text)">{picked.name}</p>
-            <p className="text-xs text-(--muted)">{picked.email}</p>
+            <p className="text-xs uppercase tracking-wide text-(--accent) font-semibold">Meeting with</p>
+            <p className="text-sm font-semibold text-(--text) mt-0.5">{picked.name}</p>
+            <p className="text-xs text-(--muted)">{picked.email} · {picked.role}</p>
           </div>
           <button type="button" onClick={() => { setPicked(null); setQ(""); }}
-            className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Change</button>
+            className="text-xs px-2.5 py-1 rounded-lg shrink-0"
+            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Change</button>
         </div>
       )}
 
       {/* Optional co-attendees — collapsed by default so the form stays simple
           for 1:1 meetings; expand to make it a group meeting. */}
-      <div className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
-        <button type="button" onClick={() => setCoOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs text-(--muted) hover:text-(--text)">
-          <span>
-            Also invite{" "}
-            {coAttendees.length === 0
-              ? <span className="text-(--muted)">— optional, makes it a group meeting</span>
-              : <span className="font-semibold text-(--text)">{coAttendees.length} other{coAttendees.length === 1 ? "" : "s"}</span>}
-          </span>
-          <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
-        </button>
-        {coOpen && (
-          <div className="border-t px-3 py-3 space-y-2" style={{ borderColor: "var(--border)" }}>
-            {coAttendees.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {coAttendees.map((u) => (
-                  <span key={u._id}
-                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px]"
-                    style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-                    {u.name}
-                    <button type="button" onClick={() => removeCoAttendee(u._id)}
-                      aria-label={`Remove ${u.name}`}
-                      className="text-(--muted) hover:text-(--error)">×</button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <select value={coRole} onChange={(e) => setCoRole(e.target.value)}
-                className="px-3 py-2 rounded-lg border text-sm"
-                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                {visible.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-              <input value={coQ} onChange={(e) => setCoQ(e.target.value)}
-                placeholder="Search by name or email…"
-                className="px-3 py-2 rounded-lg border text-sm"
-                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            </div>
-            {coResults.length > 0 && (
-              <ul className="rounded-xl border overflow-hidden divide-y" style={{ borderColor: "var(--border)" }}>
-                {coResults
-                  .filter((u) => u._id !== picked?._id && !coAttendees.some((x) => x._id === u._id))
-                  .map((u) => (
-                    <li key={u._id}>
-                      <button type="button" onClick={() => addCoAttendee(u)}
-                        className="w-full text-left px-3 py-2 hover:bg-(--bg-secondary) transition-colors">
-                        <p className="text-sm font-medium text-(--text)">{u.name}</p>
-                        <p className="text-xs text-(--muted)">{u.email} · {u.role}</p>
-                      </button>
-                    </li>
+      <Field label="Also invite"
+        hint="Add anyone else who should be on this call. Each person gets a Google Calendar invite.">
+        <div className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
+          <button type="button" onClick={() => setCoOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-(--muted) hover:text-(--text) transition-colors">
+            <span>
+              {coAttendees.length === 0
+                ? <span className="italic">No one extra — keep it 1-on-1</span>
+                : <span className="font-semibold text-(--text)">{coAttendees.length} other{coAttendees.length === 1 ? "" : "s"} invited</span>}
+            </span>
+            <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
+          </button>
+          {coOpen && (
+            <div className="border-t px-3.5 py-3 space-y-3" style={{ borderColor: "var(--border)" }}>
+              {coAttendees.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {coAttendees.map((u) => (
+                    <span key={u._id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]"
+                      style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
+                      {u.name}
+                      <button type="button" onClick={() => removeCoAttendee(u._id)}
+                        aria-label={`Remove ${u.name}`}
+                        className="text-(--muted) hover:text-(--error) text-base leading-none">×</button>
+                    </span>
                   ))}
-              </ul>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Select value={coRole} onChange={(e) => setCoRole(e.target.value)}>
+                  {visible.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </Select>
+                <Input value={coQ} onChange={(e) => setCoQ(e.target.value)}
+                  placeholder="Search by name or email" />
+              </div>
+              {coResults.length > 0 && (
+                <ul className="rounded-xl border overflow-hidden divide-y" style={{ borderColor: "var(--border)" }}>
+                  {coResults
+                    .filter((u) => u._id !== picked?._id && !coAttendees.some((x) => x._id === u._id))
+                    .map((u) => (
+                      <li key={u._id}>
+                        <button type="button" onClick={() => addCoAttendee(u)}
+                          className="w-full text-left px-3.5 py-2 hover:bg-(--bg-secondary) transition-colors">
+                          <p className="text-sm font-medium text-(--text)">{u.name}</p>
+                          <p className="text-xs text-(--muted)">{u.email} · {u.role}</p>
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </Field>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-2">
+          <Field label="Proposed date & time" required htmlFor="appt-when"
+            hint="Pick a future slot. We'll auto-check both calendars before sending."
+            example="04 Apr 2026, 14:30">
+            <Input id="appt-when" type="datetime-local" required
+              value={proposedDate} onChange={e => setProposedDate(e.target.value)}
+              min={new Date(Date.now() + 30 * 60_000).toISOString().slice(0, 16)} />
+          </Field>
+        </div>
+        <Field label="Duration" htmlFor="appt-duration">
+          <Select id="appt-duration" value={duration} onChange={e => setDuration(Number(e.target.value))}>
+            <option value={15}>15 min</option>
+            <option value={30}>30 min</option>
+            <option value={45}>45 min</option>
+            <option value={60}>1 hour</option>
+            <option value={90}>1.5 hours</option>
+          </Select>
+        </Field>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input type="datetime-local" value={proposedDate} onChange={e => setProposedDate(e.target.value)}
-          required className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm"
-          min={new Date(Date.now() + 30 * 60_000).toISOString().slice(0, 16)}
-          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-        <select value={duration} onChange={e => setDuration(Number(e.target.value))}
-          className="px-3 py-2 rounded-lg border text-sm"
-          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-          <option value={15}>15 min</option>
-          <option value={30}>30 min</option>
-          <option value={45}>45 min</option>
-          <option value={60}>1 hour</option>
-          <option value={90}>1.5 hours</option>
-        </select>
+      <Field label="Reason" required htmlFor="appt-reason"
+        hint="A short note so they know what the meeting is about."
+        example="Discuss FIR draft for the SC/ST Act case (community member: Sita Devi)">
+        <Textarea id="appt-reason" value={reason} onChange={e => setReason(e.target.value)}
+          required rows={3}
+          placeholder="What's this meeting about?" />
+      </Field>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t"
+        style={{ borderColor: "var(--border)" }}>
+        <p className="text-[11px] text-(--muted)">
+          We'll automatically check both calendars are free before sending.
+        </p>
+        <button type="submit" disabled={busy}
+          className="px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:brightness-110 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 14px -4px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
+          {busy ? "Sending…" : "Send request"}
+        </button>
       </div>
-
-      <textarea value={reason} onChange={e => setReason(e.target.value)} required rows={2}
-        placeholder="What's this meeting about?"
-        className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
-        style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-
-      <button type="submit" disabled={busy}
-        className="px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-60"
-        style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        {busy ? "Sending…" : "Send Request"}
-      </button>
-      <p className="text-[11px] text-(--muted)">
-        We'll automatically check that both calendars are free for that slot.
-      </p>
     </form>
   );
 }

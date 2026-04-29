@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import StatusChart from "./StatusChart";
 import KanbanBoard from "./KanbanBoard";
+import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 
 interface Activity {
@@ -182,100 +183,118 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       <StatusChart counts={counts} />
 
       {/* Create form */}
-      <section className="bg-(--surface) rounded-2xl border border-(--border) p-5">
-        <h2 className="font-semibold text-(--text) mb-3">Plan an activity</h2>
-        <form onSubmit={onCreate} className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_160px_120px] gap-2">
-            <input name="title" required maxLength={200} placeholder="What needs doing?"
-              className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-            <select name="category" defaultValue="other"
-              className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
-              {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
-            </select>
-            <select name="priority" defaultValue="medium"
-              className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+      <section className="bg-(--surface) rounded-2xl border border-(--border) p-6 space-y-1">
+        <h2 className="font-semibold text-(--text) text-base">Plan an activity</h2>
+        <p className="text-xs text-(--muted) mb-5">
+          Add a new task — assign it to yourself, a teammate, or several people. Pin a time slot to make it appear on Google Calendar.
+        </p>
+        <form onSubmit={onCreate} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px_140px] gap-4">
+            <Field label="Task title" required htmlFor="act-title"
+              hint="Keep it short and specific so the assignee knows what to do."
+              example="Visit Sangam Vihar shelter for follow-up">
+              <Input id="act-title" name="title" required maxLength={200}
+                placeholder="What needs doing?" />
+            </Field>
+            <Field label="Category" htmlFor="act-category">
+              <Select id="act-category" name="category" defaultValue="other">
+                {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+              </Select>
+            </Field>
+            <Field label="Priority" htmlFor="act-priority">
+              <Select id="act-priority" name="priority" defaultValue="medium">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </Select>
+            </Field>
           </div>
-          <textarea name="description" rows={2} placeholder="Details (optional)"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) resize-none focus:outline-none focus:border-(--accent)" />
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
-            {canAssign ? (
-              <select value={primaryAssignee}
+
+          <Field label="Details" htmlFor="act-desc"
+            hint="Anything the assignee needs to know — context, contact details, prior steps. Optional."
+            example="Met with the family on 4 Apr; need to verify Aadhaar and submit FIR copy.">
+            <Textarea id="act-desc" name="description" rows={3}
+              placeholder="Describe the task in a couple of sentences" />
+          </Field>
+
+          {canAssign && (
+            <Field label="Primary assignee" htmlFor="act-assignee"
+              hint="The person who owns the task. They'll see it on their dashboard and Google Calendar.">
+              <Select id="act-assignee" value={primaryAssignee}
                 onChange={(e) => {
                   const v = e.target.value;
                   setPrimaryAssignee(v);
                   // Drop the new primary from co-assignees if it's there.
                   if (v) setCoAssignees((prev) => prev.filter((id) => id !== v));
-                }}
-                className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
-                <option value="">Assign to: myself</option>
+                }}>
+                <option value="">— Myself —</option>
                 {staff.map((u) => (
                   <option key={u._id} value={u._id}>
                     {u.name} ({u.role}{u.employeeId ? ` · ${u.employeeId}` : ""})
                   </option>
                 ))}
-              </select>
-            ) : <span />}
-            <button type="submit" className="px-4 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast)"
-              style={{ background: "var(--accent)" }}>
-              Add
-            </button>
-          </div>
-          {/* Time slot — both fields are datetime-local. Leaving them blank
-              creates an undated activity. Filling only the start gets a
-              30-min default on Google Calendar; filling both pins the exact
-              time range you want. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <label className="flex flex-col gap-1 text-[11px] text-(--muted)">
-              <span>Starts (optional)</span>
-              <input name="dueDate" type="datetime-local"
-                className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-            </label>
-            <label className="flex flex-col gap-1 text-[11px] text-(--muted)">
-              <span>Ends (optional — leaves a 30-min slot if blank)</span>
-              <input name="endsAt" type="datetime-local"
-                className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-            </label>
-          </div>
+              </Select>
+            </Field>
+          )}
 
           {canAssign && staff.length > 0 && (
-            <div className="rounded-lg border" style={{ borderColor: "var(--border)" }}>
-              <button type="button" onClick={() => setCoOpen((v) => !v)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs text-(--muted) hover:text-(--text)">
-                <span>
-                  Also assign to{" "}
-                  {coAssignees.length === 0
-                    ? <span className="text-(--muted)">— optional, makes it a group task</span>
-                    : <span className="font-semibold text-(--text)">{coAssignees.length} co-assignee{coAssignees.length === 1 ? "" : "s"}</span>}
-                </span>
-                <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
-              </button>
-              {coOpen && (
-                <div className="max-h-44 overflow-y-auto border-t" style={{ borderColor: "var(--border)" }}>
-                  <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-                    {staff.filter((u) => u._id !== primaryAssignee).map((u) => {
-                      const checked = coAssignees.includes(u._id);
-                      return (
-                        <li key={u._id}>
-                          <label className="flex items-center gap-2.5 px-3 py-1.5 text-xs cursor-pointer hover:bg-(--bg-secondary)">
-                            <input type="checkbox" checked={checked}
-                              onChange={() => toggleCoAssignee(u._id)}
-                              className="accent-(--accent)" />
-                            <span className="flex-1 text-(--text)">
-                              {u.name} <span className="text-(--muted)">· {u.role}</span>
-                            </span>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-            </div>
+            <Field label="Also assign to"
+              hint="Tick anyone who should receive a copy of this task. Useful for joint visits or paired training.">
+              <div className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
+                <button type="button" onClick={() => setCoOpen((v) => !v)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-(--muted) hover:text-(--text) transition-colors">
+                  <span>
+                    {coAssignees.length === 0
+                      ? <span className="italic">No one selected — this stays a single-person task</span>
+                      : <span className="font-semibold text-(--text)">{coAssignees.length} co-assignee{coAssignees.length === 1 ? "" : "s"} picked</span>}
+                  </span>
+                  <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
+                </button>
+                {coOpen && (
+                  <div className="max-h-48 overflow-y-auto border-t" style={{ borderColor: "var(--border)" }}>
+                    <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                      {staff.filter((u) => u._id !== primaryAssignee).map((u) => {
+                        const checked = coAssignees.includes(u._id);
+                        return (
+                          <li key={u._id}>
+                            <label className="flex items-center gap-2.5 px-3.5 py-2 text-xs cursor-pointer hover:bg-(--bg-secondary) transition-colors">
+                              <input type="checkbox" checked={checked}
+                                onChange={() => toggleCoAssignee(u._id)}
+                                className="accent-(--accent)" />
+                              <span className="flex-1 text-(--text)">
+                                {u.name} <span className="text-(--muted)">· {u.role}</span>
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Field>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Starts" htmlFor="act-start"
+              hint="When the work begins. Leave blank for an undated task — it stays a to-do without a calendar entry."
+              example="04 Apr 2026, 14:30">
+              <Input id="act-start" name="dueDate" type="datetime-local" />
+            </Field>
+            <Field label="Ends" htmlFor="act-end"
+              hint="Optional. When blank, Google Calendar reserves a 30-minute slot from the start time."
+              example="04 Apr 2026, 15:30">
+              <Input id="act-end" name="endsAt" type="datetime-local" />
+            </Field>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+            <button type="submit"
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-(--accent-contrast) transition-opacity hover:brightness-110"
+              style={{ background: "var(--accent)", boxShadow: "0 4px 14px -4px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
+              Add activity
+            </button>
+          </div>
         </form>
       </section>
 
