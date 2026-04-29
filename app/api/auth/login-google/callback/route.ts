@@ -35,9 +35,30 @@ function loginRedirect(base: string, error: string, detail?: unknown): NextRespo
   return res;
 }
 
+/** Best-effort detection of the public origin the user is hitting us on —
+ *  must match the origin used when building the auth URL so Google's redirect
+ *  URI check passes during the code exchange. */
+function originFromRequest(req: NextRequest): string {
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  if (forwardedHost) {
+    const proto = forwardedProto?.split(",")[0]?.trim() || "https";
+    return `${proto}://${forwardedHost.split(",")[0]?.trim()}`;
+  }
+  const host = req.headers.get("host");
+  if (host) {
+    const proto = req.nextUrl.protocol.replace(":", "") || (host.startsWith("localhost") ? "http" : "https");
+    return `${proto}://${host}`;
+  }
+  return req.nextUrl.origin;
+}
+
 /** GET /api/auth/login-google/callback — Google redirects here after the user consents. */
 export async function GET(req: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
+  // Prefer the actual request origin so the OAuth redirect URI matches what we
+  // sent up. Fall back to the configured app URL only as a last resort.
+  const origin = originFromRequest(req);
+  const baseUrl = origin || process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
 
   try {
     const { searchParams } = new URL(req.url);
@@ -56,7 +77,7 @@ export async function GET(req: NextRequest) {
 
     let claims;
     try {
-      claims = await exchangeAndVerifyIdToken(code);
+      claims = await exchangeAndVerifyIdToken(code, origin);
     } catch (err) {
       console.error("Google ID token verification failed:", err);
       return loginRedirect(baseUrl, "google_token_invalid");
