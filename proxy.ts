@@ -37,11 +37,20 @@ const SKIP_PREFIXES = [
   // must stay reachable without a session cookie.
   "/privacy",
   "/terms",
+  // Public marketing pages — community + campaigns are linked from the
+  // home page footer and are intended for first-time visitors. Google's
+  // app-verification crawler also follows these.
+  "/jan-sahayak",
+  "/events",
   // Dev-branch only — the routes themselves are env-gated and refuse to act
   // on the production host, so leaving these in the skip list is safe.
   "/dev",
   "/api/dev/",
 ];
+
+/** Exact-match public paths. `/` can't go in SKIP_PREFIXES because every URL
+ *  startsWith("/"), so we whitelist it explicitly here. */
+const PUBLIC_EXACT_PATHS = new Set<string>(["/"]);
 
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
@@ -63,8 +72,10 @@ function rolePrefixFromPath(pathname: string): Role | null {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip static assets and public auth routes
-  if (SKIP_PREFIXES.some((p) => pathname.startsWith(p))) {
+  // Skip static assets, public marketing pages, and public auth routes —
+  // anonymous visitors (including Google's verification crawler) hit these
+  // without a session cookie.
+  if (PUBLIC_EXACT_PATHS.has(pathname) || SKIP_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 

@@ -265,15 +265,28 @@ export default function Home() {
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
       <footer className="bg-(--bg) border-t border-(--border) px-5 py-8">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-(--muted)">
-          <p>© 2026 Janman Legal Aid — Bihar, India</p>
-          <div className="flex gap-5">
+        <div className="mx-auto max-w-7xl flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between text-xs text-(--muted)">
+          <div className="space-y-1">
+            <p className="font-semibold text-(--text)">Janman Legal Aid</p>
+            <p>Operated by Janman People&apos;s Foundation · Bihar, India</p>
+            <p>
+              Contact:{" "}
+              <a href="mailto:shashwat@janmanindia.org" className="underline hover:text-(--text)">
+                shashwat@janmanindia.org
+              </a>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link href="/jan-sahayak" className="hover:text-(--text) transition-colors">Community</Link>
             <Link href="/events" className="hover:text-(--text) transition-colors">Events</Link>
-            <Link href="/training" className="hover:text-(--text) transition-colors">Training</Link>
-            <Link href="/dev" className="hover:text-(--text) transition-colors">Dev</Link>
+            <Link href="/login" className="hover:text-(--text) transition-colors">Sign in</Link>
+            <Link href="/privacy" className="hover:text-(--text) transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-(--text) transition-colors">Terms of Service</Link>
           </div>
         </div>
+        <p className="mx-auto max-w-7xl mt-6 pt-4 border-t border-(--border) text-[11px] text-(--muted)">
+          © 2026 Janman People&apos;s Foundation. All rights reserved.
+        </p>
       </footer>
     </main>
   );
