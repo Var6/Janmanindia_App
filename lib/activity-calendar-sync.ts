@@ -74,6 +74,47 @@ function eventTimes(dueDate: Date, endsAt?: Date | null): { start: Date; end: Da
   return { start: d, end: new Date(d.getTime() + 30 * 60_000) };
 }
 
+/** Build the human-readable description used on the Google Calendar event.
+ *  Includes attribution ("Assigned by … to …"), priority, category, and an
+ *  optional status line. Pass status only on the update path. */
+async function buildEventDescription(
+  act: {
+    description?: string;
+    priority: string;
+    category: string;
+    status?: string;
+    assignee: mongoose.Types.ObjectId;
+    coAssignees?: mongoose.Types.ObjectId[];
+    createdBy: mongoose.Types.ObjectId;
+  },
+  options: { includeStatus?: boolean } = {},
+): Promise<string> {
+  const ids = [act.assignee, act.createdBy, ...(act.coAssignees ?? [])];
+  const users = ids.length
+    ? await User.find({ _id: { $in: ids } }).select("name").lean()
+    : [];
+  const byId = new Map(users.map((u) => [String(u._id), u.name]));
+
+  const assigneeName  = byId.get(String(act.assignee))  ?? "—";
+  const creatorName   = byId.get(String(act.createdBy)) ?? "—";
+  const coNames       = (act.coAssignees ?? [])
+    .map((id) => byId.get(String(id)))
+    .filter((n): n is string => Boolean(n));
+
+  const recipients = coNames.length
+    ? `${assigneeName}, ${coNames.join(", ")}`
+    : assigneeName;
+
+  const lines: string[] = [];
+  if (act.description) lines.push(act.description, "");
+  lines.push(`Assigned by ${creatorName} → ${recipients}`);
+  lines.push(`Priority: ${act.priority}  ·  Category: ${act.category}`);
+  if (options.includeStatus && act.status) lines.push(`Status: ${act.status}`);
+  lines.push("");
+  lines.push("Manage at https://app.janmanindia.org/activities");
+  return lines.join("\n");
+}
+
 /** Push a brand-new activity to the right user's Google Calendar. */
 export async function syncActivityCreate(activityId: string): Promise<void> {
   try {
@@ -84,15 +125,10 @@ export async function syncActivityCreate(activityId: string): Promise<void> {
     if (!owner) return;
 
     const { start, end } = eventTimes(act.dueDate, act.endsAt);
+    const description = await buildEventDescription(act);
     const eventId = await createEvent(owner.refreshToken, {
       summary: `📋 ${act.title}`,
-      description: [
-        act.description || "",
-        `Priority: ${act.priority}`,
-        `Category: ${act.category}`,
-        "",
-        "Manage at https://app.janmanindia.org/activities",
-      ].filter(Boolean).join("\n"),
+      description,
       start, end,
       attendeeEmails: owner.attendeeEmails.length > 0 ? owner.attendeeEmails : undefined,
     });
@@ -148,16 +184,10 @@ export async function syncActivityUpdate(activityId: string): Promise<void> {
 
     const { start, end } = eventTimes(act.dueDate, act.endsAt);
     const statusPrefix = act.status === "done" ? "✅ " : act.status === "in_progress" ? "▶️ " : "📋 ";
+    const description  = await buildEventDescription(act, { includeStatus: true });
     await updateEvent(owner.googleRefreshToken, act.googleEventId, {
       summary: `${statusPrefix}${act.title}`,
-      description: [
-        act.description || "",
-        `Priority: ${act.priority}`,
-        `Category: ${act.category}`,
-        `Status: ${act.status}`,
-        "",
-        "Manage at https://app.janmanindia.org/activities",
-      ].filter(Boolean).join("\n"),
+      description,
       start, end,
       attendeeEmails,
     });

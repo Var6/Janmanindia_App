@@ -39,6 +39,11 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // When the API returns a 409 calendar_conflict, it includes a list of
+  // alternative slots that work for everyone whose calendar we can read.
+  // Stash those so the user can pick one with a single click.
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [conflictNames, setConflictNames] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const coDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,6 +75,28 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
     setQ(""); setResults([]); setPicked(null); setProposedDate(""); setReason("");
     setError(""); setSuccess(""); setDuration(30);
     setCoQ(""); setCoResults([]); setCoAttendees([]); setCoOpen(false);
+    setSuggestions([]); setConflictNames([]);
+  }
+
+  /** Convert an ISO instant (what the API returns) into the local-naïve
+   *  string a `<input type="datetime-local">` expects ("YYYY-MM-DDTHH:mm").
+   *  We deliberately drop the timezone — the input is local-time, and the
+   *  user already saw the same wall-clock when they picked the original. */
+  function isoToLocalInput(iso: string): string {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  /** Friendly display for a suggestion chip — "Wed 4 Apr · 14:30". */
+  function formatSuggestion(iso: string): string {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} · ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+  function applySuggestion(iso: string) {
+    setProposedDate(isoToLocalInput(iso));
+    setSuggestions([]);
+    setConflictNames([]);
+    setError("");
   }
 
   function addCoAttendee(u: FoundUser) {
@@ -88,7 +115,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
     if (!picked) { setError("Choose someone to meet first."); return; }
     if (!proposedDate) { setError("Pick a date and time."); return; }
     if (reason.trim().length < 5) { setError("Add a brief reason (5+ characters)."); return; }
-    setBusy(true); setError(""); setSuccess("");
+    setBusy(true); setError(""); setSuccess(""); setSuggestions([]); setConflictNames([]);
     try {
       const start = new Date(proposedDate);
       const end = new Date(start.getTime() + duration * 60_000);
@@ -104,7 +131,18 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Booking failed."); return; }
+      if (!res.ok) {
+        // Calendar conflict returns slot suggestions — surface those so the
+        // user can pick a free time without leaving the form.
+        if (res.status === 409 && data?.code === "calendar_conflict" && Array.isArray(data.suggestions)) {
+          setError(data.error ?? "Calendar clash — try another slot.");
+          setSuggestions(data.suggestions as string[]);
+          setConflictNames(Array.isArray(data.conflicts) ? data.conflicts.map((c: { name: string }) => c.name) : []);
+          return;
+        }
+        setError(data.error ?? "Booking failed.");
+        return;
+      }
       const extra = coAttendees.length > 0
         ? ` and ${coAttendees.length} other${coAttendees.length === 1 ? "" : "s"}`
         : "";
@@ -142,12 +180,44 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
       </div>
 
-      {error && (
+      {error && suggestions.length === 0 && (
         <p className="text-xs px-3 py-2 rounded-xl flex items-start gap-2"
           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
           <span aria-hidden>⚠</span>
           <span>{error}</span>
         </p>
+      )}
+
+      {/* Calendar conflict — show the busy person + the next free slots that
+          work for everyone whose calendar we can read. One click on a chip
+          rewrites the proposed time so the user can submit again. */}
+      {suggestions.length > 0 && (
+        <div className="rounded-xl border p-3 space-y-2.5"
+          style={{ background: "var(--warning-bg)", borderColor: "color-mix(in srgb, var(--warning) 35%, transparent)" }}>
+          <div className="flex items-start gap-2 text-xs" style={{ color: "var(--warning-text)" }}>
+            <span aria-hidden className="text-base shrink-0">📅</span>
+            <div className="space-y-0.5">
+              <p className="font-semibold">{conflictNames.length > 0
+                ? `${conflictNames.join(", ")} ${conflictNames.length === 1 ? "is" : "are"} busy at that time.`
+                : "That slot doesn't work."}</p>
+              <p>Pick one of these free slots instead — they work for everyone in this meeting.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {suggestions.map((iso) => (
+              <button key={iso} type="button" onClick={() => applySuggestion(iso)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-95"
+                style={{ background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)" }}>
+                {formatSuggestion(iso)}
+              </button>
+            ))}
+          </div>
+          <button type="button"
+            onClick={() => { setSuggestions([]); setConflictNames([]); setError(""); }}
+            className="text-[11px] underline" style={{ color: "var(--warning-text)" }}>
+            Dismiss
+          </button>
+        </div>
       )}
       {success && (
         <p className="text-xs px-3 py-2 rounded-xl flex items-start gap-2"

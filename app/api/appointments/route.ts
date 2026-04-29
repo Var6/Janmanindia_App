@@ -4,7 +4,7 @@ import { requireSession } from "@/lib/auth";
 import Appointment from "@/models/Appointment";
 import User from "@/models/User";
 import mongoose from "mongoose";
-import { createEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
+import { createEvent, updateEvent, deleteEvent, getBusyIntervals, suggestFreeSlots } from "@/lib/google-calendar";
 
 const DEFAULT_DURATION_MIN = 30;
 
@@ -198,16 +198,59 @@ export async function POST(request: NextRequest) {
         coAttendeeIds.push(raw);
       }
 
+      // Step 1 — check Janman's own database. Fast and definitive: if either
+      // party already has a Janman appointment overlapping this slot, block.
       if (await hasConflict(session.id, proposedDate, endDate)) {
         return NextResponse.json({ error: "You already have an appointment in that time window." }, { status: 409 });
       }
+
+      // Step 2 — check Google Calendar busy intervals for everyone invited
+      // (requester + requestee + co-attendees). Anyone without a connected
+      // Google account is treated as "no info" and skipped — we don't want
+      // to block them from being included in a group meeting.
+      const allIds = [session.id, requesteeId, ...coAttendeeIds];
+      const usersForFreebusy = await User.find({ _id: { $in: allIds } })
+        .select("+googleRefreshToken name email").lean();
+      const tokenByUser = new Map(usersForFreebusy.map((u) => [String(u._id), u]));
+
+      type ConflictReport = { userId: string; name: string };
+      const conflicts: ConflictReport[] = [];
+      const conflictTokens: string[] = [];
+      for (const id of allIds) {
+        const u = tokenByUser.get(id);
+        if (!u?.googleRefreshToken) continue;
+        const busy = await getBusyIntervals(u.googleRefreshToken, proposedDate, endDate);
+        if (busy.length > 0) {
+          conflicts.push({
+            userId: id,
+            name: id === session.id ? "You" : (u.name ?? "Someone"),
+          });
+        }
+        conflictTokens.push(u.googleRefreshToken);
+      }
+
+      if (conflicts.length > 0) {
+        // Suggest alternative slots that work for *everyone* whose calendar
+        // we can read. Returns up to 5 nearby free windows.
+        const durationMin = Math.max(15, Math.round((endDate.getTime() - proposedDate.getTime()) / 60_000));
+        const suggestions = await suggestFreeSlots(conflictTokens, proposedDate, durationMin, 5);
+        const namesList = conflicts.map((c) => c.name).join(", ");
+        return NextResponse.json({
+          error: conflicts.length === 1
+            ? `${namesList} is busy then.`
+            : `${namesList} are busy then.`,
+          code: "calendar_conflict",
+          conflicts,
+          suggestions: suggestions.map((d) => d.toISOString()),
+          durationMin,
+        }, { status: 409 });
+      }
+
+      // Step 3 — db check on the requestee (catches Janman appointments where
+      // the other side hasn't connected Google but is still booked).
       if (await hasConflict(requesteeId, proposedDate, endDate)) {
         return NextResponse.json({ error: "The other person is busy in that time window. Pick another slot." }, { status: 409 });
       }
-      // Soft-check co-attendees — flag the first conflict but don't block,
-      // since group meetings can legitimately overlap something else for
-      // some attendees. Surface the busy person's name so the requester
-      // can decide whether to reschedule.
       for (const id of coAttendeeIds) {
         if (await hasConflict(id, proposedDate, endDate)) {
           const u = await User.findById(id).select("name").lean();

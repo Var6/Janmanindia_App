@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { localInputToISO } from "@/lib/datetime";
 
 type Session = {
   _id: string;
@@ -57,8 +58,10 @@ export default function OfflineSessions({ currentUserId, canCreate }: Props) {
       topics: String(fd.get("topics") ?? "").split(",").map(s => s.trim()).filter(Boolean),
       venue: fd.get("venue"),
       district: fd.get("district") || undefined,
-      date: fd.get("date"),
-      endDate: fd.get("endDate") || undefined,
+      // Convert the datetime-local strings to ISO instants in the user's local
+      // timezone — otherwise the server (UTC) misreads "14:30" as "14:30 UTC".
+      date: localInputToISO(String(fd.get("date") ?? "")),
+      endDate: localInputToISO(String(fd.get("endDate") ?? "")),
       capacity: Number(fd.get("capacity") || 30),
       facilitators: fd.get("facilitators") || undefined,
       targetAudience: fd.get("targetAudience") || undefined,
