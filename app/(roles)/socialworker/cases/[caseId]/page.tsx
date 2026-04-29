@@ -8,7 +8,7 @@ export default async function SWCaseDetailPage({
   params: Promise<{ caseId: string }>;
 }) {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "socialworker") redirect("/login");
+  if (!session || (session.role !== "socialworker" && session.role !== "superadmin")) redirect("/login");
 
   const { caseId } = await params;
 

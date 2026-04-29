@@ -1,5 +1,5 @@
 import AppShell from "@/components/shared/AppShell";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <AppShell allow={["hr"]}>{children}</AppShell>;
+  return <AppShell allow={["hr", "superadmin"]}>{children}</AppShell>;
 }

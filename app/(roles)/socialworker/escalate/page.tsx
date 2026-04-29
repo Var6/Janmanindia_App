@@ -7,7 +7,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 
 export default async function EscalatePage() {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "socialworker") redirect("/login");
+  if (!session || (session.role !== "socialworker" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
   const alerts = dbOk

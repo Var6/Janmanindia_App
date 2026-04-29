@@ -22,7 +22,7 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
 
 export default async function SWCarePlansIndex() {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "socialworker") redirect("/login");
+  if (!session || (session.role !== "socialworker" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
   const plans = dbOk && mongoose.Types.ObjectId.isValid(session.id)

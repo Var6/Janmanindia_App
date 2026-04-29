@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function LitigationDashboard() {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "litigation") redirect("/login");
+  if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
 

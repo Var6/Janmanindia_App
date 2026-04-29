@@ -36,7 +36,8 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/litigation/cases",        label: "Cases",        icon: "briefcase" },
     { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
     { href: "/litigation/invoices",     label: "Invoice Approvals", icon: "receipt" },
-    { href: "/litigation/appointments", label: "Appointments", icon: "calendar"  },
+    // /litigation/appointments was merged into the shared /appointments hub.
+    // Keeping a sidebar entry here would have duplicated SHARED_ITEMS.
   ],
   hr: [
     { href: "/hr",                       label: "Dashboard",       icon: "home"       },
@@ -72,12 +73,17 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/director/expense-approvals",  label: "Expense Approvals", icon: "currency"    },
   ],
   superadmin: [
-    { href: "/superadmin",          label: "Overview",      icon: "shield"      },
-    { href: "/superadmin/projects", label: "Projects",      icon: "briefcase"   },
-    { href: "/director",            label: "Director",      icon: "settings"    },
-    { href: "/hr",                  label: "HR",            icon: "users"       },
-    { href: "/finance",             label: "Finance",       icon: "trending-up" },
-    { href: "/administrator",       label: "Administrator", icon: "briefcase"   },
+    { href: "/superadmin",            label: "Overview",       icon: "shield"      },
+    { href: "/superadmin/projects",   label: "Projects",       icon: "briefcase"   },
+    { href: "/director/calendar",     label: "Team Calendar",  icon: "calendar"    },
+    { href: "/director/users",        label: "Users",          icon: "users"       },
+    { href: "/director/cases",        label: "All Cases",      icon: "briefcase"   },
+    { href: "/director",              label: "Director",       icon: "settings"    },
+    { href: "/hr",                    label: "HR",             icon: "users"       },
+    { href: "/litigation",            label: "Litigation",     icon: "shield"      },
+    { href: "/socialworker",          label: "Social Worker",  icon: "user-circle" },
+    { href: "/finance",               label: "Finance",        icon: "trending-up" },
+    { href: "/administrator",         label: "Administrator",  icon: "briefcase"   },
   ],
 };
 

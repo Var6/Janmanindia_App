@@ -17,7 +17,7 @@ const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = 
 
 export default async function LitigationCasesPage() {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "litigation") redirect("/login");
+  if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)

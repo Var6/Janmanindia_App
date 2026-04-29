@@ -10,7 +10,7 @@ import InvoiceApprovalList from "@/components/reports/InvoiceApprovalList";
 
 export default async function LitigationInvoicesPage() {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "litigation") redirect("/login");
+  if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;

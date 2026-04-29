@@ -8,7 +8,7 @@ export default async function LitigationCaseDetailPage({
   params: Promise<{ caseId: string }>;
 }) {
   const session = await getSessionFromCookies();
-  if (!session || session.role !== "litigation") redirect("/login");
+  if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const { caseId } = await params;
 
