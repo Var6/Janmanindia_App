@@ -32,6 +32,11 @@ const SKIP_PREFIXES = [
   "/login",
   "/register",
   "/favicon.ico",
+  // Public legal pages — these URLs are referenced from the Google OAuth
+  // consent screen, which crawls them anonymously during verification. They
+  // must stay reachable without a session cookie.
+  "/privacy",
+  "/terms",
   // Dev-branch only — the routes themselves are env-gated and refuse to act
   // on the production host, so leaving these in the skip list is safe.
   "/dev",
