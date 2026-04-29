@@ -23,8 +23,27 @@ const devanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "Janman Legal Aid",
-  description: "Shared legal aid platform for Public, Advocates, Paralegals and Admins.",
+  // `default` is used on pages that don't set their own title; `template`
+  // wraps any page-specific title so the tab always reads
+  // "<page> — Janman Legal Aid".
+  title: {
+    default: "Janman Legal Aid",
+    template: "%s — Janman Legal Aid",
+  },
+  description: "Janman Legal Aid is a free legal aid platform connecting community members in Bihar with social workers, paralegals, and advocates. Operated by Janman People's Foundation.",
+  applicationName: "Janman Legal Aid",
+  authors: [{ name: "Janman People's Foundation" }],
+  // Icons are auto-discovered by Next.js from app/icon.png and
+  // app/apple-icon.png — no metadata.icons block needed (and overriding it
+  // with a static URL drops the cache-busting query hash).
+  openGraph: {
+    title: "Janman Legal Aid",
+    description: "Free legal aid for Bihar communities — case intake, hearings, and coordination across advocates, social workers, and admins.",
+    siteName: "Janman Legal Aid",
+    images: [{ url: "/logo.png", width: 725, height: 735, alt: "Janman Legal Aid" }],
+    locale: "en_IN",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

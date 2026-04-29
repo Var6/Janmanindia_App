@@ -32,6 +32,13 @@ const SKIP_PREFIXES = [
   "/login",
   "/register",
   "/favicon.ico",
+  // Next.js exposes app/icon.png and app/apple-icon.png at these routes for
+  // browser tab favicons and Apple touch icons. They're served as binary
+  // images without trailing extensions, so the matcher's *.png exclusion
+  // can't catch them — gate-skip them explicitly so anonymous tabs render
+  // the favicon.
+  "/icon",
+  "/apple-icon",
   // Public legal pages — these URLs are referenced from the Google OAuth
   // consent screen, which crawls them anonymously during verification. They
   // must stay reachable without a session cookie.
