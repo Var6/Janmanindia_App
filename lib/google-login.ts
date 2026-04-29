@@ -1,6 +1,16 @@
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 
-const SCOPES = ["openid", "email", "profile"];
+/** Scopes requested at sign-in. Calendar.events is bundled in so the same
+ *  consent that signs the user in also grants us write access to their
+ *  primary calendar — no separate "Connect Google Calendar" step. Users who
+ *  log in once become eligible for activity / training / appointment sync
+ *  immediately. */
+const SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/calendar.events",
+];
 
 export const WORKSPACE_DOMAIN = "janmanindia.org";
 
@@ -47,11 +57,16 @@ function getOAuthClient(requestOrigin?: string): OAuth2Client {
   return new OAuth2Client(creds.clientId, creds.clientSecret, getRedirectUri(requestOrigin));
 }
 
-/** Build Google's consent URL. State must match the cookie when the callback fires. */
+/** Build Google's consent URL. State must match the cookie when the callback
+ *  fires. We request offline access so the token exchange returns a
+ *  refresh_token — that's what powers calendar sync after the user has gone
+ *  away. Google only issues a refresh_token on the first grant per scope set
+ *  (or when prompt=consent forces it); subsequent logins return access tokens
+ *  only and we keep the existing refresh_token on file. */
 export function getLoginAuthUrl(state: string, requestOrigin?: string): string {
   const client = getOAuthClient(requestOrigin);
   return client.generateAuthUrl({
-    access_type: "online",
+    access_type: "offline",
     prompt: "select_account",
     scope: SCOPES,
     state,
@@ -61,12 +76,24 @@ export function getLoginAuthUrl(state: string, requestOrigin?: string): string {
   });
 }
 
-/** Exchange the auth code, verify the ID token signature, and return the verified claims.
- *  The redirect URI passed here must match the one used when building the auth URL. */
+export interface VerifiedGoogleSignIn {
+  payload: TokenPayload;
+  /** Present on first grant; undefined on subsequent logins where Google
+   *  reuses the existing offline grant. The caller should keep any
+   *  previously-stored refresh token when this is undefined. */
+  refreshToken?: string;
+  /** Space-separated scopes Google actually granted. Useful for noticing
+   *  when a user denied the calendar scope on a granular consent screen. */
+  scope?: string;
+}
+
+/** Exchange the auth code, verify the ID token signature, and return the
+ *  verified claims plus any tokens. The redirect URI passed here must match
+ *  the one used when building the auth URL. */
 export async function exchangeAndVerifyIdToken(
   code: string,
   requestOrigin?: string,
-): Promise<TokenPayload> {
+): Promise<VerifiedGoogleSignIn> {
   const client = getOAuthClient(requestOrigin);
   const { tokens } = await client.getToken(code);
   if (!tokens.id_token) {
@@ -84,5 +111,9 @@ export async function exchangeAndVerifyIdToken(
   if (!payload.email) throw new Error("Google ID token has no email");
   if (!payload.email_verified) throw new Error("Google email is not verified");
 
-  return payload;
+  return {
+    payload,
+    refreshToken: tokens.refresh_token ?? undefined,
+    scope: tokens.scope ?? undefined,
+  };
 }

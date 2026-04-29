@@ -81,3 +81,25 @@ export async function requireRole(
 }
 
 export { COOKIE_NAME };
+
+/** Validate a `next` parameter from a login redirect. We only accept paths
+ *  relative to our own origin — that's how we stop an attacker from crafting
+ *  a `?next=https://evil.example.com` and using our login flow as an open
+ *  redirect after authentication. Returns the safe path or null. */
+export function safeNextPath(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    // Reject anything that isn't an in-app path. Must start with a single "/"
+    // (so "//evil.com" — which a URL parser would treat as a protocol-relative
+    // host — is rejected too).
+    if (typeof raw !== "string") return null;
+    if (raw.length < 1 || raw.length > 512) return null;
+    if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return null;
+    // Reject login-related destinations to avoid bouncing the user back to
+    // the page they just came from.
+    if (raw.startsWith("/login") || raw.startsWith("/register") || raw.startsWith("/api/")) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}

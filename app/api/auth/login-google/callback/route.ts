@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
-import { signToken, COOKIE_NAME } from "@/lib/auth";
+import { signToken, COOKIE_NAME, safeNextPath } from "@/lib/auth";
 import { exchangeAndVerifyIdToken, WORKSPACE_DOMAIN } from "@/lib/google-login";
 import User from "@/models/User";
 import type { Role } from "@/models/User";
 
 const STATE_COOKIE = "g_login_state";
+const NEXT_COOKIE  = "g_login_next";
 
 const ROLE_HOME: Record<Role, string> = {
   community: "/community",
@@ -75,13 +76,20 @@ export async function GET(req: NextRequest) {
       return loginRedirect(baseUrl, "google_invalid_state");
     }
 
-    let claims;
+    let exchange;
     try {
-      claims = await exchangeAndVerifyIdToken(code, origin);
+      exchange = await exchangeAndVerifyIdToken(code, origin);
     } catch (err) {
       console.error("Google ID token verification failed:", err);
       return loginRedirect(baseUrl, "google_token_invalid");
     }
+    const claims = exchange.payload;
+    // Google only returns a refresh_token on the first grant of a given scope
+    // set. On subsequent logins, refreshToken is undefined and we keep the
+    // one we already have on file.
+    const newRefreshToken = exchange.refreshToken;
+    const grantedScopes   = exchange.scope ?? "";
+    const grantedCalendar = grantedScopes.includes("calendar.events");
 
     const email = claims.email!.toLowerCase();
     const sub = claims.sub!;
@@ -119,6 +127,14 @@ export async function GET(req: NextRequest) {
         };
         if (!user.name && fullName) updates.name = fullName;
         if (!user.avatarUrl && picture) updates.avatarUrl = picture;
+        // Persist the calendar credentials right here. We only write the
+        // refresh token when Google actually returned one (first grant or
+        // forced consent); subsequent logins reuse the existing token.
+        if (newRefreshToken) {
+          updates.googleRefreshToken = newRefreshToken;
+          updates.googleEmail        = email;
+          updates.googleConnectedAt  = new Date();
+        }
         await User.updateOne({ _id: user._id }, { $set: updates });
       } else {
         const initialRole: Role = isWorkspace ? "pending" : "community";
@@ -130,6 +146,9 @@ export async function GET(req: NextRequest) {
           isActive: true,
           lastLoginAt: new Date(),
           avatarUrl: picture,
+          ...(newRefreshToken
+            ? { googleRefreshToken: newRefreshToken, googleEmail: email, googleConnectedAt: new Date() }
+            : {}),
           ...(initialRole === "community"
             ? { communityProfile: { verificationStatus: "pending" } }
             : {}),
@@ -140,23 +159,13 @@ export async function GET(req: NextRequest) {
       return loginRedirect(baseUrl, "db_upsert_failed", err);
     }
 
-    // Need to read the refresh-token field (select:false by default) to know
-    // whether to auto-redirect this @janmanindia.org user through the calendar
-    // consent screen — first-time staff land on /api/auth/google/connect and
-    // grant calendar access in one flow before reaching their dashboard.
-    //
-    // Skipped in dev because the calendar OAuth client and the login OAuth
-    // client are different in this project, and the calendar one rarely has
-    // localhost redirect URIs registered. Users can connect calendar from
-    // their profile page when they need it.
-    let needsCalendarConsent = false;
-    if (process.env.NODE_ENV === "production") {
-      try {
-        const calendarStatus = await User.findById(user._id).select("+googleRefreshToken").lean();
-        needsCalendarConsent = isWorkspace && !calendarStatus?.googleRefreshToken;
-      } catch (err) {
-        console.error("[google-login] Calendar status check failed (non-fatal):", err);
-      }
+    // For audit trails: log when a returning user signed in but Google didn't
+    // re-issue a refresh token AND we have nothing stored. They'll need a
+    // forced-consent reconnect via /api/auth/google/connect to get one. This
+    // is rare — usually only happens if the user revoked us in their Google
+    // account settings then signed in again.
+    if (!newRefreshToken && !grantedCalendar) {
+      console.warn("[google-login] User", email, "signed in without granting calendar scope.");
     }
 
     let token: string;
@@ -171,12 +180,11 @@ export async function GET(req: NextRequest) {
       return loginRedirect(baseUrl, "token_sign_failed", err);
     }
 
-    // Auto-chain into the calendar consent flow for workspace users who haven't
-    // granted calendar access yet — /api/auth/google/connect requires the
-    // session cookie to already be set, so we set it on this response.
-    const redirectTo = needsCalendarConsent
-      ? "/api/auth/google/connect"
-      : (ROLE_HOME[user.role as Role] ?? "/");
+    // Calendar consent is collected in the same OAuth round-trip as sign-in,
+    // so the only thing left to do is land the user on the page they were
+    // trying to reach. Falls back to the role home when there's no `next`.
+    const wantedNext = safeNextPath(req.cookies.get(NEXT_COOKIE)?.value);
+    const redirectTo = wantedNext ?? ROLE_HOME[user.role as Role] ?? "/";
     const res = NextResponse.redirect(new URL(redirectTo, baseUrl));
     res.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
@@ -186,6 +194,7 @@ export async function GET(req: NextRequest) {
       path: "/",
     });
     res.cookies.delete(STATE_COOKIE);
+    res.cookies.delete(NEXT_COOKIE);
     return res;
   } catch (err) {
     // Log the full stack and any mongoose validation details so we can see

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { getLoginAuthUrl, isGoogleLoginConfigured } from "@/lib/google-login";
+import { safeNextPath } from "@/lib/auth";
 
 const STATE_COOKIE = "g_login_state";
+/** Where to send the user after a successful Google sign-in. Stored in a
+ *  short-lived cookie so the callback can read it after Google bounces back —
+ *  Google itself never sees this value, so an attacker can't tamper with it. */
+const NEXT_COOKIE = "g_login_next";
 
 /** Best-effort detection of the public origin the user is hitting us on.
  *  Honours `x-forwarded-*` headers behind a proxy/load balancer; otherwise
@@ -42,13 +47,24 @@ export async function GET(req: NextRequest) {
     const url = getLoginAuthUrl(state, origin);
 
     const res = NextResponse.redirect(url);
-    res.cookies.set(STATE_COOKIE, state, {
+    const cookieOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       maxAge: 60 * 10, // 10 minutes
       path: "/",
-    });
+    };
+    res.cookies.set(STATE_COOKIE, state, cookieOpts);
+
+    // Stash the post-login destination if the caller passed one. The proxy
+    // sets `?next=/wherever` when an unauthenticated user hits a protected
+    // page, and we surface it through the login form's Google button as well.
+    const next = safeNextPath(req.nextUrl.searchParams.get("next"));
+    if (next) {
+      res.cookies.set(NEXT_COOKIE, next, cookieOpts);
+    } else {
+      res.cookies.delete(NEXT_COOKIE);
+    }
     return res;
   } catch (err) {
     console.error("/api/auth/login-google init failed:", err);

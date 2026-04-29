@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
-import { signToken, comparePassword, COOKIE_NAME } from "@/lib/auth";
+import { signToken, comparePassword, COOKIE_NAME, safeNextPath } from "@/lib/auth";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body as { email: string; password: string };
+    const { email, password, next } = body as { email: string; password: string; next?: string };
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -56,10 +56,15 @@ export async function POST(request: NextRequest) {
       pending: "/pending",
     };
 
+    // Prefer the page the user was trying to reach when they got bounced to
+    // /login. Falls back to their role home only if the next param is missing
+    // or doesn't pass our same-origin allowlist.
+    const redirectTo = safeNextPath(next) ?? ROLE_HOME[user.role] ?? "/";
+
     const response = NextResponse.json({
       success: true,
       role: user.role,
-      redirectTo: ROLE_HOME[user.role] ?? "/",
+      redirectTo,
     });
 
     response.cookies.set(COOKIE_NAME, token, {
