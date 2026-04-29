@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type StaffUser = {
   _id: string; name: string; email: string; role: string;
@@ -125,7 +126,14 @@ export default function OffboardingPage() {
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-(--muted)">Loading staff…</div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border px-5 py-4"
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+              <SkeletonRow trailing={true} />
+            </div>
+          ))}
+        </div>
       ) : (
         <>
           <section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type Msg = {
   _id: string;
@@ -87,7 +88,12 @@ export default function VoiceMessagesPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-sm text-(--muted)">Loading…</div>
+        <div className="rounded-2xl border divide-y divide-(--border)"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+          ))}
+        </div>
       ) : msgs.length === 0 ? (
         <div className="py-16 text-center rounded-2xl border"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>

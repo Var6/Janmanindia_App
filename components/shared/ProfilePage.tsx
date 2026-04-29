@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AvatarUpload from "@/components/shared/AvatarUpload";
+import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 
 type UserProfile = {
   _id: string;
@@ -132,8 +133,16 @@ export default function ProfilePage() {
 
   if (loadingProfile) {
     return (
-      <div className="flex items-center justify-center py-20 text-(--muted)">
-        <Spinner />
+      <div className="max-w-xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton w={72} h={72} rounded="full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton w="60%" h={16} />
+            <Skeleton w="40%" h={11} />
+          </div>
+        </div>
+        <SkeletonCard lines={4} />
+        <SkeletonCard lines={3} />
       </div>
     );
   }

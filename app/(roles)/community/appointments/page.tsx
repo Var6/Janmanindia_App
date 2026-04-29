@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type Appointment = {
   _id: string;
@@ -128,7 +129,12 @@ export default function AppointmentsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-sm text-(muted)">Loading appointments…</div>
+        <div className="rounded-2xl border divide-y divide-(--border)"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+          ))}
+        </div>
       ) : appointments.length === 0 ? (
         <div className="py-16 text-center bg-(surface) rounded-2xl border border-(border)">
           <p className="text-(muted) text-sm">No appointments yet.</p>

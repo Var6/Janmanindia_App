@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type Session = {
   _id: string;
@@ -152,7 +153,11 @@ export default function OfflineSessions({ currentUserId, canCreate }: Props) {
       )}
 
       {loading ? (
-        <p className="text-sm text-(--muted)">Loading sessions…</p>
+        <div className="space-y-3">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </div>
       ) : sessions.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">🗓</p>

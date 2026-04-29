@@ -6,6 +6,7 @@ import { Timeline, type TimelineEntry } from "@/components/ui/timeline";
 import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
 import IcpForm from "@/components/icp/IcpForm";
 import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
+import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -522,11 +523,21 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
   useEffect(() => { fetchCase(); }, [caseId]);
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20 text-(--muted)">
-      <svg className="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-      </svg>
+    <div className="space-y-5">
+      <Skeleton w={140} h={11} />
+      <div className="rounded-2xl border p-5 space-y-3"
+        style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <Skeleton w="60%" h={20} />
+        <Skeleton w="35%" h={11} />
+        <div className="flex gap-2 pt-2">
+          <Skeleton w={70} h={22} rounded="full" />
+          <Skeleton w={90} h={22} rounded="full" />
+          <Skeleton w={60} h={22} rounded="full" />
+        </div>
+      </div>
+      <SkeletonStats count={4} />
+      <SkeletonCard lines={5} />
+      <SkeletonCard lines={4} />
     </div>
   );
 

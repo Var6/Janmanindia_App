@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 interface Grievance {
   _id: string;
@@ -98,7 +99,11 @@ export default function HrGrievancesPage() {
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-(--muted)">Loading…</div>
+        <div className="space-y-3">
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">📭</p>

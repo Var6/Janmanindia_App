@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type Manager = { _id: string; name: string; email?: string } | null;
 type Allocation = { _id: string; source: string; amount: number; receivedAt?: string; notes?: string };
@@ -158,7 +159,12 @@ export default function ProjectsPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-(--muted)">Loading…</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
+        </div>
       ) : projects.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📊</p>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/components/hr/OnboardingDocsFields";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 import { checkOnboardingDocs, missingOnboardingDocs, onboardingCompleteness, type OnboardingDocsLike } from "@/lib/onboarding-docs";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 
@@ -264,7 +265,12 @@ export default function OnboardingPage() {
       ) : (
         <section className="space-y-3">
           {loading ? (
-            <div className="py-10 text-center text-sm text-(--muted)">Loading staff…</div>
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border px-5 py-4"
+                style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+                <SkeletonRow trailing={true} />
+              </div>
+            ))
           ) : activeStaff.length === 0 ? (
             <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
               <p className="text-sm text-(--muted)">No active staff found.</p>

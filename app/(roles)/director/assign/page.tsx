@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type Lawyer = { _id: string; name: string; email: string; litigationProfile?: { activeCaseCount: number; location: string } };
 type CaseItem = { _id: string; caseTitle: string; litigationMember?: { name: string } };
@@ -158,7 +159,7 @@ function AssignContent() {
 
 export default function AssignPage() {
   return (
-    <Suspense fallback={<div className="py-10 text-center text-sm text-(muted)">Loading…</div>}>
+    <Suspense fallback={<SkeletonCard lines={4} />}>
       <AssignContent />
     </Suspense>
   );

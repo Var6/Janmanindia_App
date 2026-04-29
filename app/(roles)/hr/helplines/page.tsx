@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 interface Helpline {
   _id: string;
@@ -103,7 +104,12 @@ export default function HrHelplinesPage() {
       <section>
         <h2 className="text-lg font-semibold text-(--text) mb-3">Configured ({items.length})</h2>
         {loading ? (
-          <p className="text-sm text-(--muted) py-6 text-center">Loading…</p>
+          <div className="rounded-2xl border divide-y divide-(--border)"
+            style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
             <p className="text-2xl mb-2">📞</p>

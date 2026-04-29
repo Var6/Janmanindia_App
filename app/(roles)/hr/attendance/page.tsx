@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type AttendanceStatus = "present" | "absent" | "late" | "half-day";
 
@@ -174,8 +175,10 @@ export default function HrAttendancePage() {
       <div className="rounded-2xl border overflow-hidden"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-(--muted)">
-            <Spinner /> Loading…
+          <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-(--muted)">No staff found.</p>

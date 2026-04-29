@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type Expense = {
   description: string;
@@ -371,7 +372,11 @@ export default function EodReportsPanel({
       )}
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-(--muted)">Loading reports…</div>
+        <div className="space-y-3">
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </div>
       ) : reports.length === 0 ? (
         <div className="py-16 text-center rounded-2xl border"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>

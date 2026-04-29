@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SubmitExpenseForm from "@/components/finance/SubmitExpenseForm";
 import ExpenseQueue, { type ExpenseItem } from "@/components/finance/ExpenseQueue";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 export default function AdministratorExpensesPage() {
   const [items, setItems] = useState<ExpenseItem[]>([]);
@@ -35,7 +36,14 @@ export default function AdministratorExpensesPage() {
         <SubmitExpenseForm onCreated={load} />
       </div>
 
-      {loading ? <p className="text-sm text-(--muted)">Loading…</p> : (
+      {loading ? (
+        <div className="rounded-2xl border divide-y divide-(--border)"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+          ))}
+        </div>
+      ) : (
         <>
           <ExpenseQueue title="In progress" items={open} empty="Nothing pending — submit a new expense above." />
           {past.length > 0 && <ExpenseQueue title="Past expenses" items={past} />}

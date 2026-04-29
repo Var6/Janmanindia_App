@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 export interface Ticket {
   _id: string;
@@ -98,7 +99,11 @@ export default function TicketList({ mode }: Props) {
       </div>
 
       {loading ? (
-        <div className="py-10 text-center text-sm text-(--muted)">Loading…</div>
+        <div className="rounded-2xl border border-(--border) bg-(--surface) divide-y divide-(--border)">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="px-5 py-4"><SkeletonRow trailing={true} /></div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">📭</p>

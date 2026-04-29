@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type Msg = {
   _id: string;
@@ -141,7 +142,12 @@ export default function SpeakToUsPage() {
       <section>
         <h2 className="font-semibold text-(--text) mb-3">Your sent messages</h2>
         {loadingHistory ? (
-          <p className="text-sm text-(--muted)">Loading…</p>
+          <div className="rounded-2xl border divide-y divide-(--border)"
+            style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="px-5 py-4"><SkeletonRow trailing={false} /></div>
+            ))}
+          </div>
         ) : history.length === 0 ? (
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>

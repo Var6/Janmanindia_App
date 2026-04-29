@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type Goal = { _id: string; description: string; targetDate?: string; completed: boolean; completedAt?: string };
 type Session = { _id: string; date: string; type: string; notes: string; conductedBy?: { _id: string; name: string } };
@@ -162,7 +163,10 @@ export default function CarePlansPanel({ caseId, communityId, canManage }: Props
 
       <div className="divide-y" style={{ borderColor: "var(--border)" }}>
         {loading ? (
-          <p className="px-5 py-6 text-sm text-(--muted)">Loading…</p>
+          <div className="px-5 py-4 space-y-3">
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+          </div>
         ) : plans.length === 0 ? (
           <p className="px-5 py-6 text-sm text-(--muted)">
             No care plans yet. {canManage ? "Click + New Care Plan to start one — useful for survivors needing counselling, shelter, or medical follow-up." : ""}

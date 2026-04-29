@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import DailyReportForm from "@/components/reports/DailyReportForm";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 export default function HrDailyReportDetail() {
   const params = useParams<{ id: string }>();
@@ -19,7 +20,7 @@ export default function HrDailyReportDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <p className="text-sm text-(--muted)">Loading…</p>;
+  if (loading) return <SkeletonCard lines={6} />;
   if (!report) return <p className="text-sm text-(--error-text)">Report not found.</p>;
 
   return (

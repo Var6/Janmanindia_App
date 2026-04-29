@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BookAppointmentForm from "@/components/appointments/BookAppointmentForm";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type UserRef = { _id: string; name: string; email: string; role?: string };
 type Appointment = {
@@ -95,7 +96,13 @@ export default function AppointmentsHub() {
         )}
       </div>
 
-      {loading ? <p className="text-sm text-(--muted)">Loading…</p> : (
+      {loading ? (
+        <div className="space-y-4">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </div>
+      ) : (
         <>
           <Section title={`Incoming requests${incoming.length ? ` (${incoming.length})` : ""}`}
             empty="No pending requests need your response." appts={incoming}

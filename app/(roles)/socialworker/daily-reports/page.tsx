@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import DailyReportForm from "@/components/reports/DailyReportForm";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type ReportLite = {
   _id: string;
@@ -73,7 +74,14 @@ export default function DailyReportsIndex() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-(--muted)">Loading…</p>
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border px-4 py-3"
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+              <SkeletonRow trailing={true} />
+            </div>
+          ))}
+        </div>
       ) : reports.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📒</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 interface User { _id: string; name: string; role: string; employeeId?: string }
 interface Conversation {
@@ -233,7 +234,11 @@ export default function ChatApp({ currentUserId }: Props) {
         {showContacts ? (
           <div className="overflow-y-auto flex-1">
             {contacts.length === 0 ? (
-              <p className="px-3 py-6 text-xs text-center text-(--muted)">Loading…</p>
+              <ul className="divide-y divide-(--border)">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <li key={i} className="px-3 py-2"><SkeletonRow trailing={false} /></li>
+                ))}
+              </ul>
             ) : (
               <ul className="divide-y divide-(--border)">
                 {contacts.map((u) => (
