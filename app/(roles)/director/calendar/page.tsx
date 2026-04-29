@@ -5,6 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Activity from "@/models/Activity";
 import Appointment from "@/models/Appointment";
+import TrainingSession from "@/models/TrainingSession";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 
@@ -36,6 +37,7 @@ interface PopulatedActivity {
   priority: "low" | "medium" | "high";
   category: string;
   dueDate?: Date;
+  endsAt?: Date;
   completedAt?: Date;
   assignee: StaffLite | null;
   coAssignees: StaffLite[];
@@ -49,10 +51,31 @@ interface PopulatedAppointment {
   status: string;
   requester: StaffLite | null;
   requestee: StaffLite | null;
+  coAttendees: StaffLite[];
   socialWorker: StaffLite | null;
   litigationMember: StaffLite | null;
   community: StaffLite | null;
 }
+
+interface PopulatedTrainingSession {
+  _id: mongoose.Types.ObjectId;
+  title: string;
+  venue: string;
+  district?: string;
+  date: Date;
+  endDate?: Date;
+  capacity: number;
+  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  conductedBy: StaffLite | null;
+  enrollments: { user: mongoose.Types.ObjectId | StaffLite }[];
+}
+
+const TRAINING_STATUS_STYLE: Record<string, { bg: string; text: string }> = {
+  scheduled: { bg: "var(--info-bg)",      text: "var(--info-text)"    },
+  ongoing:   { bg: "var(--warning-bg)",   text: "var(--warning-text)" },
+  completed: { bg: "var(--success-bg)",   text: "var(--success-text)" },
+  cancelled: { bg: "var(--bg-secondary)", text: "var(--muted)"        },
+};
 
 function dayKey(d: Date): string {
   // Stable YYYY-MM-DD key in local time (so a 9pm task doesn't roll into tomorrow).
@@ -83,7 +106,7 @@ export default async function DirectorCalendarPage() {
   const start = new Date(now); start.setDate(start.getDate() - 7); start.setHours(0, 0, 0, 0);
   const end   = new Date(now); end.setDate(end.getDate() + 30);   end.setHours(23, 59, 59, 999);
 
-  const [activitiesRaw, appointmentsRaw, staff] = dbOk ? await Promise.all([
+  const [activitiesRaw, appointmentsRaw, trainingsRaw, staff] = dbOk ? await Promise.all([
     Activity.find({ dueDate: { $gte: start, $lte: end } })
       .sort({ dueDate: 1 })
       .populate("assignee",    "name role")
@@ -97,15 +120,23 @@ export default async function DirectorCalendarPage() {
       .sort({ proposedDate: 1 })
       .populate("requester",        "name role")
       .populate("requestee",        "name role")
+      .populate("coAttendees",      "name role")
       .populate("socialWorker",     "name role")
       .populate("litigationMember", "name role")
       .populate("community",        "name role")
       .lean<PopulatedAppointment[]>(),
+    TrainingSession.find({
+      date: { $gte: start, $lte: end },
+      status: { $in: ["scheduled", "ongoing", "completed"] },
+    })
+      .sort({ date: 1 })
+      .populate("conductedBy", "name role")
+      .lean<PopulatedTrainingSession[]>(),
     User.find({ isActive: true, role: { $nin: ["community", "pending"] } })
       .select("name role")
       .sort({ name: 1 })
       .lean<StaffLite[]>(),
-  ]) : [[], [], []];
+  ]) : [[], [], [], []];
 
   // Per-staff load summary.
   const loadByUser = new Map<string, { planned: number; in_progress: number; done: number; overdue: number; upcoming: number }>();
@@ -125,10 +156,11 @@ export default async function DirectorCalendarPage() {
     }
   }
 
-  // Group activities and appointments by day key.
+  // Group activities, appointments, and training sessions by day key.
   type DayItem =
-    | { kind: "activity"; at: Date; activity: PopulatedActivity }
-    | { kind: "appointment"; at: Date; appt: PopulatedAppointment };
+    | { kind: "activity";    at: Date; activity: PopulatedActivity }
+    | { kind: "appointment"; at: Date; appt: PopulatedAppointment }
+    | { kind: "training";    at: Date; training: PopulatedTrainingSession };
   const byDay = new Map<string, DayItem[]>();
 
   for (const a of activitiesRaw) {
@@ -144,6 +176,12 @@ export default async function DirectorCalendarPage() {
     if (!byDay.has(k)) byDay.set(k, []);
     byDay.get(k)!.push({ kind: "appointment", at, appt: ap });
   }
+  for (const t of trainingsRaw) {
+    const at = new Date(t.date);
+    const k = dayKey(at);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k)!.push({ kind: "training", at, training: t });
+  }
   for (const items of byDay.values()) items.sort((a, b) => a.at.getTime() - b.at.getTime());
 
   // Build the day list — every day in the window, even if empty, so blank days
@@ -157,6 +195,7 @@ export default async function DirectorCalendarPage() {
   const todayKey = dayKey(now);
   const totalActivities = activitiesRaw.length;
   const totalAppts = appointmentsRaw.length;
+  const totalTrainings = trainingsRaw.length;
 
   // Sort staff by busiest first (sum of planned + in_progress).
   const staffSorted = [...staff].sort((a, b) => {
@@ -173,7 +212,7 @@ export default async function DirectorCalendarPage() {
         <div>
           <h1 className="text-2xl font-bold text-(--text)">Team Calendar</h1>
           <p className="text-sm text-(--muted) mt-1">
-            All staff activities and appointments from {formatDate(start)} to {formatDate(end)} — {totalActivities} task{totalActivities === 1 ? "" : "s"} · {totalAppts} appointment{totalAppts === 1 ? "" : "s"}.
+            All staff activities, appointments and offline trainings from {formatDate(start)} to {formatDate(end)} — {totalActivities} task{totalActivities === 1 ? "" : "s"} · {totalAppts} appointment{totalAppts === 1 ? "" : "s"} · {totalTrainings} training{totalTrainings === 1 ? "" : "s"}.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -237,7 +276,39 @@ export default async function DirectorCalendarPage() {
                                   </span>
                                 </div>
                                 <p className="font-medium text-(--text) truncate">{ap.reason}</p>
-                                <p className="text-(--muted) mt-0.5">{a} ↔ {b}</p>
+                                <p className="text-(--muted) mt-0.5">
+                                  {a} ↔ {b}
+                                  {ap.coAttendees && ap.coAttendees.length > 0
+                                    ? ` + ${ap.coAttendees.length} more`
+                                    : ""}
+                                </p>
+                              </div>
+                            );
+                          }
+                          if (it.kind === "training") {
+                            const t = it.training;
+                            const ts = TRAINING_STATUS_STYLE[t.status];
+                            const enrolled = t.enrollments?.length ?? 0;
+                            return (
+                              <div key={`tr-${i}-${String(t._id)}`} className="rounded-lg border px-3 py-2 text-xs"
+                                style={{ borderColor: "color-mix(in srgb, var(--accent) 35%, var(--border))", background: "var(--bg)" }}>
+                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
+                                    style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>
+                                    Training
+                                  </span>
+                                  <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase"
+                                    style={{ background: ts.bg, color: ts.text }}>
+                                    {t.status}
+                                  </span>
+                                  <span className="text-[10px] text-(--muted)">{enrolled}/{t.capacity} enrolled</span>
+                                </div>
+                                <p className="font-medium text-(--text) truncate">{t.title}</p>
+                                <p className="text-(--muted) mt-0.5 truncate">
+                                  {t.venue}{t.district ? ` · ${t.district}` : ""}
+                                  {t.conductedBy?.name ? ` · led by ${t.conductedBy.name}` : ""}
+                                </p>
                               </div>
                             );
                           }
@@ -255,7 +326,12 @@ export default async function DirectorCalendarPage() {
                                   {a.status.replace("_", " ")}
                                 </span>
                                 <span className="text-[10px] text-(--muted) capitalize">{a.category}</span>
-                                <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
+                                <span className="text-[10px] text-(--muted)">
+                                  {formatTime(it.at)}
+                                  {a.endsAt
+                                    ? ` – ${new Date(a.endsAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+                                    : ""}
+                                </span>
                                 {overdue && (
                                   <span className="text-[10px] uppercase font-bold"
                                     style={{ color: "var(--error-text)" }}>Overdue</span>

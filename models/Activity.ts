@@ -18,7 +18,12 @@ export interface IActivity extends Document {
    *  Google Calendar attendee so the event syncs to their calendar too. */
   coAssignees: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
+  /** Start of the activity's time slot. Date-only values (midnight UTC) are
+   *  treated as "all day" and the calendar sync defaults to 09:00 IST. */
   dueDate?: Date;
+  /** Optional end of the time slot. When set, the calendar event spans
+   *  `dueDate → endsAt` instead of the default 30-min slot. */
+  endsAt?: Date;
   startedAt?: Date;
   completedAt?: Date;
   notes?: string;
@@ -45,6 +50,7 @@ const activitySchema = new Schema<IActivity>(
     coAssignees: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
     createdBy:   { type: Schema.Types.ObjectId, ref: "User", required: true },
     dueDate:     Date,
+    endsAt:      Date,
     startedAt:   Date,
     completedAt: Date,
     notes:       String,

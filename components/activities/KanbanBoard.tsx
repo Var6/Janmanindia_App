@@ -7,6 +7,7 @@ interface Activity {
   priority: "low" | "medium" | "high";
   status: "planned" | "in_progress" | "done" | "cancelled";
   dueDate?: string;
+  endsAt?: string;
   assignee:    { _id: string; name: string } | null;
   coAssignees?: { _id: string; name: string }[];
 }
@@ -62,7 +63,7 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                       {c.assignee?.name ?? "Unassigned"}
                       {c.coAssignees && c.coAssignees.length > 0 ? ` +${c.coAssignees.length}` : ""}
                       {" · "}<span className="capitalize">{c.category}</span>
-                      {c.dueDate ? ` · ${new Date(c.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
+                      {c.dueDate ? ` · ${formatKanbanWhen(c.dueDate, c.endsAt)}` : ""}
                     </p>
                     {overdue && (
                       <p className="text-[10px] uppercase font-bold mt-1 ml-4" style={{ color: "var(--error, #dc2626)" }}>
@@ -89,4 +90,23 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
       })}
     </div>
   );
+}
+
+/** Compact "when" label for Kanban cards — date-only when there's no end,
+ *  HH:mm range when same-day, otherwise just the date and start time. */
+function formatKanbanWhen(startISO: string, endISO?: string): string {
+  const start = new Date(startISO);
+  const dateOpts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const timeOpts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+  const isAllDay = start.getUTCHours() === 0 && start.getUTCMinutes() === 0 && !endISO;
+  if (isAllDay) return start.toLocaleDateString("en-IN", dateOpts);
+  if (!endISO) return `${start.toLocaleDateString("en-IN", dateOpts)} ${start.toLocaleTimeString("en-IN", timeOpts)}`;
+  const end = new Date(endISO);
+  const sameDay = start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === end.getDate();
+  if (sameDay) {
+    return `${start.toLocaleDateString("en-IN", dateOpts)} ${start.toLocaleTimeString("en-IN", timeOpts)}–${end.toLocaleTimeString("en-IN", timeOpts)}`;
+  }
+  return `${start.toLocaleDateString("en-IN", dateOpts)} ${start.toLocaleTimeString("en-IN", timeOpts)}`;
 }

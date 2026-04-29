@@ -78,10 +78,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, category, priority, assignee, coAssignees, dueDate } = body as {
+    const { title, description, category, priority, assignee, coAssignees, dueDate, endsAt } = body as {
       title?: string; description?: string;
       category?: ActivityCategory; priority?: ActivityPriority;
-      assignee?: string; coAssignees?: string[]; dueDate?: string;
+      assignee?: string; coAssignees?: string[];
+      dueDate?: string; endsAt?: string;
     };
 
     if (!title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -119,6 +120,14 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
     const noteText = (body as { note?: string }).note?.trim() || undefined;
+    // Parse + validate the optional end time. We only persist it when it's
+    // strictly after the start; otherwise drop it silently and the calendar
+    // sync falls back to a 30-min default.
+    const startAt = dueDate ? new Date(dueDate) : undefined;
+    const endAt   = endsAt  ? new Date(endsAt)  : undefined;
+    const usableEnd = startAt && endAt && !isNaN(endAt.getTime()) && endAt.getTime() > startAt.getTime()
+      ? endAt
+      : undefined;
     const activity = await Activity.create({
       title: title.trim(),
       description: description?.trim(),
@@ -128,7 +137,8 @@ export async function POST(req: NextRequest) {
       assignee: assigneeId,
       coAssignees: coAssigneeIds,
       createdBy: new mongoose.Types.ObjectId(session.id),
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      dueDate: startAt,
+      endsAt: usableEnd,
     });
 
     // Record one TaskAssignment per assigned person (excluding self-assignment).

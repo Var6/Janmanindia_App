@@ -54,13 +54,22 @@ async function pickEventOwner(
   }
 }
 
-/** Compute event start/end. If dueDate has zeroed time (date-only),
- *  default to 09:00 IST that day for a 30-min slot. Otherwise honour the time. */
-function eventTimes(dueDate: Date): { start: Date; end: Date } {
+/** Compute event start/end. Order of precedence:
+ *   1. If `endsAt` is supplied and strictly after the start → use both.
+ *   2. If `dueDate` has zeroed time (date-only midnight UTC) → start at 09:00
+ *      IST, end 30 min later.
+ *   3. Otherwise honour the start time and default to a 30-min slot. */
+function eventTimes(dueDate: Date, endsAt?: Date | null): { start: Date; end: Date } {
   const d = new Date(dueDate);
   if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) {
     // Treat midnight UTC as a date-only value → 09:00 IST = 03:30 UTC
     d.setUTCHours(3, 30, 0, 0);
+  }
+  if (endsAt) {
+    const e = new Date(endsAt);
+    if (!isNaN(e.getTime()) && e.getTime() > d.getTime()) {
+      return { start: d, end: e };
+    }
   }
   return { start: d, end: new Date(d.getTime() + 30 * 60_000) };
 }
@@ -74,7 +83,7 @@ export async function syncActivityCreate(activityId: string): Promise<void> {
     const owner = await pickEventOwner(act.assignee, act.createdBy, act.coAssignees ?? []);
     if (!owner) return;
 
-    const { start, end } = eventTimes(act.dueDate);
+    const { start, end } = eventTimes(act.dueDate, act.endsAt);
     const eventId = await createEvent(owner.refreshToken, {
       summary: `📋 ${act.title}`,
       description: [
@@ -137,7 +146,7 @@ export async function syncActivityUpdate(activityId: string): Promise<void> {
       ),
     );
 
-    const { start, end } = eventTimes(act.dueDate);
+    const { start, end } = eventTimes(act.dueDate, act.endsAt);
     const statusPrefix = act.status === "done" ? "✅ " : act.status === "in_progress" ? "▶️ " : "📋 ";
     await updateEvent(owner.googleRefreshToken, act.googleEventId, {
       summary: `${statusPrefix}${act.title}`,

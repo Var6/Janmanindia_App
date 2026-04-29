@@ -13,6 +13,7 @@ interface Activity {
   priority: "low" | "medium" | "high";
   status: "planned" | "in_progress" | "done" | "cancelled";
   dueDate?: string;
+  endsAt?: string;
   notes?: string;
   assignee:    { _id: string; name: string; role: string; employeeId?: string } | null;
   coAssignees: { _id: string; name: string; role: string; employeeId?: string }[];
@@ -61,6 +62,11 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Form state for the create panel — kept controlled so the co-assignee
+  // checklist can react to the primary selection.
+  const [primaryAssignee, setPrimaryAssignee] = useState("");
+  const [coAssignees, setCoAssignees] = useState<string[]>([]);
+  const [coOpen, setCoOpen] = useState(false);
   const canAssign = ASSIGNABLE_ROLES.includes(currentRole);
 
   const load = useCallback(async () => {
@@ -86,13 +92,22 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
+    // Drop the primary from coAssignees so a person never gets listed twice.
+    const cleanedCo = coAssignees.filter((id) => id && id !== primaryAssignee);
+    // Start/end are datetime-local strings ("YYYY-MM-DDTHH:mm"). The API
+    // ignores `endsAt` if it isn't strictly after `dueDate`, so we don't need
+    // to validate here — just pass them through.
+    const startStr = String(fd.get("dueDate") ?? "");
+    const endStr   = String(fd.get("endsAt")  ?? "");
     const payload = {
       title: String(fd.get("title") ?? "").trim(),
       description: String(fd.get("description") ?? "").trim(),
       category: String(fd.get("category") ?? "other"),
       priority: String(fd.get("priority") ?? "medium"),
-      assignee: String(fd.get("assignee") ?? ""),
-      dueDate:  String(fd.get("dueDate") ?? "") || undefined,
+      assignee: primaryAssignee,
+      coAssignees: cleanedCo,
+      dueDate: startStr || undefined,
+      endsAt:  endStr   || undefined,
     };
     const res = await fetch("/api/activities", {
       method: "POST",
@@ -105,7 +120,14 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       return;
     }
     form.reset();
+    setPrimaryAssignee("");
+    setCoAssignees([]);
+    setCoOpen(false);
     await load();
+  }
+
+  function toggleCoAssignee(id: string) {
+    setCoAssignees((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }
 
   async function patch(id: string, body: Record<string, unknown>) {
@@ -179,9 +201,15 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
           </div>
           <textarea name="description" rows={2} placeholder="Details (optional)"
             className="w-full px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) resize-none focus:outline-none focus:border-(--accent)" />
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px_auto] gap-2 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
             {canAssign ? (
-              <select name="assignee" defaultValue=""
+              <select value={primaryAssignee}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setPrimaryAssignee(v);
+                  // Drop the new primary from co-assignees if it's there.
+                  if (v) setCoAssignees((prev) => prev.filter((id) => id !== v));
+                }}
                 className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
                 <option value="">Assign to: myself</option>
                 {staff.map((u) => (
@@ -190,14 +218,64 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   </option>
                 ))}
               </select>
-            ) : <input type="hidden" name="assignee" value="" />}
-            <input name="dueDate" type="date" placeholder="Due date"
-              className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+            ) : <span />}
             <button type="submit" className="px-4 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast)"
               style={{ background: "var(--accent)" }}>
               Add
             </button>
           </div>
+          {/* Time slot — both fields are datetime-local. Leaving them blank
+              creates an undated activity. Filling only the start gets a
+              30-min default on Google Calendar; filling both pins the exact
+              time range you want. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label className="flex flex-col gap-1 text-[11px] text-(--muted)">
+              <span>Starts (optional)</span>
+              <input name="dueDate" type="datetime-local"
+                className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] text-(--muted)">
+              <span>Ends (optional — leaves a 30-min slot if blank)</span>
+              <input name="endsAt" type="datetime-local"
+                className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+            </label>
+          </div>
+
+          {canAssign && staff.length > 0 && (
+            <div className="rounded-lg border" style={{ borderColor: "var(--border)" }}>
+              <button type="button" onClick={() => setCoOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 text-xs text-(--muted) hover:text-(--text)">
+                <span>
+                  Also assign to{" "}
+                  {coAssignees.length === 0
+                    ? <span className="text-(--muted)">— optional, makes it a group task</span>
+                    : <span className="font-semibold text-(--text)">{coAssignees.length} co-assignee{coAssignees.length === 1 ? "" : "s"}</span>}
+                </span>
+                <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
+              </button>
+              {coOpen && (
+                <div className="max-h-44 overflow-y-auto border-t" style={{ borderColor: "var(--border)" }}>
+                  <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                    {staff.filter((u) => u._id !== primaryAssignee).map((u) => {
+                      const checked = coAssignees.includes(u._id);
+                      return (
+                        <li key={u._id}>
+                          <label className="flex items-center gap-2.5 px-3 py-1.5 text-xs cursor-pointer hover:bg-(--bg-secondary)">
+                            <input type="checkbox" checked={checked}
+                              onChange={() => toggleCoAssignee(u._id)}
+                              className="accent-(--accent)" />
+                            <span className="flex-1 text-(--text)">
+                              {u.name} <span className="text-(--muted)">· {u.role}</span>
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </section>
 
@@ -283,7 +361,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                         ? ` + ${a.coAssignees.map((c) => c.name).join(", ")}`
                         : ""}
                       {" · "}Created by: {a.createdBy?.name ?? "—"}
-                      {a.dueDate ? ` · Due ${new Date(a.dueDate).toLocaleDateString("en-IN")}` : ""}
+                      {a.dueDate ? ` · ${formatActivityWhen(a.dueDate, a.endsAt)}` : ""}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -328,4 +406,25 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       )}
     </div>
   );
+}
+
+/** Render the time slot for an activity:
+ *   • all-day (midnight UTC start, no end)        → "Due 12 Mar"
+ *   • timed start, no end                          → "Due 12 Mar 14:30"
+ *   • same-day start + end                         → "12 Mar 14:30 – 15:30"
+ *   • multi-day start + end                        → "12 Mar 14:30 → 13 Mar 09:00" */
+function formatActivityWhen(startISO: string, endISO?: string): string {
+  const start = new Date(startISO);
+  const isAllDay = start.getUTCHours() === 0 && start.getUTCMinutes() === 0 && !endISO;
+  const dateOpts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+  const timeOpts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+  if (isAllDay) return `Due ${start.toLocaleDateString("en-IN", dateOpts)}`;
+  const startStr = `${start.toLocaleDateString("en-IN", dateOpts)} ${start.toLocaleTimeString("en-IN", timeOpts)}`;
+  if (!endISO) return `Due ${startStr}`;
+  const end = new Date(endISO);
+  const sameDay = start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === end.getDate();
+  if (sameDay) return `${startStr} – ${end.toLocaleTimeString("en-IN", timeOpts)}`;
+  return `${startStr} → ${end.toLocaleDateString("en-IN", dateOpts)} ${end.toLocaleTimeString("en-IN", timeOpts)}`;
 }

@@ -18,20 +18,31 @@ async function syncToGoogleCalendar(
   start: Date,
   end: Date,
   reason: string,
+  coAttendeeIds: string[] = [],
 ): Promise<void> {
   try {
-    const [requester, requestee] = await Promise.all([
-      User.findById(requesterId).select("+googleRefreshToken googleEmail name email").lean(),
-      User.findById(requesteeId).select("googleEmail name email").lean(),
-    ]);
+    const ids = [requesterId, requesteeId, ...coAttendeeIds];
+    const users = await User.find({ _id: { $in: ids } })
+      .select("+googleRefreshToken googleEmail name email")
+      .lean();
+    const byId = new Map(users.map((u) => [String(u._id), u]));
+    const requester = byId.get(requesterId);
     if (!requester?.googleRefreshToken) return; // not connected — silently skip
 
-    const attendeeEmail = requestee?.googleEmail || requestee?.email;
+    const attendees = new Set<string>();
+    for (const id of [requesteeId, ...coAttendeeIds]) {
+      if (id === requesterId) continue;
+      const u = byId.get(id);
+      const email = u?.googleEmail || u?.email;
+      if (email) attendees.add(email.toLowerCase());
+    }
+
+    const requestee = byId.get(requesteeId);
     const eventId = await createEvent(requester.googleRefreshToken, {
       summary: `Janman: ${reason || "Appointment"}`,
-      description: `Appointment with ${requestee?.name ?? "team member"}\n\nManage at https://app.janmanindia.org/appointments`,
+      description: `Appointment with ${requestee?.name ?? "team member"}${coAttendeeIds.length ? ` + ${coAttendeeIds.length} other${coAttendeeIds.length === 1 ? "" : "s"}` : ""}\n\nManage at https://app.janmanindia.org/appointments`,
       start, end,
-      attendeeEmails: attendeeEmail ? [attendeeEmail] : undefined,
+      attendeeEmails: attendees.size > 0 ? [...attendees] : undefined,
     });
     if (eventId) {
       await Appointment.updateOne({ _id: appointmentId }, { $set: { googleEventId: eventId } });
@@ -83,7 +94,7 @@ async function hasConflict(userId: string, start: Date, end: Date): Promise<bool
     $and: [
       {
         $or: [
-          { requester: oid }, { requestee: oid },
+          { requester: oid }, { requestee: oid }, { coAttendees: oid },
           { community: oid }, { socialWorker: oid }, { litigationMember: oid },
         ],
       },
@@ -111,7 +122,7 @@ export async function GET() {
       ? {}
       : {
           $or: [
-            { requester: oid }, { requestee: oid },
+            { requester: oid }, { requestee: oid }, { coAttendees: oid },
             { community: oid }, { socialWorker: oid }, { litigationMember: oid },
           ],
         };
@@ -123,6 +134,7 @@ export async function GET() {
       .populate("litigationMember", "name email role")
       .populate("requester",        "name email role")
       .populate("requestee",        "name email role")
+      .populate("coAttendees",      "name email role")
       .lean();
 
     return NextResponse.json({ appointments });
@@ -162,6 +174,9 @@ export async function POST(request: NextRequest) {
 
     const requesteeId = body.requesteeId as string | undefined;
     const legacySwId  = body.socialWorkerId as string | undefined;
+    // Optional additional invitees — they ride along on the same appointment
+    // record so it shows up on their calendars and on /appointments.
+    const rawCoAttendees = Array.isArray(body.coAttendeeIds) ? body.coAttendeeIds as unknown[] : [];
 
     if (requesteeId) {
       if (!mongoose.Types.ObjectId.isValid(requesteeId)) {
@@ -170,20 +185,52 @@ export async function POST(request: NextRequest) {
       if (requesteeId === session.id) {
         return NextResponse.json({ error: "You can't book an appointment with yourself" }, { status: 400 });
       }
+
+      // Validate + dedupe co-attendees: drop the requester / requestee / dups
+      // / invalid ids without erroring, so the form can pass everyone the user
+      // ticked and we'll just keep the unique ones.
+      const seen = new Set<string>([session.id, requesteeId]);
+      const coAttendeeIds: string[] = [];
+      for (const raw of rawCoAttendees) {
+        if (typeof raw !== "string" || !mongoose.Types.ObjectId.isValid(raw)) continue;
+        if (seen.has(raw)) continue;
+        seen.add(raw);
+        coAttendeeIds.push(raw);
+      }
+
       if (await hasConflict(session.id, proposedDate, endDate)) {
         return NextResponse.json({ error: "You already have an appointment in that time window." }, { status: 409 });
       }
       if (await hasConflict(requesteeId, proposedDate, endDate)) {
         return NextResponse.json({ error: "The other person is busy in that time window. Pick another slot." }, { status: 409 });
       }
+      // Soft-check co-attendees — flag the first conflict but don't block,
+      // since group meetings can legitimately overlap something else for
+      // some attendees. Surface the busy person's name so the requester
+      // can decide whether to reschedule.
+      for (const id of coAttendeeIds) {
+        if (await hasConflict(id, proposedDate, endDate)) {
+          const u = await User.findById(id).select("name").lean();
+          return NextResponse.json({
+            error: `${u?.name ?? "A co-attendee"} is busy in that time window. Pick another slot or remove them.`,
+          }, { status: 409 });
+        }
+      }
 
       const appointment = await Appointment.create({
         requester: session.id,
         requestee: requesteeId,
+        coAttendees: coAttendeeIds,
         proposedDate, endDate, reason,
         status: "pending",
       });
-      void syncToGoogleCalendar(String(appointment._id), session.id, requesteeId, proposedDate, endDate, reason);
+      void syncToGoogleCalendar(
+        String(appointment._id),
+        session.id,
+        requesteeId,
+        proposedDate, endDate, reason,
+        coAttendeeIds,
+      );
       return NextResponse.json({ appointment }, { status: 201 });
     }
 

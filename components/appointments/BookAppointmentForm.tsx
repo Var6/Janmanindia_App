@@ -25,6 +25,13 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<FoundUser[]>([]);
   const [picked, setPicked] = useState<FoundUser | null>(null);
+  // Optional additional invitees — same search UX as the primary requestee,
+  // but multi-select. Selected entries show as removable chips.
+  const [coRole, setCoRole]   = useState("socialworker");
+  const [coQ, setCoQ]         = useState("");
+  const [coResults, setCoResults] = useState<FoundUser[]>([]);
+  const [coAttendees, setCoAttendees] = useState<FoundUser[]>([]);
+  const [coOpen, setCoOpen]   = useState(false);
   const [proposedDate, setProposedDate] = useState("");
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState("");
@@ -32,6 +39,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const coDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const visible = allowedRoles ? ROLE_OPTIONS.filter(r => allowedRoles.includes(r.value)) : ROLE_OPTIONS;
 
@@ -46,9 +54,32 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
     }, 250);
   }, [q, role, open]);
 
+  useEffect(() => {
+    if (!open || !coOpen) return;
+    if (coQ.length < 2) { setCoResults([]); return; }
+    if (coDebounceRef.current) clearTimeout(coDebounceRef.current);
+    coDebounceRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(coQ)}&role=${coRole}`);
+      const data = await res.json();
+      if (res.ok) setCoResults(data.users ?? []);
+    }, 250);
+  }, [coQ, coRole, open, coOpen]);
+
   function reset() {
     setQ(""); setResults([]); setPicked(null); setProposedDate(""); setReason("");
     setError(""); setSuccess(""); setDuration(30);
+    setCoQ(""); setCoResults([]); setCoAttendees([]); setCoOpen(false);
+  }
+
+  function addCoAttendee(u: FoundUser) {
+    if (picked && u._id === picked._id) return;
+    if (coAttendees.some((x) => x._id === u._id)) return;
+    setCoAttendees((prev) => [...prev, u]);
+    setCoQ("");
+    setCoResults([]);
+  }
+  function removeCoAttendee(id: string) {
+    setCoAttendees((prev) => prev.filter((u) => u._id !== id));
   }
 
   async function submit(e: React.FormEvent) {
@@ -65,6 +96,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requesteeId: picked._id,
+          coAttendeeIds: coAttendees.map((u) => u._id),
           proposedDate: start.toISOString(),
           endDate: end.toISOString(),
           reason: reason.trim(),
@@ -72,7 +104,10 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Booking failed."); return; }
-      setSuccess(`Request sent to ${picked.name}. They'll be notified.`);
+      const extra = coAttendees.length > 0
+        ? ` and ${coAttendees.length} other${coAttendees.length === 1 ? "" : "s"}`
+        : "";
+      setSuccess(`Request sent to ${picked.name}${extra}. They'll be notified.`);
       reset();
       setOpen(false);
       onCreated?.();
@@ -140,6 +175,65 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
             className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Change</button>
         </div>
       )}
+
+      {/* Optional co-attendees — collapsed by default so the form stays simple
+          for 1:1 meetings; expand to make it a group meeting. */}
+      <div className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
+        <button type="button" onClick={() => setCoOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 text-xs text-(--muted) hover:text-(--text)">
+          <span>
+            Also invite{" "}
+            {coAttendees.length === 0
+              ? <span className="text-(--muted)">— optional, makes it a group meeting</span>
+              : <span className="font-semibold text-(--text)">{coAttendees.length} other{coAttendees.length === 1 ? "" : "s"}</span>}
+          </span>
+          <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
+        </button>
+        {coOpen && (
+          <div className="border-t px-3 py-3 space-y-2" style={{ borderColor: "var(--border)" }}>
+            {coAttendees.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {coAttendees.map((u) => (
+                  <span key={u._id}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px]"
+                    style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
+                    {u.name}
+                    <button type="button" onClick={() => removeCoAttendee(u._id)}
+                      aria-label={`Remove ${u.name}`}
+                      className="text-(--muted) hover:text-(--error)">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <select value={coRole} onChange={(e) => setCoRole(e.target.value)}
+                className="px-3 py-2 rounded-lg border text-sm"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                {visible.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+              <input value={coQ} onChange={(e) => setCoQ(e.target.value)}
+                placeholder="Search by name or email…"
+                className="px-3 py-2 rounded-lg border text-sm"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
+            {coResults.length > 0 && (
+              <ul className="rounded-xl border overflow-hidden divide-y" style={{ borderColor: "var(--border)" }}>
+                {coResults
+                  .filter((u) => u._id !== picked?._id && !coAttendees.some((x) => x._id === u._id))
+                  .map((u) => (
+                    <li key={u._id}>
+                      <button type="button" onClick={() => addCoAttendee(u)}
+                        className="w-full text-left px-3 py-2 hover:bg-(--bg-secondary) transition-colors">
+                        <p className="text-sm font-medium text-(--text)">{u.name}</p>
+                        <p className="text-xs text-(--muted)">{u.email} · {u.role}</p>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input type="datetime-local" value={proposedDate} onChange={e => setProposedDate(e.target.value)}

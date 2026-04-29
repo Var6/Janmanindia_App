@@ -24,6 +24,11 @@ export interface ITrainingSession extends Document {
   enrollments: ITrainingEnrollment[];
   status: TrainingSessionStatus;
   highlights?: string;              // post-session summary
+  /** Google Calendar event id when synced. */
+  googleEventId?: string;
+  /** Whose calendar the event lives on (so we know which user's refresh token
+   *  to use for updates/deletes — typically the conductor). */
+  googleEventOwner?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +59,8 @@ const trainingSessionSchema = new Schema<ITrainingSession>(
     enrollments:     [enrollmentSchema],
     status:          { type: String, enum: ["scheduled", "ongoing", "completed", "cancelled"], default: "scheduled", index: true },
     highlights:      { type: String, trim: true },
+    googleEventId:    { type: String, index: true },
+    googleEventOwner: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

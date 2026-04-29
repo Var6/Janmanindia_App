@@ -16,6 +16,7 @@ type Appointment = {
   litigationMember?: UserRef | null;
   requester?: UserRef | null;
   requestee?: UserRef | null;
+  coAttendees?: UserRef[];
   responseNotes?: string;
   swNotes?: string;
   litigationNotes?: string;
@@ -68,12 +69,41 @@ export default function AppointmentsHub() {
     });
     load();
   }
+  /** Litigation chain action — used when a social worker has handed an
+   *  appointment off to a lawyer (status "approved_sw") and the lawyer has
+   *  to confirm or decline it. */
+  async function decideLitigation(id: string, decision: "approve" | "reject") {
+    await fetch("/api/appointments", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appointmentId: id,
+        action: decision === "approve" ? "confirm_litigation" : "reject_litigation",
+      }),
+    });
+    load();
+  }
 
   const myId = me?._id;
+  // The "incoming" bucket is for direct peer-to-peer requests (status pending)
+  // that the current user must respond to. The "litigationPending" bucket is the
+  // legacy SW-routed flow where a lawyer has to confirm an appointment a social
+  // worker already approved on their behalf.
   const incoming = appts.filter(a => myId && a.requestee?._id === myId && a.status === "pending");
+  const litigationPending = appts.filter(a =>
+    myId && me?.role === "litigation"
+    && a.status === "approved_sw"
+    && a.litigationMember?._id === myId
+  );
   const outgoing = appts.filter(a => myId && a.requester?._id === myId && ["pending", "confirmed", "rejected", "cancelled"].includes(a.status));
-  const upcoming = appts.filter(a => ["confirmed", "confirmed_litigation", "approved_sw"].includes(a.status));
-  const others   = appts.filter(a => !incoming.includes(a) && !outgoing.includes(a) && !upcoming.includes(a));
+  // Confirmed / upcoming meetings — include ones the user was invited to as a
+  // co-attendee so group meetings actually show up in their list.
+  const upcoming = appts.filter(a => {
+    if (litigationPending.includes(a)) return false;
+    if (!["confirmed", "confirmed_litigation", "approved_sw"].includes(a.status)) return false;
+    return true;
+  });
+  const handled = new Set([...incoming, ...litigationPending, ...outgoing, ...upcoming]);
+  const others   = appts.filter(a => !handled.has(a));
 
   return (
     <div className="space-y-6">
@@ -104,6 +134,12 @@ export default function AppointmentsHub() {
         </div>
       ) : (
         <>
+          {litigationPending.length > 0 && (
+            <Section title={`Awaiting your confirmation (${litigationPending.length})`}
+              empty="" appts={litigationPending}
+              myId={myId} onRespond={respond} onCancel={cancel}
+              onLitigationDecide={decideLitigation} />
+          )}
           <Section title={`Incoming requests${incoming.length ? ` (${incoming.length})` : ""}`}
             empty="No pending requests need your response." appts={incoming}
             myId={myId} onRespond={respond} onCancel={cancel} />
@@ -120,13 +156,15 @@ export default function AppointmentsHub() {
   );
 }
 
-function Section({ title, empty, appts, myId, onRespond, onCancel }: {
+function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationDecide }: {
   title: string;
   empty: string;
   appts: Appointment[];
   myId?: string;
   onRespond: (id: string, decision: "approve" | "reject") => void;
   onCancel: (id: string) => void;
+  /** Optional — only the litigation-chain section passes this in. */
+  onLitigationDecide?: (id: string, decision: "approve" | "reject") => void;
 }) {
   if (appts.length === 0 && !empty) return null;
   return (
@@ -156,6 +194,11 @@ function Section({ title, empty, appts, myId, onRespond, onCancel }: {
                     style={{ background: stat.bg, color: stat.text }}>{stat.label}</span>
                 </div>
                 <p className="text-sm text-(--text)">{a.reason}</p>
+                {a.coAttendees && a.coAttendees.length > 0 && (
+                  <p className="text-xs text-(--muted) mt-1">
+                    Also invited: {a.coAttendees.map((u) => u.name).join(", ")}
+                  </p>
+                )}
                 {a.responseNotes && <p className="text-xs text-(--muted) mt-1">Note: {a.responseNotes}</p>}
                 {a.swNotes && <p className="text-xs text-(--muted) mt-1">SW note: {a.swNotes}</p>}
                 {a.litigationNotes && <p className="text-xs text-(--muted) mt-1">Lawyer note: {a.litigationNotes}</p>}
@@ -168,6 +211,25 @@ function Section({ title, empty, appts, myId, onRespond, onCancel }: {
                     <button onClick={() => onRespond(a._id, "reject")}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold"
                       style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>Decline</button>
+                  </div>
+                )}
+                {onLitigationDecide && a.status === "approved_sw" && a.litigationMember?._id === myId && (
+                  <div className="flex flex-col gap-2 mt-3">
+                    {a.swNotes && (
+                      <p className="text-xs text-(--muted)">Social worker note: {a.swNotes}</p>
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button onClick={() => onLitigationDecide(a._id, "approve")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                        Confirm appointment
+                      </button>
+                      <button onClick={() => onLitigationDecide(a._id, "reject")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                        Decline
+                      </button>
+                    </div>
                   </div>
                 )}
                 {isRequester && (a.status === "pending" || a.status === "confirmed") && (

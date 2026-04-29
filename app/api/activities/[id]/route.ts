@@ -18,9 +18,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { status, notes, priority, dueDate, title, description, assignee, coAssignees, note } = body as {
+    const { status, notes, priority, dueDate, endsAt, title, description, assignee, coAssignees, note } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
-      dueDate?: string; title?: string; description?: string;
+      dueDate?: string; endsAt?: string;
+      title?: string; description?: string;
       assignee?: string; coAssignees?: string[]; note?: string;
     };
 
@@ -38,6 +39,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (description !== undefined) activity.description = description.trim();
     if (priority) activity.priority = priority;
     if (dueDate !== undefined) activity.dueDate = dueDate ? new Date(dueDate) : undefined;
+    if (endsAt !== undefined) {
+      const candidate = endsAt ? new Date(endsAt) : undefined;
+      const start = activity.dueDate ? new Date(activity.dueDate) : undefined;
+      // Drop the end if it's not strictly after the start — the calendar
+      // sync's 30-min default takes over in that case.
+      activity.endsAt = candidate && start && !isNaN(candidate.getTime()) && candidate.getTime() > start.getTime()
+        ? candidate
+        : undefined;
+    }
     if (notes !== undefined) activity.notes = notes;
 
     if (status) {

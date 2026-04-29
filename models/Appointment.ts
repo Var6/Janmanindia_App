@@ -8,6 +8,10 @@ export interface IAppointment extends Document {
   // Generic peer-to-peer fields — anyone can request a meeting with anyone.
   requester?: mongoose.Types.ObjectId;
   requestee?: mongoose.Types.ObjectId;
+  /** Additional invitees beyond the primary requestee. The requestee still
+   *  drives the approve/decline decision; everyone in this list is added to
+   *  the Google Calendar invite so it shows on their calendars too. */
+  coAttendees: mongoose.Types.ObjectId[];
   requestedAt: Date;
   proposedDate: Date;
   endDate?: Date;
@@ -26,6 +30,7 @@ const appointmentSchema = new Schema<IAppointment>(
     litigationMember: { type: Schema.Types.ObjectId, ref: "User" },
     requester: { type: Schema.Types.ObjectId, ref: "User", index: true },
     requestee: { type: Schema.Types.ObjectId, ref: "User", index: true },
+    coAttendees: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
     requestedAt: { type: Date, default: Date.now },
     proposedDate: { type: Date, required: true, index: true },
     endDate: Date,

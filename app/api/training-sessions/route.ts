@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import TrainingSession from "@/models/TrainingSession";
+import { syncTrainingCreate } from "@/lib/training-calendar-sync";
 
 const SW_ROLES = ["socialworker", "director", "superadmin", "hr"];
 
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
       targetAudience: targetAudience?.trim(),
       language: language?.trim() || undefined,
     });
+
+    // Best-effort: push to the conductor's Google Calendar (if connected).
+    void syncTrainingCreate(String(created._id));
 
     return NextResponse.json({ session: created }, { status: 201 });
   } catch (e) {

@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import TrainingSession from "@/models/TrainingSession";
 import mongoose from "mongoose";
+import { syncTrainingUpdate, syncTrainingDelete } from "@/lib/training-calendar-sync";
 
 const SW_ROLES = ["socialworker", "director", "superadmin", "hr"];
 
@@ -39,11 +40,14 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
         });
       }
       await trainingSession.save();
+      // Roll the new attendee into the synced Google Calendar invite.
+      void syncTrainingUpdate(String(trainingSession._id));
       return NextResponse.json({ ok: true, enrolled: true, count: trainingSession.enrollments.length });
     }
     if (action === "unenroll") {
       trainingSession.enrollments = trainingSession.enrollments.filter(e => String(e.user) !== session.id);
       await trainingSession.save();
+      void syncTrainingUpdate(String(trainingSession._id));
       return NextResponse.json({ ok: true, enrolled: false, count: trainingSession.enrollments.length });
     }
 
@@ -58,6 +62,14 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       if (enr) enr.attended = attended.attended;
     }
     await trainingSession.save();
+    // Status / details changed — patch the calendar event in place. If the
+    // session was cancelled, drop the event entirely so attendees see it
+    // disappear from their calendars.
+    if (trainingSession.status === "cancelled") {
+      void syncTrainingDelete(String(trainingSession._id));
+    } else {
+      void syncTrainingUpdate(String(trainingSession._id));
+    }
     return NextResponse.json({ session: trainingSession });
   } catch (e) {
     if (e instanceof Response) return e;
