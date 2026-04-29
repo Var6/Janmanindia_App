@@ -18,10 +18,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { status, notes, priority, dueDate, title, description, assignee, note } = body as {
+    const { status, notes, priority, dueDate, title, description, assignee, coAssignees, note } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
       dueDate?: string; title?: string; description?: string;
-      assignee?: string; note?: string;
+      assignee?: string; coAssignees?: string[]; note?: string;
     };
 
     await connectDB();
@@ -63,9 +63,40 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       didReassign = true;
     }
 
+    // Co-assignees update — privileged only. Replaces the full list.
+    // Newly added people get a TaskAssignment record; removals are silent.
+    if (Array.isArray(coAssignees)) {
+      if (!isPrivileged) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const primaryId = String(activity.assignee);
+      const seen = new Set<string>([primaryId]);
+      const next: mongoose.Types.ObjectId[] = [];
+      for (const id of coAssignees) {
+        if (!mongoose.Types.ObjectId.isValid(id)) continue;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        next.push(new mongoose.Types.ObjectId(id));
+      }
+      const prev = new Set((activity.coAssignees ?? []).map((id) => String(id)));
+      const added = next.filter((id) => !prev.has(String(id)));
+      activity.coAssignees = next;
+      if (added.length > 0) {
+        const assignerId = new mongoose.Types.ObjectId(session.id);
+        await TaskAssignment.insertMany(
+          added.map((id) => ({
+            activity: activity._id,
+            assignedTo: id,
+            assignedBy: assignerId,
+            note: note?.trim() || undefined,
+          })),
+        );
+      }
+    }
+
     await activity.save();
 
-    // Sync calendar event after save (best-effort).
+    // Sync calendar event after save (best-effort). A reassignment moves the
+    // event to a new owner's calendar; any other change — including the
+    // coAssignee attendee list — is patched in place.
     if (didReassign && previousAssigneeId) {
       void syncActivityReassign(String(activity._id), previousAssigneeId);
     } else {

@@ -272,9 +272,9 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
         WebkitBackdropFilter: "blur(18px) saturate(170%)",
         borderRight: "1px solid color-mix(in srgb, var(--sidebar-border) 70%, transparent)",
       }}>
-      {/* Brand row — h-20 to match TopBar */}
-      <div className={`border-b h-17 flex items-center ${collapsed ? "justify-center px-2" : "px-3"}`}
-        style={{ borderColor: "var(--sidebar-border)" }}>
+      {/* Brand row — height pinned to match TopBar exactly (68px). */}
+      <div className={`border-b flex items-center ${collapsed ? "justify-center px-2" : "px-3"}`}
+        style={{ height: 68, borderColor: "var(--sidebar-border)" }}>
         <button onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="flex items-center gap-2.5 min-w-0 w-full rounded-lg hover:bg-(--sidebar-hover) transition-colors group"

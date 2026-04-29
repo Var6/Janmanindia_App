@@ -13,6 +13,10 @@ export interface IActivity extends Document {
   priority: ActivityPriority;
   status: ActivityStatus;
   assignee: mongoose.Types.ObjectId;
+  /** Additional people the task is also assigned to. The primary `assignee`
+   *  hosts the calendar event; everyone in `coAssignees` is added as a
+   *  Google Calendar attendee so the event syncs to their calendar too. */
+  coAssignees: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
   dueDate?: Date;
   startedAt?: Date;
@@ -38,6 +42,7 @@ const activitySchema = new Schema<IActivity>(
     priority:    { type: String, enum: ["low", "medium", "high"], default: "medium" },
     status:      { type: String, enum: ["planned", "in_progress", "done", "cancelled"], default: "planned", index: true },
     assignee:    { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    coAssignees: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
     createdBy:   { type: Schema.Types.ObjectId, ref: "User", required: true },
     dueDate:     Date,
     startedAt:   Date,

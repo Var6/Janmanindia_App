@@ -7,7 +7,8 @@ interface Activity {
   priority: "low" | "medium" | "high";
   status: "planned" | "in_progress" | "done" | "cancelled";
   dueDate?: string;
-  assignee:  { _id: string; name: string } | null;
+  assignee:    { _id: string; name: string } | null;
+  coAssignees?: { _id: string; name: string }[];
 }
 
 interface Props {
@@ -58,7 +59,9 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                       <p className="text-sm font-medium text-(--text) leading-snug">{c.title}</p>
                     </div>
                     <p className="text-[11px] text-(--muted) ml-4">
-                      {c.assignee?.name ?? "Unassigned"} · <span className="capitalize">{c.category}</span>
+                      {c.assignee?.name ?? "Unassigned"}
+                      {c.coAssignees && c.coAssignees.length > 0 ? ` +${c.coAssignees.length}` : ""}
+                      {" · "}<span className="capitalize">{c.category}</span>
                       {c.dueDate ? ` · ${new Date(c.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
                     </p>
                     {overdue && (

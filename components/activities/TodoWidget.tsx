@@ -11,19 +11,22 @@ export default async function TodoWidget({ userId }: Props) {
   if (!mongoose.Types.ObjectId.isValid(userId)) return null;
   const me = new mongoose.Types.ObjectId(userId);
 
+  // Match tasks where the user is the primary assignee OR a co-assignee.
+  const mineMatch = { $or: [{ assignee: me }, { coAssignees: me }] };
+
   const [planned, inProgress, doneRecent, overdue, upcoming] = await Promise.all([
-    Activity.countDocuments({ assignee: me, status: "planned" }),
-    Activity.countDocuments({ assignee: me, status: "in_progress" }),
+    Activity.countDocuments({ ...mineMatch, status: "planned" }),
+    Activity.countDocuments({ ...mineMatch, status: "in_progress" }),
     Activity.countDocuments({
-      assignee: me, status: "done",
+      ...mineMatch, status: "done",
       completedAt: { $gte: new Date(Date.now() - 7 * 86400000) },
     }),
     Activity.countDocuments({
-      assignee: me, status: { $in: ["planned", "in_progress"] },
+      ...mineMatch, status: { $in: ["planned", "in_progress"] },
       dueDate: { $lt: new Date() },
     }),
     Activity.find({
-      assignee: me, status: { $in: ["planned", "in_progress"] },
+      ...mineMatch, status: { $in: ["planned", "in_progress"] },
     }).sort({ dueDate: 1, createdAt: -1 }).limit(4).select("title status dueDate priority").lean(),
   ]);
 

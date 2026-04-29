@@ -5,35 +5,50 @@ import { createEvent, updateEvent, deleteEvent } from "@/lib/google-calendar";
 
 /** All sync helpers swallow errors — calendar issues must never break the API. */
 
-/** Pick the right calendar to host the event on:
- *  1. The assignee (so it shows on the person's calendar who must do the work)
+/** Pick the right calendar to host the event on, plus collect attendee emails
+ *  for everyone else who needs to see it (creator + co-assignees).
+ *  Owner preference order:
+ *  1. The primary assignee (so it lands on the calendar of the person doing the work)
  *  2. Otherwise the creator (so the assigner still sees it)
- *  3. Otherwise null — neither has connected, skip. */
+ *  3. Otherwise null — nobody has connected, skip. */
 async function pickEventOwner(
   assigneeId: mongoose.Types.ObjectId,
   creatorId: mongoose.Types.ObjectId,
-): Promise<{ ownerId: mongoose.Types.ObjectId; refreshToken: string; otherEmail?: string } | null> {
+  coAssigneeIds: mongoose.Types.ObjectId[] = [],
+): Promise<{ ownerId: mongoose.Types.ObjectId; refreshToken: string; attendeeEmails: string[] } | null> {
   try {
-    const [assignee, creator] = await Promise.all([
-      User.findById(assigneeId).select("+googleRefreshToken googleEmail email").lean(),
-      User.findById(creatorId ).select("+googleRefreshToken googleEmail email").lean(),
-    ]);
+    const ids = [assigneeId, creatorId, ...coAssigneeIds];
+    const users = await User.find({ _id: { $in: ids } })
+      .select("+googleRefreshToken googleEmail email")
+      .lean();
+    const byId = new Map(users.map((u) => [String(u._id), u]));
 
+    const assignee = byId.get(String(assigneeId));
+    const creator  = byId.get(String(creatorId));
+
+    let ownerId: mongoose.Types.ObjectId;
+    let refreshToken: string;
     if (assignee?.googleRefreshToken) {
-      return {
-        ownerId: assigneeId,
-        refreshToken: assignee.googleRefreshToken,
-        otherEmail: creator?.googleEmail || creator?.email,
-      };
+      ownerId = assigneeId;
+      refreshToken = assignee.googleRefreshToken;
+    } else if (creator?.googleRefreshToken) {
+      ownerId = creatorId;
+      refreshToken = creator.googleRefreshToken;
+    } else {
+      return null;
     }
-    if (creator?.googleRefreshToken) {
-      return {
-        ownerId: creatorId,
-        refreshToken: creator.googleRefreshToken,
-        otherEmail: assignee?.googleEmail || assignee?.email,
-      };
+
+    // Everyone except the calendar owner becomes an attendee, so the invite
+    // arrives on their primary calendar without needing them to connect.
+    const attendees = new Set<string>();
+    for (const id of [assigneeId, creatorId, ...coAssigneeIds]) {
+      if (String(id) === String(ownerId)) continue;
+      const u = byId.get(String(id));
+      const email = u?.googleEmail || u?.email;
+      if (email) attendees.add(email.toLowerCase());
     }
-    return null;
+
+    return { ownerId, refreshToken, attendeeEmails: [...attendees] };
   } catch {
     return null;
   }
@@ -56,7 +71,7 @@ export async function syncActivityCreate(activityId: string): Promise<void> {
     const act = await Activity.findById(activityId).lean();
     if (!act?.dueDate) return; // no due date — skip calendar sync
 
-    const owner = await pickEventOwner(act.assignee, act.createdBy);
+    const owner = await pickEventOwner(act.assignee, act.createdBy, act.coAssignees ?? []);
     if (!owner) return;
 
     const { start, end } = eventTimes(act.dueDate);
@@ -70,7 +85,7 @@ export async function syncActivityCreate(activityId: string): Promise<void> {
         "Manage at https://app.janmanindia.org/activities",
       ].filter(Boolean).join("\n"),
       start, end,
-      attendeeEmails: owner.otherEmail ? [owner.otherEmail] : undefined,
+      attendeeEmails: owner.attendeeEmails.length > 0 ? owner.attendeeEmails : undefined,
     });
 
     if (eventId) {
@@ -105,6 +120,23 @@ export async function syncActivityUpdate(activityId: string): Promise<void> {
       return;
     }
 
+    // Refresh the attendee list so newly added co-assignees get the invite
+    // and removed ones drop off. Skip the calendar owner — they're the host,
+    // not an attendee.
+    const otherIds = [act.createdBy, ...(act.coAssignees ?? [])].filter(
+      (id) => String(id) !== String(act.googleEventOwner),
+    );
+    const otherUsers = otherIds.length
+      ? await User.find({ _id: { $in: otherIds } }).select("googleEmail email").lean()
+      : [];
+    const attendeeEmails = Array.from(
+      new Set(
+        otherUsers
+          .map((u) => (u.googleEmail || u.email || "").toLowerCase())
+          .filter(Boolean),
+      ),
+    );
+
     const { start, end } = eventTimes(act.dueDate);
     const statusPrefix = act.status === "done" ? "✅ " : act.status === "in_progress" ? "▶️ " : "📋 ";
     await updateEvent(owner.googleRefreshToken, act.googleEventId, {
@@ -118,6 +150,7 @@ export async function syncActivityUpdate(activityId: string): Promise<void> {
         "Manage at https://app.janmanindia.org/activities",
       ].filter(Boolean).join("\n"),
       start, end,
+      attendeeEmails,
     });
   } catch (err) {
     console.error("syncActivityUpdate failed:", err);

@@ -4,6 +4,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import CreateCaseForm from "@/components/shared/CreateCaseForm";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -45,9 +46,12 @@ export default async function AdminCasesPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
 
-      <div>
-        <h1 className="text-2xl font-bold text-(--text)">All Cases</h1>
-        <p className="text-sm text-(--muted) mt-1">{cases.length} total cases across all litigation members.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-(--text)">All Cases</h1>
+          <p className="text-sm text-(--muted) mt-1">{cases.length} total cases across all litigation members.</p>
+        </div>
+        <CreateCaseForm />
       </div>
 
       {/* Status summary */}

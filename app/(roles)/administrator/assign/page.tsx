@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type Priority = "low" | "medium" | "high";
 type Status   = "planned" | "in_progress" | "done" | "cancelled";
@@ -10,6 +11,7 @@ interface StaffUser { _id: string; name: string; role: string; employeeId?: stri
 interface Activity  {
   _id: string; title: string; status: Status; priority: Priority; category: Category;
   dueDate?: string; assignee?: { _id: string; name: string; role: string };
+  coAssignees?: { _id: string; name: string; role: string }[];
   createdBy?: { _id: string; name: string };
 }
 interface AssignmentRecord {
@@ -71,6 +73,7 @@ export default function AdminAssignPage() {
   const [category, setCategory]     = useState<Category>("other");
   const [priority, setPriority]     = useState<Priority>("medium");
   const [assigneeId, setAssigneeId] = useState("");
+  const [coAssigneeIds, setCoAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate]       = useState("");
   const [note, setNote]             = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +82,7 @@ export default function AdminAssignPage() {
   // Reassign state
   const [reassigning, setReassigning] = useState<string | null>(null);
   const [newAssignee, setNewAssignee] = useState("");
+  const [newCoAssignees, setNewCoAssignees] = useState<string[]>([]);
   const [reassignNote, setReassignNote] = useState("");
   const [reassignBusy, setReassignBusy] = useState(false);
 
@@ -107,18 +111,25 @@ export default function AdminAssignPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!assigneeId) { setFormMsg({ ok: false, text: "Select an assignee." }); return; }
+    if (!assigneeId) { setFormMsg({ ok: false, text: "Select a primary assignee." }); return; }
     setSubmitting(true); setFormMsg(null);
     try {
       const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), description: desc.trim(), category, priority, assignee: assigneeId, dueDate: dueDate || undefined, note: note.trim() || undefined }),
+        body: JSON.stringify({
+          title: title.trim(), description: desc.trim(), category, priority,
+          assignee: assigneeId,
+          coAssignees: coAssigneeIds.filter((id) => id !== assigneeId),
+          dueDate: dueDate || undefined,
+          note: note.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setFormMsg({ ok: false, text: data.error ?? "Failed." }); return; }
-      setFormMsg({ ok: true, text: "Task assigned successfully." });
-      setTitle(""); setDesc(""); setAssigneeId(""); setDueDate(""); setNote(""); setCategory("other"); setPriority("medium");
+      const totalAssigned = 1 + coAssigneeIds.filter((id) => id !== assigneeId).length;
+      setFormMsg({ ok: true, text: `Task assigned to ${totalAssigned} ${totalAssigned === 1 ? "person" : "people"}.` });
+      setTitle(""); setDesc(""); setAssigneeId(""); setCoAssigneeIds([]); setDueDate(""); setNote(""); setCategory("other"); setPriority("medium");
       loadAll();
     } finally { setSubmitting(false); }
   }
@@ -130,10 +141,21 @@ export default function AdminAssignPage() {
       const res = await fetch(`/api/activities/${activityId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignee: newAssignee, note: reassignNote.trim() || undefined }),
+        body: JSON.stringify({
+          assignee: newAssignee,
+          coAssignees: newCoAssignees.filter((id) => id !== newAssignee),
+          note: reassignNote.trim() || undefined,
+        }),
       });
-      if (res.ok) { setReassigning(null); setNewAssignee(""); setReassignNote(""); loadAll(); }
+      if (res.ok) { setReassigning(null); setNewAssignee(""); setNewCoAssignees([]); setReassignNote(""); loadAll(); }
     } finally { setReassignBusy(false); }
+  }
+
+  function toggleCoAssignee(id: string) {
+    setCoAssigneeIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  }
+  function toggleNewCoAssignee(id: string) {
+    setNewCoAssignees((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }
 
   const filteredActivities = statusFilter === "all"
@@ -208,8 +230,13 @@ export default function AdminAssignPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-(--muted) mb-1">Assign to *</label>
-                <select required value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}
+                <label className="block text-xs text-(--muted) mb-1">Primary assignee *</label>
+                <select required value={assigneeId} onChange={(e) => {
+                  const newPrimary = e.target.value;
+                  setAssigneeId(newPrimary);
+                  // Drop the new primary from the co-assignee list if it's there.
+                  if (newPrimary) setCoAssigneeIds((prev) => prev.filter((id) => id !== newPrimary));
+                }}
                   className="w-full px-3 py-2 rounded-xl border text-sm"
                   style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
                   <option value="">— Select staff member —</option>
@@ -219,6 +246,41 @@ export default function AdminAssignPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-(--muted) mb-1">
+                  Also assign to <span className="opacity-70">(optional — co-assignees get the task on their calendar too)</span>
+                </label>
+                <div className="rounded-xl border max-h-44 overflow-y-auto"
+                  style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+                  {staff.filter((u) => u._id !== assigneeId).length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-(--muted)">No other staff to add.</p>
+                  ) : (
+                    <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                      {staff.filter((u) => u._id !== assigneeId).map((u) => {
+                        const checked = coAssigneeIds.includes(u._id);
+                        return (
+                          <li key={u._id}>
+                            <label className="flex items-center gap-2.5 px-3 py-2 text-xs cursor-pointer hover:bg-(--bg-secondary)">
+                              <input type="checkbox" checked={checked}
+                                onChange={() => toggleCoAssignee(u._id)}
+                                className="accent-(--accent)" />
+                              <span className="flex-1 text-(--text)">
+                                {u.name} <span className="text-(--muted)">· {ROLE_LABELS[u.role] ?? u.role}</span>
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+                {coAssigneeIds.length > 0 && (
+                  <p className="text-[11px] text-(--muted) mt-1">
+                    {coAssigneeIds.length} co-assignee{coAssigneeIds.length === 1 ? "" : "s"} selected
+                  </p>
+                )}
               </div>
 
               <div>
@@ -264,7 +326,13 @@ export default function AdminAssignPage() {
             <div className="rounded-2xl border overflow-hidden"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
               {loadingActs ? (
-                <div className="flex items-center justify-center py-12 gap-2 text-(--muted)"><Spinner /> Loading…</div>
+                <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="px-5 py-4">
+                      <SkeletonRow trailing={true} />
+                    </div>
+                  ))}
+                </div>
               ) : filteredActivities.length === 0 ? (
                 <p className="py-10 text-center text-sm text-(--muted)">No tasks found.</p>
               ) : (
@@ -287,11 +355,19 @@ export default function AdminAssignPage() {
                           <p className="text-sm font-medium text-(--text)">{act.title}</p>
                           <p className="text-xs text-(--muted) mt-0.5">
                             {act.assignee ? `${act.assignee.name} · ${ROLE_LABELS[act.assignee.role] ?? act.assignee.role}` : "Unassigned"}
+                            {act.coAssignees && act.coAssignees.length > 0
+                              ? ` + ${act.coAssignees.map((c) => c.name).join(", ")}`
+                              : ""}
                             {act.dueDate ? ` · Due ${new Date(act.dueDate).toLocaleDateString("en-IN")}` : ""}
                           </p>
                         </div>
                         {act.status !== "done" && act.status !== "cancelled" && (
-                          <button onClick={() => { setReassigning(act._id); setNewAssignee(""); setReassignNote(""); }}
+                          <button onClick={() => {
+                            setReassigning(act._id);
+                            setNewAssignee(act.assignee?._id ?? "");
+                            setNewCoAssignees(act.coAssignees?.map((c) => c._id) ?? []);
+                            setReassignNote("");
+                          }}
                             className="text-xs px-3 py-1.5 rounded-lg border transition-colors shrink-0"
                             style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg)" }}>
                             Reassign
@@ -300,31 +376,63 @@ export default function AdminAssignPage() {
                       </div>
 
                       {reassigning === act._id && (
-                        <div className="flex gap-2 flex-wrap pt-1">
-                          <select value={newAssignee} onChange={(e) => setNewAssignee(e.target.value)}
-                            className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
-                            style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                            <option value="">— Select new assignee —</option>
-                            {staff.filter((u) => u._id !== act.assignee?._id).map((u) => (
-                              <option key={u._id} value={u._id}>
-                                {u.name} ({ROLE_LABELS[u.role] ?? u.role})
-                              </option>
-                            ))}
-                          </select>
-                          <input value={reassignNote} onChange={(e) => setReassignNote(e.target.value)}
-                            placeholder="Reason (optional)"
-                            className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
-                            style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-                          <button onClick={() => handleReassign(act._id)} disabled={!newAssignee || reassignBusy}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
-                            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                            {reassignBusy ? <Spinner /> : "Save"}
-                          </button>
-                          <button onClick={() => setReassigning(null)}
-                            className="px-3 py-1.5 rounded-lg text-xs border"
-                            style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-                            Cancel
-                          </button>
+                        <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+                          <div className="flex gap-2 flex-wrap">
+                            <select value={newAssignee} onChange={(e) => {
+                              const v = e.target.value;
+                              setNewAssignee(v);
+                              if (v) setNewCoAssignees((prev) => prev.filter((id) => id !== v));
+                            }}
+                              className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
+                              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                              <option value="">— Primary assignee —</option>
+                              {staff.map((u) => (
+                                <option key={u._id} value={u._id}>
+                                  {u.name} ({ROLE_LABELS[u.role] ?? u.role})
+                                </option>
+                              ))}
+                            </select>
+                            <input value={reassignNote} onChange={(e) => setReassignNote(e.target.value)}
+                              placeholder="Reason (optional)"
+                              className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
+                              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                          </div>
+                          <details className="rounded-lg border" style={{ borderColor: "var(--border)" }}>
+                            <summary className="px-3 py-1.5 text-xs cursor-pointer text-(--muted)">
+                              Also assigned to: {newCoAssignees.length === 0 ? "—" : `${newCoAssignees.length} co-assignee${newCoAssignees.length === 1 ? "" : "s"}`}
+                            </summary>
+                            <div className="max-h-36 overflow-y-auto">
+                              <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+                                {staff.filter((u) => u._id !== newAssignee).map((u) => {
+                                  const checked = newCoAssignees.includes(u._id);
+                                  return (
+                                    <li key={u._id}>
+                                      <label className="flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-(--bg-secondary)">
+                                        <input type="checkbox" checked={checked}
+                                          onChange={() => toggleNewCoAssignee(u._id)}
+                                          className="accent-(--accent)" />
+                                        <span className="flex-1 text-(--text)">
+                                          {u.name} <span className="text-(--muted)">· {ROLE_LABELS[u.role] ?? u.role}</span>
+                                        </span>
+                                      </label>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          </details>
+                          <div className="flex gap-2 flex-wrap">
+                            <button onClick={() => handleReassign(act._id)} disabled={!newAssignee || reassignBusy}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                              {reassignBusy ? <Spinner /> : "Save"}
+                            </button>
+                            <button onClick={() => setReassigning(null)}
+                              className="px-3 py-1.5 rounded-lg text-xs border"
+                              style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -344,7 +452,13 @@ export default function AdminAssignPage() {
             Assignment History ({history.length} records)
           </div>
           {loadingHist ? (
-            <div className="flex items-center justify-center py-12 gap-2 text-(--muted)"><Spinner /> Loading…</div>
+            <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-5 py-4">
+                  <SkeletonRow trailing={true} />
+                </div>
+              ))}
+            </div>
           ) : history.length === 0 ? (
             <p className="py-10 text-center text-sm text-(--muted)">No assignments recorded yet.</p>
           ) : (

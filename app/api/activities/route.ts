@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       }
     } else if (mongoose.Types.ObjectId.isValid(session.id)) {
       const me = new mongoose.Types.ObjectId(session.id);
-      filter.$or = [{ assignee: me }, { createdBy: me }];
+      filter.$or = [{ assignee: me }, { coAssignees: me }, { createdBy: me }];
     } else {
       return NextResponse.json({ activities: [] });
     }
@@ -53,8 +53,9 @@ export async function GET(request: NextRequest) {
 
     const activities = await Activity.find(filter)
       .sort({ dueDate: 1, createdAt: -1 })
-      .populate("assignee",  "name role employeeId")
-      .populate("createdBy", "name role")
+      .populate("assignee",    "name role employeeId")
+      .populate("coAssignees", "name role employeeId")
+      .populate("createdBy",   "name role")
       .lean();
 
     return NextResponse.json({ activities });
@@ -77,10 +78,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, category, priority, assignee, dueDate } = body as {
+    const { title, description, category, priority, assignee, coAssignees, dueDate } = body as {
       title?: string; description?: string;
       category?: ActivityCategory; priority?: ActivityPriority;
-      assignee?: string; dueDate?: string;
+      assignee?: string; coAssignees?: string[]; dueDate?: string;
     };
 
     if (!title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -100,7 +101,24 @@ export async function POST(req: NextRequest) {
       assigneeId = new mongoose.Types.ObjectId(assignee);
     }
 
+    // Co-assignees — privileged only, dedupe + drop the primary so we never
+    // double-list the same person.
+    let coAssigneeIds: mongoose.Types.ObjectId[] = [];
+    if (Array.isArray(coAssignees) && coAssignees.length > 0) {
+      if (!isPrivileged) {
+        return NextResponse.json({ error: "Only director/administrator/hr can assign to others" }, { status: 403 });
+      }
+      const seen = new Set<string>([String(assigneeId)]);
+      for (const id of coAssignees) {
+        if (!mongoose.Types.ObjectId.isValid(id)) continue;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        coAssigneeIds.push(new mongoose.Types.ObjectId(id));
+      }
+    }
+
     await connectDB();
+    const noteText = (body as { note?: string }).note?.trim() || undefined;
     const activity = await Activity.create({
       title: title.trim(),
       description: description?.trim(),
@@ -108,18 +126,19 @@ export async function POST(req: NextRequest) {
       priority: pri,
       status: "planned",
       assignee: assigneeId,
+      coAssignees: coAssigneeIds,
       createdBy: new mongoose.Types.ObjectId(session.id),
       dueDate: dueDate ? new Date(dueDate) : undefined,
     });
 
-    // Record assignment when task is assigned to someone other than self
-    if (String(assigneeId) !== session.id) {
-      await TaskAssignment.create({
-        activity: activity._id,
-        assignedTo: assigneeId,
-        assignedBy: new mongoose.Types.ObjectId(session.id),
-        note: (body as { note?: string }).note?.trim() || undefined,
-      });
+    // Record one TaskAssignment per assigned person (excluding self-assignment).
+    const allAssignees = [assigneeId, ...coAssigneeIds];
+    const assignerId = new mongoose.Types.ObjectId(session.id);
+    const assignmentDocs = allAssignees
+      .filter((id) => String(id) !== session.id)
+      .map((id) => ({ activity: activity._id, assignedTo: id, assignedBy: assignerId, note: noteText }));
+    if (assignmentDocs.length > 0) {
+      await TaskAssignment.insertMany(assignmentDocs);
     }
 
     // Sync to Google Calendar (best-effort — assignee's calendar if connected,

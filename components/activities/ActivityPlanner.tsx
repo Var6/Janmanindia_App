@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import StatusChart from "./StatusChart";
 import KanbanBoard from "./KanbanBoard";
+import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 
 interface Activity {
   _id: string;
@@ -13,8 +14,9 @@ interface Activity {
   status: "planned" | "in_progress" | "done" | "cancelled";
   dueDate?: string;
   notes?: string;
-  assignee:  { _id: string; name: string; role: string; employeeId?: string } | null;
-  createdBy: { _id: string; name: string; role: string } | null;
+  assignee:    { _id: string; name: string; role: string; employeeId?: string } | null;
+  coAssignees: { _id: string; name: string; role: string; employeeId?: string }[];
+  createdBy:   { _id: string; name: string; role: string } | null;
   createdAt: string;
 }
 
@@ -136,8 +138,11 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   }
 
   // Filtering
+  const isMine = (a: Activity) =>
+    a.assignee?._id === currentUserId ||
+    (a.coAssignees ?? []).some((c) => c._id === currentUserId);
   const filtered = items.filter((a) => {
-    if (filter === "mine")    return a.assignee?._id === currentUserId;
+    if (filter === "mine")    return isMine(a);
     if (filter === "created") return a.createdBy?._id === currentUserId;
     return true;
   });
@@ -201,7 +206,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
         <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
           {([
             { k: "all",     l: `All (${items.length})` },
-            { k: "mine",    l: `Assigned to me (${items.filter((i) => i.assignee?._id === currentUserId).length})` },
+            { k: "mine",    l: `Assigned to me (${items.filter(isMine).length})` },
             { k: "created", l: `Created by me (${items.filter((i) => i.createdBy?._id === currentUserId).length})` },
           ] as const).map((t) => (
             <button key={t.k} onClick={() => setFilter(t.k)}
@@ -228,7 +233,18 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
 
       {/* List or Kanban */}
       {loading ? (
-        <div className="py-10 text-center text-sm text-(--muted)">Loading…</div>
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-(--border) bg-(--surface) p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Skeleton w={42} h={14} rounded="full" />
+                <Skeleton w={64} h={14} rounded="full" />
+                <Skeleton w={80} h={14} rounded="full" />
+              </div>
+              <SkeletonRow withAvatar={false} trailing={true} />
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">📅</p>
@@ -263,6 +279,9 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                     {a.description && <p className="text-xs text-(--muted) mt-0.5">{a.description}</p>}
                     <p className="text-[11px] text-(--muted) mt-1">
                       Assignee: {a.assignee?.name ?? "—"}{a.assignee?.employeeId ? ` (${a.assignee.employeeId})` : ""}
+                      {a.coAssignees && a.coAssignees.length > 0
+                        ? ` + ${a.coAssignees.map((c) => c.name).join(", ")}`
+                        : ""}
                       {" · "}Created by: {a.createdBy?.name ?? "—"}
                       {a.dueDate ? ` · Due ${new Date(a.dueDate).toLocaleDateString("en-IN")}` : ""}
                     </p>
