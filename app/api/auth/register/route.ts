@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
-import { hashPassword } from "@/lib/auth";
+import { COOKIE_NAME, hashPassword, signToken } from "@/lib/auth";
 import User from "@/models/User";
 
 /**
@@ -71,13 +71,14 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    await User.create({
+    const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       passwordHash,
       role: "community",
       phone: phone?.trim() || undefined,
       isActive: true,
+      lastLoginAt: new Date(),
       communityProfile: {
         govtIdUrl: govtIdUrl?.trim() || undefined,
         govtIdType: govtIdUrl ? normaliseGovtIdType(govtIdType) : undefined,
@@ -90,13 +91,34 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
+    // Auto-login: a community member who just gave us their details shouldn't
+    // have to type them again. Sign the same JWT the login route uses and set
+    // the auth_token cookie so the next request lands them inside /community.
+    const token = await signToken({
+      id: String(user._id),
+      role: user.role,
+      name: user.name,
+    });
+
+    const response = NextResponse.json(
       {
         success: true,
-        message: "Registration submitted. A social worker will verify your details and reach out within 48 hours.",
+        role: user.role,
+        redirectTo: "/community",
+        message: "Welcome to Janman. A social worker will verify your details and reach out within 48 hours.",
       },
       { status: 201 }
     );
+
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

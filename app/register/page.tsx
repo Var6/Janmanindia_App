@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import Spotlight from "@/components/ui/Spotlight";
 
@@ -17,7 +16,6 @@ const ID_TYPES: { value: string; label: string; hi?: string }[] = [
 ];
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -77,16 +75,18 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json() as { error?: string; message?: string; redirectTo?: string };
       if (!res.ok) {
         setError(data.error ?? "Registration failed.");
-      } else {
-        setSuccess(data.message ?? "Registration submitted. A social worker will reach out shortly.");
-        setTimeout(() => router.push("/login"), 2800);
+        setLoading(false);
+        return;
       }
+      setSuccess(data.message ?? "Welcome to Janman. Taking you to your dashboard…");
+      // The register endpoint also sets the auth cookie, so a hard navigation
+      // is enough to land the user inside /community as a signed-in member.
+      window.location.href = data.redirectTo ?? "/community";
     } catch {
       setError("Network error — please try again.");
-    } finally {
       setLoading(false);
     }
   }

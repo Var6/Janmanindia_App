@@ -207,8 +207,13 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      {/* Google Calendar */}
-      <GoogleCalendarSection profile={profile} onUpdate={(p) => setProfile(p)} />
+      {/* Google Calendar — only Janman staff (with @janmanindia.org workspace
+          accounts) can connect their calendar. Community members don't have
+          Workspace, and asking them to "Connect Google Calendar" is just noise
+          — appointments they request go through the social worker either way. */}
+      {profile?.role && profile.role !== "community" && (
+        <GoogleCalendarSection profile={profile} onUpdate={(p) => setProfile(p)} />
+      )}
 
       {/* Password */}
       <form onSubmit={handlePasswordSubmit} className="rounded-2xl border p-6 space-y-4"

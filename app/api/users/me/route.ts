@@ -10,6 +10,7 @@ export async function GET() {
   await connectDB();
   const user = await User.findById(session.id)
     .select("-passwordHash")
+    .populate("communityProfile.assignedSocialWorker", "name email phone role")
     .lean();
 
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });

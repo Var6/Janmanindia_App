@@ -178,6 +178,50 @@ export async function POST(request: NextRequest) {
     // record so it shows up on their calendars and on /appointments.
     const rawCoAttendees = Array.isArray(body.coAttendeeIds) ? body.coAttendeeIds as unknown[] : [];
 
+    // ── Community → Social Worker flow ───────────────────────────────────────
+    // Community members don't have @janmanindia.org accounts and can't connect
+    // Google Calendar. Skip every Google freebusy / event-sync step for this
+    // path — we use the local DB ("Appointment" collection) to detect overlap
+    // for both the community user and the social worker. The social worker
+    // sees the request in their queue (status "pending_sw") and responds.
+    if (session.role === "community") {
+      let swId = legacySwId;
+      if (!swId || !mongoose.Types.ObjectId.isValid(swId)) {
+        // Fall back to the SW already assigned to the community member, so a
+        // first-time request "just works" without making them pick a name.
+        const me = await User.findById(session.id).select("communityProfile.assignedSocialWorker").lean();
+        const assigned = me?.communityProfile?.assignedSocialWorker;
+        if (assigned) swId = String(assigned);
+      }
+      if (!swId || !mongoose.Types.ObjectId.isValid(swId)) {
+        return NextResponse.json({
+          error: "Pick a social worker for this appointment, or wait for one to be assigned to you.",
+          code: "no_social_worker",
+        }, { status: 400 });
+      }
+      const sw = await User.findById(swId).select("role isActive name").lean();
+      if (!sw || sw.role !== "socialworker" || !sw.isActive) {
+        return NextResponse.json({ error: "That social worker isn't available." }, { status: 400 });
+      }
+      if (await hasConflict(session.id, proposedDate, endDate)) {
+        return NextResponse.json({ error: "You already have an appointment in that time window." }, { status: 409 });
+      }
+      if (await hasConflict(swId, proposedDate, endDate)) {
+        return NextResponse.json({
+          error: `${sw.name ?? "The social worker"} is busy then. Please pick another time.`,
+        }, { status: 409 });
+      }
+      const appointment = await Appointment.create({
+        community: session.id,
+        socialWorker: swId,
+        requester: session.id,
+        requestee: swId,
+        proposedDate, endDate, reason,
+        status: "pending_sw",
+      });
+      return NextResponse.json({ appointment }, { status: 201 });
+    }
+
     if (requesteeId) {
       if (!mongoose.Types.ObjectId.isValid(requesteeId)) {
         return NextResponse.json({ error: "requesteeId is not a valid id" }, { status: 400 });
@@ -277,26 +321,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ appointment }, { status: 201 });
     }
 
-    // Legacy community flow
-    if (session.role !== "community" || !legacySwId) {
-      return NextResponse.json({ error: "requesteeId is required" }, { status: 400 });
-    }
-    if (await hasConflict(session.id, proposedDate, endDate)) {
-      return NextResponse.json({ error: "You already have an appointment in that time window." }, { status: 409 });
-    }
-    if (await hasConflict(legacySwId, proposedDate, endDate)) {
-      return NextResponse.json({ error: "The social worker is busy in that time window. Pick another slot." }, { status: 409 });
-    }
-
-    const appointment = await Appointment.create({
-      community: session.id,
-      socialWorker: legacySwId,
-      requester: session.id,
-      requestee: legacySwId,
-      proposedDate, endDate, reason,
-      status: "pending_sw",
-    });
-    return NextResponse.json({ appointment }, { status: 201 });
+    // Staff role with no requesteeId — nothing to book.
+    return NextResponse.json({ error: "requesteeId is required" }, { status: 400 });
   } catch (e) {
     if (e instanceof Response) return e;
     console.error("POST /api/appointments", e);
