@@ -70,16 +70,19 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [coAssignees, setCoAssignees] = useState<string[]>([]);
   const [coOpen, setCoOpen] = useState(false);
   // The time-slot fields are opt-in: most tasks are simple to-dos that
-  // don't need a Google Calendar entry. Users click "Add a time slot" to
-  // reveal Date / Time / Ends.
+  // don't need a Google Calendar entry. Users click "Schedule" to reveal
+  // start / end date+time inputs.
   //
   // Date and time live in *separate* inputs because the native
   // datetime-local picker on most browsers is too wide and clumsy. We merge
-  // them back into one ISO instant on submit.
-  const [timeOpen, setTimeOpen] = useState(false);
-  const [whenDate, setWhenDate] = useState("");
-  const [whenStart, setWhenStart] = useState("");
-  const [whenEnd, setWhenEnd]   = useState("");
+  // them back into one ISO instant on submit. We also keep start/end as
+  // separate dates so a multi-day activity (training, court hearing across
+  // sessions, multi-day fieldwork camp) can span across midnight.
+  const [timeOpen, setTimeOpen]   = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate]     = useState("");
+  const [endTime, setEndTime]     = useState("");
   // The whole create form is collapsed behind a "+ New activity" button by
   // default — this page is overwhelmingly used for viewing tasks, not
   // creating them, and a folded form keeps the layout calm.
@@ -111,15 +114,21 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
     const fd = new FormData(form);
     // Drop the primary from coAssignees so a person never gets listed twice.
     const cleanedCo = coAssignees.filter((id) => id && id !== primaryAssignee);
-    // The schedule panel uses three small inputs (date / start time / end
-    // time) instead of a single wide datetime-local picker. We merge them
-    // into ISO instants here, parsed in the browser's local timezone so the
-    // time the user typed is the time that ends up on Google Calendar.
-    const startStr = whenDate && whenStart
-      ? localInputToISO(`${whenDate}T${whenStart}`)
+    // The schedule panel uses paired date+time inputs for start and end so
+    // multi-day activities work. We merge each pair into a single ISO instant
+    // in the browser's local timezone, so the wall-clock time the user typed
+    // is the time that ends up on Google Calendar.
+    //
+    // If only the start date is filled (no time), it's treated as an all-day
+    // activity. If the end date is omitted but an end time is given, we
+    // assume same-day end. If the end is missing entirely, the calendar sync
+    // falls back to a 30-min default.
+    const effectiveEndDate = endDate || (startDate && endTime ? startDate : "");
+    const startStr = startDate
+      ? localInputToISO(`${startDate}T${startTime || "00:00"}`)
       : undefined;
-    const endStr = whenDate && whenEnd
-      ? localInputToISO(`${whenDate}T${whenEnd}`)
+    const endStr = effectiveEndDate && (endTime || endDate)
+      ? localInputToISO(`${effectiveEndDate}T${endTime || "23:59"}`)
       : undefined;
     const payload = {
       title: String(fd.get("title") ?? "").trim(),
@@ -147,7 +156,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
     setCoOpen(false);
     setTimeOpen(false);
     setFormOpen(false);
-    setWhenDate(""); setWhenStart(""); setWhenEnd("");
+    setStartDate(""); setStartTime(""); setEndDate(""); setEndTime("");
     await load();
   }
 
@@ -327,35 +336,65 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
               </div>
             )}
 
-            {/* Schedule — date/start/end as three small inputs that merge to
-                ISO on submit. Native datetime-local is far too wide for a
-                snug form. */}
+            {/* Schedule — separate start and end date+time pickers so the
+                activity can span multiple days. Same-day events: pick one
+                date, fill both times. Multi-day: pick different end date.
+                Native datetime-local is too wide for the snug form, so we
+                keep the two halves side-by-side as small inputs. */}
             {!timeOpen ? (
               <button type="button" onClick={() => setTimeOpen(true)}
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-dashed transition-colors hover:border-(--accent) hover:text-(--accent) text-(--muted)"
                 style={{ borderColor: "var(--border)" }}>
                 <span className="text-sm">📅</span> Schedule
-                <span className="text-[10px] text-(--muted) font-normal italic">— adds to Google Calendar</span>
+                <span className="text-[10px] text-(--muted) font-normal italic">— supports multi-day, syncs to Google Calendar</span>
               </button>
             ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <input type="date" value={whenDate} onChange={(e) => setWhenDate(e.target.value)}
-                  className="w-44 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
-                {/* w-36 (~144px) is enough for the native time picker to show
-                    "12:00 AM" or "12:00 PM" without truncation in any
-                    browser. w-28 was clipping the meridiem on macOS Chrome. */}
-                <input type="time" value={whenStart} onChange={(e) => setWhenStart(e.target.value)}
-                  placeholder="Start" title="Start time"
-                  className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
-                <span className="text-(--muted) text-xs">→</span>
-                <input type="time" value={whenEnd} onChange={(e) => setWhenEnd(e.target.value)}
-                  placeholder="End" title="End time (optional)"
-                  className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
-                <button type="button" onClick={() => { setTimeOpen(false); setWhenDate(""); setWhenStart(""); setWhenEnd(""); }}
-                  className="ml-auto text-xs text-(--muted) hover:text-(--error) transition-colors px-1.5 py-1"
-                  title="Clear schedule">
-                  ×
-                </button>
+              <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">Schedule</p>
+                  <button type="button"
+                    onClick={() => { setTimeOpen(false); setStartDate(""); setStartTime(""); setEndDate(""); setEndTime(""); }}
+                    className="text-xs text-(--muted) hover:text-(--error) transition-colors px-1.5 py-0.5"
+                    title="Clear schedule">
+                    Clear ×
+                  </button>
+                </div>
+                {/* Start row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">From</span>
+                  <input type="date" value={startDate}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setStartDate(v);
+                      // Convenience: if the end date was empty or earlier than
+                      // the new start, follow the start date so same-day events
+                      // are a one-click setup.
+                      if (!endDate || (endDate && endDate < v)) setEndDate(v);
+                    }}
+                    className="w-44 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
+                  {/* w-36 (~144px) is enough for the native time picker to show
+                      "12:00 AM" / "12:00 PM" without truncation. */}
+                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                    title="Start time (leave blank for all-day)"
+                    className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
+                </div>
+                {/* End row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">To</span>
+                  <input type="date" value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    title="End date (defaults to start date for same-day events)"
+                    className="w-44 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
+                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
+                    title="End time (optional)"
+                    className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
+                </div>
+                {endDate && startDate && endDate !== startDate && (
+                  <p className="text-[10px] text-(--muted) italic">
+                    Multi-day activity — runs across {dayCount(startDate, endDate)} days.
+                  </p>
+                )}
               </div>
             )}
 
@@ -514,6 +553,17 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       )}
     </div>
   );
+}
+
+/** Inclusive day count between two `yyyy-mm-dd` strings — used so the form
+ *  can show "runs across N days" when the activity spans midnight. Both ends
+ *  are local-naïve dates from <input type="date"> so a Date round-trip is
+ *  safe. */
+function dayCount(startYmd: string, endYmd: string): number {
+  const a = new Date(`${startYmd}T00:00:00`);
+  const b = new Date(`${endYmd}T00:00:00`);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
+  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1);
 }
 
 /** Render the time slot for an activity:
