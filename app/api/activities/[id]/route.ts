@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await req.json();
     const { status, notes, priority, dueDate, endsAt, title, description, assignee, coAssignees, note,
-            addTodo, toggleTodo, removeTodo } = body as {
+            addTodo, toggleTodo, editTodo, removeTodo } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
       dueDate?: string; endsAt?: string;
       title?: string; description?: string;
@@ -27,6 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       /** Checklist mutations — only one fires per request. */
       addTodo?:    { title: string };
       toggleTodo?: { id: string; done: boolean };
+      editTodo?:   { id: string; title: string };
       removeTodo?: { id: string };
     };
 
@@ -46,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Checklist mutations — handled before the rest so adding a todo doesn't
     // accidentally trigger a calendar resync. Saved and returned immediately.
-    if (addTodo || toggleTodo || removeTodo) {
+    if (addTodo || toggleTodo || editTodo || removeTodo) {
       if (addTodo) {
         const t = String(addTodo.title ?? "").trim();
         if (!t) return NextResponse.json({ error: "Todo title is required" }, { status: 400 });
@@ -71,6 +72,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           todo.doneBy = undefined;
           todo.doneAt = undefined;
         }
+      }
+      if (editTodo) {
+        if (!mongoose.Types.ObjectId.isValid(editTodo.id)) {
+          return NextResponse.json({ error: "Invalid todo id" }, { status: 400 });
+        }
+        const next = String(editTodo.title ?? "").trim();
+        if (!next) return NextResponse.json({ error: "Todo title can't be empty — delete it instead" }, { status: 400 });
+        const todo = activity.todos.find((t) => String(t._id) === editTodo.id);
+        if (!todo) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+        todo.title = next.slice(0, 280);
       }
       if (removeTodo) {
         if (!mongoose.Types.ObjectId.isValid(removeTodo.id)) {

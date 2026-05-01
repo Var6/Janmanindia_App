@@ -583,6 +583,11 @@ function ActivityTodos({ activityId, todos, onChanged }: {
   const [adding, setAdding] = useState(false);
   const [draft,  setDraft]  = useState("");
   const [busy,   setBusy]   = useState(false);
+  // Inline edit state — `editingId` is the todo currently in edit mode, and
+  // `editDraft` is the in-flight title. We render an <input> in place of the
+  // text label and commit on Enter / blur, cancel on Escape.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
 
   const total = todos.length;
   const done  = todos.filter((t) => t.done).length;
@@ -610,6 +615,21 @@ function ActivityTodos({ activityId, todos, onChanged }: {
     await call({ addTodo: { title: t } });
     setDraft("");
     setAdding(false);
+  }
+
+  function startEdit(todo: Todo) {
+    setEditingId(todo._id);
+    setEditDraft(todo.title);
+  }
+
+  async function commitEdit() {
+    if (!editingId) return;
+    const next = editDraft.trim();
+    const original = todos.find((t) => t._id === editingId)?.title ?? "";
+    setEditingId(null);
+    setEditDraft("");
+    if (!next || next === original) return; // empty or unchanged → no-op
+    await call({ editTodo: { id: editingId, title: next } });
   }
 
   if (total === 0 && !adding) {
@@ -644,22 +664,52 @@ function ActivityTodos({ activityId, todos, onChanged }: {
       </div>
 
       <ul className="space-y-0.5">
-        {todos.map((t) => (
-          <li key={t._id} className="flex items-center gap-2 group/item">
-            <input type="checkbox" checked={t.done} disabled={busy}
-              onChange={(e) => call({ toggleTodo: { id: t._id, done: e.target.checked } })}
-              className="accent-(--accent) cursor-pointer" />
-            <span className={`flex-1 text-xs ${t.done ? "line-through text-(--muted)" : "text-(--text)"}`}>
-              {t.title}
-            </span>
-            <button type="button" disabled={busy}
-              onClick={() => call({ removeTodo: { id: t._id } })}
-              className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
-              title="Remove">
-              ×
-            </button>
-          </li>
-        ))}
+        {todos.map((t) => {
+          const isEditing = editingId === t._id;
+          return (
+            <li key={t._id} className="flex items-center gap-2 group/item">
+              <input type="checkbox" checked={t.done} disabled={busy || isEditing}
+                onChange={(e) => call({ toggleTodo: { id: t._id, done: e.target.checked } })}
+                className="accent-(--accent) cursor-pointer" />
+              {isEditing ? (
+                <input
+                  autoFocus
+                  value={editDraft}
+                  onChange={(e) => setEditDraft(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter")   { e.preventDefault(); commitEdit(); }
+                    if (e.key === "Escape")  { setEditingId(null); setEditDraft(""); }
+                  }}
+                  className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                  style={{ borderColor: "var(--border)" }}
+                />
+              ) : (
+                <button type="button" onClick={() => startEdit(t)}
+                  title="Click to edit"
+                  className={`flex-1 text-left text-xs cursor-text ${t.done ? "line-through text-(--muted)" : "text-(--text)"}`}>
+                  {t.title}
+                </button>
+              )}
+              {!isEditing && (
+                <>
+                  <button type="button" disabled={busy}
+                    onClick={() => startEdit(t)}
+                    className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--accent) transition-all px-1"
+                    title="Edit">
+                    ✎
+                  </button>
+                  <button type="button" disabled={busy}
+                    onClick={() => call({ removeTodo: { id: t._id } })}
+                    className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
+                    title="Remove">
+                    ×
+                  </button>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {adding && (
