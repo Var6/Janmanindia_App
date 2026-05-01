@@ -77,13 +77,9 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSession();
 
-    // Cases can be authored by anyone *except* HR (HR doesn't deal in
-    // legal matters) and there's no role gate to block tracking. Community
-    // members can register existing cases for tracking; staff create or
-    // import cases for community members.
-    if (session.role === "hr") {
-      return NextResponse.json({ error: "HR can't create cases" }, { status: 403 });
-    }
+    // Janman's HR / litigation / director leads are all qualified lawyers,
+    // so any signed-in role may file or register a case. Community members
+    // file under their own name; staff file on behalf of community members.
 
     await connectDB();
 

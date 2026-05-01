@@ -6,12 +6,15 @@ import KanbanBoard from "./KanbanBoard";
 import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 import { localInputToISO } from "@/lib/datetime";
+import MentionInput, { MentionText, type MentionMember } from "./MentionInput";
 
 interface Todo {
   _id: string;
   title: string;
   done: boolean;
   doneAt?: string;
+  /** Populated user refs for everyone @-mentioned in `title`. */
+  mentions?: { _id: string; name: string; role?: string }[];
 }
 
 interface Activity {
@@ -528,10 +531,16 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 {/* Checklist — small subtasks the assignee(s) tick off as
                     work moves forward. Strikes through done items. Anyone
                     on the activity (assignee, co-assignee, creator) can
-                    add/tick/remove via /api/activities/[id]. */}
+                    add/tick/remove via /api/activities/[id]. The `members`
+                    list is who you can `@`-mention — assignee + co-assignees,
+                    deduped. */}
                 <ActivityTodos
                   activityId={a._id}
                   todos={a.todos ?? []}
+                  members={[
+                    ...(a.assignee ? [{ _id: a.assignee._id, name: a.assignee.name, role: a.assignee.role }] : []),
+                    ...(a.coAssignees ?? []).map((c) => ({ _id: c._id, name: c.name, role: c.role })),
+                  ].filter((m, i, arr) => arr.findIndex((x) => x._id === m._id) === i)}
                   onChanged={load}
                 />
 
@@ -575,19 +584,24 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
 
 /** Per-activity checklist — fetches no extra data; mutates via PATCH on the
  *  parent activity and asks the planner to reload after each change. */
-function ActivityTodos({ activityId, todos, onChanged }: {
+function ActivityTodos({ activityId, todos, members, onChanged }: {
   activityId: string;
   todos: Todo[];
+  /** Whom you can @-mention in this activity (assignee + co-assignees). */
+  members: MentionMember[];
   onChanged: () => void | Promise<void>;
 }) {
   const [adding, setAdding] = useState(false);
   const [draft,  setDraft]  = useState("");
+  const [draftMentions, setDraftMentions] = useState<string[]>([]);
   const [busy,   setBusy]   = useState(false);
   // Inline edit state — `editingId` is the todo currently in edit mode, and
   // `editDraft` is the in-flight title. We render an <input> in place of the
-  // text label and commit on Enter / blur, cancel on Escape.
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState("");
+  // text label and commit on Enter / blur, cancel on Escape. Mentions track
+  // the user ids the in-flight title `@`-references.
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [editDraft, setEditDraft]   = useState("");
+  const [editMentions, setEditMentions] = useState<string[]>([]);
 
   const total = todos.length;
   const done  = todos.filter((t) => t.done).length;
@@ -612,24 +626,28 @@ function ActivityTodos({ activityId, todos, onChanged }: {
   async function add() {
     const t = draft.trim();
     if (!t) { setAdding(false); return; }
-    await call({ addTodo: { title: t } });
+    await call({ addTodo: { title: t, mentions: draftMentions } });
     setDraft("");
+    setDraftMentions([]);
     setAdding(false);
   }
 
   function startEdit(todo: Todo) {
     setEditingId(todo._id);
     setEditDraft(todo.title);
+    setEditMentions((todo.mentions ?? []).map((m) => m._id));
   }
 
   async function commitEdit() {
     if (!editingId) return;
     const next = editDraft.trim();
     const original = todos.find((t) => t._id === editingId)?.title ?? "";
+    const mentions = editMentions;
     setEditingId(null);
     setEditDraft("");
+    setEditMentions([]);
     if (!next || next === original) return; // empty or unchanged → no-op
-    await call({ editTodo: { id: editingId, title: next } });
+    await call({ editTodo: { id: editingId, title: next, mentions } });
   }
 
   if (total === 0 && !adding) {
@@ -672,23 +690,20 @@ function ActivityTodos({ activityId, todos, onChanged }: {
                 onChange={(e) => call({ toggleTodo: { id: t._id, done: e.target.checked } })}
                 className="accent-(--accent) cursor-pointer" />
               {isEditing ? (
-                <input
-                  autoFocus
+                <MentionInput
                   value={editDraft}
-                  onChange={(e) => setEditDraft(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter")   { e.preventDefault(); commitEdit(); }
-                    if (e.key === "Escape")  { setEditingId(null); setEditDraft(""); }
-                  }}
-                  className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
-                  style={{ borderColor: "var(--border)" }}
+                  members={members}
+                  onChange={(text, ids) => { setEditDraft(text); setEditMentions(ids); }}
+                  onCommit={commitEdit}
+                  onCancel={() => { setEditingId(null); setEditDraft(""); setEditMentions([]); }}
+                  autoFocus
+                  className="flex-1 w-full px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
                 />
               ) : (
                 <button type="button" onClick={() => startEdit(t)}
                   title="Click to edit"
-                  className={`flex-1 text-left text-xs cursor-text ${t.done ? "line-through text-(--muted)" : "text-(--text)"}`}>
-                  {t.title}
+                  className="flex-1 text-left cursor-text">
+                  <MentionText text={t.title} members={members} struck={t.done} />
                 </button>
               )}
               {!isEditing && (
@@ -714,17 +729,15 @@ function ActivityTodos({ activityId, todos, onChanged }: {
 
       {adding && (
         <div className="flex items-center gap-2 pt-1">
-          <input
-            autoFocus
+          <MentionInput
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); add(); }
-              if (e.key === "Escape") { setAdding(false); setDraft(""); }
-            }}
-            placeholder="Sub-task — press Enter to add"
-            className="flex-1 px-2 py-1 rounded-md border text-xs bg-(--surface) focus:outline-none focus:border-(--accent)"
-            style={{ borderColor: "var(--border)" }} />
+            members={members}
+            onChange={(text, ids) => { setDraft(text); setDraftMentions(ids); }}
+            onCommit={add}
+            onCancel={() => { setAdding(false); setDraft(""); setDraftMentions([]); }}
+            autoFocus
+            placeholder="Sub-task — type @ to assign someone"
+          />
           <button type="button" onClick={add} disabled={busy || !draft.trim()}
             className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>

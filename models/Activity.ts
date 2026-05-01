@@ -18,6 +18,11 @@ export interface IActivityTodo {
   doneAt?: Date;
   addedBy: mongoose.Types.ObjectId;
   addedAt: Date;
+  /** Users `@`-mentioned in the todo title. Stored separately from the
+   *  rendered title (which keeps the literal "@Name" text) so we can later
+   *  query "todos where I'm mentioned" without parsing strings. Always a
+   *  subset of the activity's assignee + co-assignees. */
+  mentions: mongoose.Types.ObjectId[];
 }
 
 export interface IActivity extends Document {
@@ -54,12 +59,13 @@ export interface IActivity extends Document {
 
 const todoSchema = new Schema<IActivityTodo>(
   {
-    title:   { type: String, required: true, trim: true, maxlength: 280 },
-    done:    { type: Boolean, default: false },
-    doneBy:  { type: Schema.Types.ObjectId, ref: "User" },
-    doneAt:  Date,
-    addedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    addedAt: { type: Date, default: Date.now },
+    title:    { type: String, required: true, trim: true, maxlength: 280 },
+    done:     { type: Boolean, default: false },
+    doneBy:   { type: Schema.Types.ObjectId, ref: "User" },
+    doneAt:   Date,
+    addedBy:  { type: Schema.Types.ObjectId, ref: "User", required: true },
+    addedAt:  { type: Date, default: Date.now },
+    mentions: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
   },
   { _id: true }
 );

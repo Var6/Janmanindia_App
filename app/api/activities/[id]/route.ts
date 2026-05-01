@@ -24,10 +24,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       dueDate?: string; endsAt?: string;
       title?: string; description?: string;
       assignee?: string; coAssignees?: string[]; note?: string;
-      /** Checklist mutations — only one fires per request. */
-      addTodo?:    { title: string };
+      /** Checklist mutations — only one fires per request. `mentions` on
+       *  add/edit are user ids the title `@`-references; the API validates
+       *  every id is on this activity (assignee or co-assignee) so people
+       *  can't be mentioned into work they're not part of. */
+      addTodo?:    { title: string; mentions?: string[] };
       toggleTodo?: { id: string; done: boolean };
-      editTodo?:   { id: string; title: string };
+      editTodo?:   { id: string; title: string; mentions?: string[] };
       removeTodo?: { id: string };
     };
 
@@ -48,6 +51,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Checklist mutations — handled before the rest so adding a todo doesn't
     // accidentally trigger a calendar resync. Saved and returned immediately.
     if (addTodo || toggleTodo || editTodo || removeTodo) {
+      // Build the activity's "member set" once — assignee + co-assignees.
+      // `@`-mentions on a todo must point at someone in this set so people
+      // can't be silently roped into work they aren't part of.
+      const memberIds = new Set<string>([String(activity.assignee), ...activity.coAssignees.map((id) => String(id))]);
+      const validateMentions = (raw: unknown): mongoose.Types.ObjectId[] => {
+        if (!Array.isArray(raw)) return [];
+        const out: mongoose.Types.ObjectId[] = [];
+        const seen = new Set<string>();
+        for (const id of raw) {
+          if (typeof id !== "string") continue;
+          if (!mongoose.Types.ObjectId.isValid(id)) continue;
+          if (!memberIds.has(id)) continue;        // off-activity → drop
+          if (seen.has(id)) continue;              // dedupe
+          seen.add(id);
+          out.push(new mongoose.Types.ObjectId(id));
+        }
+        return out;
+      };
+
       if (addTodo) {
         const t = String(addTodo.title ?? "").trim();
         if (!t) return NextResponse.json({ error: "Todo title is required" }, { status: 400 });
@@ -56,6 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           done: false,
           addedBy: new mongoose.Types.ObjectId(session.id),
           addedAt: new Date(),
+          mentions: validateMentions(addTodo.mentions),
         } as never);
       }
       if (toggleTodo) {
@@ -82,6 +105,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const todo = activity.todos.find((t) => String(t._id) === editTodo.id);
         if (!todo) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
         todo.title = next.slice(0, 280);
+        // Only overwrite mentions when the client explicitly sent the field —
+        // a plain title rename shouldn't blow away the existing list.
+        if ("mentions" in editTodo) {
+          todo.mentions = validateMentions(editTodo.mentions) as typeof todo.mentions;
+        }
       }
       if (removeTodo) {
         if (!mongoose.Types.ObjectId.isValid(removeTodo.id)) {

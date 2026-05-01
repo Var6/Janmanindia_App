@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
@@ -60,6 +61,7 @@ export default function RootLayout({
             {children}
           </SessionProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

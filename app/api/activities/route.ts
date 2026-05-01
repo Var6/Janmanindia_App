@@ -53,9 +53,10 @@ export async function GET(request: NextRequest) {
 
     const activities = await Activity.find(filter)
       .sort({ dueDate: 1, createdAt: -1 })
-      .populate("assignee",    "name role employeeId")
-      .populate("coAssignees", "name role employeeId")
-      .populate("createdBy",   "name role")
+      .populate("assignee",       "name role employeeId")
+      .populate("coAssignees",    "name role employeeId")
+      .populate("createdBy",      "name role")
+      .populate("todos.mentions", "name role")
       .lean();
 
     return NextResponse.json({ activities });
