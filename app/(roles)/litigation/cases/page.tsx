@@ -20,8 +20,16 @@ export default async function LitigationCasesPage() {
   if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
+  // Show: cases assigned to me OR existing cases registered by community/staff
+  // for tracking (so a lawyer can pick them up). Mirrors the API filter for
+  // GET /api/cases when role === "litigation".
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
-    ? await Case.find({ litigationMember: new mongoose.Types.ObjectId(session.id) })
+    ? await Case.find({
+        $or: [
+          { litigationMember: new mongoose.Types.ObjectId(session.id) },
+          { isExistingCase: true },
+        ],
+      })
         .populate("community", "name phone")
         .populate("socialWorker", "name")
         .sort({ nextHearingDate: 1, updatedAt: -1 })

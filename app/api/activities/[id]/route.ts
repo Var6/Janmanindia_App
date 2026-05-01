@@ -18,21 +18,68 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json();
-    const { status, notes, priority, dueDate, endsAt, title, description, assignee, coAssignees, note } = body as {
+    const { status, notes, priority, dueDate, endsAt, title, description, assignee, coAssignees, note,
+            addTodo, toggleTodo, removeTodo } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
       dueDate?: string; endsAt?: string;
       title?: string; description?: string;
       assignee?: string; coAssignees?: string[]; note?: string;
+      /** Checklist mutations — only one fires per request. */
+      addTodo?:    { title: string };
+      toggleTodo?: { id: string; done: boolean };
+      removeTodo?: { id: string };
     };
 
     await connectDB();
     const activity = await Activity.findById(id);
     if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const isOwner = String(activity.assignee) === session.id || String(activity.createdBy) === session.id;
+    // Anyone listed on the activity (assignee, co-assignee, or creator) plus
+    // privileged roles can mutate it. Co-assignees couldn't tick todos before
+    // because the original check only looked at primary + creator.
+    const isCoAssignee = (activity.coAssignees ?? []).some((id) => String(id) === session.id);
+    const isOwner = String(activity.assignee) === session.id || String(activity.createdBy) === session.id || isCoAssignee;
     const isPrivileged = ASSIGN_ROLES.includes(session.role);
     if (!isOwner && !isPrivileged) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Checklist mutations — handled before the rest so adding a todo doesn't
+    // accidentally trigger a calendar resync. Saved and returned immediately.
+    if (addTodo || toggleTodo || removeTodo) {
+      if (addTodo) {
+        const t = String(addTodo.title ?? "").trim();
+        if (!t) return NextResponse.json({ error: "Todo title is required" }, { status: 400 });
+        activity.todos.push({
+          title: t.slice(0, 280),
+          done: false,
+          addedBy: new mongoose.Types.ObjectId(session.id),
+          addedAt: new Date(),
+        } as never);
+      }
+      if (toggleTodo) {
+        if (!mongoose.Types.ObjectId.isValid(toggleTodo.id)) {
+          return NextResponse.json({ error: "Invalid todo id" }, { status: 400 });
+        }
+        const todo = activity.todos.find((t) => String(t._id) === toggleTodo.id);
+        if (!todo) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+        todo.done = Boolean(toggleTodo.done);
+        if (todo.done) {
+          todo.doneBy = new mongoose.Types.ObjectId(session.id);
+          todo.doneAt = new Date();
+        } else {
+          todo.doneBy = undefined;
+          todo.doneAt = undefined;
+        }
+      }
+      if (removeTodo) {
+        if (!mongoose.Types.ObjectId.isValid(removeTodo.id)) {
+          return NextResponse.json({ error: "Invalid todo id" }, { status: 400 });
+        }
+        activity.todos = activity.todos.filter((t) => String(t._id) !== removeTodo.id) as typeof activity.todos;
+      }
+      await activity.save();
+      return NextResponse.json({ activity });
     }
 
     if (title?.trim()) activity.title = title.trim();

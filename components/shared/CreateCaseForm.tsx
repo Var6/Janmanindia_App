@@ -16,6 +16,13 @@ export default function CreateCaseForm() {
   const [community, setCommunity]     = useState<Community | null>(null);
   const [caseTitle, setCaseTitle] = useState("");
   const [caseType, setCaseType]   = useState("");
+  // Initial status + tracking fields. Default Open keeps the form one-click
+  // for fresh cases; Pending / Escalated apply when registering one that's
+  // already underway (police station, lower court, etc).
+  const [caseStatus, setCaseStatus]   = useState<"Open" | "Pending" | "Escalated">("Open");
+  const [isExisting, setIsExisting]   = useState(false);
+  const [currentStep, setCurrentStep] = useState("");
+  const [existingNotes, setExistingNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
   const debounceRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +54,10 @@ export default function CreateCaseForm() {
     setCommunity(null);
     setCaseTitle("");
     setCaseType("");
+    setCaseStatus("Open");
+    setIsExisting(false);
+    setCurrentStep("");
+    setExistingNotes("");
     setError("");
   }
 
@@ -68,6 +79,10 @@ export default function CreateCaseForm() {
           caseType,
           path: meta.path,
           communityId: community._id,
+          status: caseStatus,
+          isExistingCase: isExisting,
+          currentStep:   currentStep.trim() || undefined,
+          existingNotes: existingNotes.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -203,9 +218,56 @@ export default function CreateCaseForm() {
               ))}
             </select>
             <p className="text-[11px] text-(--muted) mt-1">
-              We'll route the workflow (criminal / high court) automatically based on the selected type.
+              We&apos;ll route the workflow (criminal / high court) automatically based on the selected type.
             </p>
           </div>
+
+          {/* In-progress case toggle — when on, the form gains "current step"
+              and "history" so a user can register a case that's already
+              underway elsewhere instead of starting one fresh. */}
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border px-3.5 py-2.5"
+            style={{ borderColor: isExisting ? "var(--accent)" : "var(--border)", background: "var(--bg)" }}>
+            <input type="checkbox" checked={isExisting} onChange={(e) => setIsExisting(e.target.checked)}
+              className="mt-0.5 accent-(--accent) cursor-pointer" />
+            <span>
+              <p className="text-sm font-medium text-(--text)">Already in progress (track only)</p>
+              <p className="text-[11px] text-(--muted) mt-0.5">
+                The case is already underway at a police station / court. Janman is monitoring,
+                not filing. Litigation members will see this case in their queue.
+              </p>
+            </span>
+          </label>
+
+          {isExisting && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-(--text) mb-1.5">Current status</label>
+                <select value={caseStatus} onChange={(e) => setCaseStatus(e.target.value as "Open" | "Pending" | "Escalated")}
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+                  <option value="Open">Open — actively progressing</option>
+                  <option value="Pending">Pending — waiting on the other side</option>
+                  <option value="Escalated">Escalated — needs senior intervention</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-(--text) mb-1.5">Where it is right now</label>
+                <input value={currentStep} onChange={(e) => setCurrentStep(e.target.value)} maxLength={300}
+                  placeholder="e.g. FIR filed at Patna Bypass PS, awaiting chargesheet"
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-(--text) mb-1.5">Past steps / history</label>
+                <textarea value={existingNotes} onChange={(e) => setExistingNotes(e.target.value)} rows={3}
+                  placeholder="Briefly note what's already happened — incident date, FIR number, lawyer involved, hearing dates so far…"
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
+                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+              </div>
+            </>
+          )}
 
           <button type="submit" disabled={submitting || !community || !caseTitle.trim() || !caseType}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"

@@ -30,9 +30,15 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     };
     const stamp = { by: new mongoose.Types.ObjectId(session.id), at: new Date(), notes: notes?.trim() };
 
+    // Approval is flat: HR, Finance, or Director can sign off at either
+    // stage. We keep the two-stage status enum for audit (so "approved by
+    // HR then approved by Director" still records distinct timestamps), but
+    // any of the three roles is welcome to advance it.
+    const APPROVERS = ["hr", "finance", "director", "superadmin"];
+
     if (action === "hr_verify") {
-      if (!["hr", "director", "superadmin"].includes(session.role)) {
-        return NextResponse.json({ error: "Only HR can verify" }, { status: 403 });
+      if (!APPROVERS.includes(session.role)) {
+        return NextResponse.json({ error: "Only HR / Finance / Director can verify" }, { status: 403 });
       }
       if (expense.status !== "submitted") {
         return NextResponse.json({ error: "Only submitted expenses can be verified" }, { status: 400 });
@@ -44,8 +50,8 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     }
 
     if (action === "director_approve") {
-      if (!["director", "superadmin"].includes(session.role)) {
-        return NextResponse.json({ error: "Only the director can approve" }, { status: 403 });
+      if (!APPROVERS.includes(session.role)) {
+        return NextResponse.json({ error: "Only HR / Finance / Director can approve" }, { status: 403 });
       }
       if (expense.status !== "hr_verified") {
         return NextResponse.json({ error: "Expense must be HR-verified before director approval" }, { status: 400 });
@@ -87,11 +93,10 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
                   : expense.status === "hr_verified" ? "director"
                   : null;
       if (!stage) return NextResponse.json({ error: "Cannot reject at this stage" }, { status: 400 });
-      const isHrStage = stage === "hr";
-      const allowed = isHrStage
-        ? ["hr", "director", "superadmin"].includes(session.role)
-        : ["director", "superadmin"].includes(session.role);
-      if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      // Approval is flat (HR / Finance / Director), so rejection mirrors it.
+      if (!APPROVERS.includes(session.role)) {
+        return NextResponse.json({ error: "Only HR / Finance / Director can reject" }, { status: 403 });
+      }
       if (!notes?.trim()) return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
       expense.status = "rejected";
       expense.rejection = { stage, ...stamp };

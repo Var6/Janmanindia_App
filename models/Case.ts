@@ -48,6 +48,17 @@ export interface ICase extends Document {
   documents: IDocument[];
   caseDiary: IDiaryEntry[];
 
+  /** True when the case was registered for tracking purposes (it was already
+   *  underway elsewhere — police station, lower court — when it landed in
+   *  Janman). Lets the dashboard separate "we filed this" from "we're
+   *  monitoring this". */
+  isExistingCase?: boolean;
+  /** Where the case is right now in real-world terms — free text entered at
+   *  creation ("FIR filed at Patna Bypass PS, awaiting chargesheet"). */
+  currentStep?: string;
+  /** Free-form notes capturing the history before Janman got involved. */
+  existingNotes?: string;
+
   // Criminal path
   criminalPath?: {
     firFiled: boolean;
@@ -180,6 +191,9 @@ const caseSchema = new Schema<ICase>(
     googleCalendarEventId: String,
     documents: [documentSchema],
     caseDiary: [diaryEntrySchema],
+    isExistingCase: { type: Boolean, default: false, index: true },
+    currentStep:    { type: String, trim: true },
+    existingNotes:  { type: String, trim: true },
     criminalPath: criminalPathSchema,
     highCourtPath: highCourtPathSchema,
   },

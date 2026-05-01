@@ -104,10 +104,20 @@ export default async function AdminCasesPage() {
                         style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
                         {c.caseNumber ?? "—"}
                       </span>
+                      {c.isExistingCase && (
+                        <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
+                          style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}
+                          title="Tracked — already in progress when added">
+                          Existing
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
                       {c.caseTitle}
                     </p>
+                    {c.currentStep && (
+                      <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{c.currentStep}</p>
+                    )}
                     <p className="text-xs text-(--muted)">{community?.name ?? "—"}</p>
                   </Link>
 

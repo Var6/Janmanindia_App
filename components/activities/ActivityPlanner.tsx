@@ -7,6 +7,13 @@ import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 import { localInputToISO } from "@/lib/datetime";
 
+interface Todo {
+  _id: string;
+  title: string;
+  done: boolean;
+  doneAt?: string;
+}
+
 interface Activity {
   _id: string;
   title: string;
@@ -20,6 +27,7 @@ interface Activity {
   assignee:    { _id: string; name: string; role: string; employeeId?: string } | null;
   coAssignees: { _id: string; name: string; role: string; employeeId?: string }[];
   createdBy:   { _id: string; name: string; role: string } | null;
+  todos?: Todo[];
   createdAt: string;
 }
 
@@ -517,6 +525,16 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   </span>
                 </header>
 
+                {/* Checklist — small subtasks the assignee(s) tick off as
+                    work moves forward. Strikes through done items. Anyone
+                    on the activity (assignee, co-assignee, creator) can
+                    add/tick/remove via /api/activities/[id]. */}
+                <ActivityTodos
+                  activityId={a._id}
+                  todos={a.todos ?? []}
+                  onChanged={load}
+                />
+
                 <div className="flex flex-wrap gap-1.5 pt-3 mt-1 border-t border-(--border)/70">
                   {a.status !== "in_progress" && a.status !== "done" && (
                     <button onClick={() => patch(a._id, { status: "in_progress" })} disabled={busyId === a._id}
@@ -549,6 +567,119 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
               </article>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Per-activity checklist — fetches no extra data; mutates via PATCH on the
+ *  parent activity and asks the planner to reload after each change. */
+function ActivityTodos({ activityId, todos, onChanged }: {
+  activityId: string;
+  todos: Todo[];
+  onChanged: () => void | Promise<void>;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft,  setDraft]  = useState("");
+  const [busy,   setBusy]   = useState(false);
+
+  const total = todos.length;
+  const done  = todos.filter((t) => t.done).length;
+
+  async function call(body: Record<string, unknown>) {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/activities/${activityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert((d as { error?: string }).error ?? "Failed");
+        return;
+      }
+      await onChanged();
+    } finally { setBusy(false); }
+  }
+
+  async function add() {
+    const t = draft.trim();
+    if (!t) { setAdding(false); return; }
+    await call({ addTodo: { title: t } });
+    setDraft("");
+    setAdding(false);
+  }
+
+  if (total === 0 && !adding) {
+    return (
+      <button type="button" onClick={() => setAdding(true)}
+        className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-(--muted) hover:text-(--accent) transition-colors">
+        <span className="text-xs">＋</span> Add a checklist
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border bg-(--bg) px-3 py-2 space-y-1.5"
+      style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-(--muted)">
+          Checklist {total > 0 && <span className="font-normal">· {done}/{total} done</span>}
+        </p>
+        {total > 0 && (
+          <div className="flex-1 mx-3 h-1 rounded-full overflow-hidden" style={{ background: "var(--bg-secondary, #f3f4f6)" }}>
+            <div className="h-full rounded-full transition-all"
+              style={{
+                width: `${total > 0 ? Math.round((done / total) * 100) : 0}%`,
+                background: "var(--success, #16a34a)",
+              }} />
+          </div>
+        )}
+        <button type="button" onClick={() => setAdding((v) => !v)}
+          className="text-[11px] text-(--muted) hover:text-(--accent) transition-colors px-1">
+          {adding ? "Cancel" : "+ Add"}
+        </button>
+      </div>
+
+      <ul className="space-y-0.5">
+        {todos.map((t) => (
+          <li key={t._id} className="flex items-center gap-2 group/item">
+            <input type="checkbox" checked={t.done} disabled={busy}
+              onChange={(e) => call({ toggleTodo: { id: t._id, done: e.target.checked } })}
+              className="accent-(--accent) cursor-pointer" />
+            <span className={`flex-1 text-xs ${t.done ? "line-through text-(--muted)" : "text-(--text)"}`}>
+              {t.title}
+            </span>
+            <button type="button" disabled={busy}
+              onClick={() => call({ removeTodo: { id: t._id } })}
+              className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
+              title="Remove">
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {adding && (
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); add(); }
+              if (e.key === "Escape") { setAdding(false); setDraft(""); }
+            }}
+            placeholder="Sub-task — press Enter to add"
+            className="flex-1 px-2 py-1 rounded-md border text-xs bg-(--surface) focus:outline-none focus:border-(--accent)"
+            style={{ borderColor: "var(--border)" }} />
+          <button type="button" onClick={add} disabled={busy || !draft.trim()}
+            className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+            Add
+          </button>
         </div>
       )}
     </div>

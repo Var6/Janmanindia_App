@@ -5,6 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import AddExistingCaseForm from "@/components/community/AddExistingCaseForm";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -27,16 +28,21 @@ export default async function CaseTrackerPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-(--text)">Case Tracker</h1>
-          <p className="text-sm text-(--muted) mt-1">All your filed cases and their current status.</p>
+          <p className="text-sm text-(--muted) mt-1">
+            Cases you&apos;ve filed and ones you&apos;re tracking — past or in progress.
+          </p>
         </div>
-        <Link href="/community/file-case"
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          + New Case
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <AddExistingCaseForm />
+          <Link href="/community/file-case"
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+            + File new case
+          </Link>
+        </div>
       </div>
 
       {cases.length === 0 ? (
