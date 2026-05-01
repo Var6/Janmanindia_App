@@ -6,6 +6,7 @@ import EodReport from "@/models/EodReport";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 export default async function HrDashboard() {
   const session = await getSessionFromCookies();
@@ -31,6 +32,9 @@ export default async function HrDashboard() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
       <TodoWidget userId={session.id} />
+
+      {/* Quick line to a social worker — SW is the single contact point. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
         <h1 className="text-2xl font-bold text-(--text)">HR Dashboard</h1>

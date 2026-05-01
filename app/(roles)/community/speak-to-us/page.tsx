@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { CommunityHelpTabs } from "@/components/community/SectionTabs";
 
 type Msg = {
   _id: string;
@@ -69,12 +70,13 @@ export default function SpeakToUsPage() {
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
+      <CommunityHelpTabs />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-(--text)">Speak to Us</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Can't type? No problem — record your voice and we'll listen. Our team will reach out to you.
-          You don't need a verified account to send a message.
+          Can&apos;t type? No problem — record your voice and we&apos;ll listen. Our team will reach out to you.
+          You don&apos;t need a verified account to send a message.
         </p>
       </div>
 

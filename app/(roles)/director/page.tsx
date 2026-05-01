@@ -6,6 +6,7 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -72,6 +73,9 @@ export default async function AdminDashboard() {
     <div className="space-y-7">
       {!dbOk && <NoDBBanner />}
       <TodoWidget userId={session.id} />
+
+      {/* Quick line to a social worker — SW is the single contact point. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">

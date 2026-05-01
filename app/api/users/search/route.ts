@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
   const q    = searchParams.get("q")?.trim() ?? "";
   const role = searchParams.get("role") ?? "community";
 
-  // Privacy: community members can only look up other staff (not other community
-  // members or privileged roles). Staff can look up anyone.
+  // Privacy: community members can normally only look up staff (not other
+  // community members or privileged roles). Exception — looking up another
+  // *community* member for the case-enquiry "filing on behalf" flow is
+  // allowed but restricted to exact phone/email matches so the directory
+  // can't be browsed by name (you have to already know how to contact them).
   const COMMUNITY_VISIBLE_ROLES = ["socialworker", "litigation", "hr", "finance"];
-  if (session.role === "community" && !COMMUNITY_VISIBLE_ROLES.includes(role)) {
+  const isCommunityToCommunity = session.role === "community" && role === "community";
+  if (session.role === "community" && !isCommunityToCommunity && !COMMUNITY_VISIBLE_ROLES.includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -22,13 +26,16 @@ export async function GET(request: NextRequest) {
 
   await connectDB();
 
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const filter: Record<string, unknown> = {
     role,
     isActive: true,
-    $or: [
-      { name:  { $regex: q, $options: "i" } },
-      { email: { $regex: q, $options: "i" } },
-    ],
+    $or: isCommunityToCommunity
+      ? [{ phone: q.trim() }, { email: q.trim().toLowerCase() }]
+      : [
+          { name:  { $regex: escaped, $options: "i" } },
+          { email: { $regex: escaped, $options: "i" } },
+        ],
   };
 
   const users = await User.find(filter)

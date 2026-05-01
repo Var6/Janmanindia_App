@@ -1,13 +1,39 @@
 "use client";
 
+import { useState } from "react";
+
 // ── Constants ──────────────────────────────────────────────────────────────
+// Layout is now centred: the SVG sits in the middle of the row, with
+// alt-path (col 1) labels rendered to its LEFT (right-aligned) and
+// main-path (col 0) labels rendered to its RIGHT (left-aligned). Earlier
+// versions stacked all labels in a single column on the right, which let
+// long col-0 + col-1 strings overlap when wrapped.
 const RH   = 64;   // row height (px)
-const MX   = 20;   // main-column x
-const BX   = 72;   // branch-column x
+const MX   = 76;   // main-column x — right of centre
+const BX   = 28;   // branch-column x — left of centre
 const DR   = 7;    // dot radius
 const SVG_W = 104; // SVG canvas width
 
 type St = "done" | "active" | "pending";
+
+/** Graph-node id → stageTransition stage key. Only nodes with a real
+ *  underlying boolean (firFiled / chargesheetFiled / per-step .filed) map
+ *  to something the API can flip; descriptive nodes like "Investigation"
+ *  or "Cognizance" don't appear here and stay non-clickable. */
+const STAGE_ID_FOR_NODE: Record<string, string> = {
+  fir:        "fir",
+  cs:         "chargesheet",
+  charges:    "charges",
+  verdict:    "verdict",
+  // High Court — node id matches the stage id verbatim.
+  petitionFiled:       "petitionFiled",
+  supportingAffidavit: "supportingAffidavit",
+  admission:           "admission",
+  counterAffidavit:    "counterAffidavit",
+  rejoinder:           "rejoinder",
+  pleaClose:           "pleaClose",
+  inducement:          "inducement",
+};
 
 // ── Data types ──────────────────────────────────────────────────────────────
 interface GNode {
@@ -111,26 +137,33 @@ function buildFirGraph(cp: CrimPath, createdAt: string): { nodes: GNode[]; edges
 
   // Whether the final-form branch is visible (chargesheet not yet filed)
   const showFinalFormBranch = !cp.chargesheetFiled && !cp.cognizanceOrderDoc;
-  // Row offsets shift down when final-form branch is present
+  // Row offsets shift down when the alt branch is visible. The branch
+  // occupies its own two rows (Final Form, Notice to Informant) entirely
+  // in col 1, so neither label collides with col-0 entries above or below.
   const extra = showFinalFormBranch ? 2 : 0;
 
+  // Row layout — every (row, col) pair must be unique so labels (which
+  // span the full label-column width) don't stack on top of each other.
+  // Earlier versions had `cs` and `cog` both on row 3, and `cs` and `ff`
+  // sharing row 3 too — both fixed here by giving every step its own row.
   const R = {
     filed:    0,
     fir:      1,
     invest:   2,
-    cs:       3,        // chargesheet (col 0)
-    ff:       3,        // final form  (col 1, same row)
-    notice:   4,        // notice to informant (col 1)
-    cog:      3 + extra,   // cognizance — shifts down when branch shown
-    appear:   4 + extra,
-    charges:  5 + extra,
-    pw:       6 + extra,
-    dw:       7 + extra,
-    exam:     8 + extra,
-    args:     9 + extra,
-    verdict: 10 + extra,
-    sentence:11 + extra,  // col 1 (conviction path)
-    closedC: 12 + extra,  // col 1 (conviction closed)
+    cs:       3,            // chargesheet (col 0)
+    ff:       4,            // final form  (col 1, only used when branch shown)
+    notice:   5,            // notice to informant (col 1, only when branch shown)
+    cog:      4 + extra,    // cognizance — sits below cs when branch hidden,
+                            // and below `notice` when branch is visible
+    appear:   5 + extra,
+    charges:  6 + extra,
+    pw:       7 + extra,
+    dw:       8 + extra,
+    exam:     9 + extra,
+    args:    10 + extra,
+    verdict: 11 + extra,
+    sentence:12 + extra,    // col 1 (conviction path)
+    closedC: 13 + extra,    // col 1 (conviction closed)
   };
 
   const n = (node: GNode)     => nodes.push(node);
@@ -385,21 +418,36 @@ function GraphSvg({ nodes, edges, totalRows }: { nodes: GNode[]; edges: GEdge[];
 }
 
 // ── Label column ────────────────────────────────────────────────────────────
-function GraphLabels({ nodes }: { nodes: GNode[] }) {
+interface LabelProps {
+  nodes: GNode[];
+  /** Which column of the graph this label strip is paired with — drives
+   *  filtering (we only render nodes that belong here) and text alignment.
+   *  - "main" → col 0 nodes, sit to the right of the SVG, left-aligned.
+   *  - "alt"  → col 1 nodes, sit to the left of the SVG, right-aligned. */
+  side: "main" | "alt";
+  canEdit: boolean;
+  onStageClick?: (nodeId: string, stageId: string, currentlyDone: boolean) => Promise<void> | void;
+  busyNodeId?: string | null;
+}
+function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelProps) {
+  const wantedCol: 0 | 1 = side === "main" ? 0 : 1;
+  const visible = nodes.filter(n => n.col === wantedCol);
+  const isAlt = side === "alt";
   return (
-    <div style={{ position: "relative", flex: 1 }}>
-      {nodes.map(n => {
+    <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+      {visible.map(n => {
         const top = n.row * RH;
         const isBranch = n.col === 1;
-        return (
-          <div key={n.id} style={{
-            position: "absolute", top,
-            left: isBranch ? 8 : 0,  // slight indent for branch nodes
-            height: RH,
-            display: "flex", flexDirection: "column", justifyContent: "center",
-            paddingRight: 8,
-          }}>
-            <div className="flex items-center gap-2 flex-wrap">
+        // Decide whether the label itself becomes a button: only when the
+        // viewer can edit AND we have a stageTransition mapping for this
+        // node id. Click toggles done-ness via the parent callback.
+        const stageId   = STAGE_ID_FOR_NODE[n.id];
+        const clickable = canEdit && Boolean(stageId) && Boolean(onStageClick);
+        const busy      = busyNodeId === n.id;
+
+        const labelBody = (
+          <>
+            <div className={`flex items-center gap-2 flex-wrap ${isAlt ? "justify-end" : ""}`}>
               <span className="text-sm font-semibold leading-tight"
                 style={{
                   color: n.status === "done"   ? "var(--success-text, #166534)" :
@@ -420,9 +468,18 @@ function GraphLabels({ nodes }: { nodes: GNode[] }) {
                   closed
                 </span>
               )}
+              {clickable && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-opacity"
+                  style={{
+                    background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                  }}>
+                  {busy ? "…" : n.status === "done" ? "click to undo" : "click to mark done"}
+                </span>
+              )}
             </div>
             {(n.sub || n.date) && (
-              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
+              <p className={`text-xs mt-0.5 leading-relaxed ${isAlt ? "text-right" : ""}`} style={{ color: "var(--muted)" }}>
                 {n.date && <span>{n.date}</span>}
                 {n.date && n.sub && <span> · </span>}
                 {n.sub && <span>{n.sub}</span>}
@@ -430,6 +487,7 @@ function GraphLabels({ nodes }: { nodes: GNode[] }) {
             )}
             {n.doc && (
               <a href={n.doc.url} target="_blank" rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium hover:underline underline-offset-2"
                 style={{ color: "var(--accent)" }}>
                 <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-3 h-3">
@@ -439,6 +497,49 @@ function GraphLabels({ nodes }: { nodes: GNode[] }) {
                 {n.doc.label}
               </a>
             )}
+          </>
+        );
+
+        // Each side anchors its labels against the SVG edge. Alt (left) sits
+        // flush against the right side of its container; main (right) sits
+        // flush against the left side of its container. Padding nudges the
+        // label away from the dot so the line connecting them is unobscured.
+        const wrapperStyle: React.CSSProperties = {
+          position: "absolute", top,
+          left:  isAlt ? 0 : 0,
+          right: isAlt ? 0 : 0,
+          height: RH,
+          display: "flex", flexDirection: "column", justifyContent: "center",
+          alignItems: isAlt ? "flex-end" : "flex-start",
+          paddingLeft:  isAlt ? 8 : 12,
+          paddingRight: isAlt ? 12 : 8,
+        };
+
+        if (clickable) {
+          return (
+            <button
+              key={n.id}
+              type="button"
+              disabled={busy}
+              onClick={() => onStageClick!(n.id, stageId, n.status === "done")}
+              style={{
+                ...wrapperStyle,
+                textAlign: isAlt ? "right" : "left",
+                background: "transparent", border: "none",
+                cursor: busy ? "wait" : "pointer", padding: 0,
+                paddingLeft:  isAlt ? 8 : 12,
+                paddingRight: isAlt ? 12 : 8,
+                borderRadius: 8,
+              }}
+              className="hover:bg-(--bg-secondary) transition-colors"
+              title={n.status === "done" ? "Click to undo this step" : "Click to mark this step done"}>
+              {labelBody}
+            </button>
+          );
+        }
+        return (
+          <div key={n.id} style={wrapperStyle}>
+            {labelBody}
           </div>
         );
       })}
@@ -483,11 +584,19 @@ interface Props {
   highCourtPath?: HCPath;
   firFiled?: boolean;
   createdAt: string;
+  /** Required for click-to-advance — when true, mappable nodes (FIR /
+   *  Chargesheet / Charges / Verdict / each HC step) become buttons. */
+  canEdit?: boolean;
+  /** Case id for the PATCH target. Only used when canEdit is true. */
+  caseId?: string;
+  /** Re-fetch the case after a successful stage flip. */
+  onChanged?: () => void | Promise<void>;
 }
 
-export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt }: Props) {
+export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt, canEdit, caseId, onChanged }: Props) {
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
+  const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
 
   if (path === "criminal" && criminalPath) {
     const result = firFiled
@@ -502,6 +611,30 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
   }
 
   if (nodes.length === 0) return null;
+
+  // Toggle the underlying boolean for this stage: done → revert; else → advance.
+  // The parent re-fetches the case so the graph re-renders with the new state.
+  async function handleStageClick(nodeId: string, stageId: string, currentlyDone: boolean) {
+    if (!caseId) return;
+    setBusyNodeId(nodeId);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stageTransition: { stage: stageId, action: currentlyDone ? "revert" : "advance" },
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert((d as { error?: string }).error ?? "Failed to update stage.");
+        return;
+      }
+      await onChanged?.();
+    } finally {
+      setBusyNodeId(null);
+    }
+  }
 
   const totalRows = Math.max(...nodes.map(n => n.row)) + 1;
   const totalH    = totalRows * RH;
@@ -534,12 +667,27 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         </div>
       </div>
 
-      {/* Graph */}
+      {/* Graph — three columns: alt-path labels (left, right-aligned),
+          centred SVG, then main-path labels (right, left-aligned). The
+          two label columns flex equally so the SVG stays in the middle. */}
       <div className="px-4 py-4">
         <Legend />
-        <div style={{ position: "relative", height: totalH, display: "flex", marginTop: 8 }}>
+        <div style={{ position: "relative", height: totalH, display: "flex", alignItems: "stretch", marginTop: 8 }}>
+          <GraphLabels
+            nodes={nodes}
+            side="alt"
+            canEdit={Boolean(canEdit && caseId)}
+            onStageClick={handleStageClick}
+            busyNodeId={busyNodeId}
+          />
           <GraphSvg nodes={nodes} edges={edges} totalRows={totalRows} />
-          <GraphLabels nodes={nodes} />
+          <GraphLabels
+            nodes={nodes}
+            side="main"
+            canEdit={Boolean(canEdit && caseId)}
+            onStageClick={handleStageClick}
+            busyNodeId={busyNodeId}
+          />
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import User from "@/models/User";
 import { getCalendarEmbedUrl } from "@/lib/gcal";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 const STATUS_COLORS: Record<string, string> = {
   Open: "bg-blue-100 text-blue-700",
@@ -51,6 +52,9 @@ export default async function LitigationDashboard() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
       <TodoWidget userId={session.id} />
+
+      {/* Quick line to a social worker — SW is the single contact point. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
         <h1 className="text-2xl font-bold text-(--text)">Litigation Dashboard</h1>

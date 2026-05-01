@@ -11,14 +11,26 @@ const SHARED_ITEMS: NavItem[] = [
 
 /** Role-specific items, ordered top-to-bottom in the sidebar. */
 const ROLE_ITEMS: Record<string, NavItem[]> = {
+  // Community has no case-filing entry — they're read-only viewers of cases
+  // a social worker / lawyer files for them. Adding existing cases is a
+  // litigation responsibility, not a community one.
+  //
+  // Sidebar is intentionally collapsed:
+  //  - "Help & Support" lands on /community/speak-to-us, which (along with
+  //    /community/sos and /chat) shares a tab strip so all three help
+  //    pathways live under one menu item.
+  //  - "Cases & Appointments" lands on /community/case-tracker; that page
+  //    and /community/appointments share their own tab strip too.
   community: [
-    { href: "/community",                label: "Dashboard",    icon: "home"        },
-    { href: "/community/file-case",      label: "File a Case",  icon: "file-plus"   },
-    { href: "/community/speak-to-us",    label: "Speak to Us",  icon: "mic"         },
-    { href: "/community/sos",            label: "SOS",          icon: "bell"        },
-    { href: "/community/rtps",           label: "RTPS",         icon: "file-text"   },
-    { href: "/community/case-tracker",   label: "Case Tracker", icon: "search"      },
-    { href: "/community/appointments",   label: "Appointments", icon: "calendar"    },
+    { href: "/community",                label: "Dashboard",            icon: "home"      },
+    // "Help & Support" is the consolidated entry point for Speak to Us,
+    // SOS, and Chat — each rendered as a tab inside the others so a
+    // community member can switch between them in one click.
+    { href: "/community/speak-to-us",    label: "Help & Support",       icon: "mic"       },
+    // "Cases & Appointments" lands on the case tracker; appointments live
+    // on a sibling tab.
+    { href: "/community/case-tracker",   label: "Cases & Appointments", icon: "briefcase" },
+    { href: "/community/rtps",           label: "RTPS",                 icon: "file-text" },
   ],
   socialworker: [
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
@@ -35,9 +47,12 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
     { href: "/litigation/cases",        label: "Cases",        icon: "briefcase" },
     { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
-    { href: "/litigation/invoices",     label: "Invoice Approvals", icon: "receipt" },
+    // Invoice / expense approval is finance / director / HR's responsibility,
+    // not litigation's. The /litigation/invoices route still exists for the
+    // head-lawyer escrow flow, but we don't surface it in the sidebar so
+    // litigation members aren't given the impression they can sign off on
+    // money.
     // /litigation/appointments was merged into the shared /appointments hub.
-    // Keeping a sidebar entry here would have duplicated SHARED_ITEMS.
   ],
   hr: [
     { href: "/hr",                       label: "Dashboard",       icon: "home"       },
@@ -87,11 +102,18 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
 };
 
-/** Cross-role utility items. Activities is staff-only (community gated out). */
+/** Cross-role utility items shown to every staff role. */
 const STAFF_ITEMS: NavItem[] = [
   { href: "/activities", label: "Activities", icon: "calendar"  },
-  { href: "/logistics",  label: "Logistics",  icon: "briefcase" },
 ];
+
+/** Logistics is an admin-only function — fulfilling tickets, raising office
+ *  spend, etc. Only roles who actually act on logistics requests should see
+ *  the link. Field staff (socialworker / litigation / hr / finance) raise
+ *  tickets via /grievance or in-page widgets, not through a top-level
+ *  "Logistics" sidebar entry. */
+const LOGISTICS_ROLES = ["administrator", "director", "superadmin"];
+const LOGISTICS_ITEM: NavItem = { href: "/logistics", label: "Logistics", icon: "briefcase" };
 
 const PROFILE_ITEM = (role: string): NavItem => ({
   href: `/${role}/profile`,
@@ -104,8 +126,30 @@ const PROFILE_ITEM = (role: string): NavItem => ({
  *  My Profile pinned to bottom. */
 export function navItemsFor(role: string): NavItem[] {
   const base = ROLE_ITEMS[role] ?? [];
-  const utility = role === "community" ? [] : STAFF_ITEMS;
-  const shared = role === "finance" ? SHARED_ITEMS.filter(i => i.href !== "/training") : SHARED_ITEMS;
+  // Activities is staff-only (community gated out). Logistics is gated to
+  // the roles who fulfil tickets — administrator / director / superadmin —
+  // so the link doesn't sit in every staff sidebar by default.
+  const utility: NavItem[] = role === "community"
+    ? []
+    : LOGISTICS_ROLES.includes(role)
+      ? [...STAFF_ITEMS, LOGISTICS_ITEM]
+      : STAFF_ITEMS;
+
+  // Per-role pruning of the SHARED_ITEMS strip:
+  //  - community has /community/appointments (DB-only freebusy flow) +
+  //    /community/case-tracker bundled as "Cases & Appointments" in the
+  //    role strip, and Speak to Us / SOS / Chat bundled as "Help &
+  //    Support". So /appointments, /chat, and /policies are all dropped
+  //    from the shared strip to avoid duplication.
+  //  - finance never sees /training (legacy decision).
+  let shared: NavItem[];
+  if (role === "community") {
+    shared = SHARED_ITEMS.filter(i => i.href !== "/appointments" && i.href !== "/policies" && i.href !== "/chat");
+  } else if (role === "finance") {
+    shared = SHARED_ITEMS.filter(i => i.href !== "/training");
+  } else {
+    shared = SHARED_ITEMS;
+  }
 
   const all = [...base, ...utility, ...shared];
   const dashboardItem = all.find((i) => i.label === "Dashboard" || i.label === "Overview");

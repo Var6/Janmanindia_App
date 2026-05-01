@@ -6,6 +6,7 @@ import CommunityContactPanel from "@/components/shared/CommunityContactPanel";
 import { detectsDistress } from "@/lib/crisis";
 import Field, { Input, Textarea } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
+import { CommunityHelpTabs } from "@/components/community/SectionTabs";
 
 export default function SosPage() {
   const [step, setStep] = useState<"idle" | "form" | "sent">("idle");
@@ -42,6 +43,7 @@ export default function SosPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <CommunityHelpTabs />
       <header className="relative overflow-hidden rounded-2xl glass px-6 py-6">
         <Spotlight color="#dc2626" />
         <div className="relative">

@@ -17,6 +17,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .populate("community", "name email phone")
       .populate("litigationMember", "name email")
       .populate("socialWorker", "name email")
+      .populate("auditLog.by", "name role")
       .lean();
 
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -38,6 +39,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return NextResponse.json({ case: caseDoc });
   } catch (error) {
     if (error instanceof Response) return error;
+    console.error("GET /api/cases/[caseId] error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -60,12 +62,48 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json();
-    const allowedFields = ["status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath"];
+    const allowedFields = [
+      "status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath",
+      "district", "causeTitle",
+      // District Legal Fellow Case Management form — lawyer-managed metadata.
+      "courtCaseNumber", "courtName", "relevantSections",
+      "bailAndAppearanceStatus", "stage", "compensationStatus",
+    ];
     const update: Record<string, unknown> = {};
     const pushOps: Record<string, unknown> = {};
+    /** Audit entries collected during this PATCH. Pushed onto auditLog once
+     *  at the end so they all share the same Mongo round-trip. */
+    const audit: { action: string; summary: string; by: string; byRole: string; at: Date }[] = [];
+    const logAudit = (action: string, summary: string) => {
+      audit.push({ action, summary, by: session.id, byRole: session.role, at: new Date() });
+    };
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) update[field] = body[field];
+    }
+
+    // Audit only fields the user explicitly changed AND whose new value
+    // differs from what's currently stored. Pure no-ops (re-saving the same
+    // status, etc.) shouldn't pollute the timeline.
+    if (body.status !== undefined && body.status !== caseDoc.status) {
+      logAudit("status_changed", `Status: ${caseDoc.status} → ${body.status}`);
+    }
+    if (body.nextHearingDate !== undefined) {
+      const incoming = body.nextHearingDate ? new Date(body.nextHearingDate).toISOString() : null;
+      const current  = caseDoc.nextHearingDate ? new Date(caseDoc.nextHearingDate).toISOString() : null;
+      if (incoming !== current) {
+        const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+        logAudit("hearing_updated", `Next hearing: ${fmt(current)} → ${fmt(incoming)}`);
+      }
+    }
+    // Generic metadata field changes — log each one with field name. Skip
+    // criminalPath / highCourtPath here because they're handled by the
+    // stage-transition + doc-upload branches below with richer summaries.
+    const META_FIELDS = ["caseTitle", "district", "causeTitle", "courtCaseNumber", "courtName", "relevantSections", "bailAndAppearanceStatus", "stage", "compensationStatus"];
+    for (const f of META_FIELDS) {
+      if (body[f] !== undefined && body[f] !== (caseDoc as unknown as Record<string, unknown>)[f]) {
+        logAudit("metadata_updated", `Updated ${f}`);
+      }
     }
 
     if (body.diaryEntry) {
@@ -75,6 +113,117 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         writtenBy: session.id,
       };
       delete update.diaryEntry;
+      logAudit("diary_added", "Added a diary entry");
+    }
+
+    /* Court Appearance entry — mirrors the Janman District Legal Fellowship
+       Court Appearance Google Form. Push the structured record onto
+       courtAppearances and also bump the top-level nextHearingDate so the
+       existing hearing widgets/calendar sync continue to work. */
+    if (body.courtAppearance) {
+      const ca = body.courtAppearance as {
+        date?: string;
+        currentStatus?: string;
+        dailyOrderBrief?: string;
+        lastHearingDate?: string;
+        nextHearingDate?: string;
+        remarks?: string;
+      };
+      if (!ca.date || !ca.dailyOrderBrief?.trim()) {
+        return NextResponse.json(
+          { error: "courtAppearance.date and courtAppearance.dailyOrderBrief are required" },
+          { status: 400 }
+        );
+      }
+      const apDate = new Date(ca.date);
+      if (isNaN(apDate.getTime())) {
+        return NextResponse.json({ error: "courtAppearance.date is invalid" }, { status: 400 });
+      }
+      const lastHearingDate = ca.lastHearingDate ? new Date(ca.lastHearingDate) : undefined;
+      const nextHearingDate = ca.nextHearingDate ? new Date(ca.nextHearingDate) : undefined;
+      pushOps.courtAppearances = {
+        date: apDate,
+        currentStatus: ca.currentStatus?.trim() || undefined,
+        dailyOrderBrief: ca.dailyOrderBrief.trim(),
+        lastHearingDate: lastHearingDate && !isNaN(lastHearingDate.getTime()) ? lastHearingDate : undefined,
+        nextHearingDate: nextHearingDate && !isNaN(nextHearingDate.getTime()) ? nextHearingDate : undefined,
+        remarks: ca.remarks?.trim() || undefined,
+        loggedBy: session.id,
+        loggedAt: new Date(),
+      };
+      logAudit(
+        "appearance_logged",
+        `Court appearance logged for ${apDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${ca.currentStatus ? ` — ${ca.currentStatus}` : ""}`
+      );
+      // If the appearance carries a future hearing, surface it on the case so
+      // the dashboard widget + calendar sync (handled below) pick it up.
+      if (nextHearingDate && !isNaN(nextHearingDate.getTime())) {
+        update.nextHearingDate = nextHearingDate;
+        body.nextHearingDate = nextHearingDate.toISOString();
+      }
+    }
+
+    /* Stage transition — advance / revert one workflow step without uploading
+     * a doc. Used by the Case Stage Stepper UI on the case detail page so a
+     * lawyer can mark a stage done (or undo a click) with one button.
+     *
+     *   body.stageTransition = { stage: "fir" | "chargesheet" | ... , action: "advance" | "revert" }
+     *
+     * Criminal stages (in order):  fir → chargesheet → charges → verdict
+     * High court stages:           petitionFiled → supportingAffidavit → admission
+     *                              → counterAffidavit → rejoinder → pleaClose → inducement
+     *
+     * "advance" sets the boolean true and stamps the date with `now`.
+     * "revert" sets the boolean false and clears the date. Document
+     * artefacts (firDoc, chargeDocs, etc.) are left intact — a stage can be
+     * un-marked without losing the uploaded evidence.
+     */
+    if (body.stageTransition) {
+      const { stage, action } = body.stageTransition as { stage?: string; action?: string };
+      if (!stage || (action !== "advance" && action !== "revert")) {
+        return NextResponse.json({ error: "stageTransition requires stage + action ('advance' | 'revert')" }, { status: 400 });
+      }
+      const advance = action === "advance";
+      const now = new Date();
+      // Pretty stage labels for the audit summary — keep in sync with the
+      // stepper labels so users see consistent wording across UIs.
+      const STAGE_LABELS: Record<string, string> = {
+        fir: "FIR Filed", chargesheet: "Chargesheet Filed", charges: "Charges Framed", verdict: "Verdict",
+        petitionFiled: "Petition Filed", supportingAffidavit: "Supporting Affidavit", admission: "Admission",
+        counterAffidavit: "Counter Affidavit", rejoinder: "Rejoinder", pleaClose: "Plea Close", inducement: "Inducement",
+      };
+      const stageLabel = STAGE_LABELS[stage] ?? stage;
+      logAudit(
+        advance ? "stage_advance" : "stage_revert",
+        advance ? `Marked ${stageLabel} done` : `Reverted ${stageLabel}`
+      );
+
+      if (caseDoc.path === "criminal") {
+        const CRIMINAL = ["fir", "chargesheet", "charges", "verdict"];
+        if (!CRIMINAL.includes(stage)) {
+          return NextResponse.json({ error: `Unknown criminal stage "${stage}"` }, { status: 400 });
+        }
+        if (stage === "fir") {
+          update["criminalPath.firFiled"] = advance;
+        } else if (stage === "chargesheet") {
+          update["criminalPath.chargesheetFiled"] = advance;
+          update["criminalPath.chargesheetDate"] = advance ? now : null;
+        } else if (stage === "charges") {
+          update["criminalPath.chargesFramed"] = advance;
+        } else if (stage === "verdict") {
+          // Verdict text is set via a different path; here we just mark the
+          // verdict date so the stepper can surface "verdict reached" without
+          // forcing a free-text prompt mid-click.
+          update["criminalPath.verdictDate"] = advance ? now : null;
+        }
+      } else if (caseDoc.path === "highcourt") {
+        const HC_STAGES = ["petitionFiled", "supportingAffidavit", "admission", "counterAffidavit", "rejoinder", "pleaClose", "inducement"];
+        if (!HC_STAGES.includes(stage)) {
+          return NextResponse.json({ error: `Unknown high-court stage "${stage}"` }, { status: 400 });
+        }
+        update[`highCourtPath.${stage}.filed`]   = advance;
+        update[`highCourtPath.${stage}.filedAt`] = advance ? now : null;
+      }
     }
 
     // Document upload routed by category. Empty/general → documents[];
@@ -93,6 +242,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         ocrStatus: "pending" as const,
       };
       const cat = (category ?? "general").toLowerCase();
+      logAudit("doc_uploaded", `Uploaded "${label}"${cat && cat !== "general" ? ` (${cat})` : ""}`);
       if (cat === "general" || !cat) {
         pushOps.documents = docPayload;
       } else if (cat === "fir") {
@@ -121,6 +271,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     }
 
+    // Flush audit entries collected during this PATCH onto the auditLog
+     // array. Using `$each` keeps insertion order even when multiple entries
+     // came from a single request (e.g. doc upload that also advances a
+     // stage).
+    if (audit.length > 0) {
+      pushOps.auditLog = audit.length === 1 ? audit[0] : { $each: audit };
+    }
     if (Object.keys(pushOps).length > 0) update["$push"] = pushOps;
 
     const updated = await Case.findByIdAndUpdate(caseId, update, { new: true });

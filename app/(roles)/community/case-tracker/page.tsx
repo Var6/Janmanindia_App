@@ -5,7 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
-import AddExistingCaseForm from "@/components/community/AddExistingCaseForm";
+import { CommunityCasesTabs } from "@/components/community/SectionTabs";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -28,20 +28,14 @@ export default async function CaseTrackerPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
 
+      <CommunityCasesTabs />
+
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-(--text)">Case Tracker</h1>
           <p className="text-sm text-(--muted) mt-1">
-            Cases you&apos;ve filed and ones you&apos;re tracking — past or in progress.
+            Cases registered for you by Janman&apos;s social worker / lawyer team. View-only — your team handles updates.
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <AddExistingCaseForm />
-          <Link href="/community/file-case"
-            className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            + File new case
-          </Link>
         </div>
       </div>
 
@@ -50,14 +44,10 @@ export default async function CaseTrackerPage() {
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-3">⚖️</p>
           <p className="text-sm text-(--muted)">
-            {dbOk ? "You haven't filed any cases yet." : "Connect database to see your cases."}
+            {dbOk
+              ? "No cases registered yet — your social worker will add one when there's a matter to track."
+              : "Connect database to see your cases."}
           </p>
-          {dbOk && (
-            <Link href="/community/file-case"
-              className="mt-3 inline-block text-sm hover:underline" style={{ color: "var(--accent)" }}>
-              File your first case →
-            </Link>
-          )}
         </div>
       ) : (
         <div className="space-y-3">

@@ -14,10 +14,13 @@ export default async function AdminCaseDetailPage({
 
   const { caseId } = await params;
 
+  // Director and superadmin can edit cases — add documents, advance stages,
+  // append diary entries — alongside the assigned litigation member.
+  // Community members keep view-only access via /community/case-tracker.
   return (
     <CaseDetailPage
       caseId={caseId}
-      canEdit={false}
+      canEdit={true}
       canManageCarePlan={true}
       backHref="/director/cases"
       backLabel="All Cases"

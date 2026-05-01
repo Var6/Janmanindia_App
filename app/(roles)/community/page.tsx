@@ -9,6 +9,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import BentoCard from "@/components/ui/BentoCard";
 import Spotlight from "@/components/ui/Spotlight";
 import AnimatedShinyText from "@/components/ui/AnimatedShinyText";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 const RTPS_GUIDES = [
   { title: "Right to Information",  hi: "RTI",         description: "Ask any government office for information — they must reply in 30 days.", link: "https://rtionline.gov.in",   accent: "#3b82f6" },
@@ -63,18 +64,20 @@ export default async function CommunityDashboard() {
             <AnimatedShinyText>Hi {session.name.split(" ")[0]}, what do you need help with today?</AnimatedShinyText>
           </h1>
           <p className="text-sm text-(--muted) mt-3 max-w-2xl">
-            File a new case, raise an emergency alert, or browse government schemes you can apply for. Your assigned social worker is one tap away.
+            Track your cases, raise an emergency alert, or browse government schemes you can apply for. Your assigned social worker is one tap away.
           </p>
         </div>
       </section>
 
-      {/* Primary actions — bento */}
+      {/* Primary actions — bento. Community is read-only on cases — case
+          filing is handled by social workers / litigation, so the dashboard
+          surfaces tracker / voice intake / SOS / appointments instead. */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <BentoCard href="/community/file-case" accent="var(--accent)"
-          icon="📝"
-          title="File a Case"
-          description="Report an injustice — police refusal, land grab, denied scheme, etc.">
-          <p className="text-xs text-(--muted) mt-2">A social worker reviews and assigns a lawyer.</p>
+        <BentoCard href="/community/case-tracker" accent="var(--accent)"
+          icon="📂"
+          title="Case Tracker"
+          description="See where your cases stand — hearings, documents, status updates.">
+          <p className="text-xs text-(--muted) mt-2">Updated by your social worker and lawyer.</p>
         </BentoCard>
 
         <BentoCard href="/community/speak-to-us" accent="#7c3aed"
@@ -99,6 +102,11 @@ export default async function CommunityDashboard() {
         </BentoCard>
       </section>
 
+      {/* Direct line to the assigned social worker — quick query without
+          leaving the dashboard. SW is the single point of contact for
+          everything that doesn't fit the SOS / appointments flows. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} />
+
       {/* My cases */}
       <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
         <header className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
@@ -113,12 +121,7 @@ export default async function CommunityDashboard() {
         {cases.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="text-3xl mb-2">📂</p>
-            <p className="text-sm text-(--muted) mb-3">You haven't filed any cases yet.</p>
-            <Link href="/community/file-case"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-(--accent-contrast)"
-              style={{ background: "var(--accent)" }}>
-              File your first case
-            </Link>
+            <p className="text-sm text-(--muted)">No cases yet — your social worker will register one for you when needed.</p>
           </div>
         ) : (
           <div className="divide-y divide-(--border)">

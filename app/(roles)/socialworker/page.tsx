@@ -8,6 +8,7 @@ import Case from "@/models/Case";
 import SosAlert from "@/models/SosAlert";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -80,6 +81,11 @@ export default async function SocialWorkerDashboard() {
       {!dbOk && <NoDBBanner />}
       <TodoWidget userId={session.id} />
 
+      {/* Incoming queries — community members + the team. SW is the single
+          contact point ("face of the NGO"), so this surface is mounted high
+          on the dashboard with unread counts. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} />
+
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -138,16 +144,21 @@ export default async function SocialWorkerDashboard() {
             <div className="divide-y divide-(--border)">
               {pendingVerifications.map((u) => (
                 <div key={String(u._id)} className="px-5 py-3.5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                  {/* Click the name/avatar to open the full community-member
+                      detail page (profile + cases + care plans + history).
+                      Approve / Reject still works inline via VerifyButtons
+                      so the queue stays one-click-fast. */}
+                  <Link href={`/socialworker/community/${String(u._id)}`}
+                    className="flex items-center gap-3 min-w-0 group flex-1">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                       style={{ background: "var(--accent-muted)", color: "var(--sidebar-active-text)" }}>
                       {u.name?.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
+                      <p className="text-sm font-medium text-(--text) truncate group-hover:text-(--accent) transition-colors">{u.name}</p>
                       <p className="text-xs text-(--muted) truncate">{u.communityProfile?.govtIdType ?? "—"} · {u.email}</p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex gap-2 shrink-0">
                     {u.communityProfile?.govtIdUrl && (
                       <a href={u.communityProfile.govtIdUrl} target="_blank" rel="noopener noreferrer"

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { CommunityCasesTabs } from "@/components/community/SectionTabs";
 
 type UserRef = { _id: string; name: string; email?: string; phone?: string; role?: string };
 type Appointment = {
@@ -137,6 +138,8 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
+      <CommunityCasesTabs />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-(text)">Appointments</h1>

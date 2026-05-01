@@ -480,26 +480,31 @@ async function run() {
     { name: "Rajan Mehra",         email: "rajan@dev.janmanindia.in",     role: "community",   phone: "9000000012",
       communityProfile: { govtIdType: "Passport", govtIdUrl: "https://example.com/rajan-id.pdf", verificationStatus: "verified", district: "Patna"   } },
 
+    // Dev fixtures use a `JPF/DEV/...` employee-id namespace so they never
+    // collide with the real seeded team in `seed-team.mjs` (which uses
+    // JPF/JNA/.. for legal fellows and JPF/COR/.. for the coordination
+    // unit). Without this prefix, re-running seed against a DB that already
+    // has the team blows up on the unique employeeId index.
     { name: "Dev Social Worker",   email: "sw@dev.janmanindia.in",        role: "socialworker", phone: "9000000002",
-      employeeId: "JPF/JNA/26/01", joinedAt: new Date("2026-01-15"),
+      employeeId: "JPF/DEV/SW/01", joinedAt: new Date("2026-01-15"),
       socialWorkerProfile: { avgResolutionTimeDays: 4.2, openTickets: 3, resolvedTickets: 12, slaBreaches: 1, district: "Delhi" } },
     { name: "Anita Desai",         email: "anita@dev.janmanindia.in",     role: "socialworker", phone: "9000000013",
-      employeeId: "JPF/JNA/26/02", joinedAt: new Date("2026-02-01"),
+      employeeId: "JPF/DEV/SW/02", joinedAt: new Date("2026-02-01"),
       socialWorkerProfile: { avgResolutionTimeDays: 6.8, openTickets: 5, resolvedTickets: 28, slaBreaches: 3, district: "Mumbai Suburban" } },
 
     { name: "Dev Litigation",      email: "litigation@dev.janmanindia.in", role: "litigation",  phone: "9000000003",
-      employeeId: "JPF/LIT/26/01", joinedAt: new Date("2026-01-20"),
+      employeeId: "JPF/DEV/LIT/01", joinedAt: new Date("2026-01-20"),
       litigationProfile: { barCouncilId: "BAR/DEV/001", activeCaseCount: 5, location: { district: "Delhi", city: "New Delhi" }, specialisation: ["Criminal", "Constitutional"] } },
     { name: "Vikram Nair",         email: "vikram@dev.janmanindia.in",    role: "litigation",  phone: "9000000014",
-      employeeId: "JPF/LIT/26/02", joinedAt: new Date("2026-02-10"),
+      employeeId: "JPF/DEV/LIT/02", joinedAt: new Date("2026-02-10"),
       litigationProfile: { barCouncilId: "BAR/DEV/002", activeCaseCount: 8, location: { district: "Mumbai Suburban", city: "Mumbai" }, specialisation: ["Civil", "Family"] } },
 
     { name: "Dev HR Manager",      email: "hr@dev.janmanindia.in",        role: "hr",          phone: "9000000004",
-      employeeId: "JPF/COR/26/01", joinedAt: new Date("2026-01-05") },
+      employeeId: "JPF/DEV/HR/01", joinedAt: new Date("2026-01-05") },
     { name: "Dev Finance Officer", email: "finance@dev.janmanindia.in",   role: "finance",     phone: "9000000005",
-      employeeId: "JPF/COR/26/02", joinedAt: new Date("2026-01-08") },
+      employeeId: "JPF/DEV/FIN/01", joinedAt: new Date("2026-01-08") },
     { name: "Dev Super Admin",     email: "superadmin@dev.janmanindia.in", role: "superadmin", phone: "9000000007",
-      employeeId: "JPF/COR/26/03", joinedAt: new Date("2026-01-01") },
+      employeeId: "JPF/DEV/SA/01", joinedAt: new Date("2026-01-01") },
   ];
 
   let usersCreated = 0, usersUpdated = 0;
@@ -956,14 +961,22 @@ async function run() {
   ]);
   console.log(`Logistics:    ${tickets.length} inserted`);
 
-  // District helplines — set by HR
+  // District helplines — upsert by district so re-running the seed against a
+  // DB that already has helplines (e.g. from `seed-team.mjs`) doesn't crash
+  // on the unique `district` index.
   await DistrictHelpline.deleteMany({ notes: /dev seed/i });
-  const helplines = await DistrictHelpline.insertMany([
-    { district: "Delhi",            primaryName: "Dev Social Worker", primaryPhone: "9000000002", secondaryName: "Dev Litigation", secondaryPhone: "9000000003", notes: "Dev seed", setBy: hrId },
-    { district: "Mumbai Suburban",  primaryName: "Anita Desai",       primaryPhone: "9000000013", secondaryName: "Vikram Nair",    secondaryPhone: "9000000014", notes: "Dev seed", setBy: hrId },
-    { district: "Patna",            primaryName: "Dev Social Worker", primaryPhone: "9000000002", notes: "Dev seed (fallback to Delhi team)",                 setBy: hrId },
-  ]);
-  console.log(`Helplines:    ${helplines.length} inserted`);
+  const helplineRows = [
+    { district: "Delhi",           primaryName: "Dev Social Worker", primaryPhone: "9000000002", secondaryName: "Dev Litigation", secondaryPhone: "9000000003", notes: "Dev seed", setBy: hrId },
+    { district: "Mumbai Suburban", primaryName: "Anita Desai",       primaryPhone: "9000000013", secondaryName: "Vikram Nair",    secondaryPhone: "9000000014", notes: "Dev seed", setBy: hrId },
+    { district: "Patna",           primaryName: "Dev Social Worker", primaryPhone: "9000000002", notes: "Dev seed (fallback to Delhi team)",                 setBy: hrId },
+  ];
+  const helplineRes = await DistrictHelpline.bulkWrite(
+    helplineRows.map((h) => ({
+      updateOne: { filter: { district: h.district }, update: { $set: h }, upsert: true },
+    })),
+    { ordered: false }
+  );
+  console.log(`Helplines:    ${helplineRes.upsertedCount} inserted, ${helplineRes.modifiedCount} updated`);
 
   // Conversations + Messages
   await Conversation.deleteMany({ lastMessagePreview: /dev seed/i });

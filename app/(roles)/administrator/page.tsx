@@ -5,6 +5,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import LogisticsTicket from "@/models/LogisticsTicket";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
+import QueriesBox from "@/components/shared/QueriesBox";
 
 export default async function AdministratorDashboard() {
   const session = await getSessionFromCookies();
@@ -37,6 +38,9 @@ export default async function AdministratorDashboard() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
       <TodoWidget userId={session.id} />
+
+      {/* Quick line to a social worker — SW is the single contact point. */}
+      <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
         <h1 className="text-2xl font-bold text-(--text)">Administrator — Operations</h1>
