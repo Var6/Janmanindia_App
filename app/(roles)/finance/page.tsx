@@ -9,6 +9,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import FinancePayQueue from "@/components/finance/FinancePayQueue";
 import QueriesBox from "@/components/shared/QueriesBox";
+import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 
 const CATEGORY_LABEL: Record<string, string> = {
   admin: "Admin / Office", training: "Training", exploration: "Exploration",
@@ -81,6 +82,7 @@ export default async function FinanceDashboard() {
 
   return (
     <div className="space-y-8">
+      <ActivityAssignmentBanner currentUserId={session.id} />
       <TodoWidget userId={session.id} />
 
       {/* Quick line to a social worker — SW is the single contact point. */}

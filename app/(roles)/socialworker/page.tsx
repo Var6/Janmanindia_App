@@ -9,6 +9,7 @@ import SosAlert from "@/models/SosAlert";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
+import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -79,6 +80,10 @@ export default async function SocialWorkerDashboard() {
   return (
     <div className="space-y-7">
       {!dbOk && <NoDBBanner />}
+      {/* Banner for activities recently assigned to me. Polls every 30s,
+          flashes the tab title until acknowledged. */}
+      <ActivityAssignmentBanner currentUserId={session.id} />
+
       <TodoWidget userId={session.id} />
 
       {/* Incoming queries — community members + the team. SW is the single

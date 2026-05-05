@@ -237,7 +237,55 @@ export interface ICase extends Document {
     rejoinder: IHighCourtStep;
     pleaClose: IHighCourtStep;
     inducement: IHighCourtStep;
+
+    /** High-level High Court stages — the four headline phases the
+     *  litigation team tracks. Sit alongside the granular 7-step flow so
+     *  the case detail can show both an executive summary and the detail. */
+    officeNotes?:    IHighCourtStep;
+    argumentsStage?: IHighCourtStep;
+    judgements?:     IHighCourtStep;
+
+    /** Named document slots for HC matters. Each maps to a real artefact
+     *  on the registry — keeping them as named fields (instead of one
+     *  generic blob) lets the UI render distinct upload buttons + the case
+     *  audit log carry meaningful labels. */
+    mainPetitionDoc?:    IDocument;
+    counterAffidavitDocs: IDocument[];
+    rejoinderDocs:       IDocument[];
+    notesOfArgumentsDoc?: IDocument;
+    /** "List of dates" is a chronological timeline the HC team builds up
+     *  during the matter; each entry is a date, a one-line label, and an
+     *  optional supporting document. */
+    listOfDates: { _id?: mongoose.Types.ObjectId; date: Date; label: string; addedBy: mongoose.Types.ObjectId; addedAt: Date; doc?: IDocument }[];
+    orderDocs: IDocument[];
   };
+
+  /** Pinned strategy / "cheatcode" notes the team writes on the case
+   *  workflow — e.g. "police negligence visible from para 7 of FIR".
+   *  Author can edit / delete; everyone with case access can reply. */
+  caseComments?: ICaseComment[];
+}
+
+/** A single pinned comment on the case workflow. Replies are first-class
+ *  but flat (no nested threading) — keeps the UI digestible. */
+export interface ICaseComment {
+  _id?: mongoose.Types.ObjectId;
+  text: string;
+  by:     mongoose.Types.ObjectId;
+  byName: string;     // cached so a deleted user's name still renders
+  byRole?: string;
+  pinned?: boolean;   // shown floating on the workflow graph when true
+  createdAt: Date;
+  editedAt?: Date;
+  replies: {
+    _id?: mongoose.Types.ObjectId;
+    text: string;
+    by:     mongoose.Types.ObjectId;
+    byName: string;
+    byRole?: string;
+    createdAt: Date;
+    editedAt?: Date;
+  }[];
 }
 
 const documentSchema = new Schema<IDocument>(
@@ -379,6 +427,43 @@ const criminalPathSchema = new Schema(
   { _id: false }
 );
 
+const listOfDatesEntrySchema = new Schema(
+  {
+    date:    { type: Date, required: true },
+    label:   { type: String, required: true, trim: true, maxlength: 280 },
+    addedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    addedAt: { type: Date, default: Date.now },
+    doc:     documentSchema,
+  },
+  { _id: true }
+);
+
+const commentReplySchema = new Schema(
+  {
+    text:      { type: String, required: true, trim: true, maxlength: 2000 },
+    by:        { type: Schema.Types.ObjectId, ref: "User", required: true },
+    byName:    { type: String, required: true },
+    byRole:    String,
+    createdAt: { type: Date, default: Date.now },
+    editedAt:  Date,
+  },
+  { _id: true }
+);
+
+const caseCommentSchema = new Schema<ICaseComment>(
+  {
+    text:      { type: String, required: true, trim: true, maxlength: 2000 },
+    by:        { type: Schema.Types.ObjectId, ref: "User", required: true },
+    byName:    { type: String, required: true },
+    byRole:    String,
+    pinned:    { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    editedAt:  Date,
+    replies:   { type: [commentReplySchema], default: [] },
+  },
+  { _id: true }
+);
+
 const highCourtPathSchema = new Schema(
   {
     petitionFiled: highCourtStepSchema,
@@ -388,6 +473,22 @@ const highCourtPathSchema = new Schema(
     rejoinder: highCourtStepSchema,
     pleaClose: highCourtStepSchema,
     inducement: highCourtStepSchema,
+
+    // Headline 4-stage HC tracker (additive — sits alongside the granular
+    // 7-step flow above so existing data + UI keep working).
+    officeNotes:    highCourtStepSchema,
+    argumentsStage: highCourtStepSchema,
+    judgements:     highCourtStepSchema,
+
+    // Named document slots — preferred over the generic `documents[]` for
+    // HC matters since the case page needs distinct upload buttons + the
+    // audit log needs meaningful labels.
+    mainPetitionDoc:      documentSchema,
+    counterAffidavitDocs: { type: [documentSchema], default: [] },
+    rejoinderDocs:        { type: [documentSchema], default: [] },
+    notesOfArgumentsDoc:  documentSchema,
+    listOfDates:          { type: [listOfDatesEntrySchema], default: [] },
+    orderDocs:            { type: [documentSchema], default: [] },
   },
   { _id: false }
 );
@@ -446,6 +547,7 @@ const caseSchema = new Schema<ICase>(
     existingNotes:  { type: String, trim: true },
     criminalPath: criminalPathSchema,
     highCourtPath: highCourtPathSchema,
+    caseComments: { type: [caseCommentSchema], default: [] },
   },
   { timestamps: true }
 );

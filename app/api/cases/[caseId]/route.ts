@@ -167,6 +167,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("case_unshared", `Removed ${target?.name ?? "lawyer"}`);
     }
 
+    /* List of Dates entry — append a chronological note to the HC matter's
+       timeline. Each entry is a date + label (+ optional doc). Editors:
+       litigation members on the case (already gated above). */
+    if (body.addListOfDatesEntry) {
+      const e = body.addListOfDatesEntry as { date?: string; label?: string; docUrl?: string; docLabel?: string };
+      if (!e.date || !e.label?.trim()) {
+        return NextResponse.json({ error: "addListOfDatesEntry.date and .label are required" }, { status: 400 });
+      }
+      const dt = new Date(e.date);
+      if (isNaN(dt.getTime())) {
+        return NextResponse.json({ error: "addListOfDatesEntry.date is invalid" }, { status: 400 });
+      }
+      pushOps["highCourtPath.listOfDates"] = {
+        date: dt,
+        label: e.label.trim(),
+        addedBy: session.id,
+        addedAt: new Date(),
+        ...(e.docUrl ? { doc: {
+          label: e.docLabel?.trim() || e.label.trim(),
+          url: e.docUrl,
+          uploadedBy: session.id,
+          uploadedAt: new Date(),
+          ocrStatus: "pending" as const,
+        }} : {}),
+      };
+      logAudit("list_of_dates_added", `List of dates: ${e.label.trim()}`);
+    }
+
     /* Court Appearance entry — mirrors the Janman District Legal Fellowship
        Court Appearance Google Form. Push the structured record onto
        courtAppearances and also bump the top-level nextHearingDate so the
@@ -268,7 +296,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           update["criminalPath.verdictDate"] = advance ? now : null;
         }
       } else if (caseDoc.path === "highcourt") {
-        const HC_STAGES = ["petitionFiled", "supportingAffidavit", "admission", "counterAffidavit", "rejoinder", "pleaClose", "inducement"];
+        const HC_STAGES = [
+          // Granular 7-step flow.
+          "petitionFiled", "supportingAffidavit", "admission",
+          "counterAffidavit", "rejoinder", "pleaClose", "inducement",
+          // High-level 4-stage tracker (additive — see Case model).
+          "officeNotes", "argumentsStage", "judgements",
+        ];
         if (!HC_STAGES.includes(stage)) {
           return NextResponse.json({ error: `Unknown high-court stage "${stage}"` }, { status: 400 });
         }
@@ -317,6 +351,27 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         update[`highCourtPath.${stepKey}.filed`]   = true;
         update[`highCourtPath.${stepKey}.filedAt`] = new Date();
         update[`highCourtPath.${stepKey}.doc`]     = docPayload;
+      }
+      // Named HC document slots (Phase B). Singular slots overwrite; plural
+      // slots ($push). Each slot also auto-flips the corresponding 4-stage
+      // marker where it makes sense — e.g. uploading the main petition
+      // implies "Office Notes" reached; an order doc implies "Judgements".
+      else if (cat === "mainpetition" || cat === "main-petition") {
+        update["highCourtPath.mainPetitionDoc"] = docPayload;
+        update["highCourtPath.officeNotes.filed"]   = true;
+        update["highCourtPath.officeNotes.filedAt"] = new Date();
+      } else if (cat === "counter-affidavit" || cat === "counteraffidavits") {
+        pushOps["highCourtPath.counterAffidavitDocs"] = docPayload;
+      } else if (cat === "rejoinders") {
+        pushOps["highCourtPath.rejoinderDocs"] = docPayload;
+      } else if (cat === "notes-of-arguments" || cat === "notesofarguments") {
+        update["highCourtPath.notesOfArgumentsDoc"] = docPayload;
+        update["highCourtPath.argumentsStage.filed"]   = true;
+        update["highCourtPath.argumentsStage.filedAt"] = new Date();
+      } else if (cat === "order" || cat === "orders") {
+        pushOps["highCourtPath.orderDocs"] = docPayload;
+        update["highCourtPath.judgements.filed"]   = true;
+        update["highCourtPath.judgements.filedAt"] = new Date();
       } else {
         pushOps.documents = docPayload;
       }

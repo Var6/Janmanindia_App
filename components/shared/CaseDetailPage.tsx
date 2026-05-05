@@ -6,6 +6,8 @@ import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
 import IcpForm from "@/components/icp/IcpForm";
 import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
 import CaseAuditLog from "@/components/shared/CaseAuditLog";
+import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
+import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
 
@@ -102,7 +104,27 @@ type PopulatedCase = {
     petitionFiled: HighCourtStep; supportingAffidavit: HighCourtStep;
     admission: HighCourtStep; counterAffidavit: HighCourtStep;
     rejoinder: HighCourtStep; pleaClose: HighCourtStep; inducement: HighCourtStep;
+    // High-level 4-stage tracker (additive).
+    officeNotes?: HighCourtStep; argumentsStage?: HighCourtStep; judgements?: HighCourtStep;
+    // Named document slots.
+    mainPetitionDoc?: DocMeta;
+    counterAffidavitDocs?: DocMeta[];
+    rejoinderDocs?: DocMeta[];
+    notesOfArgumentsDoc?: DocMeta;
+    listOfDates?: Array<{ _id: string; date: string; label: string; addedBy: string; addedAt: string; doc?: DocMeta }>;
+    orderDocs?: DocMeta[];
   };
+  caseComments?: Array<{
+    _id: string;
+    text: string;
+    by: string;
+    byName: string;
+    byRole?: string;
+    pinned?: boolean;
+    createdAt: string;
+    editedAt?: string;
+    replies: Array<{ _id: string; text: string; by: string; byName: string; byRole?: string; createdAt: string; editedAt?: string }>;
+  }>;
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -1324,6 +1346,10 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
         onChanged={fetchCase}
       />
 
+      {/* Cheatcode notes — pinned strategy reminders. Anyone with case
+          access can add / reply; only the author can edit / delete. */}
+      <CaseCheatcodes caseId={c._id} comments={c.caseComments ?? []} onChanged={fetchCase} />
+
       {/* Intake facts captured by the Case Enquiry form. Visible to anyone with
           access to the case so SW + lawyers see the same paper-form data. */}
       <EnquirySummary enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle} />
@@ -1430,6 +1456,12 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
           caseId={c._id}
           onChanged={refresh}
         />
+
+        {/* High Court 4-stage tracker + named document slots. Only renders
+            for HC matters; criminal cases are covered by the workflow graph. */}
+        {c.path === "highcourt" && (
+          <HighCourtStagesAndDocs caseId={c._id} caseData={c} canEdit={canEdit} onChanged={refresh} />
+        )}
 
         {/* Documents — collapsible. Open by default for editors so the
             upload widget is one click away; closed for read-only viewers. */}

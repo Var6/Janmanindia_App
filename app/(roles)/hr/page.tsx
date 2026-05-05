@@ -7,6 +7,7 @@ import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
+import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 
 export default async function HrDashboard() {
   const session = await getSessionFromCookies();
@@ -31,6 +32,7 @@ export default async function HrDashboard() {
   return (
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
+      <ActivityAssignmentBanner currentUserId={session.id} />
       <TodoWidget userId={session.id} />
 
       {/* Quick line to a social worker — SW is the single contact point. */}

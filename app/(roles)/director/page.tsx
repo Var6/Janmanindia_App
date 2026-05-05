@@ -7,6 +7,7 @@ import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
+import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -72,6 +73,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-7">
       {!dbOk && <NoDBBanner />}
+      <ActivityAssignmentBanner currentUserId={session.id} />
       <TodoWidget userId={session.id} />
 
       {/* Quick line to a social worker — SW is the single contact point. */}
