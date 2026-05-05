@@ -417,10 +417,32 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     }
 
+    /* Delete a document from the general documents[] array. */
+    if (body.deleteDocument) {
+      const docId = String(body.deleteDocument.docId ?? "").trim();
+      if (!docId) return NextResponse.json({ error: "deleteDocument.docId is required" }, { status: 400 });
+      await Case.updateOne({ _id: caseId }, { $pull: { documents: { _id: docId } } });
+      logAudit("doc_deleted", `Deleted document ${docId}`);
+    }
+
+    /* Rename / re-label a document in the general documents[] array. */
+    if (body.editDocument) {
+      const { docId, label } = body.editDocument as { docId?: string; label?: string };
+      if (!docId || !label?.trim()) {
+        return NextResponse.json({ error: "editDocument.docId and editDocument.label are required" }, { status: 400 });
+      }
+      await Case.updateOne(
+        { _id: caseId },
+        { $set: { "documents.$[elem].label": label.trim() } },
+        { arrayFilters: [{ "elem._id": docId }] }
+      );
+      logAudit("doc_renamed", `Renamed document to "${label.trim()}"`);
+    }
+
     // Flush audit entries collected during this PATCH onto the auditLog
-     // array. Using `$each` keeps insertion order even when multiple entries
-     // came from a single request (e.g. doc upload that also advances a
-     // stage).
+    // array. Using `$each` keeps insertion order even when multiple entries
+    // came from a single request (e.g. doc upload that also advances a
+    // stage).
     if (audit.length > 0) {
       pushOps.auditLog = audit.length === 1 ? audit[0] : { $each: audit };
     }

@@ -36,10 +36,11 @@ export default async function LitigationDashboard() {
     const sevenDaysOut = new Date();
     sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
 
+    const memberFilter = { $or: [{ litigationMember: litigationId }, { litigationMembers: litigationId }] };
     [allCases, upcomingHearings, pendingAppointments, litigationUser] = await Promise.all([
-      Case.find({ litigationMember: litigationId, status: { $in: ["Open", "Pending", "Escalated"] } })
+      Case.find({ ...memberFilter, status: { $in: ["Open", "Pending", "Escalated"] } })
         .sort({ updatedAt: -1 }).limit(8).lean(),
-      Case.find({ litigationMember: litigationId, nextHearingDate: { $gte: new Date(), $lte: sevenDaysOut } })
+      Case.find({ ...memberFilter, nextHearingDate: { $gte: new Date(), $lte: sevenDaysOut } })
         .sort({ nextHearingDate: 1 }).limit(5).lean(),
       Appointment.find({ litigationMember: litigationId, status: "approved_sw" })
         .sort({ proposedDate: 1 }).limit(5).populate("community", "name email").lean(),

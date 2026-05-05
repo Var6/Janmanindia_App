@@ -1568,15 +1568,22 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
     <div className="space-y-6 pb-16">
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-(--muted)">
+      <nav className="flex items-center gap-2 text-sm flex-wrap">
         {dashboardHref && (
           <>
-            <Link href={dashboardHref} className="hover:text-(--text) transition-colors">Dashboard</Link>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5"><path d="M6 4l4 4-4 4"/></svg>
+            <Link href={dashboardHref}
+              className="font-medium underline underline-offset-2 transition-colors hover:opacity-80"
+              style={{ color: "var(--accent)" }}>
+              Dashboard
+            </Link>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 shrink-0 text-(--muted)"><path d="M6 4l4 4-4 4"/></svg>
           </>
         )}
-        <Link href={backHref} className="hover:text-(--text) transition-colors">{backLabel}</Link>
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5"><path d="M6 4l4 4-4 4"/></svg>
+        <Link href={backHref}
+          className="text-(--muted) hover:text-(--text) transition-colors">
+          {backLabel}
+        </Link>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 shrink-0 text-(--muted)"><path d="M6 4l4 4-4 4"/></svg>
         <span className="font-mono font-semibold text-(--text)">{c.caseNumber}</span>
       </nav>
 
@@ -1801,23 +1808,29 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
           <HighCourtStagesAndDocs caseId={c._id} caseData={c} canEdit={canEdit} onChanged={refresh} />
         )}
 
-        {/* Documents — collapsible. Open by default for editors so the
-            upload widget is one click away; closed for read-only viewers. */}
-        {canEdit && (
-          <CollapsibleSection
-            title="Documents"
-            badge={docCount > 0 ? <CountPill n={docCount} /> : null}
-            defaultOpen={false}
-            description="Upload FIR / chargesheet / charge / evidence files. Linked to the right milestone automatically.">
-            <CaseDocsUpload caseId={c._id} caseType={c.path} onUploaded={refresh} />
-          </CollapsibleSection>
-        )}
+        {/* Documents — visible to everyone; editors get upload + rename/delete. */}
+        <CollapsibleSection
+          title="Documents"
+          badge={docCount > 0 ? <CountPill n={docCount} /> : null}
+          defaultOpen={docCount > 0}>
+          <div className="space-y-4">
+            <CaseDocsList
+              caseId={c._id}
+              docs={c.documents ?? []}
+              canEdit={canEdit}
+              onChanged={refresh}
+            />
+            {canEdit && (
+              <CaseDocsUpload caseId={c._id} caseType={c.path} onUploaded={refresh} />
+            )}
+          </div>
+        </CollapsibleSection>
 
         {/* Court appearances — per-hearing structured log. */}
         <CollapsibleSection
           title="Court appearances"
           badge={appearanceCount > 0 ? <CountPill n={appearanceCount} /> : null}
-          defaultOpen={appearanceCount > 0}>
+          defaultOpen={true}>
           <CourtAppearancesSection
             caseId={c._id}
             appearances={c.courtAppearances ?? []}
@@ -1832,7 +1845,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
         <CollapsibleSection
           title="Case diary"
           badge={diaryCount > 0 ? <CountPill n={diaryCount} /> : null}
-          defaultOpen={false}>
+          defaultOpen={true}>
           <DiaryList entries={c.caseDiary ?? []} />
           {canEdit && <AddDiaryForm caseId={c._id} onSuccess={refresh} />}
         </CollapsibleSection>
@@ -1853,6 +1866,141 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
 }
 
 /** Small pill rendering a count badge in a section header. */
+function CaseDocsList({
+  caseId,
+  docs,
+  canEdit,
+  onChanged,
+}: {
+  caseId: string;
+  docs: DocMeta[];
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+
+  if (!docs.length) {
+    return <p className="text-sm text-(--muted) px-1 pb-1">No documents attached yet.</p>;
+  }
+
+  async function startEdit(doc: DocMeta) {
+    setEditingId(doc._id ?? null);
+    setEditLabel(doc.label);
+    setErr("");
+  }
+
+  async function saveEdit(docId: string) {
+    const label = editLabel.trim();
+    if (!label) { setErr("Label cannot be empty."); return; }
+    setSavingId(docId); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ editDocument: { docId, label } }),
+      });
+      if (!res.ok) { const d = await res.json(); setErr(d.error ?? "Save failed."); return; }
+      setEditingId(null);
+      onChanged();
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function deleteDoc(docId: string) {
+    if (!confirm("Delete this document from the case? This cannot be undone.")) return;
+    setDeletingId(docId); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteDocument: { docId } }),
+      });
+      if (!res.ok) { const d = await res.json(); setErr(d.error ?? "Delete failed."); return; }
+      onChanged();
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {err && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+      {docs.map((doc) => {
+        const docId = doc._id ?? "";
+        const isEditing = editingId === docId;
+        const isSaving = savingId === docId;
+        const isDeleting = deletingId === docId;
+        return (
+          <div key={docId}
+            className="rounded-xl border px-3 py-2.5 flex items-start gap-3"
+            style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+            {/* File icon */}
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 mt-0.5 shrink-0 text-(--muted)">
+              <path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+              <polyline points="10 2 10 5 13 5"/>
+            </svg>
+
+            <div className="flex-1 min-w-0">
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={editLabel}
+                    onChange={e => setEditLabel(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") saveEdit(docId); if (e.key === "Escape") setEditingId(null); }}
+                    className="flex-1 px-2 py-1 rounded-lg border text-sm"
+                    style={{ background: "var(--surface)", borderColor: "var(--accent)", color: "var(--text)" }}
+                    maxLength={200}
+                  />
+                  <button onClick={() => saveEdit(docId)} disabled={isSaving}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg disabled:opacity-60"
+                    style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                    {isSaving ? "…" : "Save"}
+                  </button>
+                  <button onClick={() => setEditingId(null)}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                  className="text-sm font-medium hover:underline"
+                  style={{ color: "var(--accent)" }}>
+                  {doc.label}
+                </a>
+              )}
+              <p className="text-[11px] text-(--muted) mt-0.5">
+                {new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+              </p>
+            </div>
+
+            {canEdit && !isEditing && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => startEdit(doc)}
+                  className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
+                  style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
+                  Rename
+                </button>
+                <button onClick={() => deleteDoc(docId)} disabled={isDeleting}
+                  className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
+                  style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                  {isDeleting ? "…" : "Delete"}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CountPill({ n }: { n: number }) {
   return (
     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"

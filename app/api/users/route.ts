@@ -6,7 +6,7 @@ import User from "@/models/User";
 /** GET /api/users?role=socialworker,litigation — list staff (HR/director/superadmin). */
 export async function GET(request: NextRequest) {
   try {
-    await requireRole("hr", "director", "superadmin");
+    await requireRole("hr", "director", "superadmin", "litigation");
     await connectDB();
 
     const { searchParams } = new URL(request.url);
