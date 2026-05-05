@@ -688,6 +688,157 @@ function CmInput({ label, value, onChange, placeholder }: {
   );
 }
 
+/* ── Single editable court appearance entry ─────────────────────────────── */
+function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
+  caseId: string; ap: CourtAppearance; canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    date: ap.date ? new Date(ap.date).toISOString().slice(0, 10) : "",
+    currentStatus: ap.currentStatus ?? "",
+    dailyOrderBrief: ap.dailyOrderBrief,
+    lastHearingDate: ap.lastHearingDate ? new Date(ap.lastHearingDate).toISOString().slice(0, 10) : "",
+    nextHearingDate: ap.nextHearingDate ? new Date(ap.nextHearingDate).toISOString().slice(0, 10) : "",
+    remarks: ap.remarks ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (!editing) setDraft({
+      date: ap.date ? new Date(ap.date).toISOString().slice(0, 10) : "",
+      currentStatus: ap.currentStatus ?? "",
+      dailyOrderBrief: ap.dailyOrderBrief,
+      lastHearingDate: ap.lastHearingDate ? new Date(ap.lastHearingDate).toISOString().slice(0, 10) : "",
+      nextHearingDate: ap.nextHearingDate ? new Date(ap.nextHearingDate).toISOString().slice(0, 10) : "",
+      remarks: ap.remarks ?? "",
+    });
+  }, [ap, editing]);
+
+  async function save() {
+    if (!draft.dailyOrderBrief.trim()) { setErr("Daily order brief is required."); return; }
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          editCourtAppearance: {
+            appearanceId: ap._id,
+            date: draft.date,
+            currentStatus: draft.currentStatus.trim() || undefined,
+            dailyOrderBrief: draft.dailyOrderBrief.trim(),
+            lastHearingDate: draft.lastHearingDate || undefined,
+            nextHearingDate: draft.nextHearingDate || undefined,
+            remarks: draft.remarks.trim() || undefined,
+          },
+        }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  const inputCls = "w-full px-3 py-2 rounded-xl border text-sm focus:outline-none";
+  const inputStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" };
+
+  if (!editing) {
+    return (
+      <div className="rounded-2xl border overflow-hidden"
+        style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <div className="px-4 py-2 border-b flex items-center justify-between"
+          style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
+            {fmtDate(ap.date)}
+          </span>
+          <div className="flex items-center gap-2">
+            {ap.currentStatus && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full"
+                style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{ap.currentStatus}</span>
+            )}
+            {canEdit && (
+              <button type="button" onClick={() => setEditing(true)}
+                className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+                Edit
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="px-4 py-3 space-y-2">
+          <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{ap.dailyOrderBrief}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-(--muted)">
+            {ap.lastHearingDate && <span>Last hearing: {fmtDate(ap.lastHearingDate)}</span>}
+            {ap.nextHearingDate && <span className="font-semibold" style={{ color: "var(--accent)" }}>Next hearing: {fmtDate(ap.nextHearingDate)}</span>}
+          </div>
+          {ap.remarks && (
+            <p className="text-xs text-(--muted) italic border-t pt-2" style={{ borderColor: "var(--border)" }}>
+              Remarks: {ap.remarks}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border p-4 space-y-3"
+      style={{ background: "var(--surface)", borderColor: "var(--accent)" }}>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-(--text)">Edit Appearance</p>
+        <button type="button" onClick={() => setEditing(false)}
+          className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+      </div>
+      {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Date of Appearance</label>
+          <input type="date" value={draft.date} onChange={e => setDraft(s => ({ ...s, date: e.target.value }))}
+            className={inputCls} style={inputStyle} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Current Status</label>
+          <input value={draft.currentStatus} onChange={e => setDraft(s => ({ ...s, currentStatus: e.target.value }))}
+            placeholder="e.g. Adjourned, Argued, Reserved"
+            className={inputCls} style={inputStyle} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Daily Order Brief *</label>
+          <textarea value={draft.dailyOrderBrief} onChange={e => setDraft(s => ({ ...s, dailyOrderBrief: e.target.value }))} rows={3}
+            className={`${inputCls} resize-y`} style={inputStyle} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Last Date of Hearing</label>
+          <input type="date" value={draft.lastHearingDate} onChange={e => setDraft(s => ({ ...s, lastHearingDate: e.target.value }))}
+            className={inputCls} style={inputStyle} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Next Date of Hearing</label>
+          <input type="date" value={draft.nextHearingDate} onChange={e => setDraft(s => ({ ...s, nextHearingDate: e.target.value }))}
+            className={inputCls} style={inputStyle} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Remarks</label>
+          <input value={draft.remarks} onChange={e => setDraft(s => ({ ...s, remarks: e.target.value }))}
+            placeholder="Optional comment" className={inputCls} style={inputStyle} />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={save} disabled={saving}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" onClick={() => setEditing(false)}
+          className="px-4 py-2 rounded-xl text-sm"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Court Appearances ──────────────────────────────────────────────────── */
 function CourtAppearancesSection({
   caseId, appearances, canEdit, onChanged,
@@ -701,8 +852,8 @@ function CourtAppearancesSection({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-bold text-(--text)">Court Appearances</h2>
-        <p className="text-xs text-(--muted)">{sorted.length} logged</p>
+        <h2 className="text-lg font-bold text-(--text)">Case History</h2>
+        <p className="text-xs text-(--muted)">{sorted.length} appearance{sorted.length === 1 ? "" : "s"} logged</p>
       </div>
 
       {sorted.length === 0 && !canEdit && (
@@ -710,31 +861,7 @@ function CourtAppearancesSection({
       )}
 
       {sorted.map(ap => (
-        <div key={ap._id} className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <div className="px-4 py-2 border-b flex items-center justify-between"
-            style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
-            <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-              Appearance · {fmtDate(ap.date)}
-            </span>
-            {ap.currentStatus && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full"
-                style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{ap.currentStatus}</span>
-            )}
-          </div>
-          <div className="px-4 py-3 space-y-2">
-            <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{ap.dailyOrderBrief}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-(--muted)">
-              {ap.lastHearingDate && <span>Last hearing: {fmtDate(ap.lastHearingDate)}</span>}
-              {ap.nextHearingDate && <span>Next hearing: {fmtDate(ap.nextHearingDate)}</span>}
-            </div>
-            {ap.remarks && (
-              <p className="text-xs text-(--muted) italic border-t pt-2" style={{ borderColor: "var(--border)" }}>
-                Remarks: {ap.remarks}
-              </p>
-            )}
-          </div>
-        </div>
+        <AppearanceEntry key={ap._id} caseId={caseId} ap={ap} canEdit={canEdit} onChanged={onChanged} />
       ))}
 
       {canEdit && (
@@ -870,17 +997,24 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
 }
 
 /* ── Court / parties / subject card ─────────────────────────────────────── */
-function CourtPartiesSubjectCard({ caseData }: { caseData: PopulatedCase }) {
+function CourtPartiesSubjectCard({
+  caseId, caseData, canEdit, onChanged,
+}: {
+  caseId: string;
+  caseData: PopulatedCase;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
   const has = (v?: string | string[]) => v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== "");
   const p = caseData.parties;
   const s = caseData.subject;
   const r = caseData.reportingStatus;
   const showCourt    = has(caseData.courtName) || caseData.courtType || has(caseData.state);
   const showParties  = has(p?.petitioners) || has(p?.respondents);
-  const showSubject  = has(s?.courtThey) || has(s?.ourPoints) || has(s?.reason);
+  const showSubject  = has(s?.courtThey) || has(s?.ourPoints);
   const showFiling   = caseData.filingStatus || r?.status;
   const showECourt   = has(caseData.eCourtLink);
-  if (!showCourt && !showParties && !showSubject && !showFiling && !showECourt) return null;
+  if (!showCourt && !showParties && !showSubject && !showFiling && !showECourt && !canEdit) return null;
 
   const courtTypeLabel = caseData.courtType === "supreme"   ? "Supreme Court"
                        : caseData.courtType === "highcourt" ? "High Court"
@@ -898,7 +1032,7 @@ function CourtPartiesSubjectCard({ caseData }: { caseData: PopulatedCase }) {
       <div className="px-4 py-2 border-b flex items-center gap-2"
         style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
-        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>Court &amp; Parties</span>
+        <span className="text-xs font-semibold flex-1" style={{ color: "var(--accent)" }}>Court &amp; Parties</span>
       </div>
       <div className="px-5 py-4 space-y-4">
         {/* Court row */}
@@ -914,41 +1048,21 @@ function CourtPartiesSubjectCard({ caseData }: { caseData: PopulatedCase }) {
           </div>
         )}
 
-        {/* Parties */}
-        {showParties && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-3 border-t"
-            style={{ borderColor: "var(--border)" }}>
-            {has(p?.petitioners) && (
-              <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Petitioner(s)</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {p!.petitioners!.map((name, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>{name}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {has(p?.respondents) && (
-              <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Respondent(s)</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {p!.respondents!.map((name, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>{name}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Parties — read-only list + optional inline editor */}
+        <PartiesEditor
+          caseId={caseId}
+          petitioners={p?.petitioners ?? []}
+          respondents={p?.respondents ?? []}
+          canEdit={canEdit}
+          onChanged={onChanged}
+        />
 
         {/* Subject */}
         {showSubject && (
           <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
             <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Subject</p>
             {has(s?.courtThey) && (
-              <Line label="Court — their stand" wide>
+              <Line label="Subject of the court" wide>
                 <span className="block whitespace-pre-line">{s!.courtThey}</span>
               </Line>
             )}
@@ -957,39 +1071,256 @@ function CourtPartiesSubjectCard({ caseData }: { caseData: PopulatedCase }) {
                 <span className="block whitespace-pre-line">{s!.ourPoints}</span>
               </Line>
             )}
-            {has(s?.reason) && (
-              <Line label="Why we have a case" wide>
-                <span className="block whitespace-pre-line">{s!.reason}</span>
-              </Line>
-            )}
           </div>
         )}
 
         {/* Filing + e-Court row */}
-        {(showFiling || showECourt) && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 pt-3 border-t text-sm"
-            style={{ borderColor: "var(--border)" }}>
-            {filingLabel && <Line label="Filing Status">{filingLabel}</Line>}
-            {r?.status && (
-              <Line label="Reporting">
-                {r.status === "conflict" ? "Defect" : r.status === "success" ? "Cleared" : "Pending"}
-                {r.defectDeadline && (
-                  <span className="block text-[11px] text-(--muted) mt-0.5">
-                    Cure by {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
-                  </span>
-                )}
-              </Line>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 pt-3 border-t text-sm"
+          style={{ borderColor: "var(--border)" }}>
+          {showFiling && filingLabel && <Line label="Filing Status">{filingLabel}</Line>}
+          {r?.status && (
+            <Line label="Reporting">
+              {r.status === "conflict" ? "Defect" : r.status === "success" ? "Cleared" : "Pending"}
+              {r.defectDeadline && (
+                <span className="block text-[11px] text-(--muted) mt-0.5">
+                  Cure by {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
+                </span>
+              )}
+            </Line>
+          )}
+          {/* e-Court link — read + inline edit */}
+          <ECourtLinkEditor
+            caseId={caseId}
+            value={caseData.eCourtLink}
+            canEdit={canEdit}
+            onChanged={onChanged}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartiesEditor({
+  caseId, petitioners, respondents, canEdit, onChanged,
+}: {
+  caseId: string;
+  petitioners: string[];
+  respondents: string[];
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [pets, setPets] = useState<string[]>(petitioners);
+  const [resps, setResps] = useState<string[]>(respondents);
+  const [petDraft, setPetDraft] = useState("");
+  const [respDraft, setRespDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  // Re-seed when parent re-fetches
+  useEffect(() => {
+    if (!editing) { setPets(petitioners); setResps(respondents); }
+  }, [petitioners, respondents, editing]);
+
+  const hasParties = petitioners.length > 0 || respondents.length > 0;
+
+  function commit(side: "pet" | "resp") {
+    const draft = side === "pet" ? petDraft : respDraft;
+    const v = draft.trim();
+    if (!v) return;
+    if (side === "pet") { if (!pets.includes(v)) setPets([...pets, v]); setPetDraft(""); }
+    else { if (!resps.includes(v)) setResps([...resps, v]); setRespDraft(""); }
+  }
+
+  async function save() {
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parties: { petitioners: pets, respondents: resps } }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  const chipStyle = { background: "var(--bg-secondary)", color: "var(--text)" };
+
+  if (!editing) {
+    return (
+      <div className="pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Parties</p>
+          {canEdit && (
+            <button type="button" onClick={() => setEditing(true)}
+              className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+              {hasParties ? "Edit" : "+ Add parties"}
+            </button>
+          )}
+        </div>
+        {hasParties ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            {petitioners.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Petitioner(s)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {petitioners.map((name, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}>{name}</span>
+                  ))}
+                </div>
+              </div>
             )}
-            {showECourt && (
-              <Line label="e-Courts link">
-                <a href={caseData.eCourtLink!} target="_blank" rel="noopener noreferrer"
-                  className="hover:underline truncate inline-block max-w-full" style={{ color: "var(--accent)" }}>
-                  Open ↗
-                </a>
-              </Line>
+            {respondents.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Respondent(s) / Defendant(s)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {respondents.map((name, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}>{name}</span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
+        ) : (
+          <p className="text-xs text-(--muted) italic">No parties recorded yet.</p>
         )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-3 border-t space-y-3" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-(--text)">Edit Parties</p>
+        <button type="button" onClick={() => { setEditing(false); setPets(petitioners); setResps(respondents); }}
+          className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+      </div>
+      {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ChipField label="Petitioner(s)" chips={pets} draft={petDraft}
+          onDraftChange={setPetDraft} onCommit={() => commit("pet")}
+          onRemove={i => setPets(pets.filter((_, idx) => idx !== i))} />
+        <ChipField label="Respondent(s) / Defendant(s)" chips={resps} draft={respDraft}
+          onDraftChange={setRespDraft} onCommit={() => commit("resp")}
+          onRemove={i => setResps(resps.filter((_, idx) => idx !== i))} />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={save} disabled={saving}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" onClick={() => { setEditing(false); setPets(petitioners); setResps(respondents); }}
+          className="px-4 py-2 rounded-xl text-sm font-semibold"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ChipField({ label, chips, draft, onDraftChange, onCommit, onRemove }: {
+  label: string; chips: string[]; draft: string;
+  onDraftChange: (s: string) => void; onCommit: () => void; onRemove: (i: number) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-(--muted) mb-1">{label}</label>
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-1.5">
+          {chips.map((v, i) => (
+            <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+              style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
+              {v}
+              <button type="button" onClick={() => onRemove(i)} className="hover:underline leading-none">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input value={draft} onChange={e => onDraftChange(e.target.value)}
+        placeholder="Type a name and press Enter"
+        className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
+        style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); onCommit(); } }}
+        onBlur={() => { if (draft.trim()) onCommit(); }} />
+    </div>
+  );
+}
+
+function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
+  caseId: string; value?: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { if (!editing) setDraft(value ?? ""); }, [value, editing]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eCourtLink: draft.trim() || null }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+    } finally { setSaving(false); }
+  }
+
+  if (!editing) {
+    return (
+      <Line label="e-Courts link">
+        {value ? (
+          <span className="flex items-center gap-2">
+            <a href={value} target="_blank" rel="noopener noreferrer"
+              className="hover:underline truncate inline-block max-w-[160px]" style={{ color: "var(--accent)" }}>
+              Open ↗
+            </a>
+            {canEdit && (
+              <button type="button" onClick={() => setEditing(true)}
+                className="text-[10px] hover:underline shrink-0" style={{ color: "var(--muted)" }}>
+                Edit
+              </button>
+            )}
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <span className="text-xs text-(--muted) italic">Not set</span>
+            {canEdit && (
+              <button type="button" onClick={() => setEditing(true)}
+                className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
+                + Add
+              </button>
+            )}
+          </span>
+        )}
+      </Line>
+    );
+  }
+
+  return (
+    <div className="sm:col-span-3">
+      <label className="block text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">e-Courts link</label>
+      <div className="flex gap-2">
+        <input value={draft} onChange={e => setDraft(e.target.value)} type="url"
+          placeholder="https://services.ecourts.gov.in/…"
+          className="flex-1 px-3 py-1.5 rounded-lg border text-sm focus:outline-none"
+          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+        <button type="button" onClick={save} disabled={saving}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+          {saving ? "…" : "Save"}
+        </button>
+        <button type="button" onClick={() => setEditing(false)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -1022,7 +1353,7 @@ function LitigationTeamPanel({
     const t = setTimeout(async () => {
       setSearching(true);
       try {
-        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=litigation`);
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=litigation,director`);
         const d = await r.json();
         const teamIds = new Set(team.map(m => m._id));
         setResults((d.users ?? []).filter((u: LawyerRef) => !teamIds.has(u._id)));
@@ -1172,9 +1503,10 @@ interface Props {
   canManageCarePlan?: boolean; // true for social workers
   backHref: string;          // breadcrumb back link
   backLabel?: string;
+  dashboardHref?: string;    // optional dashboard link shown before the back link
 }
 
-export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = false, backHref, backLabel = "Cases" }: Props) {
+export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = false, backHref, backLabel = "Cases", dashboardHref }: Props) {
   const [caseData, setCaseData]   = useState<PopulatedCase | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -1237,6 +1569,12 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-(--muted)">
+        {dashboardHref && (
+          <>
+            <Link href={dashboardHref} className="hover:text-(--text) transition-colors">Dashboard</Link>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5"><path d="M6 4l4 4-4 4"/></svg>
+          </>
+        )}
         <Link href={backHref} className="hover:text-(--text) transition-colors">{backLabel}</Link>
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5"><path d="M6 4l4 4-4 4"/></svg>
         <span className="font-mono font-semibold text-(--text)">{c.caseNumber}</span>
@@ -1336,7 +1674,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
       {/* Court / parties / subject captured at creation by the lawyer. Only
           rendered when at least one of these new fields is set so older
           cases (pre court-type-aware flow) don't show empty headers. */}
-      <CourtPartiesSubjectCard caseData={c} />
+      <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
 
       {/* Multi-lawyer share panel — lead + shared members + add/remove. */}
       <LitigationTeamPanel

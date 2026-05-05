@@ -88,7 +88,13 @@ export default async function LitigationCasesPage() {
                             {c.caseNumber}
                           </span>
                         )}
-                        <span className="text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "High Court"}</span>
+                        <span className="text-xs text-(--muted)">
+                          {c.courtType === "district"  ? (c.courtName ?? "Civil / District Court")
+                          : c.courtType === "supreme"  ? "Supreme Court"
+                          : c.courtType === "other"    ? (c.courtName ?? "Tribunal / Forum")
+                          : c.path === "criminal"      ? "Criminal"
+                          : c.courtName               ?? "High Court"}
+                        </span>
                       </div>
                       <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5">

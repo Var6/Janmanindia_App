@@ -76,7 +76,6 @@ export default function CreateLitigationCaseForm() {
   /* ── Subject ─────────────────────────────────────────────────────── */
   const [subjectCourtThey, setSubjectCourtThey] = useState("");
   const [subjectOurPoints, setSubjectOurPoints] = useState("");
-  const [subjectReason,    setSubjectReason]    = useState("");
   const [eCourtLink,       setECourtLink]       = useState("");
 
   /* ── Case-type (workflow path) ───────────────────────────────────── */
@@ -132,7 +131,7 @@ export default function CreateLitigationCaseForm() {
     lawyerDebounce.current = setTimeout(async () => {
       setLawyerSearching(true);
       try {
-        const r = await fetch(`/api/users/search?q=${encodeURIComponent(lawyerQuery)}&role=litigation`);
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(lawyerQuery)}&role=litigation,director`);
         const d = await r.json();
         setLawyerResults((d.users ?? []).filter((u: Lawyer) => !shareWith.some(s => s._id === u._id)));
       } catch { setLawyerResults([]); }
@@ -156,7 +155,7 @@ export default function CreateLitigationCaseForm() {
     setCourtType("highcourt");
     setHighCourt(""); setState(""); setDistrictCourt(""); setDistrictOther(""); setOtherCourtName("");
     setPetitioners([]); setRespondents([]); setPetitionerDraft(""); setRespondentDraft(""); setTitleOverride("");
-    setSubjectCourtThey(""); setSubjectOurPoints(""); setSubjectReason(""); setECourtLink("");
+    setSubjectCourtThey(""); setSubjectOurPoints(""); setECourtLink("");
     setCaseType("");
     setHasNumber(true);
     setCourtCaseNumber(""); setFirNumber(""); setPoliceStation(""); setRelevantSections("");
@@ -232,7 +231,6 @@ export default function CreateLitigationCaseForm() {
         subject: {
           courtThey: subjectCourtThey.trim() || undefined,
           ourPoints: subjectOurPoints.trim() || undefined,
-          reason:    subjectReason.trim()    || undefined,
         },
         ...(eCourtLink.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
         // Sharing
@@ -410,19 +408,15 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── 3. Subject ──────────────────────────────────────────── */}
-      <Section title="3. Subject of the case" subtitle="Three angles the team agrees on early — keeps strategy crisp.">
+      <Section title="3. Subject of the case" subtitle="Key angles the team agrees on early — keeps strategy crisp.">
         <div className="grid grid-cols-1 gap-3">
-          <Field label="Court — their stand" hint="The line the other side is taking (and what the court has said so far).">
+          <Field label="Subject of the court" hint="What the court is hearing — the opposing stand and any orders so far.">
             <Textarea rows={2} value={subjectCourtThey} onChange={e => setSubjectCourtThey(e.target.value)}
               placeholder="State argues petitioner has no locus; matter already heard by HC…" />
           </Field>
           <Field label="Our points" hint="Our reading + the arguments we'll make.">
             <Textarea rows={2} value={subjectOurPoints} onChange={e => setSubjectOurPoints(e.target.value)}
               placeholder="Locus is established by Art. 32; HC ruling didn't address compensation question…" />
-          </Field>
-          <Field label="Why we have a case" hint="The strategic 'cheatcode' — the one or two facts that make it winnable.">
-            <Textarea rows={2} value={subjectReason} onChange={e => setSubjectReason(e.target.value)}
-              placeholder="Police investigation file shows clear procedural lapses — see para 7 of FIR" />
           </Field>
           <Field label="e-Courts / SC services link (optional)">
             <Input value={eCourtLink} onChange={e => setECourtLink(e.target.value)}

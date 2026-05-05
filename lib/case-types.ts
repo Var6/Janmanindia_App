@@ -93,12 +93,13 @@ export const CASE_TYPES: CaseTypeGroup[] = [
   {
     group: "Family Court",
     groupHi: "पारिवारिक न्यायालय",
-    description: "Divorce, custody, guardianship, restitution",
+    description: "Divorce, custody, guardianship, maintenance, restitution",
     types: [
       { code: "HMA",      name: "Divorce — Hindu Marriage Act",        hi: "तलाक — हिंदू विवाह अधिनियम", path: "highcourt" },
       { code: "MA",       name: "Marriage Act Petition",               hi: "विवाह अधिनियम याचिका",     path: "highcourt" },
       { code: "RFCR",     name: "Restitution of Conjugal Rights",      hi: "दाम्पत्य अधिकार पुनर्स्थापन", path: "highcourt" },
       { code: "GUARD",    name: "Guardianship / Custody",              hi: "संरक्षण / कस्टडी",          path: "highcourt" },
+      { code: "FC.MAINT", name: "Maintenance (Family Court)",          hi: "गुजारा भत्ता — पारिवारिक न्यायालय", path: "criminal" },
       { code: "CMA",      name: "Christian Marriage Act",              hi: "ईसाई विवाह अधिनियम",       path: "highcourt" },
       { code: "MWPA",     name: "Muslim Women (PRD) Act",              hi: "मुस्लिम महिला अधिकार अधि.",  path: "highcourt" },
       { code: "SMA",      name: "Special Marriage Act",                hi: "विशेष विवाह अधिनियम",       path: "highcourt" },

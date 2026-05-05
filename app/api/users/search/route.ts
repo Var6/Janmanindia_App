@@ -8,8 +8,10 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const q    = searchParams.get("q")?.trim() ?? "";
-  const role = searchParams.get("role") ?? "community";
+  const q         = searchParams.get("q")?.trim() ?? "";
+  const roleParam = searchParams.get("role") ?? "community";
+  const roles     = roleParam.split(",").map((r) => r.trim()).filter(Boolean);
+  const role      = roles.length === 1 ? roles[0] : roleParam;
 
   // Privacy: community members can normally only look up staff (not other
   // community members or privileged roles). Exception — looking up another
@@ -18,7 +20,7 @@ export async function GET(request: NextRequest) {
   // can't be browsed by name (you have to already know how to contact them).
   const COMMUNITY_VISIBLE_ROLES = ["socialworker", "litigation", "hr", "finance"];
   const isCommunityToCommunity = session.role === "community" && role === "community";
-  if (session.role === "community" && !isCommunityToCommunity && !COMMUNITY_VISIBLE_ROLES.includes(role)) {
+  if (session.role === "community" && !isCommunityToCommunity && !roles.every(r => COMMUNITY_VISIBLE_ROLES.includes(r))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -27,8 +29,9 @@ export async function GET(request: NextRequest) {
   await connectDB();
 
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const roleFilter = roles.length > 1 ? { $in: roles } : role;
   const filter: Record<string, unknown> = {
-    role,
+    role: roleFilter,
     isActive: true,
     $or: isCommunityToCommunity
       ? [{ phone: q.trim() }, { email: q.trim().toLowerCase() }]

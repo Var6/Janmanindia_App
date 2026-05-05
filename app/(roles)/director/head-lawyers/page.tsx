@@ -28,7 +28,7 @@ export default function HeadLawyersPage() {
   async function load() {
     const [hRes, lRes] = await Promise.all([
       fetch("/api/head-lawyers"),
-      fetch("/api/users?role=litigation"),
+      fetch("/api/users?role=litigation,director"),
     ]);
     const h = await hRes.json();
     const l = await lRes.json();

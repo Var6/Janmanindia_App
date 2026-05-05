@@ -18,6 +18,7 @@ export default async function LitigationCaseDetailPage({
       canEdit={true}
       backHref="/litigation/cases"
       backLabel="My Cases"
+      dashboardHref="/litigation"
     />
   );
 }

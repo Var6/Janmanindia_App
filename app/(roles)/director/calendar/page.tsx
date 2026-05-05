@@ -6,6 +6,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Activity from "@/models/Activity";
 import Appointment from "@/models/Appointment";
 import TrainingSession from "@/models/TrainingSession";
+import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 
@@ -57,6 +58,16 @@ interface PopulatedAppointment {
   community: StaffLite | null;
 }
 
+interface CaseLite {
+  _id: mongoose.Types.ObjectId;
+  caseTitle: string;
+  caseNumber?: string;
+  nextHearingDate: Date;
+  courtName?: string;
+  status: string;
+  litigationMember?: { _id: mongoose.Types.ObjectId; name: string } | null;
+}
+
 interface PopulatedTrainingSession {
   _id: mongoose.Types.ObjectId;
   title: string;
@@ -106,7 +117,7 @@ export default async function DirectorCalendarPage() {
   const start = new Date(now); start.setDate(start.getDate() - 7); start.setHours(0, 0, 0, 0);
   const end   = new Date(now); end.setDate(end.getDate() + 30);   end.setHours(23, 59, 59, 999);
 
-  const [activitiesRaw, appointmentsRaw, trainingsRaw, staff] = dbOk ? await Promise.all([
+  const [activitiesRaw, appointmentsRaw, trainingsRaw, casesRaw, staff] = dbOk ? await Promise.all([
     Activity.find({ dueDate: { $gte: start, $lte: end } })
       .sort({ dueDate: 1 })
       .populate("assignee",    "name role")
@@ -132,11 +143,19 @@ export default async function DirectorCalendarPage() {
       .sort({ date: 1 })
       .populate("conductedBy", "name role")
       .lean<PopulatedTrainingSession[]>(),
+    Case.find({
+      nextHearingDate: { $gte: start, $lte: end },
+      status: { $nin: ["Closed", "Dismissed", "Disposal", "Withdrawn"] },
+    })
+      .sort({ nextHearingDate: 1 })
+      .select("caseTitle caseNumber nextHearingDate courtName status litigationMember")
+      .populate("litigationMember", "name")
+      .lean<CaseLite[]>(),
     User.find({ isActive: true, role: { $nin: ["community", "pending"] } })
       .select("name role")
       .sort({ name: 1 })
       .lean<StaffLite[]>(),
-  ]) : [[], [], [], []];
+  ]) : [[], [], [], [], []];
 
   // Per-staff load summary.
   const loadByUser = new Map<string, { planned: number; in_progress: number; done: number; overdue: number; upcoming: number }>();
@@ -156,11 +175,12 @@ export default async function DirectorCalendarPage() {
     }
   }
 
-  // Group activities, appointments, and training sessions by day key.
+  // Group activities, appointments, training sessions, and case hearings by day key.
   type DayItem =
     | { kind: "activity";    at: Date; activity: PopulatedActivity }
     | { kind: "appointment"; at: Date; appt: PopulatedAppointment }
-    | { kind: "training";    at: Date; training: PopulatedTrainingSession };
+    | { kind: "training";    at: Date; training: PopulatedTrainingSession }
+    | { kind: "hearing";     at: Date; caseItem: CaseLite };
   const byDay = new Map<string, DayItem[]>();
 
   for (const a of activitiesRaw) {
@@ -182,6 +202,12 @@ export default async function DirectorCalendarPage() {
     if (!byDay.has(k)) byDay.set(k, []);
     byDay.get(k)!.push({ kind: "training", at, training: t });
   }
+  for (const c of casesRaw) {
+    const at = new Date(c.nextHearingDate);
+    const k = dayKey(at);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k)!.push({ kind: "hearing", at, caseItem: c });
+  }
   for (const items of byDay.values()) items.sort((a, b) => a.at.getTime() - b.at.getTime());
 
   // Build the day list — every day in the window, even if empty, so blank days
@@ -196,6 +222,7 @@ export default async function DirectorCalendarPage() {
   const totalActivities = activitiesRaw.length;
   const totalAppts = appointmentsRaw.length;
   const totalTrainings = trainingsRaw.length;
+  const totalHearings = casesRaw.length;
 
   // Sort staff by busiest first (sum of planned + in_progress).
   const staffSorted = [...staff].sort((a, b) => {
@@ -212,7 +239,7 @@ export default async function DirectorCalendarPage() {
         <div>
           <h1 className="text-2xl font-bold text-(--text)">Team Calendar</h1>
           <p className="text-sm text-(--muted) mt-1">
-            All staff activities, appointments and offline trainings from {formatDate(start)} to {formatDate(end)} — {totalActivities} task{totalActivities === 1 ? "" : "s"} · {totalAppts} appointment{totalAppts === 1 ? "" : "s"} · {totalTrainings} training{totalTrainings === 1 ? "" : "s"}.
+            All staff activities, appointments, trainings and case hearings from {formatDate(start)} to {formatDate(end)} — {totalActivities} task{totalActivities === 1 ? "" : "s"} · {totalAppts} appointment{totalAppts === 1 ? "" : "s"} · {totalTrainings} training{totalTrainings === 1 ? "" : "s"} · {totalHearings} hearing{totalHearings === 1 ? "" : "s"}.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -310,6 +337,30 @@ export default async function DirectorCalendarPage() {
                                   {t.conductedBy?.name ? ` · led by ${t.conductedBy.name}` : ""}
                                 </p>
                               </div>
+                            );
+                          }
+                          if (it.kind === "hearing") {
+                            const c = it.caseItem;
+                            return (
+                              <Link key={`hr-${i}-${String(c._id)}`} href={`/director/cases/${String(c._id)}`}
+                                className="rounded-lg border px-3 py-2 text-xs block transition-colors hover:border-(--accent)"
+                                style={{ borderColor: "color-mix(in srgb, var(--error) 35%, var(--border))", background: "var(--bg)" }}>
+                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
+                                    style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                                    Court Hearing
+                                  </span>
+                                  <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
+                                  <span className="text-[10px] font-semibold uppercase"
+                                    style={{ color: "var(--muted)" }}>{c.status}</span>
+                                </div>
+                                <p className="font-medium text-(--text) truncate">{c.caseTitle}</p>
+                                <p className="text-(--muted) mt-0.5 truncate">
+                                  {c.caseNumber ? `${c.caseNumber} · ` : ""}
+                                  {c.courtName ?? "Court not specified"}
+                                  {c.litigationMember?.name ? ` · ${c.litigationMember.name}` : ""}
+                                </p>
+                              </Link>
                             );
                           }
                           const a = it.activity;

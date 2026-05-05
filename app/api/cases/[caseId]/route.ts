@@ -242,6 +242,46 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     }
 
+    /* Edit an existing court appearance entry in-place. Only the fields
+       explicitly provided are updated; others are preserved. */
+    if (body.editCourtAppearance) {
+      const ea = body.editCourtAppearance as {
+        appearanceId?: string;
+        date?: string;
+        currentStatus?: string;
+        dailyOrderBrief?: string;
+        lastHearingDate?: string;
+        nextHearingDate?: string;
+        remarks?: string;
+      };
+      if (!ea.appearanceId) {
+        return NextResponse.json({ error: "editCourtAppearance.appearanceId is required" }, { status: 400 });
+      }
+      if (!ea.dailyOrderBrief?.trim()) {
+        return NextResponse.json({ error: "dailyOrderBrief is required" }, { status: 400 });
+      }
+      const apIdx = (caseDoc.courtAppearances ?? []).findIndex((a) => String((a as unknown as { _id: unknown })._id) === ea.appearanceId);
+      if (apIdx === -1) {
+        return NextResponse.json({ error: "Court appearance not found" }, { status: 404 });
+      }
+      const prefix = `courtAppearances.${apIdx}`;
+      if (ea.date) update[`${prefix}.date`] = new Date(ea.date);
+      update[`${prefix}.currentStatus`]   = ea.currentStatus?.trim() || undefined;
+      update[`${prefix}.dailyOrderBrief`] = ea.dailyOrderBrief.trim();
+      update[`${prefix}.lastHearingDate`] = ea.lastHearingDate ? new Date(ea.lastHearingDate) : undefined;
+      update[`${prefix}.nextHearingDate`] = ea.nextHearingDate ? new Date(ea.nextHearingDate) : undefined;
+      update[`${prefix}.remarks`]         = ea.remarks?.trim() || undefined;
+      logAudit("appearance_edited", `Edited court appearance from ${ea.date ?? "unknown date"}`);
+      // Sync the case-level nextHearingDate if this entry carries a future hearing.
+      if (ea.nextHearingDate) {
+        const nhd = new Date(ea.nextHearingDate);
+        if (!isNaN(nhd.getTime())) {
+          update.nextHearingDate = nhd;
+          body.nextHearingDate = nhd.toISOString();
+        }
+      }
+    }
+
     /* Stage transition — advance / revert one workflow step without uploading
      * a doc. Used by the Case Stage Stepper UI on the case detail page so a
      * lawyer can mark a stage done (or undo a click) with one button.

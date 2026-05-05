@@ -24,6 +24,7 @@ export default async function AdminCaseDetailPage({
       canManageCarePlan={true}
       backHref="/director/cases"
       backLabel="All Cases"
+      dashboardHref="/director"
     />
   );
 }

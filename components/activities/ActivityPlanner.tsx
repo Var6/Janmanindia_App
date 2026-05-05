@@ -66,7 +66,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
   cancelled:   { bg: "var(--bg-secondary, #f3f4f6)", color: "var(--muted)",                 label: "Cancelled"   },
 };
 
-const ASSIGNABLE_ROLES = ["director", "superadmin", "administrator", "hr"];
+const ASSIGNABLE_ROLES = ["director", "superadmin", "administrator", "hr", "litigation"];
 
 export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [items, setItems] = useState<Activity[]>([]);

@@ -19,6 +19,7 @@ export default async function SWCaseDetailPage({
       canManageCarePlan={true}
       backHref="/socialworker/cases"
       backLabel="Cases"
+      dashboardHref="/socialworker"
     />
   );
 }
