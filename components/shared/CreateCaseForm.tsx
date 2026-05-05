@@ -23,6 +23,15 @@ export default function CreateCaseForm() {
   const [isExisting, setIsExisting]   = useState(false);
   const [currentStep, setCurrentStep] = useState("");
   const [existingNotes, setExistingNotes] = useState("");
+  // Court-side metadata for cases the lawyer is registering after the fact —
+  // matters with an FIR / court case number already on record. Mapped to the
+  // top-level Case fields (`courtCaseNumber`, `courtName`, `relevantSections`)
+  // and to `enquiry.firNumber` / `enquiry.policeStation` on submission.
+  const [courtCaseNumber, setCourtCaseNumber] = useState("");
+  const [courtName, setCourtName]             = useState("");
+  const [firNumber, setFirNumber]             = useState("");
+  const [policeStation, setPoliceStation]     = useState("");
+  const [relevantSections, setRelevantSections] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
   const debounceRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,6 +67,11 @@ export default function CreateCaseForm() {
     setIsExisting(false);
     setCurrentStep("");
     setExistingNotes("");
+    setCourtCaseNumber("");
+    setCourtName("");
+    setFirNumber("");
+    setPoliceStation("");
+    setRelevantSections("");
     setError("");
   }
 
@@ -71,6 +85,13 @@ export default function CreateCaseForm() {
     setSubmitting(true);
     setError("");
     try {
+      // Build enquiry sub-doc only when at least one intake field is set —
+      // the API drops empty enquiry blocks but sending `{}` would still trip
+      // the validator path. Keeps the wire body tidy for fresh-case creation.
+      const enquiry: Record<string, string> = {};
+      if (firNumber.trim())     enquiry.firNumber     = firNumber.trim();
+      if (policeStation.trim()) enquiry.policeStation = policeStation.trim();
+
       const res = await fetch("/api/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,6 +104,10 @@ export default function CreateCaseForm() {
           isExistingCase: isExisting,
           currentStep:   currentStep.trim() || undefined,
           existingNotes: existingNotes.trim() || undefined,
+          courtCaseNumber:  courtCaseNumber.trim() || undefined,
+          courtName:        courtName.trim()       || undefined,
+          relevantSections: relevantSections.trim() || undefined,
+          ...(Object.keys(enquiry).length ? { enquiry } : {}),
         }),
       });
       const data = await res.json();
@@ -265,6 +290,56 @@ export default function CreateCaseForm() {
                   placeholder="Briefly note what's already happened — incident date, FIR number, lawyer involved, hearing dates so far…"
                   className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
                   style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+              </div>
+
+              {/* Court-side metadata for the matter we're tracking. The
+                  internal Janman case number is auto-generated server-side
+                  (JMI-YYYY-NNNNN); these fields capture the *external*
+                  numbers that already exist on the FIR / court record. */}
+              <div className="pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+                <p className="text-xs font-semibold text-(--muted) uppercase tracking-wide mt-3 mb-2">
+                  Existing case numbers
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-(--text) mb-1.5">FIR No. / Complaint Case No.</label>
+                    <input value={firNumber} onChange={(e) => setFirNumber(e.target.value)} maxLength={120}
+                      placeholder="123/2026"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-(--text) mb-1.5">Court Case / Registration No.</label>
+                    <input value={courtCaseNumber} onChange={(e) => setCourtCaseNumber(e.target.value)} maxLength={120}
+                      placeholder="GR 456/2026 · ST 78/2026"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-(--text) mb-1.5">Court Name</label>
+                    <input value={courtName} onChange={(e) => setCourtName(e.target.value)} maxLength={200}
+                      placeholder="CJM Court, Patna"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-(--text) mb-1.5">Police Station</label>
+                    <input value={policeStation} onChange={(e) => setPoliceStation(e.target.value)} maxLength={200}
+                      placeholder="Khajanchi Hat PS"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-(--text) mb-1.5">Relevant Sections</label>
+                    <input value={relevantSections} onChange={(e) => setRelevantSections(e.target.value)} maxLength={300}
+                      placeholder="BNS 64, 351 r/w POCSO §6"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+                  </div>
+                </div>
+                <p className="text-[11px] text-(--muted) mt-2">
+                  All optional — fill what you have on hand. The internal Janman case number is generated automatically.
+                </p>
               </div>
             </>
           )}
