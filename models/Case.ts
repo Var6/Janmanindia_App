@@ -1,7 +1,14 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export type CaseStatus = "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed";
+export type CaseStatus =
+  // Legacy enum members — kept so old rows still validate.
+  | "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed"
+  // New litigation-team vocabulary preferred by the create / detail UIs.
+  | "Disposal" | "Withdrawn";
 export type CasePath = "criminal" | "highcourt";
+export type CourtType = "supreme" | "highcourt" | "district" | "other";
+export type FilingStatus = "drafting" | "filing" | "filed";
+export type ReportingStatusKind = "pending" | "success" | "conflict";
 export type OcrStatus = "pending" | "processing" | "processed" | "failed";
 
 export interface IDocument {
@@ -76,6 +83,37 @@ export interface IAuditEntry {
   at: Date;
 }
 
+/** Subject of the case — the three angles the litigation team writes down
+ *  early to keep the case strategy crisp. Captured at creation time and
+ *  editable later from the case detail page. */
+export interface ICaseSubject {
+  /** Court they — the line the other side is taking. */
+  courtThey?: string;
+  /** Our points — our reading / arguments. */
+  ourPoints?: string;
+  /** Why we believe we have a case. */
+  reason?: string;
+}
+
+/** Parties on either side. Stored as arrays so a multi-petitioner / multi-
+ *  respondent matter ("Rishabh, Shashwat & Yatharth vs Parle, Britannia &
+ *  ITC") is captured exactly. The display title (`caseTitle` / `partyTitle`)
+ *  is derived from these on the client side at creation. */
+export interface ICaseParties {
+  petitioners: string[];
+  respondents: string[];
+}
+
+/** Registry-side reporting — when the petition is filed but a number is
+ *  still pending. Lets the dashboard warn before defect-cure deadlines. */
+export interface IReportingStatus {
+  status: ReportingStatusKind;
+  /** Defect note from the registry — only set when status === "conflict". */
+  defectNote?: string;
+  /** Last date by which the defect must be cured. */
+  defectDeadline?: Date;
+}
+
 /** A single court appearance entry. Mirrors the Janman District Legal
  *  Fellowship Court Appearance Google Form so litigation members can record
  *  per-hearing notes without leaving the app. */
@@ -120,8 +158,34 @@ export interface ICase extends Document {
   /** Whether compensation has been awarded / disbursed in this matter. Free
    *  text so the lawyer can capture amount, status, and date in one line. */
   compensationStatus?: string;
+
+  /** Court taxonomy — supreme / highcourt / district / other. Drives which
+   *  picker the create form uses and which numbering hint we show. */
+  courtType?: CourtType;
+  /** Indian state the court is located in. Required for "district" type
+   *  (drives the district-court dropdown), optional otherwise. */
+  state?: string;
+  /** Parties of record. Display title is derived from these. */
+  parties?: ICaseParties;
+  /** Subject of the case — strategic notes the team agrees on early. */
+  subject?: ICaseSubject;
+  /** External e-Courts / SC services link, if any. */
+  eCourtLink?: string;
+  /** Filing status — meaningful when the case has been drafted / submitted
+   *  but doesn't yet have a court-assigned number. */
+  filingStatus?: FilingStatus;
+  /** Registry scrutiny outcome — captured separately from filingStatus so
+   *  we can warn on defect deadlines without losing the broader state. */
+  reportingStatus?: IReportingStatus;
+
   community: mongoose.Types.ObjectId;
+  /** Lead litigation member (back-compat with single-lawyer rows). New
+   *  rows mirror this into `litigationMembers[0]` — readers should prefer
+   *  `litigationMembers` and fall back to this when the array is empty. */
   litigationMember?: mongoose.Types.ObjectId;
+  /** All litigation members on the matter — supports case sharing across
+   *  multiple lawyers. The lead lawyer is always litigationMembers[0]. */
+  litigationMembers?: mongoose.Types.ObjectId[];
   socialWorker?: mongoose.Types.ObjectId;
   nextHearingDate?: Date;
   googleCalendarEventId?: string;
@@ -231,6 +295,32 @@ const enquirySchema = new Schema<IEnquiry>(
   { _id: false }
 );
 
+const partiesSchema = new Schema<ICaseParties>(
+  {
+    petitioners: { type: [String], default: [] },
+    respondents: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
+const subjectSchema = new Schema<ICaseSubject>(
+  {
+    courtThey: { type: String, trim: true },
+    ourPoints: { type: String, trim: true },
+    reason:    { type: String, trim: true },
+  },
+  { _id: false }
+);
+
+const reportingStatusSchema = new Schema<IReportingStatus>(
+  {
+    status:         { type: String, enum: ["pending", "success", "conflict"], required: true },
+    defectNote:     { type: String, trim: true },
+    defectDeadline: Date,
+  },
+  { _id: false }
+);
+
 const courtAppearanceSchema = new Schema<ICourtAppearance>(
   {
     date: { type: Date, required: true },
@@ -308,8 +398,10 @@ const caseSchema = new Schema<ICase>(
     caseNumber: { type: String, required: true, unique: true },
     status: {
       type: String,
-      enum: ["Open", "Closed", "Escalated", "Pending", "Dismissed"],
-      default: "Open",
+      // Legacy + new vocabulary live side-by-side. Old rows stay valid; new
+      // rows can use Pending / Disposal / Withdrawn from the new UI.
+      enum: ["Open", "Closed", "Escalated", "Pending", "Dismissed", "Disposal", "Withdrawn"],
+      default: "Pending",
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
     caseType: { type: String, trim: true, index: true },
@@ -321,8 +413,26 @@ const caseSchema = new Schema<ICase>(
     bailAndAppearanceStatus: { type: String, trim: true },
     stage: { type: String, trim: true },
     compensationStatus: { type: String, trim: true },
+
+    courtType: {
+      type: String,
+      enum: ["supreme", "highcourt", "district", "other"],
+      index: true,
+    },
+    state: { type: String, trim: true, index: true },
+    parties: partiesSchema,
+    subject: subjectSchema,
+    eCourtLink: { type: String, trim: true },
+    filingStatus: { type: String, enum: ["drafting", "filing", "filed"] },
+    reportingStatus: reportingStatusSchema,
+
     community: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    litigationMember: { type: Schema.Types.ObjectId, ref: "User" },
+    /** Lead litigation member (back-compat). New rows mirror
+     *  litigationMembers[0] into this field too so legacy queries keep working. */
+    litigationMember:  { type: Schema.Types.ObjectId, ref: "User" },
+    /** All assigned litigation members. Visibility queries should prefer
+     *  this array; fall back to litigationMember when empty for old rows. */
+    litigationMembers: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     socialWorker: { type: Schema.Types.ObjectId, ref: "User" },
     nextHearingDate: Date,
     googleCalendarEventId: String,
@@ -344,6 +454,7 @@ const caseSchema = new Schema<ICase>(
 caseSchema.index({ status: 1 });
 caseSchema.index({ community: 1 });
 caseSchema.index({ litigationMember: 1, status: 1 });
+caseSchema.index({ litigationMembers: 1, status: 1 });
 caseSchema.index({ nextHearingDate: 1 });
 caseSchema.index({ "documents.ocrStatus": 1 });
 caseSchema.index({

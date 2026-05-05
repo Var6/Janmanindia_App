@@ -16,22 +16,30 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const caseDoc = await Case.findById(caseId)
       .populate("community", "name email phone")
       .populate("litigationMember", "name email")
+      .populate("litigationMembers", "name email")
       .populate("socialWorker", "name email")
       .populate("auditLog.by", "name role")
       .lean();
 
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Access control
+    // Access control. Litigation can read when they're the lead OR one of
+    // the shared members — supports the multi-lawyer share flow.
     const communityId = String(caseDoc.community?._id ?? caseDoc.community);
     const lmId = String(caseDoc.litigationMember?._id ?? caseDoc.litigationMember ?? "");
     const swId = String(caseDoc.socialWorker?._id ?? caseDoc.socialWorker ?? "");
+    const sharedIds = (caseDoc.litigationMembers ?? []).map((m: unknown) => {
+      const mm = m as { _id?: unknown } | string;
+      return typeof mm === "string" ? mm : String((mm as { _id?: unknown })._id ?? mm);
+    });
+    const isAssignedLitigation = session.role === "litigation"
+      && (lmId === session.id || sharedIds.includes(session.id));
 
     const allowed =
       session.role === "superadmin" ||
       session.role === "director" ||
       (session.role === "community" && communityId === session.id) ||
-      (session.role === "litigation" && lmId === session.id) ||
+      isAssignedLitigation ||
       (session.role === "socialworker" && swId === session.id);
 
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -57,8 +65,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const caseDoc = await Case.findById(caseId);
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (session.role === "litigation" && String(caseDoc.litigationMember) !== session.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Litigation can write when they're the lead OR a shared member. Other
+    // privileged roles (director / superadmin) skip this check.
+    if (session.role === "litigation") {
+      const lead = String(caseDoc.litigationMember ?? "");
+      const sharedIdsW = (caseDoc.litigationMembers ?? []).map(String);
+      if (lead !== session.id && !sharedIdsW.includes(session.id)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const body = await request.json();
@@ -68,6 +82,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       // District Legal Fellow Case Management form — lawyer-managed metadata.
       "courtCaseNumber", "courtName", "relevantSections",
       "bailAndAppearanceStatus", "stage", "compensationStatus",
+      // Court-type-aware create-form fields, editable from case detail too.
+      "courtType", "state", "parties", "subject", "eCourtLink",
+      "filingStatus", "reportingStatus",
     ];
     const update: Record<string, unknown> = {};
     const pushOps: Record<string, unknown> = {};
@@ -114,6 +131,40 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       };
       delete update.diaryEntry;
       logAudit("diary_added", "Added a diary entry");
+    }
+
+    /* Share / unshare the case with another litigation member. The lead
+       lawyer (`litigationMember`) is left alone — share only mutates
+       `litigationMembers[]`. Director / superadmin can always share; a
+       litigation member can only share a case they're already on. */
+    if (body.shareWithLitigation) {
+      const userId = String(body.shareWithLitigation.userId ?? "").trim();
+      if (!userId) {
+        return NextResponse.json({ error: "shareWithLitigation.userId is required" }, { status: 400 });
+      }
+      const target = await User.findById(userId).select("role isActive name").lean();
+      if (!target || !target.isActive || target.role !== "litigation") {
+        return NextResponse.json({ error: "Target user must be an active litigation member" }, { status: 400 });
+      }
+      const existing = (caseDoc.litigationMembers ?? []).map(String);
+      if (!existing.includes(userId) && String(caseDoc.litigationMember ?? "") !== userId) {
+        await Case.updateOne({ _id: caseId }, { $addToSet: { litigationMembers: userId } });
+        logAudit("case_shared", `Shared with ${target.name}`);
+      }
+    }
+    if (body.unshareLitigation) {
+      const userId = String(body.unshareLitigation.userId ?? "").trim();
+      if (!userId) {
+        return NextResponse.json({ error: "unshareLitigation.userId is required" }, { status: 400 });
+      }
+      // The lead lawyer is never removed via this op — keeps invariant
+      // "the case always has at least one owner."
+      if (String(caseDoc.litigationMember ?? "") === userId) {
+        return NextResponse.json({ error: "Cannot remove the lead litigation member; reassign first" }, { status: 400 });
+      }
+      const target = await User.findById(userId).select("name").lean();
+      await Case.updateOne({ _id: caseId }, { $pull: { litigationMembers: userId } });
+      logAudit("case_unshared", `Removed ${target?.name ?? "lawyer"}`);
     }
 
     /* Court Appearance entry — mirrors the Janman District Legal Fellowship

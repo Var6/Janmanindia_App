@@ -5,14 +5,16 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
-import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
 
 const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = {
-  Open:      { background: "var(--info-bg)",      color: "var(--info-text)"    },
-  Closed:    { background: "var(--bg-secondary)", color: "var(--muted)"        },
-  Escalated: { background: "var(--error-bg)",     color: "var(--error-text)"   },
-  Pending:   { background: "var(--warning-bg)",   color: "var(--warning-text)" },
-  Dismissed: { background: "var(--error-bg)",     color: "var(--error-text)"   },
+  Open:       { background: "var(--info-bg)",      color: "var(--info-text)"    },
+  Closed:     { background: "var(--bg-secondary)", color: "var(--muted)"        },
+  Escalated:  { background: "var(--error-bg)",     color: "var(--error-text)"   },
+  Pending:    { background: "var(--warning-bg)",   color: "var(--warning-text)" },
+  Dismissed:  { background: "var(--error-bg)",     color: "var(--error-text)"   },
+  Disposal:   { background: "var(--success-bg)",   color: "var(--success-text)" },
+  Withdrawn:  { background: "var(--bg-secondary)", color: "var(--muted)"        },
 };
 
 export default async function LitigationCasesPage() {
@@ -20,19 +22,27 @@ export default async function LitigationCasesPage() {
   if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
   const dbOk = await tryConnectDB();
-  // Litigation only sees cases explicitly assigned to them. Director /
-  // administrator / superadmin see every case via /director/cases — a
-  // lawyer should never see a case they aren't on the record for.
+  // Litigation sees cases where they are the lead OR a shared member —
+  // supports the multi-lawyer flow. Director / administrator / superadmin
+  // see every case via /director/cases.
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
-    ? await Case.find({ litigationMember: new mongoose.Types.ObjectId(session.id) })
+    ? await Case.find({
+        $or: [
+          { litigationMember:  new mongoose.Types.ObjectId(session.id) },
+          { litigationMembers: new mongoose.Types.ObjectId(session.id) },
+        ],
+      })
         .populate("community", "name phone")
         .populate("socialWorker", "name")
         .sort({ nextHearingDate: 1, updatedAt: -1 })
         .lean()
     : [];
 
-  const open = cases.filter((c) => c.status !== "Closed" && c.status !== "Dismissed");
-  const closed = cases.filter((c) => c.status === "Closed" || c.status === "Dismissed");
+  // "Closed" group covers any final state — legacy Closed/Dismissed plus the
+  // new vocabulary (Disposal, Withdrawn). Everything else is treated as open.
+  const FINAL_STATES = new Set(["Closed", "Dismissed", "Disposal", "Withdrawn"]);
+  const open   = cases.filter((c) => !FINAL_STATES.has(c.status));
+  const closed = cases.filter((c) =>  FINAL_STATES.has(c.status));
 
   return (
     <div className="space-y-8">
@@ -45,7 +55,7 @@ export default async function LitigationCasesPage() {
             {open.length} active · {closed.length} closed · sorted by next hearing date
           </p>
         </div>
-        <CreateCaseForm />
+        <CreateLitigationCaseForm />
       </div>
 
       <section>

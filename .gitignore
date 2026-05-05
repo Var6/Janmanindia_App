@@ -53,3 +53,6 @@ next-env.d.ts
 # uploaded files — local-FS dev fallback only; production uses Vercel Blob
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# Local Claude harness state — keep out of source control
+.claude/

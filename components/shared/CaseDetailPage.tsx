@@ -42,11 +42,12 @@ type CourtAppearance = {
   loggedAt?: string;
 };
 
+type LawyerRef = { _id: string; name: string; email: string };
 type PopulatedCase = {
   _id: string;
   caseTitle: string;
   caseNumber: string;
-  status: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed";
+  status: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed" | "Disposal" | "Withdrawn";
   path: "criminal" | "highcourt";
   district?: string;
   causeTitle?: string;
@@ -56,8 +57,19 @@ type PopulatedCase = {
   bailAndAppearanceStatus?: string;
   stage?: string;
   compensationStatus?: string;
+  // Court-type-aware fields populated by CreateLitigationCaseForm.
+  courtType?: "supreme" | "highcourt" | "district" | "other";
+  state?: string;
+  parties?: { petitioners?: string[]; respondents?: string[] };
+  subject?: { courtThey?: string; ourPoints?: string; reason?: string };
+  eCourtLink?: string;
+  filingStatus?: "drafting" | "filing" | "filed";
+  reportingStatus?: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: string };
   community?: { _id: string; name: string; email: string; phone?: string };
-  litigationMember?: { _id: string; name: string; email: string };
+  /** Lead lawyer (legacy single-field). */
+  litigationMember?: LawyerRef;
+  /** All assigned lawyers, including the lead. */
+  litigationMembers?: LawyerRef[];
   socialWorker?: { _id: string; name: string; email: string };
   nextHearingDate?: string;
   documents: DocMeta[];
@@ -108,11 +120,13 @@ function fmtTimelineTitle(d: string | Date) {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
-  Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"     },
-  Escalated: { bg: "var(--error-bg)",     text: "var(--error-text)"    },
-  Pending:   { bg: "var(--warning-bg)",   text: "var(--warning-text)"  },
-  Closed:    { bg: "var(--bg-secondary)", text: "var(--muted)"         },
-  Dismissed: { bg: "var(--error-bg)",     text: "var(--error-text)"    },
+  Open:       { bg: "var(--info-bg)",      text: "var(--info-text)"     },
+  Escalated:  { bg: "var(--error-bg)",     text: "var(--error-text)"    },
+  Pending:    { bg: "var(--warning-bg)",   text: "var(--warning-text)"  },
+  Closed:     { bg: "var(--bg-secondary)", text: "var(--muted)"         },
+  Dismissed:  { bg: "var(--error-bg)",     text: "var(--error-text)"    },
+  Disposal:   { bg: "var(--success-bg)",   text: "var(--success-text)"  },
+  Withdrawn:  { bg: "var(--bg-secondary)", text: "var(--muted)"         },
 };
 
 const OCR_STYLE: Record<string, { bg: string; text: string }> = {
@@ -833,6 +847,302 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
   );
 }
 
+/* ── Court / parties / subject card ─────────────────────────────────────── */
+function CourtPartiesSubjectCard({ caseData }: { caseData: PopulatedCase }) {
+  const has = (v?: string | string[]) => v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== "");
+  const p = caseData.parties;
+  const s = caseData.subject;
+  const r = caseData.reportingStatus;
+  const showCourt    = has(caseData.courtName) || caseData.courtType || has(caseData.state);
+  const showParties  = has(p?.petitioners) || has(p?.respondents);
+  const showSubject  = has(s?.courtThey) || has(s?.ourPoints) || has(s?.reason);
+  const showFiling   = caseData.filingStatus || r?.status;
+  const showECourt   = has(caseData.eCourtLink);
+  if (!showCourt && !showParties && !showSubject && !showFiling && !showECourt) return null;
+
+  const courtTypeLabel = caseData.courtType === "supreme"   ? "Supreme Court"
+                       : caseData.courtType === "highcourt" ? "High Court"
+                       : caseData.courtType === "district"  ? "Civil / District Court"
+                       : caseData.courtType === "other"     ? "Tribunal / Forum"
+                       : null;
+  const filingLabel = caseData.filingStatus === "drafting" ? "Drafting"
+                    : caseData.filingStatus === "filing"   ? "Filing"
+                    : caseData.filingStatus === "filed"    ? "Filed"
+                    : null;
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center gap-2"
+        style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
+        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>Court &amp; Parties</span>
+      </div>
+      <div className="px-5 py-4 space-y-4">
+        {/* Court row */}
+        {showCourt && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+            {courtTypeLabel && <Line label="Court Type">{courtTypeLabel}</Line>}
+            {has(caseData.state) && <Line label="State">{caseData.state}</Line>}
+            {has(caseData.courtName) && (
+              <div className="sm:col-span-3">
+                <Line label="Court / Forum" wide>{caseData.courtName}</Line>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Parties */}
+        {showParties && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pt-3 border-t"
+            style={{ borderColor: "var(--border)" }}>
+            {has(p?.petitioners) && (
+              <div>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Petitioner(s)</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {p!.petitioners!.map((name, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>{name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {has(p?.respondents) && (
+              <div>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Respondent(s)</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {p!.respondents!.map((name, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>{name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Subject */}
+        {showSubject && (
+          <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Subject</p>
+            {has(s?.courtThey) && (
+              <Line label="Court — their stand" wide>
+                <span className="block whitespace-pre-line">{s!.courtThey}</span>
+              </Line>
+            )}
+            {has(s?.ourPoints) && (
+              <Line label="Our points" wide>
+                <span className="block whitespace-pre-line">{s!.ourPoints}</span>
+              </Line>
+            )}
+            {has(s?.reason) && (
+              <Line label="Why we have a case" wide>
+                <span className="block whitespace-pre-line">{s!.reason}</span>
+              </Line>
+            )}
+          </div>
+        )}
+
+        {/* Filing + e-Court row */}
+        {(showFiling || showECourt) && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 pt-3 border-t text-sm"
+            style={{ borderColor: "var(--border)" }}>
+            {filingLabel && <Line label="Filing Status">{filingLabel}</Line>}
+            {r?.status && (
+              <Line label="Reporting">
+                {r.status === "conflict" ? "Defect" : r.status === "success" ? "Cleared" : "Pending"}
+                {r.defectDeadline && (
+                  <span className="block text-[11px] text-(--muted) mt-0.5">
+                    Cure by {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
+                  </span>
+                )}
+              </Line>
+            )}
+            {showECourt && (
+              <Line label="e-Courts link">
+                <a href={caseData.eCourtLink!} target="_blank" rel="noopener noreferrer"
+                  className="hover:underline truncate inline-block max-w-full" style={{ color: "var(--accent)" }}>
+                  Open ↗
+                </a>
+              </Line>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Litigation team panel — multi-lawyer share ────────────────────────── */
+function LitigationTeamPanel({
+  caseId, caseData, canEdit, onChanged,
+}: {
+  caseId: string;
+  caseData: PopulatedCase;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [adding, setAdding]   = useState(false);
+  const [query, setQuery]     = useState("");
+  const [results, setResults] = useState<LawyerRef[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [busyId, setBusyId]   = useState<string | null>(null);
+  const [err, setErr]         = useState("");
+
+  // Build the canonical team list. The lead always shows first, then the
+  // shared members with the lead de-duplicated out.
+  const lead    = caseData.litigationMember;
+  const shared  = (caseData.litigationMembers ?? []).filter(m => !lead || m._id !== lead._id);
+  const team    = lead ? [lead, ...shared] : shared;
+
+  useEffect(() => {
+    if (!query || query.length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=litigation`);
+        const d = await r.json();
+        const teamIds = new Set(team.map(m => m._id));
+        setResults((d.users ?? []).filter((u: LawyerRef) => !teamIds.has(u._id)));
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query, team]);
+
+  async function share(userId: string) {
+    setBusyId(userId); setErr("");
+    try {
+      const r = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shareWithLitigation: { userId } }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setErr((d as { error?: string }).error ?? "Failed to share.");
+        return;
+      }
+      setQuery(""); setResults([]); setAdding(false);
+      onChanged();
+    } finally {
+      setBusyId(null);
+    }
+  }
+  async function unshare(userId: string) {
+    setBusyId(userId); setErr("");
+    try {
+      const r = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unshareLitigation: { userId } }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setErr((d as { error?: string }).error ?? "Failed to remove.");
+        return;
+      }
+      onChanged();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (team.length === 0 && !canEdit) return null;
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center justify-between"
+        style={{ background: "color-mix(in srgb, var(--info) 6%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>
+          Litigation Team · {team.length}
+        </span>
+        {canEdit && !adding && (
+          <button type="button" onClick={() => setAdding(true)}
+            className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+            + Share with another lawyer
+          </button>
+        )}
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        {err && (
+          <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+            {err}
+          </div>
+        )}
+        {team.length === 0 ? (
+          <p className="text-xs text-(--muted) italic">No lawyer assigned yet.</p>
+        ) : (
+          <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+            {team.map((m, i) => (
+              <li key={m._id} className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-semibold text-(--text)">
+                    {m.name}
+                    {i === 0 && (
+                      <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>Lead</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-(--muted)">{m.email}</p>
+                </div>
+                {canEdit && i > 0 && (
+                  <button type="button" disabled={busyId === m._id} onClick={() => unshare(m._id)}
+                    className="text-xs hover:underline" style={{ color: "var(--error)" }}>
+                    {busyId === m._id ? "…" : "Remove"}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {adding && (
+          <div className="rounded-xl border p-3 space-y-2"
+            style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-(--text)">Add a lawyer</p>
+              <button type="button" onClick={() => { setAdding(false); setQuery(""); setResults([]); }}
+                className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+            </div>
+            <input value={query} onChange={e => setQuery(e.target.value)}
+              placeholder="Search by name or email…"
+              className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
+              style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+            {searching && <p className="text-[11px] text-(--muted)">Searching…</p>}
+            {results.length > 0 && (
+              <div className="rounded-lg border overflow-hidden"
+                style={{ borderColor: "var(--border)" }}>
+                {results.map(u => (
+                  <button key={u._id} type="button" disabled={busyId === u._id}
+                    onClick={() => share(u._id)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-(--bg-secondary) flex items-center justify-between"
+                    style={{ borderBottom: "1px solid var(--border)" }}>
+                    <span>
+                      <span className="font-medium text-(--text)">{u.name}</span>
+                      <span className="text-xs text-(--muted) ml-2">{u.email}</span>
+                    </span>
+                    <span className="text-xs" style={{ color: "var(--accent)" }}>
+                      {busyId === u._id ? "Sharing…" : "Share"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {query.length >= 2 && !searching && results.length === 0 && (
+              <p className="text-[11px] text-(--muted)">No matches for "{query}".</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -1000,6 +1310,19 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
           </div>
         )}
       </div>
+
+      {/* Court / parties / subject captured at creation by the lawyer. Only
+          rendered when at least one of these new fields is set so older
+          cases (pre court-type-aware flow) don't show empty headers. */}
+      <CourtPartiesSubjectCard caseData={c} />
+
+      {/* Multi-lawyer share panel — lead + shared members + add/remove. */}
+      <LitigationTeamPanel
+        caseId={c._id}
+        caseData={c}
+        canEdit={canEdit}
+        onChanged={fetchCase}
+      />
 
       {/* Intake facts captured by the Case Enquiry form. Visible to anyone with
           access to the case so SW + lawyers see the same paper-form data. */}

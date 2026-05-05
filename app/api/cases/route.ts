@@ -27,10 +27,14 @@ export async function GET(request: NextRequest) {
     } else if (session.role === "community") {
       filter.community = session.id;
     } else if (session.role === "litigation") {
-      // Strictly assigned cases. The earlier "also see existing-case
-      // tracker entries" rule was removed — a lawyer should never see a
-      // case they aren't on the record for.
-      filter.litigationMember = session.id;
+      // Strictly assigned cases. A case is visible if the lawyer is the
+      // lead (`litigationMember`, legacy single-lawyer rows) OR is one of
+      // the shared `litigationMembers[]` (new multi-lawyer rows). A lawyer
+      // should never see a case they aren't on the record for.
+      filter.$or = [
+        { litigationMember: session.id },
+        { litigationMembers: session.id },
+      ];
     } else if (session.role === "socialworker") {
       filter.socialWorker = session.id;
     } else {
@@ -44,10 +48,19 @@ export async function GET(request: NextRequest) {
     if (path) filter.path = path;
 
     // Free-text search across caseNumber + caseTitle for typeahead pickers.
+    // If the role visibility filter already used `$or` (litigation), combine
+    // the two sets via `$and` so we don't lose either constraint.
     if (q && q.length >= 1) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const re = new RegExp(escaped, "i");
-      filter.$or = [{ caseNumber: re }, { caseTitle: re }];
+      const searchOr = [{ caseNumber: re }, { caseTitle: re }, { courtCaseNumber: re }];
+      if (Array.isArray(filter.$or)) {
+        const visibilityOr = filter.$or as Record<string, unknown>[];
+        delete filter.$or;
+        filter.$and = [{ $or: visibilityOr }, { $or: searchOr }];
+      } else {
+        filter.$or = searchOr;
+      }
     }
 
     const [cases, total] = await Promise.all([
@@ -57,6 +70,7 @@ export async function GET(request: NextRequest) {
         .limit(limit)
         .populate("community", "name email")
         .populate("litigationMember", "name")
+        .populate("litigationMembers", "name email")
         .populate("socialWorker", "name")
         .lean(),
       Case.countDocuments(filter),
@@ -86,13 +100,17 @@ export async function POST(request: NextRequest) {
             district, causeTitle,
             courtCaseNumber, courtName, relevantSections,
             bailAndAppearanceStatus, stage, compensationStatus,
+            // New court-type-aware create-form fields
+            courtType: rawCourtType, state, parties, subject, eCourtLink,
+            filingStatus, reportingStatus,
+            litigationMemberIds,
             enquiry: enquiryRaw,
             voiceAttachment } = body as {
       caseTitle: string;
       path?: "criminal" | "highcourt";
       caseType?: string;
       communityId?: string;
-      status?: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed";
+      status?: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed" | "Disposal" | "Withdrawn";
       /** Set true when registering a case that's already underway elsewhere
        *  — the workflow stages all default to "not done" but the case shows
        *  with an "Existing" badge and lands in the litigation visibility
@@ -112,6 +130,27 @@ export async function POST(request: NextRequest) {
       bailAndAppearanceStatus?: string;
       stage?: string;
       compensationStatus?: string;
+      /** Court taxonomy (supreme / highcourt / district / other) — drives the
+       *  picker on the create form. Optional so old callers keep working. */
+      courtType?: "supreme" | "highcourt" | "district" | "other";
+      /** Indian state the court sits in. Required for "district" type. */
+      state?: string;
+      /** Petitioners + respondents — captured separately so the display
+       *  title (`caseTitle`) can be regenerated when parties change. */
+      parties?: { petitioners?: string[]; respondents?: string[] };
+      /** Strategic subject — three angles the team agrees on early. */
+      subject?: { courtThey?: string; ourPoints?: string; reason?: string };
+      /** External e-Courts / SC services link. */
+      eCourtLink?: string;
+      /** Used when the petition is being prepared / filed but doesn't yet
+       *  have a court-assigned number. */
+      filingStatus?: "drafting" | "filing" | "filed";
+      /** Registry scrutiny outcome + defect deadline. */
+      reportingStatus?: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: string };
+      /** Additional litigation members to share the case with on creation.
+       *  The lead lawyer is always litigationMembers[0]; this list is
+       *  merged with the lead and de-duplicated server-side. */
+      litigationMemberIds?: string[];
       /** Intake-time facts (Case Enquiry Form). All fields optional so the
        *  community quick-file flow continues to work; full enquiry is filled
        *  by the structured intake form. */
@@ -165,10 +204,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "communityId is required" }, { status: 400 });
     }
 
-    const ALLOWED_STATUSES = ["Open", "Closed", "Escalated", "Pending", "Dismissed"] as const;
-    const initialStatus = (status && ALLOWED_STATUSES.includes(status))
+    const ALLOWED_STATUSES = ["Open", "Closed", "Escalated", "Pending", "Dismissed", "Disposal", "Withdrawn"] as const;
+    const initialStatus = (status && (ALLOWED_STATUSES as readonly string[]).includes(status))
       ? status
-      : "Open";
+      : "Pending";
 
     // Community-authored cases default to "existing" since the tracker UI is
     // explicitly for in-progress matters. Staff can set the flag explicitly.
@@ -212,6 +251,52 @@ export async function POST(request: NextRequest) {
       if (!Object.values(enquiryDoc).some(v => v !== undefined)) enquiryDoc = undefined;
     }
 
+    // Whitelist court taxonomy + reporting status. The Mongoose enum check
+    // below is belt-and-braces, but rejecting upfront produces nicer errors.
+    const COURT_TYPES = ["supreme", "highcourt", "district", "other"] as const;
+    const courtType = (rawCourtType && (COURT_TYPES as readonly string[]).includes(rawCourtType))
+      ? rawCourtType
+      : undefined;
+
+    // Build the parties + subject + reporting sub-docs only when at least
+    // one field is non-empty — keeps the document tidy for fresh cases that
+    // don't go through the new create-form flow.
+    const cleanParties = parties && (parties.petitioners?.length || parties.respondents?.length)
+      ? {
+          petitioners: (parties.petitioners ?? []).map(s => String(s).trim()).filter(Boolean),
+          respondents: (parties.respondents ?? []).map(s => String(s).trim()).filter(Boolean),
+        }
+      : undefined;
+    const cleanSubject = subject && (subject.courtThey?.trim() || subject.ourPoints?.trim() || subject.reason?.trim())
+      ? {
+          courtThey: subject.courtThey?.trim() || undefined,
+          ourPoints: subject.ourPoints?.trim() || undefined,
+          reason:    subject.reason?.trim()    || undefined,
+        }
+      : undefined;
+    let cleanReporting: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: Date } | undefined;
+    if (reportingStatus?.status && ["pending", "success", "conflict"].includes(reportingStatus.status)) {
+      const dl = reportingStatus.defectDeadline ? new Date(reportingStatus.defectDeadline) : undefined;
+      cleanReporting = {
+        status: reportingStatus.status,
+        defectNote: reportingStatus.defectNote?.trim() || undefined,
+        defectDeadline: dl && !isNaN(dl.getTime()) ? dl : undefined,
+      };
+    }
+
+    // Resolve the litigation-member set. Lead lawyer (the session, when
+    // they're filing themselves) goes at position 0; any explicitly shared
+    // ids follow, with duplicates removed. Non-litigation roles (HR,
+    // director, etc.) creating cases pass `litigationMemberIds` to seed the
+    // assignment list without auto-becoming a member themselves.
+    const litMembers: string[] = [];
+    if (session.role === "litigation") litMembers.push(session.id);
+    for (const id of litigationMemberIds ?? []) {
+      if (typeof id === "string" && id.trim() && !litMembers.includes(id)) {
+        litMembers.push(id);
+      }
+    }
+
     const newCase = await Case.create({
       caseTitle,
       caseNumber,
@@ -226,9 +311,20 @@ export async function POST(request: NextRequest) {
       stage: stage?.trim() || undefined,
       compensationStatus: compensationStatus?.trim() || undefined,
       community: communityRef,
-      // Litigation lawyers who file their own cases get auto-assigned so the case
-      // shows up in their list and they can update it without a separate hand-off.
-      ...(session.role === "litigation" ? { litigationMember: session.id } : {}),
+      // Litigation members on the case. Lead is the first id (session lawyer
+      // when they file themselves, else the first explicit share). The
+      // legacy single-lawyer field stays mirrored for back-compat.
+      ...(litMembers.length
+        ? { litigationMember: litMembers[0], litigationMembers: litMembers }
+        : {}),
+      // New court-type-aware fields. All optional — only persisted when set.
+      ...(courtType ? { courtType } : {}),
+      ...(state?.trim() ? { state: state.trim() } : {}),
+      ...(cleanParties ? { parties: cleanParties } : {}),
+      ...(cleanSubject ? { subject: cleanSubject } : {}),
+      ...(eCourtLink?.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
+      ...(filingStatus && ["drafting", "filing", "filed"].includes(filingStatus) ? { filingStatus } : {}),
+      ...(cleanReporting ? { reportingStatus: cleanReporting } : {}),
       status: initialStatus,
       isExistingCase: flaggedExisting,
       currentStep:    currentStep?.trim() || undefined,
