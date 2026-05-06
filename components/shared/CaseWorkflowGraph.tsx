@@ -591,9 +591,13 @@ interface Props {
   caseId?: string;
   /** Re-fetch the case after a successful stage flip. */
   onChanged?: () => void | Promise<void>;
+  /** Pinned cheatcode notes — rendered as floating sticky pills inside
+   *  the graph card so the must-know facts are visible while planning
+   *  next steps. Pass already-filtered (pinned only) entries. */
+  pinnedNotes?: Array<{ _id: string; text: string; byName?: string }>;
 }
 
-export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt, canEdit, caseId, onChanged }: Props) {
+export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt, canEdit, caseId, onChanged, pinnedNotes }: Props) {
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
@@ -667,28 +671,54 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         </div>
       </div>
 
-      {/* Graph — three columns: alt-path labels (left, right-aligned),
-          centred SVG, then main-path labels (right, left-aligned). The
-          two label columns flex equally so the SVG stays in the middle. */}
-      <div className="px-4 py-4">
-        <Legend />
-        <div style={{ position: "relative", height: totalH, display: "flex", alignItems: "stretch", marginTop: 8 }}>
-          <GraphLabels
-            nodes={nodes}
-            side="alt"
-            canEdit={Boolean(canEdit && caseId)}
-            onStageClick={handleStageClick}
-            busyNodeId={busyNodeId}
-          />
-          <GraphSvg nodes={nodes} edges={edges} totalRows={totalRows} />
-          <GraphLabels
-            nodes={nodes}
-            side="main"
-            canEdit={Boolean(canEdit && caseId)}
-            onStageClick={handleStageClick}
-            busyNodeId={busyNodeId}
-          />
+      {/* Graph + sticky notes side-by-side. Graph sits on the left and
+          takes the available width; pinned cheatcode notes float in a
+          column on the right inside the same card so the team's
+          must-know facts stay visible alongside the workflow. */}
+      <div className="px-4 py-4 flex gap-4 items-start">
+        <div className="flex-1 min-w-0">
+          <Legend />
+          <div style={{ position: "relative", height: totalH, display: "flex", alignItems: "stretch", marginTop: 8 }}>
+            <GraphLabels
+              nodes={nodes}
+              side="alt"
+              canEdit={Boolean(canEdit && caseId)}
+              onStageClick={handleStageClick}
+              busyNodeId={busyNodeId}
+            />
+            <GraphSvg nodes={nodes} edges={edges} totalRows={totalRows} />
+            <GraphLabels
+              nodes={nodes}
+              side="main"
+              canEdit={Boolean(canEdit && caseId)}
+              onStageClick={handleStageClick}
+              busyNodeId={busyNodeId}
+            />
+          </div>
         </div>
+
+        {pinnedNotes && pinnedNotes.length > 0 && (
+          <aside className="shrink-0 w-56 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
+              📌 Pinned notes
+            </p>
+            {pinnedNotes.map((n, i) => (
+              <div key={n._id}
+                className="relative px-3 py-2 rounded-md text-xs leading-snug shadow-sm"
+                style={{
+                  background: "#fef9c3",
+                  color: "#713f12",
+                  border: "1px solid #fde047",
+                  transform: `rotate(${i % 2 === 0 ? "-0.6" : "0.6"}deg)`,
+                }}>
+                <p className="whitespace-pre-line">{n.text}</p>
+                {n.byName && (
+                  <p className="mt-1 text-[10px] italic" style={{ color: "#a16207" }}>— {n.byName}</p>
+                )}
+              </div>
+            ))}
+          </aside>
+        )}
       </div>
     </div>
   );

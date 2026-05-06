@@ -1347,6 +1347,9 @@ function LitigationTeamPanel({
   const lead    = caseData.litigationMember;
   const shared  = (caseData.litigationMembers ?? []).filter(m => !lead || m._id !== lead._id);
   const team    = lead ? [lead, ...shared] : shared;
+  // Stable string key for the effect — `team` is rebuilt every render so it
+  // can't be a dep directly (causes an infinite render loop).
+  const teamIdsKey = team.map(m => m._id).join(",");
 
   useEffect(() => {
     if (!query || query.length < 2) { setResults([]); return; }
@@ -1355,7 +1358,7 @@ function LitigationTeamPanel({
       try {
         const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=litigation,director`);
         const d = await r.json();
-        const teamIds = new Set(team.map(m => m._id));
+        const teamIds = new Set(teamIdsKey.split(",").filter(Boolean));
         setResults((d.users ?? []).filter((u: LawyerRef) => !teamIds.has(u._id)));
       } catch {
         setResults([]);
@@ -1364,7 +1367,7 @@ function LitigationTeamPanel({
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [query, team]);
+  }, [query, teamIdsKey]);
 
   async function share(userId: string) {
     setBusyId(userId); setErr("");
@@ -1799,6 +1802,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
           createdAt={c.createdAt}
           canEdit={canEdit}
           caseId={c._id}
+          pinnedNotes={(c.caseComments ?? []).filter(n => n.pinned).map(n => ({ _id: n._id, text: n.text, byName: n.byName }))}
           onChanged={refresh}
         />
 

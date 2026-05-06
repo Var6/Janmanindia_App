@@ -16,7 +16,7 @@ export default async function ChatPage() {
       {session.role === "community" && (
         <CommunityHelpTabs />
       )}
-      <ChatApp currentUserId={session.id} currentUserName={session.name} />
+      <ChatApp currentUserId={session.id} currentUserName={session.name} currentUserRole={session.role} />
     </div>
   );
 }

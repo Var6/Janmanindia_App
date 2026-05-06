@@ -46,7 +46,6 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
     { href: "/litigation/cases",        label: "Cases",        icon: "briefcase" },
-    { href: "/litigation/calendar",     label: "Calendar",     icon: "calendar"  },
     { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
     // Invoice / expense approval is finance / director / HR's responsibility,
     // not litigation's. The /litigation/invoices route still exists for the

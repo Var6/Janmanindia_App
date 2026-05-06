@@ -26,8 +26,13 @@ export async function GET() {
   }
 }
 
-/** POST /api/chat/conversations — open or create a DM with another user.
- *  Body: { peerId } */
+/** POST /api/chat/conversations — open or create a conversation.
+ *  DM:    { peerId }
+ *  Group: { participantIds: string[], title?: string }
+ *  Groups always include the caller, ignore duplicates, and allow 2+
+ *  total members (3+ recommended). Each pairwise role combo must be a
+ *  legal DM under canDirectMessage so we don't bypass the role gating
+ *  the DM endpoint enforces today. */
 export async function POST(req: NextRequest) {
   try {
     const session = await requireSession();
@@ -35,7 +40,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     }
     const body = await req.json();
-    const { peerId } = body as { peerId?: string };
+    const { peerId, participantIds, title } = body as {
+      peerId?: string;
+      participantIds?: string[];
+      title?: string;
+    };
+
+    await connectDB();
+    const me = new mongoose.Types.ObjectId(session.id);
+
+    // Group path. Must precede DM path because a group payload could also
+    // include a single participantId; only fall back to DM when no
+    // participantIds[] was sent at all. Community accounts can never
+    // create groups — they're DM-only with their assigned social worker.
+    if (Array.isArray(participantIds)) {
+      if (session.role === "community") {
+        return NextResponse.json({ error: "Community accounts cannot create group chats" }, { status: 403 });
+      }
+      const cleaned = Array.from(new Set(
+        participantIds
+          .filter((id) => typeof id === "string" && mongoose.Types.ObjectId.isValid(id))
+          .filter((id) => id !== session.id)
+      ));
+      if (cleaned.length === 0) {
+        return NextResponse.json({ error: "Pick at least one other person" }, { status: 400 });
+      }
+
+      const peers = await User.find({ _id: { $in: cleaned }, isActive: true }).select("role").lean();
+      if (peers.length !== cleaned.length) {
+        return NextResponse.json({ error: "One or more selected users are inactive or missing" }, { status: 400 });
+      }
+      for (const p of peers) {
+        if (!canDirectMessage(session.role, p.role)) {
+          return NextResponse.json({
+            error: `Group chat not permitted with role "${p.role}".`,
+          }, { status: 403 });
+        }
+      }
+
+      const trimmedTitle = (title ?? "").trim().slice(0, 80);
+
+      // 2-person groups still go through the group path (different surface
+      // semantics from a DM): we don't reuse the DM dedupe lookup here.
+      // Larger groups likewise always create a fresh conversation —
+      // duplicate "groups" between the same set of people are intentional
+      // (e.g. case-X group vs case-Y group with overlapping members).
+      const allParticipants = [me, ...cleaned.map((id) => new mongoose.Types.ObjectId(id))];
+
+      const conversation = await Conversation.create({
+        type: "group",
+        participants: allParticipants,
+        title: trimmedTitle || undefined,
+        createdBy: me,
+      });
+      const populated = await conversation.populate("participants", "name role employeeId");
+      return NextResponse.json({ conversation: populated });
+    }
+
+    // DM path (legacy single-peer body).
     if (!peerId || !mongoose.Types.ObjectId.isValid(peerId)) {
       return NextResponse.json({ error: "Valid peerId required" }, { status: 400 });
     }
@@ -43,7 +105,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cannot DM yourself" }, { status: 400 });
     }
 
-    await connectDB();
     const peer = await User.findById(peerId).select("role isActive").lean();
     if (!peer || !peer.isActive) {
       return NextResponse.json({ error: "Peer not found or inactive" }, { status: 404 });
@@ -54,7 +115,6 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    const me = new mongoose.Types.ObjectId(session.id);
     const them = new mongoose.Types.ObjectId(peerId);
     const sortedPair = [me, them].sort((a, b) => a.toString().localeCompare(b.toString()));
 

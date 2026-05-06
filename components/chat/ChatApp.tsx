@@ -8,6 +8,7 @@ interface User { _id: string; name: string; role: string; employeeId?: string }
 interface Conversation {
   _id: string;
   type: "dm" | "group";
+  title?: string;
   participants: User[];
   lastMessageAt?: string;
   lastMessagePreview?: string;
@@ -25,12 +26,16 @@ interface Message {
 interface Props {
   currentUserId: string;
   currentUserName: string;
+  currentUserRole?: string;
 }
 
 const POLL_MS_FOCUSED = 4000;
 const POLL_MS_HIDDEN  = 30000; // back off when tab hidden
 
-export default function ChatApp({ currentUserId }: Props) {
+export default function ChatApp({ currentUserId, currentUserRole }: Props) {
+  // Community members can only DM their assigned social worker — group
+  // chats are a staff coordination tool and aren't exposed to them.
+  const canCreateGroups = currentUserRole !== "community";
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -40,6 +45,12 @@ export default function ChatApp({ currentUserId }: Props) {
   const [editText, setEditText] = useState("");
   const [sending, setSending] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  // "dm" = clicking a contact starts a 1:1 chat; "group" = checkboxes
+  // accumulate into a multi-select with a title field at the bottom.
+  const [composeMode, setComposeMode] = useState<"dm" | "group">("dm");
+  const [groupSelected, setGroupSelected] = useState<Set<string>>(new Set());
+  const [groupTitle, setGroupTitle] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
   const lastTsRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const focusedRef = useRef(true);
@@ -120,6 +131,49 @@ export default function ChatApp({ currentUserId }: Props) {
     setConversations((prev) => prev.some((c) => c._id === conv._id) ? prev : [conv, ...prev]);
     setActiveId(conv._id);
     setShowContacts(false);
+  }
+
+  function toggleGroupMember(id: string) {
+    setGroupSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function resetCompose() {
+    setComposeMode("dm");
+    setGroupSelected(new Set());
+    setGroupTitle("");
+  }
+
+  async function createGroup() {
+    if (groupSelected.size === 0 || creatingGroup) return;
+    setCreatingGroup(true);
+    try {
+      const res = await fetch("/api/chat/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantIds: Array.from(groupSelected),
+          title: groupTitle.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error ?? "Failed to create group");
+        return;
+      }
+      const d = await res.json();
+      const conv = d.conversation as Conversation;
+      setConversations((prev) => [conv, ...prev]);
+      setActiveId(conv._id);
+      setShowContacts(false);
+      resetCompose();
+    } finally {
+      setCreatingGroup(false);
+    }
   }
 
   async function send(e: React.FormEvent) {
@@ -213,8 +267,27 @@ export default function ChatApp({ currentUserId }: Props) {
     return c.participants.find((p) => p._id !== currentUserId);
   }
 
-  const active = conversations.find((c) => c._id === activeId);
-  const activePeer = active ? peerOf(active) : undefined;
+  /** Display label for a conversation row / header — peer name for DMs,
+   *  the explicit group title (or a comma-joined member list) for groups. */
+  function convLabel(c: Conversation & { title?: string }): string {
+    if (c.type === "group") {
+      if (c.title) return c.title;
+      const others = c.participants.filter((p) => p._id !== currentUserId);
+      const names = others.slice(0, 3).map((p) => p.name.split(" ")[0]).join(", ");
+      return others.length > 3 ? `${names} +${others.length - 3}` : names || "Group";
+    }
+    return peerOf(c)?.name ?? "Unknown";
+  }
+
+  function convSubtitle(c: Conversation): string {
+    if (c.type === "group") {
+      return `${c.participants.length} members`;
+    }
+    return peerOf(c)?.role ?? "";
+  }
+
+  const active = conversations.find((c) => c._id === activeId) as (Conversation & { title?: string }) | undefined;
+  const activePeer = active && active.type === "dm" ? peerOf(active) : undefined;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3 h-[calc(100vh-160px)]">
@@ -222,42 +295,98 @@ export default function ChatApp({ currentUserId }: Props) {
       <aside className="rounded-xl border border-(--border) bg-(--surface) overflow-hidden flex flex-col">
         <div className="px-3 py-2.5 border-b border-(--border) flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-wide text-(--muted)">
-            {showContacts ? "Start chat" : "Chats"}
+            {showContacts ? (composeMode === "group" ? "New group" : "Start chat") : "Chats"}
           </p>
-          <button onClick={() => setShowContacts(!showContacts)}
-            className="text-xs px-2 py-0.5 rounded-md text-(--accent-contrast) font-bold"
-            style={{ background: "var(--accent)" }}>
-            {showContacts ? "✕" : "＋"}
-          </button>
+          {currentUserRole !== "community" && (
+            <button onClick={() => { if (showContacts) resetCompose(); setShowContacts(!showContacts); }}
+              className="text-xs px-2 py-0.5 rounded-md text-(--accent-contrast) font-bold"
+              style={{ background: "var(--accent)" }}>
+              {showContacts ? "✕" : "＋"}
+            </button>
+          )}
         </div>
 
         {showContacts ? (
-          <div className="overflow-y-auto flex-1">
-            {contacts.length === 0 ? (
-              <ul className="divide-y divide-(--border)">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <li key={i} className="px-3 py-2"><SkeletonRow trailing={false} /></li>
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Mode toggle — hidden for community since they can only DM
+                their assigned social worker. */}
+            {canCreateGroups && (
+              <div className="px-3 pt-2 pb-2 flex gap-1">
+                {(["dm", "group"] as const).map((m) => (
+                  <button key={m} onClick={() => { setComposeMode(m); if (m === "dm") setGroupSelected(new Set()); }}
+                    className="flex-1 text-xs px-2 py-1.5 rounded-md font-semibold transition-colors"
+                    style={{
+                      background: composeMode === m ? "var(--accent)" : "var(--bg)",
+                      color: composeMode === m ? "var(--accent-contrast)" : "var(--muted)",
+                      border: "1px solid var(--border)",
+                    }}>
+                    {m === "dm" ? "Direct" : "Group"}
+                  </button>
                 ))}
-              </ul>
-            ) : (
-              <ul className="divide-y divide-(--border)">
-                {contacts.map((u) => (
-                  <li key={u._id}>
-                    <button onClick={() => openConvWith(u._id)}
-                      className="w-full px-3 py-2 text-left hover:bg-(--accent-subtle) transition-colors flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                        style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-                        {initials(u.name)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
-                        <p className="text-[10px] text-(--muted) capitalize truncate">{u.role}</p>
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              </div>
             )}
+
+            {/* Group meta — title + selected count + create button */}
+            {composeMode === "group" && (
+              <div className="px-3 pb-2 space-y-2 border-b border-(--border)">
+                <input value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)}
+                  placeholder="Group name (optional)" maxLength={80}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-md border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-(--muted)">
+                    {groupSelected.size === 0 ? "Pick members below" : `${groupSelected.size} selected`}
+                  </p>
+                  <button onClick={createGroup} disabled={groupSelected.size === 0 || creatingGroup}
+                    className="text-[11px] px-2.5 py-1 rounded-md font-bold disabled:opacity-40"
+                    style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                    {creatingGroup ? "Creating…" : "Create group"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Contacts list */}
+            <div className="overflow-y-auto flex-1">
+              {contacts.length === 0 ? (
+                <ul className="divide-y divide-(--border)">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <li key={i} className="px-3 py-2"><SkeletonRow trailing={false} /></li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="divide-y divide-(--border)">
+                  {contacts.map((u) => {
+                    const checked = groupSelected.has(u._id);
+                    return (
+                      <li key={u._id}>
+                        <button onClick={() => composeMode === "group" ? toggleGroupMember(u._id) : openConvWith(u._id)}
+                          className="w-full px-3 py-2 text-left hover:bg-(--accent-subtle) transition-colors flex items-center gap-2"
+                          style={composeMode === "group" && checked ? { background: "var(--accent-subtle)" } : undefined}>
+                          {composeMode === "group" && (
+                            <span className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
+                              style={{
+                                background: checked ? "var(--accent)" : "transparent",
+                                borderColor: checked ? "var(--accent)" : "var(--border)",
+                                color: "var(--accent-contrast)",
+                              }}>
+                              {checked && <span className="text-[10px] leading-none">✓</span>}
+                            </span>
+                          )}
+                          <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
+                            style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                            {initials(u.name)}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
+                            <p className="text-[10px] text-(--muted) capitalize truncate">{u.role}</p>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
         ) : (
           <div className="overflow-y-auto flex-1">
@@ -268,8 +397,10 @@ export default function ChatApp({ currentUserId }: Props) {
             ) : (
               <ul className="divide-y divide-(--border)">
                 {conversations.map((c) => {
-                  const peer = peerOf(c);
                   const isActive = c._id === activeId;
+                  const label = convLabel(c);
+                  const subtitle = convSubtitle(c);
+                  const isGroup = c.type === "group";
                   return (
                     <li key={c._id} className="relative group">
                       <button onClick={() => setActiveId(c._id)}
@@ -277,11 +408,11 @@ export default function ChatApp({ currentUserId }: Props) {
                         style={{ background: isActive ? "var(--accent-subtle)" : "transparent" }}>
                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
                           style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-                          {initials(peer?.name)}
+                          {isGroup ? "👥" : initials(label)}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex justify-between items-baseline gap-2">
-                            <p className="text-sm font-semibold text-(--text) truncate">{peer?.name ?? "Unknown"}</p>
+                            <p className="text-sm font-semibold text-(--text) truncate">{label}</p>
                             {c.lastMessageAt && (
                               <span className="text-[10px] text-(--muted) shrink-0">
                                 {timeAgo(c.lastMessageAt)}
@@ -291,7 +422,7 @@ export default function ChatApp({ currentUserId }: Props) {
                           {c.lastMessagePreview ? (
                             <p className="text-xs text-(--muted) truncate mt-0.5">{c.lastMessagePreview}</p>
                           ) : (
-                            <p className="text-[10px] text-(--muted) capitalize mt-0.5">{peer?.role}</p>
+                            <p className="text-[10px] text-(--muted) capitalize mt-0.5">{subtitle}</p>
                           )}
                         </div>
                       </button>
@@ -322,11 +453,17 @@ export default function ChatApp({ currentUserId }: Props) {
             <header className="px-4 py-2.5 border-b border-(--border) flex items-center gap-2">
               <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                 style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-                {initials(activePeer?.name)}
+                {active?.type === "group" ? "👥" : initials(activePeer?.name)}
               </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-(--text) truncate">{activePeer?.name ?? "Conversation"}</p>
-                <p className="text-[10px] text-(--muted) capitalize">{activePeer?.role}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-(--text) truncate">
+                  {active ? convLabel(active) : "Conversation"}
+                </p>
+                <p className="text-[10px] text-(--muted) capitalize truncate">
+                  {active?.type === "group"
+                    ? active.participants.map((p) => p.name).join(", ")
+                    : activePeer?.role}
+                </p>
               </div>
             </header>
 

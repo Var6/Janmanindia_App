@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import BookAppointmentForm from "@/components/appointments/BookAppointmentForm";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 
 type UserRef = { _id: string; name: string; email: string; role?: string };
+type Hearing = {
+  _id: string;
+  caseTitle: string;
+  caseNumber?: string;
+  nextHearingDate: string;
+  courtName?: string;
+  courtType?: string;
+  status: string;
+};
 type Appointment = {
   _id: string;
   status: string;
@@ -35,19 +45,25 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> 
 export default function AppointmentsHub() {
   const [me, setMe] = useState<{ _id: string; role: string } | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
+  const [hearings, setHearings] = useState<Hearing[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     try {
-      const [meRes, listRes] = await Promise.all([
+      const [meRes, listRes, hearingsRes] = await Promise.all([
         fetch("/api/users/me"),
         fetch("/api/appointments"),
+        // Endpoint silently returns [] for roles without case access, so it's
+        // safe to call unconditionally and gate the section on .length.
+        fetch("/api/cases/hearings"),
       ]);
       const meData = await meRes.json();
       const listData = await listRes.json();
+      const hearingsData = await hearingsRes.json();
       if (meData.user) setMe({ _id: meData.user._id, role: meData.user.role });
       setAppts(listData.appointments ?? []);
+      setHearings(hearingsData.hearings ?? []);
     } finally {
       setLoading(false);
     }
@@ -134,6 +150,7 @@ export default function AppointmentsHub() {
         </div>
       ) : (
         <>
+          <HearingsSection hearings={hearings} role={me?.role} />
           {litigationPending.length > 0 && (
             <Section title={`Awaiting your confirmation (${litigationPending.length})`}
               empty="" appts={litigationPending}
@@ -244,6 +261,58 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
           })}
         </div>
       )}
+    </section>
+  );
+}
+
+function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: string }) {
+  if (hearings.length === 0) return null;
+  const baseHref = role === "litigation" ? "/litigation/cases" : role === "director" || role === "superadmin" ? "/director/cases" : null;
+  if (!baseHref) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return (
+    <section>
+      <h2 className="font-semibold text-(--text) mb-3">
+        Upcoming court hearings
+        <span className="ml-2 text-xs font-normal text-(--muted)">
+          ({hearings.length} in next 60 days)
+        </span>
+      </h2>
+      <div className="space-y-2">
+        {hearings.map((h) => {
+          const d = new Date(h.nextHearingDate);
+          const days = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+          const courtLabel = h.courtName
+            ?? (h.courtType === "supreme" ? "Supreme Court"
+              : h.courtType === "district" ? "District Court"
+              : "High Court");
+          return (
+            <Link key={h._id} href={`${baseHref}/${h._id}`}
+              className="flex items-start gap-3 px-4 py-3 rounded-2xl border transition-colors hover:border-(--accent)"
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+              <span className="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded mt-0.5"
+                style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                Hearing
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-(--text) truncate">{h.caseTitle}</p>
+                <p className="text-xs text-(--muted) mt-0.5 truncate">
+                  {h.caseNumber ? `${h.caseNumber} · ` : ""}{courtLabel} · {h.status}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-xs font-semibold text-(--text)">
+                  {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </p>
+                <p className="text-[10px]"
+                  style={{ color: days <= 3 ? "var(--error-text)" : "var(--muted)" }}>
+                  {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `in ${days}d`}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
     </section>
   );
 }

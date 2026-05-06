@@ -12,22 +12,29 @@ export async function GET() {
     if (!mongoose.Types.ObjectId.isValid(session.id)) return NextResponse.json({ contacts: [] });
     await connectDB();
 
-    let allowedRoles: string[];
+    // Community sees only the social worker they've been assigned to —
+    // not the org-wide SW list. If they have no assignment yet, no
+    // contacts are shown (and the page nudges them to wait for one).
+    let users;
     if (session.role === "community") {
-      allowedRoles = ["socialworker"];
+      const me = await User.findById(session.id).select("communityProfile.assignedSocialWorker").lean();
+      const swId = me?.communityProfile?.assignedSocialWorker;
+      if (!swId) {
+        return NextResponse.json({ contacts: [] });
+      }
+      users = await User.find({ _id: swId, isActive: true, role: "socialworker" })
+        .select("name role employeeId")
+        .lean();
     } else {
-      // staff can chat with all staff and with community
-      allowedRoles = ["socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin", "community"];
+      users = await User.find({
+        _id: { $ne: session.id },
+        role: { $in: ["socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin", "community"] },
+        isActive: true,
+      })
+        .select("name role employeeId")
+        .sort({ role: 1, name: 1 })
+        .lean();
     }
-
-    const users = await User.find({
-      _id: { $ne: session.id },
-      role: { $in: allowedRoles },
-      isActive: true,
-    })
-      .select("name role employeeId")
-      .sort({ role: 1, name: 1 })
-      .lean();
 
     // Defensive — re-filter via canDirectMessage
     const contacts = users.filter((u) => canDirectMessage(session.role, u.role));
