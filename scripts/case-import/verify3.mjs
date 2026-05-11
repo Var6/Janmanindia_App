@@ -1,0 +1,13 @@
+import mongoose from 'mongoose';
+await mongoose.connect(process.env.MONGODB_URI);
+const Cases = mongoose.connection.collection('cases');
+const Users = mongoose.connection.collection('users');
+const imp = await Cases.countDocuments({ caseNumber: /^JMI-IMP-/ });
+const dev = await Cases.countDocuments({ caseNumber: /^DEV-/ });
+const stubs = await Users.countDocuments({ email: /@stub\.janmanindia\.org$/ });
+const total = await Cases.countDocuments({});
+const sampleImported = await Cases.find({ caseNumber: /^JMI-IMP-/ }).project({ caseNumber:1, causeTitle:1, community:1, district:1, status:1 }).sort({ caseNumber: 1 }).toArray();
+console.log({ imported: imp, dev_seed: dev, stub_users: stubs, total });
+console.log('\nImported cases:');
+sampleImported.forEach(c => console.log(' ', c.caseNumber, '|', c.district, '|', c.status, '|', c.causeTitle));
+await mongoose.disconnect();
