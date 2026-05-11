@@ -1,0 +1,13 @@
+import mongoose from 'mongoose';
+await mongoose.connect(process.env.MONGODB_URI);
+const Case = mongoose.connection.collection('cases');
+const last = await Case.find({}, { projection: { caseNumber:1, district:1 } }).sort({ _id:-1 }).limit(5).toArray();
+console.log('Latest 5 cases:'); last.forEach(c => console.log(' ', c.caseNumber, c.district));
+const total = await Case.countDocuments({});
+console.log('Total cases:', total);
+const patnaCount = await Case.countDocuments({ district: 'Patna' });
+console.log('Patna cases:', patnaCount);
+const numbers = await Case.find({ caseNumber: /^JMI-/ }, { projection: { caseNumber:1 } }).toArray();
+const nums = numbers.map(c => parseInt(c.caseNumber.split('-').pop(), 10)).filter(n => !isNaN(n));
+console.log('Max JMI-* numeric suffix:', nums.length ? Math.max(...nums) : 'none');
+await mongoose.disconnect();
