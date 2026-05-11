@@ -1,0 +1,10 @@
+import mongoose from 'mongoose';
+await mongoose.connect(process.env.MONGODB_URI);
+const Cases = mongoose.connection.collection('cases');
+const Activities = mongoose.connection.collection('activities');
+const imp = await Cases.countDocuments({ caseNumber: /^JMI-IMP-/ });
+const byD = await Cases.aggregate([{ $match: { caseNumber: /^JMI-IMP-/ } }, { $group: { _id: '$district', n: { $sum: 1 } } }]).toArray();
+const acts = await Activities.countDocuments({});
+console.log({ imported_litigations: imp, total_activities: acts });
+console.log('By district:', byD);
+await mongoose.disconnect();
