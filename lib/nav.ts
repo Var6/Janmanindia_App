@@ -1,12 +1,13 @@
 import type { NavItem } from "@/components/shared/SidebarNav";
 
-/** Items every authenticated user sees (regardless of role). */
+/** Items every authenticated user sees (regardless of role). Icons are
+ *  chosen so no two items in any one user's sidebar share a glyph. */
 const SHARED_ITEMS: NavItem[] = [
   { href: "/appointments", label: "Appointments", icon: "calendar"  },
   { href: "/chat",         label: "Chat",         icon: "chat"      },
-  { href: "/grievance",    label: "Grievance",    icon: "alert"     },
+  { href: "/grievance",    label: "Grievance",    icon: "flame"     },
   { href: "/training",     label: "Training",     icon: "book"      },
-  { href: "/policies",     label: "Policies",     icon: "shield"    },
+  { href: "/policies",     label: "Policies",     icon: "scroll"    },
 ];
 
 /** Role-specific items, ordered top-to-bottom in the sidebar. */
@@ -34,18 +35,20 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   socialworker: [
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
-    { href: "/socialworker/cases",           label: "Cases",          icon: "briefcase"   },
+    { href: "/socialworker/cases",           label: "Cases",          icon: "scale"       },
     { href: "/socialworker/care-plans",      label: "Care Plans",     icon: "user-circle" },
     { href: "/socialworker/daily-reports",   label: "Daily Reports",  icon: "document"    },
     { href: "/socialworker/queries",         label: "Queries",        icon: "search"      },
     { href: "/socialworker/plv-requests",    label: "PLV Requests",   icon: "users"       },
-    { href: "/socialworker/escalate",        label: "Escalate",       icon: "alert"       },
+    { href: "/socialworker/escalate",        label: "Escalate",       icon: "target"      },
     { href: "/socialworker/voice-messages",  label: "Voice Messages", icon: "mic"         },
     { href: "/socialworker/media-scanning",  label: "Media Scanning", icon: "upload"      },
+    { href: "/socialworker/aangan",          label: "Aangan (Child)", icon: "shield"      },
   ],
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
-    { href: "/litigation/cases",        label: "Cases",        icon: "briefcase" },
+    { href: "/litigation/cases",        label: "Cases",        icon: "scale"     },
+    { href: "/litigation/tools",        label: "Legal Tools",  icon: "gavel"     },
     { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
     // Invoice / expense approval is finance / director / HR's responsibility,
     // not litigation's. The /litigation/invoices route still exists for the
@@ -62,7 +65,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/hr/attendance",            label: "Attendance",      icon: "clock"      },
     { href: "/hr/onboarding",            label: "Onboarding",      icon: "user-plus"  },
     { href: "/hr/offboarding",           label: "Offboarding",     icon: "user-minus" },
-    { href: "/hr/grievances",            label: "Grievances",      icon: "alert"      },
+    { href: "/hr/grievances",            label: "Grievances",      icon: "inbox"      },
     { href: "/hr/helplines",             label: "Helplines",       icon: "bell"       },
   ],
   finance: [
@@ -74,37 +77,38 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/administrator",          label: "Dashboard",    icon: "home"      },
     { href: "/administrator/assign",   label: "Assign Tasks", icon: "refresh"   },
     { href: "/administrator/expenses", label: "My Expenses",  icon: "currency"  },
-    { href: "/administrator/tickets",  label: "Ticket Inbox", icon: "alert"     },
-    { href: "/administrator/offices",  label: "Offices",      icon: "briefcase" },
+    { href: "/administrator/tickets",  label: "Ticket Inbox", icon: "inbox"     },
+    { href: "/administrator/offices",  label: "Offices",      icon: "building"  },
   ],
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
-    { href: "/director/calendar",           label: "Team Calendar",     icon: "calendar"    },
-    { href: "/director/cases",              label: "Cases",             icon: "briefcase"   },
+    { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
+    { href: "/director/cases",              label: "Cases",             icon: "scale"       },
     { href: "/director/users",              label: "Users",             icon: "users"       },
     { href: "/director/assign",             label: "Assign",            icon: "refresh"     },
-    { href: "/director/head-lawyers",       label: "Head Lawyers",      icon: "shield"      },
+    { href: "/director/head-lawyers",       label: "Head Lawyers",      icon: "award"       },
+    { href: "/director/jan-sahayak-pro",    label: "JNA Pro",           icon: "gavel"       },
     { href: "/director/invoices",           label: "Invoice Approvals", icon: "receipt"     },
     { href: "/director/expense-approvals",  label: "Expense Approvals", icon: "currency"    },
   ],
   superadmin: [
-    { href: "/superadmin",            label: "Overview",       icon: "shield"      },
-    { href: "/superadmin/projects",   label: "Projects",       icon: "briefcase"   },
-    { href: "/director/calendar",     label: "Team Calendar",  icon: "calendar"    },
+    { href: "/superadmin",            label: "Overview",       icon: "compass"     },
+    { href: "/superadmin/projects",   label: "Projects",       icon: "folder"      },
+    { href: "/director/calendar",     label: "Team Calendar",  icon: "users-team"  },
     { href: "/director/users",        label: "Users",          icon: "users"       },
-    { href: "/director/cases",        label: "All Cases",      icon: "briefcase"   },
+    { href: "/director/cases",        label: "All Cases",      icon: "scale"       },
     { href: "/director",              label: "Director",       icon: "settings"    },
-    { href: "/hr",                    label: "HR",             icon: "users"       },
-    { href: "/litigation",            label: "Litigation",     icon: "shield"      },
+    { href: "/hr",                    label: "HR",             icon: "user-plus"   },
+    { href: "/litigation",            label: "Litigation",     icon: "gavel"       },
     { href: "/socialworker",          label: "Social Worker",  icon: "user-circle" },
     { href: "/finance",               label: "Finance",        icon: "trending-up" },
-    { href: "/administrator",         label: "Administrator",  icon: "briefcase"   },
+    { href: "/administrator",         label: "Administrator",  icon: "building"    },
   ],
 };
 
 /** Cross-role utility items shown to every staff role. */
 const STAFF_ITEMS: NavItem[] = [
-  { href: "/activities", label: "Activities", icon: "calendar"  },
+  { href: "/activities", label: "Activities", icon: "target"  },
 ];
 
 /** Logistics is an admin-only function — fulfilling tickets, raising office

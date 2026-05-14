@@ -189,6 +189,80 @@ const ICONS = {
       <line x1="7" y1="19" x2="13" y2="19"/>
     </svg>
   ),
+  scale: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <line x1="10" y1="3" x2="10" y2="17"/>
+      <path d="M5 6h10M3 12c0-3 1.5-6 2-6s2 3 2 6H3zm10 0c0-3 1.5-6 2-6s2 3 2 6h-4z"/>
+    </svg>
+  ),
+  gavel: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M9 2l5 5-2 2-5-5z"/>
+      <path d="M11 4l5 5"/>
+      <path d="M7 8l5 5-5 5-5-5z"/>
+      <line x1="3" y1="18" x2="17" y2="18"/>
+    </svg>
+  ),
+  folder: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+    </svg>
+  ),
+  building: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <rect x="3" y="2" width="14" height="16" rx="1"/>
+      <line x1="7" y1="6" x2="7" y2="6"/><line x1="13" y1="6" x2="13" y2="6"/>
+      <line x1="7" y1="10" x2="7" y2="10"/><line x1="13" y1="10" x2="13" y2="10"/>
+      <rect x="8" y="13" width="4" height="5"/>
+    </svg>
+  ),
+  target: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <circle cx="10" cy="10" r="8"/>
+      <circle cx="10" cy="10" r="5"/>
+      <circle cx="10" cy="10" r="2"/>
+    </svg>
+  ),
+  compass: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <circle cx="10" cy="10" r="8"/>
+      <polygon points="13.5 6.5 8.5 8.5 6.5 13.5 11.5 11.5"/>
+    </svg>
+  ),
+  scroll: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H6a2 2 0 01-2-2V4z"/>
+      <path d="M4 4v0a2 2 0 00-2 2v0a2 2 0 002 2"/>
+      <line x1="8" y1="7" x2="14" y2="7"/>
+      <line x1="8" y1="10" x2="14" y2="10"/>
+    </svg>
+  ),
+  flame: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M10 18c3.5 0 6-2.5 6-6 0-2-1-3.5-2-4.5 0 1.5-1 2-1.5 2 0-2-1-4-2.5-5.5 0 2.5-1.5 3.5-3 5C5 10 4 11.5 4 13c0 3 2.5 5 6 5z"/>
+    </svg>
+  ),
+  inbox: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M2 13l3-9h10l3 9"/>
+      <path d="M2 13v4a1 1 0 001 1h14a1 1 0 001-1v-4"/>
+      <path d="M2 13h4l1 2h6l1-2h4"/>
+    </svg>
+  ),
+  award: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <circle cx="10" cy="8" r="5"/>
+      <polyline points="6.5 12 5 18 10 15 15 18 13.5 12"/>
+    </svg>
+  ),
+  "users-team": (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <circle cx="7" cy="7" r="2.5"/>
+      <circle cx="13" cy="8" r="2"/>
+      <path d="M3 17c0-2.5 1.8-4 4-4s4 1.5 4 4"/>
+      <path d="M11 17c0-2 1.4-3 3-3s3 1 3 3"/>
+    </svg>
+  ),
 } satisfies Record<string, React.ReactNode>;
 
 interface Props {
