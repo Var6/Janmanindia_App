@@ -5,12 +5,14 @@ export async function claudeCall(
   system: string,
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   max_tokens = 1500,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools?: any[],
 ): Promise<string> {
   try {
     const r = await fetch("/api/ai/draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ system, messages, max_tokens }),
+      body: JSON.stringify({ system, messages, max_tokens, tools }),
     });
     const d = await r.json();
     return d.text || d.error || "No response.";

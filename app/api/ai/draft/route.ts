@@ -12,18 +12,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text: "AI is not configured on this deployment yet.", error: "missing_key" }, { status: 503 });
     }
 
-    const { system, messages, max_tokens } = await req.json();
+    const { system, messages, max_tokens, tools } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ text: "", error: "messages required" }, { status: 400 });
     }
 
     const client = new Anthropic({ apiKey });
-    const res = await client.messages.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload: any = {
       model: "claude-sonnet-4-5",
       max_tokens: typeof max_tokens === "number" ? Math.min(max_tokens, 4096) : 1500,
       system: typeof system === "string" ? system : undefined,
       messages,
-    });
+    };
+    if (Array.isArray(tools) && tools.length > 0) payload.tools = tools;
+    const res = await client.messages.create(payload);
 
     const text = res.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
