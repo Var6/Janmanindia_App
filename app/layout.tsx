@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Manrope, Fraunces, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
 
-const sans = Plus_Jakarta_Sans({
+const sans = Manrope({
   variable: "--font-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const serif = Fraunces({
+  variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
 });
@@ -54,7 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en"
-      className={`${sans.variable} ${mono.variable} ${devanagari.variable} h-full antialiased`}>
+      className={`${sans.variable} ${serif.variable} ${mono.variable} ${devanagari.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300 app-bg">
         <ThemeProvider>
           <SessionProvider>

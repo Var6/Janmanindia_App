@@ -1,31 +1,33 @@
 @import "tailwindcss";
 
-/* ── Light theme ──────────────────────────────────────────────────────────── */
+/* ── Light theme — Jan Sahayak / lawyer-letterhead aesthetic ─────────────── */
+/*  Warm terracotta (#C84B31) on cream (#FAF6EE) + clay borders. The fonts
+ *  pair Manrope (body) with Fraunces (display) — set via next/font.       */
 :root {
   color-scheme: light;
 
-  /* Backgrounds */
-  --bg:           #f6f8fb;
-  --bg-secondary: #eef2f7;
-  --surface:      #ffffff;
-  --surface-2:    #f8fafc;
+  /* Backgrounds — cream, paper, parchment */
+  --bg:           #FAF6EE;
+  --bg-secondary: #F3ECDB;
+  --surface:      #FFFCF6;
+  --surface-2:    #F8F2E5;
 
-  /* Text */
-  --text:         #0f172a;
-  --text-2:       #334155;
-  --muted:        #64748b;
-  --muted-2:      #94a3b8;
+  /* Text — warm ink */
+  --text:         #231812;
+  --text-2:       #3F2E22;
+  --muted:        #5C4A3F;
+  --muted-2:      #8A7766;
 
-  /* Borders */
-  --border:       #e2e8f0;
-  --border-2:     #f1f5f9;
+  /* Borders — clay */
+  --border:       #EBDDC9;
+  --border-2:     #F1E5D2;
 
-  /* Accent — amber */
-  --accent:         #f59e0b;
-  --accent-hover:   #d97706;
-  --accent-contrast:#0f172a;
-  --accent-muted:   #fef3c7;
-  --accent-subtle:  #fffbeb;
+  /* Accent — terracotta */
+  --accent:         #C84B31;
+  --accent-hover:   #9B3722;
+  --accent-contrast:#FFFCF6;
+  --accent-muted:   #FBE6DF;
+  --accent-subtle:  #FDF1EC;
 
   /* Status */
   --success:     #10b981;
@@ -50,15 +52,15 @@
   --shadow:     0 4px 16px rgba(15,23,42,0.08), 0 2px 4px rgba(15,23,42,0.04);
   --shadow-lg:  0 16px 48px rgba(15,23,42,0.10), 0 6px 16px rgba(15,23,42,0.06);
   --shadow-xl:  0 24px 64px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.06);
-  --shadow-accent: 0 8px 24px rgba(245,158,11,0.28);
+  --shadow-accent: 0 8px 24px rgba(200,75,49,0.28);
 
-  /* Sidebar */
-  --sidebar:            #ffffff;
-  --sidebar-border:     #e8edf4;
-  --sidebar-hover:      rgba(245,158,11,0.07);
-  --sidebar-active-bg:  rgba(245,158,11,0.11);
-  --sidebar-active-text:#b45309;
-  --sidebar-icon:       #94a3b8;
+  /* Sidebar — paper */
+  --sidebar:            #FFFCF6;
+  --sidebar-border:     #EBDDC9;
+  --sidebar-hover:      rgba(200,75,49,0.07);
+  --sidebar-active-bg:  rgba(200,75,49,0.11);
+  --sidebar-active-text:#9B3722;
+  --sidebar-icon:       #8A7766;
 }
 
 /* ── Dark theme ───────────────────────────────────────────────────────────── */
@@ -135,8 +137,9 @@ body {
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--font-sans), sans-serif;
-  letter-spacing: -0.018em;
+  font-family: var(--font-serif), var(--font-sans), ui-serif, Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.012em;
 }
 
 code, pre, .font-mono {
@@ -161,8 +164,8 @@ code, pre, .font-mono {
   z-index: -2;
   background:
     radial-gradient(800px 500px at 12% -10%,  color-mix(in srgb, var(--accent)  18%, transparent), transparent 60%),
-    radial-gradient(700px 480px at 92% 10%,   color-mix(in srgb, #6366f1        16%, transparent), transparent 60%),
-    radial-gradient(900px 600px at 50% 110%,  color-mix(in srgb, #14b8a6        14%, transparent), transparent 60%);
+    radial-gradient(700px 480px at 92% 10%,   color-mix(in srgb, #E59500        14%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%,  color-mix(in srgb, #2E7D32        10%, transparent), transparent 60%);
   pointer-events: none;
 }
 .app-bg::after {
@@ -198,7 +201,7 @@ code, pre, .font-mono {
 }
 
 ::selection {
-  background: rgba(245, 158, 11, 0.25);
+  background: rgba(200, 75, 49, 0.22);
   color: var(--text);
 }
 
@@ -230,7 +233,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  box-shadow: 0 0 0 3px rgba(200,75,49,0.15);
 }
 
 input::placeholder, textarea::placeholder {
