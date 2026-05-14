@@ -1,0 +1,361 @@
+// @ts-nocheck
+"use client";
+import React, { useState } from "react";
+import { claudeCall } from "@/lib/ai-client";
+
+/** Legal Research & Drafting Suite — Janman People's Foundation
+ *  6 modules: Case Tracker, Research Assistant, Document Drafter,
+ *  Briefing Note Builder, Document Summariser, FIR/Complaint Drafter. */
+
+const MODULES = [
+  { id: "tracker",    label: "Case Tracker",          icon: "📁" },
+  { id: "research",   label: "Research Assistant",    icon: "🔎" },
+  { id: "drafter",    label: "Document Drafter",      icon: "✍️" },
+  { id: "briefing",   label: "Briefing Note Builder", icon: "📜" },
+  { id: "summariser", label: "Document Summariser",   icon: "📄" },
+  { id: "fir",        label: "FIR / Complaint Drafter", icon: "⚖️" },
+];
+
+const DOC_TYPES = [
+  "Bail Application","Anticipatory Bail Application","Writ Petition (HC)","SLP (SC)",
+  "PIL","FIR / Complaint","Legal Notice","Reply to Notice","Affidavit","Plaint","Written Statement",
+];
+const STATUTES = ["IPC/BNS","POCSO","SC/ST (PoA) Act","PWDVA","Dowry Prohibition Act","MGNREGA","NFSA","UAPA","NDPS","Custom"];
+
+function Field({ label, value, onChange, type = "input", rows = 3, options, placeholder, required }) {
+  const cls = "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white";
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+        {label}
+        {required && <span className="text-rose-500"> *</span>}
+      </label>
+      {type === "textarea" ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls} />
+      ) : type === "select" ? (
+        <select value={value} onChange={(e) => onChange(e.target.value)} className={cls}>
+          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={cls} />
+      )}
+    </div>
+  );
+}
+
+function Output({ title, text, loading }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); };
+  if (loading)
+    return (
+      <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-sm text-gray-500">
+        <div className="inline-block w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+        Working...
+      </div>
+    );
+  if (!text) return null;
+  return (
+    <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm font-semibold text-gray-700">{title}</span>
+        <button onClick={copy} className="text-xs text-indigo-600 hover:underline">{copied ? "Copied!" : "Copy"}</button>
+      </div>
+      <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans leading-relaxed">{text}</pre>
+    </div>
+  );
+}
+
+function CaseTracker() {
+  const [cases, setCases] = useState([
+    { id: 1, name: "State v. Mathur Manjhi", court: "Patna HC",     parties: "State v. Mathur Manjhi", stage: "Final Hearing",     nextDate: "2026-05-20", lawyer: "Shashwat", notes: "POCSO acquittal appeal" },
+    { id: 2, name: "Arsalan v. NIA",         court: "Supreme Court", parties: "Arsalan v. NIA",        stage: "Listed for Hearing", nextDate: "2026-05-18", lawyer: "Sr. Adv.", notes: "UAPA bail; MHA sanction defect" },
+  ]);
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({ name: "", court: "Patna HC", parties: "", stage: "Filed", nextDate: "", lawyer: "Shashwat", notes: "" });
+
+  const upcoming = cases.filter((c) => {
+    if (!c.nextDate) return false;
+    const days = (new Date(c.nextDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return days >= 0 && days <= 7;
+  });
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Case Tracker</h2>
+          <p className="text-sm text-gray-500">In-session tracker. For permanent matters, use /director/cases.</p>
+        </div>
+        <button onClick={() => setShow(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">+ New Matter</button>
+      </div>
+      {upcoming.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="font-semibold text-amber-900 text-sm">⚠ {upcoming.length} hearing(s) within 7 days</div>
+          <div className="text-xs text-amber-800 mt-1">{upcoming.map((c) => `${c.name} (${c.nextDate})`).join(" · ")}</div>
+        </div>
+      )}
+      <div className="bg-white border rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-600">
+            <tr>
+              <th className="px-4 py-2 text-left">Matter</th>
+              <th className="px-4 py-2 text-left">Court</th>
+              <th className="px-4 py-2 text-left">Stage</th>
+              <th className="px-4 py-2 text-left">Next Date</th>
+              <th className="px-4 py-2 text-left">Lawyer</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {cases.map((c) => (
+              <tr key={c.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium">{c.name}<div className="text-xs text-gray-500">{c.notes}</div></td>
+                <td className="px-4 py-3 text-gray-600">{c.court}</td>
+                <td className="px-4 py-3"><span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{c.stage}</span></td>
+                <td className="px-4 py-3 text-gray-600">{c.nextDate || "—"}</td>
+                <td className="px-4 py-3 text-gray-600">{c.lawyer}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {show && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-3">
+            <h3 className="text-lg font-bold">New Matter</h3>
+            <Field label="Matter Name" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} required />
+            <Field label="Parties" value={form.parties} onChange={(v) => setForm((f) => ({ ...f, parties: v }))} />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Court" type="select" value={form.court} onChange={(v) => setForm((f) => ({ ...f, court: v }))} options={["Supreme Court","Patna HC","District Court","DLSA","Other"]} />
+              <Field label="Stage" type="select" value={form.stage} onChange={(v) => setForm((f) => ({ ...f, stage: v }))} options={["Filed","Listed","Final Hearing","Judgment Reserved","Disposed"]} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Next Date" type="date" value={form.nextDate} onChange={(v) => setForm((f) => ({ ...f, nextDate: v }))} />
+              <Field label="Lawyer" value={form.lawyer} onChange={(v) => setForm((f) => ({ ...f, lawyer: v }))} />
+            </div>
+            <Field label="Notes" type="textarea" value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} rows={2} />
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShow(false)} className="px-4 py-2 text-sm">Cancel</button>
+              <button
+                onClick={() => {
+                  setCases((p) => [...p, { ...form, id: Date.now() }]);
+                  setShow(false);
+                  setForm({ name: "", court: "Patna HC", parties: "", stage: "Filed", nextDate: "", lawyer: "Shashwat", notes: "" });
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResearchAssistant() {
+  const [msgs, setMsgs] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const send = async () => {
+    if (!input.trim()) return;
+    const newMsgs = [...msgs, { role: "user", content: input }];
+    setMsgs(newMsgs);
+    setInput("");
+    setLoading(true);
+    const sys = "You are a legal research assistant for an Indian advocate practising at Patna HC and Supreme Court. Provide structured, well-cited answers on Indian law (Constitution, IPC/BNS, CrPC/BNSS, Evidence/BSA, special statutes). Always include statute, case citations with year and parallel citation, and a short ratio. Bias toward Bihar / SC precedent.";
+    const reply = await claudeCall(sys, newMsgs, 2000);
+    setMsgs([...newMsgs, { role: "assistant", content: reply }]);
+    setLoading(false);
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">Research Assistant</h2>
+        <p className="text-sm text-gray-500">Ask questions on Indian law — case law, statutes, procedure.</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4 h-[400px] overflow-y-auto space-y-3">
+        {msgs.length === 0 && <div className="text-sm text-gray-400 text-center pt-32">Start a conversation. e.g. "What is the test for granting bail under S. 437 CrPC for an offence punishable with life?"</div>}
+        {msgs.map((m, i) => (
+          <div key={i} className={`max-w-[85%] ${m.role === "user" ? "ml-auto bg-indigo-50 text-indigo-900" : "bg-gray-50"} p-3 rounded-lg text-sm`}>
+            <div className="text-xs font-semibold mb-1 opacity-60">{m.role === "user" ? "You" : "Claude"}</div>
+            <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+          </div>
+        ))}
+        {loading && <div className="text-sm text-gray-400">Thinking…</div>}
+      </div>
+      <div className="flex gap-2">
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Ask a legal question..." className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+        <button onClick={send} disabled={loading} className="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Send</button>
+      </div>
+    </div>
+  );
+}
+
+function DocumentDrafter() {
+  const [form, setForm] = useState({ type: "Bail Application", court: "Patna HC", parties: "", facts: "", relief: "", grounds: "" });
+  const [out, setOut] = useState("");
+  const [loading, setLoading] = useState(false);
+  const generate = async () => {
+    setLoading(true); setOut("");
+    const sys = "You are an experienced Indian advocate. Draft formal legal documents in proper Indian court format with headings, numbered paragraphs, statutory provisions, and case citations. Use the precise language of Indian courts.";
+    const prompt = `Draft a ${form.type} for ${form.court}.\n\nParties: ${form.parties}\nFacts: ${form.facts}\nRelief: ${form.relief}\nGrounds noted: ${form.grounds}\n\nInclude title, before the court, in the matter of, facts, grounds with case law (cite Arnesh Kumar, Satender Kumar Antil, Sanjay Chandra for bail; relevant Constitution articles for writs), and prayer.`;
+    setOut(await claudeCall(sys, [{ role: "user", content: prompt }], 3000));
+    setLoading(false);
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">Document Drafter</h2>
+        <p className="text-sm text-gray-500">Generate first drafts of petitions, applications, notices.</p>
+      </div>
+      <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Document Type" type="select" value={form.type} onChange={(v) => setForm((f) => ({ ...f, type: v }))} options={DOC_TYPES} />
+          <Field label="Court" value={form.court} onChange={(v) => setForm((f) => ({ ...f, court: v }))} />
+        </div>
+        <Field label="Parties" value={form.parties} onChange={(v) => setForm((f) => ({ ...f, parties: v }))} placeholder="e.g. Mohan Kumar v. State of Bihar" />
+        <Field label="Facts" type="textarea" rows={5} value={form.facts} onChange={(v) => setForm((f) => ({ ...f, facts: v }))} />
+        <Field label="Relief Sought" type="textarea" rows={2} value={form.relief} onChange={(v) => setForm((f) => ({ ...f, relief: v }))} />
+        <Field label="Key Grounds / Notes" type="textarea" rows={3} value={form.grounds} onChange={(v) => setForm((f) => ({ ...f, grounds: v }))} />
+        <button onClick={generate} disabled={loading} className="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Generate Draft</button>
+      </div>
+      <Output title="Draft Document" text={out} loading={loading} />
+    </div>
+  );
+}
+
+function BriefingNoteBuilder() {
+  const [form, setForm] = useState({ caseTitle: "", court: "Supreme Court of India", caseNo: "", impugnedOrder: "", issues: "", facts: "", submissions: "" });
+  const [out, setOut] = useState(""); const [loading, setLoading] = useState(false);
+  const generate = async () => {
+    setLoading(true); setOut("");
+    const sys = "You are drafting an Indian SC/HC briefing note in house style: crisp, no fluff; lettered submission heads; Issue/Findings/Conclusion labels; case law cited at cluster end; abbreviations P, IO, CS, TC, JC; dual page refs P[n]/E[n] where applicable.";
+    const prompt = `Briefing note.\n\nCase Title: ${form.caseTitle}\nCourt: ${form.court}\nCase No: ${form.caseNo}\nImpugned Order: ${form.impugnedOrder}\nFacts: ${form.facts}\nIssues: ${form.issues}\nSubmission heads: ${form.submissions}\n\nProduce: header, overview, issues, facts, lettered submissions (A, B, C…) with sub-points (1, 2, 3…) and case clusters at the end of each, conclusion/prayer.`;
+    setOut(await claudeCall(sys, [{ role: "user", content: prompt }], 4000));
+    setLoading(false);
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">Briefing Note Builder</h2>
+        <p className="text-sm text-gray-500">SC/HC style briefing notes for senior counsel.</p>
+      </div>
+      <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Case Title" value={form.caseTitle} onChange={(v) => setForm((f) => ({ ...f, caseTitle: v }))} />
+          <Field label="Court" value={form.court} onChange={(v) => setForm((f) => ({ ...f, court: v }))} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Case No / Diary No" value={form.caseNo} onChange={(v) => setForm((f) => ({ ...f, caseNo: v }))} />
+          <Field label="Impugned Order Date / Details" value={form.impugnedOrder} onChange={(v) => setForm((f) => ({ ...f, impugnedOrder: v }))} />
+        </div>
+        <Field label="Facts" type="textarea" rows={4} value={form.facts} onChange={(v) => setForm((f) => ({ ...f, facts: v }))} />
+        <Field label="Issues" type="textarea" rows={3} value={form.issues} onChange={(v) => setForm((f) => ({ ...f, issues: v }))} />
+        <Field label="Submission Heads" type="textarea" rows={3} value={form.submissions} onChange={(v) => setForm((f) => ({ ...f, submissions: v }))} placeholder="e.g. A. No prima facie case; B. No flight risk; C. Parity" />
+        <button onClick={generate} disabled={loading} className="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Generate Note</button>
+      </div>
+      <Output title="Briefing Note" text={out} loading={loading} />
+    </div>
+  );
+}
+
+function DocumentSummariser() {
+  const [text, setText] = useState(""); const [out, setOut] = useState(""); const [loading, setLoading] = useState(false);
+  const generate = async () => {
+    if (!text.trim()) return;
+    setLoading(true); setOut("");
+    const sys = "Summarise Indian judgments/orders/documents in structured form: Court/Bench/Date | Parties | Facts | Issues | Held | Ratio | Significance for practice.";
+    setOut(await claudeCall(sys, [{ role: "user", content: text }], 2500));
+    setLoading(false);
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">Document Summariser</h2>
+        <p className="text-sm text-gray-500">Paste any judgment, order, or document.</p>
+      </div>
+      <div className="bg-white border rounded-lg p-5 space-y-3">
+        <Field label="Document Text" type="textarea" rows={10} value={text} onChange={setText} placeholder="Paste the judgment or order here..." />
+        <button onClick={generate} disabled={loading} className="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Summarise</button>
+      </div>
+      <Output title="Structured Summary" text={out} loading={loading} />
+    </div>
+  );
+}
+
+function FIRDrafter() {
+  const [form, setForm] = useState({ complainant: "", address: "", phone: "", ps: "", date: "", time: "", place: "", accused: "", incident: "", injuries: "", witnesses: "", statute: "IPC/BNS" });
+  const [out, setOut] = useState(""); const [loading, setLoading] = useState(false);
+  const generate = async () => {
+    setLoading(true); setOut("");
+    const sys = "Draft a properly structured FIR / complaint in Indian format with all sections of the relevant statute correctly identified. Suggest applicable provisions of IPC/BNS, POCSO, SC/ST Act, PWDVA, Dowry Prohibition Act, NDPS, or other statutes as appropriate.";
+    const prompt = `FIR / Complaint draft.\n\nComplainant: ${form.complainant}\nAddress: ${form.address}\nPhone: ${form.phone}\nPolice Station: ${form.ps}\nDate of incident: ${form.date}, Time: ${form.time}\nPlace: ${form.place}\nAccused: ${form.accused}\nIncident description: ${form.incident}\nInjuries: ${form.injuries}\nWitnesses: ${form.witnesses}\nApplicable statute focus: ${form.statute}\n\nDraft: complete FIR/complaint with addressee, brief facts narrated chronologically, identification of accused, witnesses, suggested sections of the applicable statutes with explanations, prayer for registration and investigation.`;
+    setOut(await claudeCall(sys, [{ role: "user", content: prompt }], 3000));
+    setLoading(false);
+  };
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">FIR / Complaint Drafter</h2>
+        <p className="text-sm text-gray-500">Auto-suggests applicable sections.</p>
+      </div>
+      <div className="bg-white border rounded-lg p-5 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Complainant" value={form.complainant} onChange={(v) => setForm((f) => ({ ...f, complainant: v }))} />
+          <Field label="Phone" value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
+        </div>
+        <Field label="Address" value={form.address} onChange={(v) => setForm((f) => ({ ...f, address: v }))} />
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Police Station" value={form.ps} onChange={(v) => setForm((f) => ({ ...f, ps: v }))} />
+          <Field label="Date" type="date" value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
+          <Field label="Time" value={form.time} onChange={(v) => setForm((f) => ({ ...f, time: v }))} />
+        </div>
+        <Field label="Place of Incident" value={form.place} onChange={(v) => setForm((f) => ({ ...f, place: v }))} />
+        <Field label="Accused (names, descriptions)" type="textarea" rows={2} value={form.accused} onChange={(v) => setForm((f) => ({ ...f, accused: v }))} />
+        <Field label="Incident Description" type="textarea" rows={5} value={form.incident} onChange={(v) => setForm((f) => ({ ...f, incident: v }))} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Injuries / Damage" type="textarea" rows={2} value={form.injuries} onChange={(v) => setForm((f) => ({ ...f, injuries: v }))} />
+          <Field label="Witnesses" type="textarea" rows={2} value={form.witnesses} onChange={(v) => setForm((f) => ({ ...f, witnesses: v }))} />
+        </div>
+        <Field label="Statute Focus" type="select" value={form.statute} onChange={(v) => setForm((f) => ({ ...f, statute: v }))} options={STATUTES} />
+        <button onClick={generate} disabled={loading} className="px-5 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Generate FIR / Complaint</button>
+      </div>
+      <Output title="Draft FIR / Complaint" text={out} loading={loading} />
+    </div>
+  );
+}
+
+export default function LegalSuite() {
+  const [tab, setTab] = useState("tracker");
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      <aside className="w-64 bg-indigo-950 text-white p-4 space-y-1">
+        <div className="p-3 mb-3 border-b border-indigo-800">
+          <div className="font-bold text-base">Legal Suite</div>
+          <div className="text-xs opacity-70 mt-0.5">Janman People's Foundation</div>
+          <div className="text-xs opacity-60">Jan Nyaya Abhiyan</div>
+        </div>
+        {MODULES.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setTab(m.id)}
+            className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-2 transition ${tab === m.id ? "bg-indigo-600 text-white" : "hover:bg-indigo-900"}`}
+          >
+            <span>{m.icon}</span> {m.label}
+          </button>
+        ))}
+      </aside>
+      <main className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-4xl">
+          {tab === "tracker"    && <CaseTracker />}
+          {tab === "research"   && <ResearchAssistant />}
+          {tab === "drafter"    && <DocumentDrafter />}
+          {tab === "briefing"   && <BriefingNoteBuilder />}
+          {tab === "summariser" && <DocumentSummariser />}
+          {tab === "fir"        && <FIRDrafter />}
+        </div>
+      </main>
+    </div>
+  );
+}
