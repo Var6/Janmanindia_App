@@ -22,11 +22,19 @@ const TRAINING_MODULES: VideoModule[] = [
   { id: "1", title: "Understanding the Right to Information Act",  description: "How to file an RTI, timelines, and what to do if your application is denied.",                              youtubeId: "p0wOFQbKt-A", category: "Civil Rights",   durationMins: 22 },
   { id: "2", title: "MGNREGA — Your Right to Employment",          description: "Register for rural employment guarantee, demand job cards, and escalate non-payment.",                      youtubeId: "ysz5S6PUM-M", category: "Labour Rights",  durationMins: 18 },
   { id: "3", title: "Filing an FIR — Step by Step",                description: "Know your rights when police refuse to register an FIR and how to approach magistrates.",                   youtubeId: "kCpjgl2baLs", category: "Criminal Law",   durationMins: 15 },
+  { id: "6", title: "Building Defence Strategy under India's New Criminal Laws (BNS | BNSS | BSA)", description: "Lawyers' Training Workshop by Jan Nyay Abhiyan | Nyaya Shiksha Training Programme — Chargesheet Analysis, Cross-Examination, Defence Strategy, Mock Trial. Subscribe: youtube.com/@JanNyayAbhiyan. Share with lawyers, law students & legal aid workers.", youtubeId: "7A4tVYSptQk", category: "Criminal Law",   durationMins: 60 },
   { id: "4", title: "Domestic Violence Protection Act",            description: "Protection orders, shelter homes, and the role of protection officers.",                                    youtubeId: "TrMBHt_Cl10", category: "Family Law",     durationMins: 25 },
   { id: "5", title: "How to File a PIL",                           description: "Public Interest Litigation — who can file, which court, and the process.",                                  youtubeId: "Mk5d2iyRDLw", category: "Property Law",   durationMins: 28 },
 ];
 
 const CATEGORIES = [...new Set(TRAINING_MODULES.map((m) => m.category))];
+
+const INTERACTIVE_MODULES: { slug: string; title: string; description: string }[] = [
+  { slug: "fundamental-rights", title: "Fundamental Rights", description: "Constitutional rights under Articles 12–35 — interactive walkthrough with case scenarios." },
+  { slug: "child-rights",       title: "Child Rights",       description: "POCSO, JJ Act, and child protection mechanisms — guided modules for field workers." },
+  { slug: "gbv",                title: "Gender-Based Violence", description: "DV Act, Section 498A, workplace harassment — response protocols and remedies." },
+  { slug: "scst-atrocities",    title: "SC/ST Atrocities Act", description: "Filing complaints, special courts, and protections under the PoA Act." },
+];
 
 function serializeMaterial(m: unknown): TrainingMaterialT {
   const obj = m as Record<string, unknown> & { _id: unknown; uploadedBy: unknown; approvedBy?: unknown; createdAt?: unknown; approvedAt?: unknown };
@@ -84,6 +92,28 @@ export default async function TrainingPage() {
       </div>
 
       {canReview && pending.length > 0 && <ApprovalQueue materials={pending} />}
+
+      <section>
+        <h2 className="text-lg font-semibold text-(--text) mb-1">Interactive Training Modules</h2>
+        <p className="text-xs text-(--muted) mb-4">
+          Self-paced legal modules from Janman People's Foundation — Jan Nyaya Abhiyan.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {INTERACTIVE_MODULES.map((mod) => (
+            <a
+              key={mod.slug}
+              href={`https://shashwat-sys.github.io/janman-training/${mod.slug}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-(--surface) rounded-2xl border border-(--border) p-4 hover:border-(--accent) transition-colors block"
+            >
+              <p className="font-semibold text-sm text-(--text)">{mod.title}</p>
+              <p className="text-xs text-(--muted) mt-1">{mod.description}</p>
+              <p className="text-xs text-(--accent) mt-3">Open module ↗</p>
+            </a>
+          ))}
+        </div>
+      </section>
 
       <OfflineSessions
         currentUserId={session.id}
