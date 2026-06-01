@@ -17,6 +17,10 @@ export type ExpenseItem = {
   incurredAt?: string;
   status: "submitted" | "hr_verified" | "director_approved" | "paid" | "rejected";
   project: { _id: string; code: string; name: string } | null;
+  /** Set instead of `project` for expenses raised from a case Finance tab. */
+  case?: { _id: string; caseNumber: string; caseTitle: string } | null;
+  /** Case expenses only: true = org-funded requisition, false = reimbursement. */
+  paidByOrg?: boolean;
   submittedBy: UserRef;
   submittedRole?: string;
   submittedAt: string;
@@ -93,8 +97,11 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                       <p className="text-sm font-bold text-(--text)">{x.title}</p>
                     </div>
                     <p className="text-xs text-(--muted) mt-0.5">
-                      <span className="font-mono font-bold">{x.project?.code ?? "—"}</span>
-                      {" · "}{x.project?.name ?? "—"}
+                      <span className="font-mono font-bold">{x.project?.code ?? x.case?.caseNumber ?? "—"}</span>
+                      {" · "}{x.project?.name ?? x.case?.caseTitle ?? "—"}
+                      {x.case && (
+                        <>{" · "}<span className="capitalize">{x.paidByOrg ? "requisition" : "reimbursement"}</span></>
+                      )}
                       {" · "}<span className="capitalize">{x.category}</span>
                       {" · "}filed by {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
                       {" · "}{new Date(x.submittedAt).toLocaleDateString("en-IN")}

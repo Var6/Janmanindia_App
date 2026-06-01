@@ -32,7 +32,16 @@ export interface IExpenseDecision {
 }
 
 export interface IExpense extends Document {
-  project: mongoose.Types.ObjectId;
+  /** Project this spend draws against. Optional when the expense is tied to a
+   *  case instead (case-scoped requisitions / reimbursements have no project
+   *  budget — exactly one of `project` / `case` is set). */
+  project?: mongoose.Types.ObjectId;
+  /** Case this expense belongs to, when entered from the case Finance tab. */
+  case?: mongoose.Types.ObjectId;
+  /** True  → the organisation pays directly (a *requisition* / advance).
+   *  False → the worker paid out of pocket and claims it back (a
+   *  *reimbursement*). Drives the two sub-tabs on the case Finance view. */
+  paidByOrg?: boolean;
   category: ExpenseCategory;
   title: string;
   description?: string;
@@ -67,7 +76,14 @@ const decisionSchema = new Schema<IExpenseDecision>(
 
 const expenseSchema = new Schema<IExpense>(
   {
-    project:    { type: Schema.Types.ObjectId, ref: "Project", required: true, index: true },
+    // Exactly one of project / case scopes the expense. Project is required
+    // only when the expense isn't case-scoped (case finance has no budget line).
+    project:    {
+      type: Schema.Types.ObjectId, ref: "Project", index: true,
+      required: function (this: IExpense) { return !this.case; },
+    },
+    case:       { type: Schema.Types.ObjectId, ref: "Case", index: true },
+    paidByOrg:  { type: Boolean, default: false },
     category:   {
       type: String,
       enum: ["admin", "training", "exploration", "staff", "travel", "legal", "other"],
@@ -106,6 +122,7 @@ const expenseSchema = new Schema<IExpense>(
 );
 
 expenseSchema.index({ project: 1, status: 1 });
+expenseSchema.index({ case: 1, status: 1 });
 expenseSchema.index({ status: 1, submittedAt: -1 });
 
 const Expense: Model<IExpense> =

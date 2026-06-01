@@ -28,16 +28,20 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const communityId = String(caseDoc.community?._id ?? caseDoc.community);
     const lmId = String(caseDoc.litigationMember?._id ?? caseDoc.litigationMember ?? "");
     const swId = String(caseDoc.socialWorker?._id ?? caseDoc.socialWorker ?? "");
+    const creatorId = String(caseDoc.createdBy ?? "");
     const sharedIds = (caseDoc.litigationMembers ?? []).map((m: unknown) => {
       const mm = m as { _id?: unknown } | string;
       return typeof mm === "string" ? mm : String((mm as { _id?: unknown })._id ?? mm);
     });
     const isAssignedLitigation = session.role === "litigation"
       && (lmId === session.id || sharedIds.includes(session.id));
+    // The person who filed the case always retains access, whatever their role.
+    const isCreator = creatorId !== "" && creatorId === session.id;
 
     const allowed =
       session.role === "superadmin" ||
       session.role === "director" ||
+      isCreator ||
       (session.role === "community" && communityId === session.id) ||
       isAssignedLitigation ||
       (session.role === "socialworker" && swId === session.id);
@@ -493,18 +497,37 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const session = await requireSession();
-    if (!["director", "superadmin"].includes(session.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const { caseId } = await params;
     await connectDB();
 
     const caseDoc = await Case.findById(caseId);
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Permission: director / superadmin, or the person who created the case.
+    const isCreator = String(caseDoc.createdBy ?? "") === session.id;
+    if (!["director", "superadmin"].includes(session.role) && !isCreator) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Security confirmation — the caller must echo back the exact case number.
+    // This mirrors the "type the case number to confirm" dialog and stops a
+    // stray DELETE (or a mistargeted id) from destroying the wrong case.
+    let confirmCaseNumber: string | undefined;
+    try {
+      const body = await request.json();
+      confirmCaseNumber = typeof body?.confirmCaseNumber === "string" ? body.confirmCaseNumber : undefined;
+    } catch {
+      // No / invalid body — treated as a missing confirmation below.
+    }
+    if ((confirmCaseNumber ?? "").trim() !== caseDoc.caseNumber) {
+      return NextResponse.json(
+        { error: "Confirmation failed — the case number you typed does not match." },
+        { status: 400 }
+      );
+    }
 
     if (caseDoc.googleCalendarEventId) {
       try {

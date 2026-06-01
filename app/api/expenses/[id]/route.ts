@@ -69,8 +69,10 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       if (expense.status !== "director_approved") {
         return NextResponse.json({ error: "Expense must be director-approved before payment" }, { status: 400 });
       }
-      // Confirm the project still has budget headroom (advisory — we still allow it).
-      const project = await Project.findById(expense.project).lean();
+      // Confirm the project still has budget headroom (advisory — we still
+      // allow it). Skipped for case-scoped expenses, which have no project
+      // budget line.
+      const project = expense.project ? await Project.findById(expense.project).lean() : null;
       if (project) {
         const paidSoFar = await Expense.aggregate([
           { $match: { project: project._id, status: "paid" } },

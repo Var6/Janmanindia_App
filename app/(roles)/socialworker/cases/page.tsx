@@ -22,7 +22,12 @@ export default async function SWCasesPage() {
 
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
-    ? await Case.find({ socialWorker: new mongoose.Types.ObjectId(session.id) })
+    ? await Case.find({
+        $or: [
+          { socialWorker: new mongoose.Types.ObjectId(session.id) },
+          { createdBy:    new mongoose.Types.ObjectId(session.id) },
+        ],
+      })
         .populate("community", "name email")
         .populate("litigationMember", "name")
         .sort({ updatedAt: -1 })

@@ -179,6 +179,10 @@ export interface ICase extends Document {
   reportingStatus?: IReportingStatus;
 
   community: mongoose.Types.ObjectId;
+  /** The user who first filed / registered this case. Always retains access
+   *  to it regardless of role or assignment — visibility is "assigned OR
+   *  created". Also one of the roles permitted to delete the case. */
+  createdBy?: mongoose.Types.ObjectId;
   /** Lead litigation member (back-compat with single-lawyer rows). New
    *  rows mirror this into `litigationMembers[0]` — readers should prefer
    *  `litigationMembers` and fall back to this when the array is empty. */
@@ -528,6 +532,8 @@ const caseSchema = new Schema<ICase>(
     reportingStatus: reportingStatusSchema,
 
     community: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    /** Who created the case. Retains visibility + may delete it. */
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
     /** Lead litigation member (back-compat). New rows mirror
      *  litigationMembers[0] into this field too so legacy queries keep working. */
     litigationMember:  { type: Schema.Types.ObjectId, ref: "User" },

@@ -4,6 +4,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Project from "@/models/Project";
 import Expense from "@/models/Expense";
 import EodReport from "@/models/EodReport";
+import "@/models/Case"; // register schema for populate (case-scoped expenses)
 import "@/models/User"; // register schema for populate
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
@@ -35,12 +36,14 @@ export default async function FinanceDashboard() {
       .sort({ updatedAt: -1 })
       .limit(20)
       .populate("project", "code name")
+      .populate("case", "caseNumber caseTitle")
       .populate("submittedBy", "name email role")
       .populate("payment.by", "name")
       .lean(),
     Expense.find({ status: "director_approved" })
       .sort({ submittedAt: 1 })
       .populate("project", "code name")
+      .populate("case", "caseNumber caseTitle")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .populate("directorApproval.by", "name")

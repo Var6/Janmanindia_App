@@ -27,16 +27,22 @@ export async function GET(request: NextRequest) {
     } else if (session.role === "community") {
       filter.community = session.id;
     } else if (session.role === "litigation") {
-      // Strictly assigned cases. A case is visible if the lawyer is the
-      // lead (`litigationMember`, legacy single-lawyer rows) OR is one of
-      // the shared `litigationMembers[]` (new multi-lawyer rows). A lawyer
-      // should never see a case they aren't on the record for.
+      // Strictly assigned-or-created cases. Visible only if the lawyer is the
+      // lead (`litigationMember`, legacy single-lawyer rows), one of the
+      // shared `litigationMembers[]` (new multi-lawyer rows), or the person
+      // who filed it (`createdBy`). A lawyer never sees a case they aren't on
+      // the record for.
       filter.$or = [
         { litigationMember: session.id },
         { litigationMembers: session.id },
+        { createdBy: session.id },
       ];
     } else if (session.role === "socialworker") {
-      filter.socialWorker = session.id;
+      // Assigned-or-created, same rule as litigation.
+      filter.$or = [
+        { socialWorker: session.id },
+        { createdBy: session.id },
+      ];
     } else {
       // HR / finance / anyone else: never list cases. An impossible
       // condition keeps the rest of the pagination + search code working
@@ -300,6 +306,8 @@ export async function POST(request: NextRequest) {
     const newCase = await Case.create({
       caseTitle,
       caseNumber,
+      // Whoever files the case keeps visibility + delete rights on it.
+      createdBy: session.id,
       path,
       caseType: caseType?.trim() || undefined,
       district: district?.trim() || undefined,

@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Expense from "@/models/Expense";
 import Project from "@/models/Project";
+import Case from "@/models/Case";
 import mongoose from "mongoose";
 
 // Roles allowed to submit an expense for org-related spending.
@@ -17,16 +18,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status   = searchParams.get("status");
     const project  = searchParams.get("project");
+    const caseId   = searchParams.get("case");
     const mine     = searchParams.get("mine") === "true";
 
     const filter: Record<string, unknown> = {};
     if (status)  filter.status  = status;
     if (project && mongoose.Types.ObjectId.isValid(project)) filter.project = project;
+    if (caseId  && mongoose.Types.ObjectId.isValid(caseId))  filter.case = caseId;
     if (mine) filter.submittedBy = session.id;
 
     const expenses = await Expense.find(filter)
       .sort({ submittedAt: -1 })
       .populate("project", "code name totalBudget")
+      .populate("case", "caseNumber caseTitle")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .populate("directorApproval.by", "name")
@@ -51,8 +55,10 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { projectId, category, title, description, amount, vendor, receiptUrl, incurredAt } = body as {
-      projectId: string;
+    const { projectId, caseId, paidByOrg, category, title, description, amount, vendor, receiptUrl, incurredAt } = body as {
+      projectId?: string;
+      caseId?: string;
+      paidByOrg?: boolean;
       category: string;
       title: string;
       description?: string;
@@ -62,8 +68,17 @@ export async function POST(request: NextRequest) {
       incurredAt?: string;
     };
 
-    if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
-      return NextResponse.json({ error: "Valid projectId is required" }, { status: 400 });
+    // An expense scopes to exactly one of a project (budget line) or a case
+    // (the case Finance tab — requisitions / reimbursements). Validate that
+    // whichever was supplied is a real id, and that we got one of them.
+    if (projectId && !mongoose.Types.ObjectId.isValid(projectId)) {
+      return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
+    }
+    if (caseId && !mongoose.Types.ObjectId.isValid(caseId)) {
+      return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
+    }
+    if (!projectId && !caseId) {
+      return NextResponse.json({ error: "A projectId or caseId is required" }, { status: 400 });
     }
     if (!title?.trim()) return NextResponse.json({ error: "title is required" }, { status: 400 });
     const numericAmount = Number(amount);
@@ -74,11 +89,20 @@ export async function POST(request: NextRequest) {
     if (!category || !allowedCats.includes(category)) {
       return NextResponse.json({ error: `category must be one of ${allowedCats.join(", ")}` }, { status: 400 });
     }
-    const project = await Project.findById(projectId).lean();
-    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+    if (projectId) {
+      const project = await Project.findById(projectId).lean();
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+    if (caseId) {
+      const kase = await Case.findById(caseId).select("_id").lean();
+      if (!kase) return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    }
 
     const expense = await Expense.create({
-      project: projectId,
+      project: projectId || undefined,
+      case: caseId || undefined,
+      paidByOrg: caseId ? Boolean(paidByOrg) : undefined,
       category,
       title: title.trim(),
       description: description?.trim(),

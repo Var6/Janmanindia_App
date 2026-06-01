@@ -3,6 +3,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Expense from "@/models/Expense";
 import "@/models/Project"; // register schema for populate
+import "@/models/Case";    // register schema for populate (case-scoped expenses)
 import "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import ExpenseQueue, { type ExpenseItem } from "@/components/finance/ExpenseQueue";
@@ -18,6 +19,7 @@ export default async function DirectorExpenseApprovalsPage() {
     Expense.find({ status: "hr_verified" })
       .sort({ submittedAt: 1 })
       .populate("project", "code name")
+      .populate("case", "caseNumber caseTitle")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .lean(),
@@ -25,6 +27,7 @@ export default async function DirectorExpenseApprovalsPage() {
       .sort({ updatedAt: -1 })
       .limit(20)
       .populate("project", "code name")
+      .populate("case", "caseNumber caseTitle")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .populate("directorApproval.by", "name")

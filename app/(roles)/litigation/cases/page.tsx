@@ -30,6 +30,7 @@ export default async function LitigationCasesPage() {
         $or: [
           { litigationMember:  new mongoose.Types.ObjectId(session.id) },
           { litigationMembers: new mongoose.Types.ObjectId(session.id) },
+          { createdBy:         new mongoose.Types.ObjectId(session.id) },
         ],
       })
         .populate("community", "name phone")

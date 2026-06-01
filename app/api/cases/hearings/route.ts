@@ -26,7 +26,7 @@ export async function GET() {
       const id = new mongoose.Types.ObjectId(session.id);
       filter = {
         ...filter,
-        $or: [{ litigationMember: id }, { litigationMembers: id }],
+        $or: [{ litigationMember: id }, { litigationMembers: id }, { createdBy: id }],
       };
     } else if (session.role !== "director" && session.role !== "superadmin") {
       // Other roles don't get hearings — return an empty list so the

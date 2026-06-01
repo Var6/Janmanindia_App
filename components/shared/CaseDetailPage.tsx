@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
 import IcpForm from "@/components/icp/IcpForm";
 import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
 import CaseAuditLog from "@/components/shared/CaseAuditLog";
 import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
+import CaseFinanceTab from "@/components/case/CaseFinanceTab";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
@@ -68,6 +70,9 @@ type PopulatedCase = {
   filingStatus?: "drafting" | "filing" | "filed";
   reportingStatus?: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: string };
   community?: { _id: string; name: string; email: string; phone?: string };
+  /** Id of the user who filed the case (not populated — kept as a raw id for
+   *  the "creator can see/delete" checks). */
+  createdBy?: string;
   /** Lead lawyer (legacy single-field). */
   litigationMember?: LawyerRef;
   /** All assigned lawyers, including the lead. */
@@ -1499,6 +1504,104 @@ function LitigationTeamPanel({
   );
 }
 
+/* ── Danger zone — permanent case deletion ──────────────────────────────── */
+/** Hard-deletes the case. Only shown to director / superadmin or the person
+ *  who created it. Requires the user to type the exact case number to confirm
+ *  — the same string is sent to the server, which re-checks it before
+ *  deleting (see DELETE /api/cases/[caseId]). */
+function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
+  caseId: string; caseNumber: string; createdBy?: string; backHref: string;
+}) {
+  const router = useRouter();
+  const [me, setMe] = useState<{ id: string; role: string } | null>(null);
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    fetch("/api/users/me")
+      .then(r => r.json())
+      .then(d => { if (d.user) setMe({ id: String(d.user._id), role: d.user.role }); })
+      .catch(() => {});
+  }, []);
+
+  if (!me) return null;
+  const canDelete = me.role === "director" || me.role === "superadmin" || (createdBy != null && createdBy === me.id);
+  if (!canDelete) return null;
+
+  async function remove() {
+    if (confirmText.trim() !== caseNumber) { setErr("The case number doesn't match."); return; }
+    setBusy(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmCaseNumber: confirmText.trim() }),
+      });
+      if (res.ok) {
+        router.push(backHref);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setErr(d.error ?? "Failed to delete the case.");
+      }
+    } catch {
+      setErr("Network error.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ borderColor: "color-mix(in srgb, var(--error) 35%, var(--border))", background: "var(--surface)" }}>
+      <div className="px-4 py-2 border-b"
+        style={{ background: "var(--error-bg)", borderColor: "color-mix(in srgb, var(--error) 25%, transparent)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--error-text)" }}>Danger Zone</span>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        <p className="text-sm text-(--text)">
+          Permanently delete this case and everything attached to it (documents, diary, appearances, finances).
+          <span className="font-semibold"> This cannot be undone.</span>
+        </p>
+
+        {!open ? (
+          <button type="button" onClick={() => setOpen(true)}
+            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
+            Delete this case
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-(--muted) mb-1">
+                Type <span className="font-mono font-bold text-(--text)">{caseNumber}</span> to confirm
+              </label>
+              <input value={confirmText} onChange={e => setConfirmText(e.target.value)}
+                placeholder={caseNumber} autoComplete="off"
+                className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
+            {err && <p className="text-xs" style={{ color: "var(--error-text)" }}>{err}</p>}
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={remove} disabled={busy || confirmText.trim() !== caseNumber}
+                className="px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                style={{ background: "var(--error)", color: "#fff" }}>
+                {busy ? "Deleting…" : "Delete permanently"}
+              </button>
+              <button type="button" onClick={() => { setOpen(false); setConfirmText(""); setErr(""); }}
+                className="px-4 py-2 rounded-xl text-sm font-semibold"
+                style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -1515,7 +1618,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
   const [error, setError]         = useState("");
   const [hearingDate, setHearingDate] = useState<string | undefined>();
   const [timelineKey, setTimelineKey] = useState(0);
-  const [tab, setTab] = useState<"legal" | "icp">("legal");
+  const [tab, setTab] = useState<"legal" | "icp" | "finance">("legal");
 
   async function fetchCase() {
     try {
@@ -1714,8 +1817,9 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
       <div className="flex items-center gap-1 p-1 rounded-xl border w-fit"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         {([
-          ["legal", "Legal Progress"],
-          ["icp",   "Individual Care Plan"],
+          ["legal",   "Legal Progress"],
+          ["icp",     "Individual Care Plan"],
+          ["finance", "Case Finance"],
         ] as const).map(([k, label]) => {
           const sel = tab === k;
           return (
@@ -1737,9 +1841,15 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
         ) : (
           <p className="text-sm text-(--muted) px-1">No community member linked to this case yet.</p>
         )
+      ) : tab === "finance" ? (
+        <CaseFinanceTab caseId={c._id} />
       ) : (
         <LegalProgressBlock />
       )}
+
+      {/* Permanent deletion — only rendered for director / superadmin or the
+          case creator (gated inside the component via /api/users/me). */}
+      <CaseDangerZone caseId={c._id} caseNumber={c.caseNumber} createdBy={c.createdBy} backHref={backHref} />
     </div>
   );
 

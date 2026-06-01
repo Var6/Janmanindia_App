@@ -36,7 +36,7 @@ export default async function LitigationDashboard() {
     const sevenDaysOut = new Date();
     sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
 
-    const memberFilter = { $or: [{ litigationMember: litigationId }, { litigationMembers: litigationId }] };
+    const memberFilter = { $or: [{ litigationMember: litigationId }, { litigationMembers: litigationId }, { createdBy: litigationId }] };
     [allCases, upcomingHearings, pendingAppointments, litigationUser] = await Promise.all([
       Case.find({ ...memberFilter, status: { $in: ["Open", "Pending", "Escalated"] } })
         .sort({ updatedAt: -1 }).limit(8).lean(),
