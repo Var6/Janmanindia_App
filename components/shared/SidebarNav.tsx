@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { useT } from "@/components/i18n/LanguageProvider";
+import { useT, useLang } from "@/components/i18n/LanguageProvider";
 
 export interface NavItem {
   href: string;
@@ -278,6 +278,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
   const pathname = usePathname();
   const router   = useRouter();
   const t        = useT();
+  const { lang, setLang } = useLang();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initialAvatarUrl);
   const [unreadChat, setUnreadChat] = useState(0);
@@ -420,6 +421,34 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
           );
         })}
       </nav>
+
+      {/* Language switcher — English ⇄ हिन्दी, visible on every page. */}
+      <div className="px-2 pt-2 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
+        {collapsed ? (
+          <button type="button" onClick={() => setLang(lang === "hi" ? "en" : "hi")}
+            title={lang === "hi" ? "Switch to English" : "हिन्दी में बदलें"}
+            className="mx-auto flex items-center justify-center w-9 h-8 rounded-lg text-xs font-bold transition-colors hover:bg-(--sidebar-hover)"
+            style={{ color: "var(--muted)" }}>
+            {lang === "hi" ? "अ" : "A"}
+          </button>
+        ) : (
+          <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: "var(--bg-secondary)" }}>
+            {([["en", "English"], ["hi", "हिन्दी"]] as const).map(([code, label]) => {
+              const active = lang === code;
+              return (
+                <button key={code} type="button" onClick={() => setLang(code)}
+                  className="flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-colors"
+                  style={{
+                    background: active ? "var(--accent)" : "transparent",
+                    color: active ? "var(--accent-contrast)" : "var(--muted)",
+                  }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* User footer */}
       <div className="px-2 py-2.5 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
