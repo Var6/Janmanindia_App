@@ -3,10 +3,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/ui/SessionProvider";
+import { useT, useLang } from "@/components/i18n/LanguageProvider";
+import { LANGUAGES } from "@/lib/i18n";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, updateProfile, logout } = useSession();
+  const t = useT();
+  const { lang, setLang } = useLang();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -27,13 +31,13 @@ export default function SettingsPage() {
     return (
       <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] px-6 py-16">
         <div className="mx-auto max-w-3xl rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-10 text-center shadow-2xl shadow-black/5">
-          <h1 className="text-3xl font-semibold">No active session</h1>
-          <p className="mt-4 text-[var(--muted)]">Please sign in before updating your profile.</p>
+          <h1 className="text-3xl font-semibold">{t("No active session")}</h1>
+          <p className="mt-4 text-[var(--muted)]">{t("Please sign in before updating your profile.")}</p>
           <button
             onClick={() => router.push("/login")}
             className="mt-8 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
           >
-            Go to Login
+            {t("Go to Login")}
           </button>
         </div>
       </main>
@@ -43,7 +47,7 @@ export default function SettingsPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     updateProfile({ name, avatarUrl, password, about });
-    setMessage("Profile saved successfully.");
+    setMessage(t("Profile saved successfully."));
   }
 
   function handleLogout() {
@@ -57,8 +61,8 @@ export default function SettingsPage() {
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl shadow-black/5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-[var(--accent)]">Settings</p>
-              <h1 className="mt-3 text-3xl font-semibold">Edit your profile</h1>
+              <p className="text-sm uppercase tracking-[0.24em] text-[var(--accent)]">{t("Settings")}</p>
+              <h1 className="mt-3 text-3xl font-semibold">{t("Profile & Settings")}</h1>
               <p className="mt-2 max-w-2xl text-[var(--muted)]">Update your name, profile image, password, and personal details here.</p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
@@ -66,17 +70,44 @@ export default function SettingsPage() {
                 onClick={() => router.push("/dashboard")}
                 className="rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface)]"
               >
-                Back to Dashboard
+                {t("Dashboard")}
               </button>
               <button
                 onClick={handleLogout}
                 className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
               >
-                Logout
+                {t("Logout")}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Language — switches the whole app between English and Hindi. */}
+        <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl shadow-black/5">
+          <h2 className="text-lg font-semibold text-[var(--text)]">{t("Language")} · भाषा</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t("Choose the language for the entire app.")}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {LANGUAGES.map((l) => {
+              const active = lang === l.code;
+              return (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setLang(l.code)}
+                  aria-pressed={active}
+                  className="rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+                  style={{
+                    background: active ? "var(--accent)" : "var(--bg)",
+                    color: active ? "var(--accent-contrast)" : "var(--text)",
+                    borderColor: active ? "var(--accent)" : "var(--border)",
+                  }}
+                >
+                  {l.native}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl shadow-black/5">
           <div className="grid gap-8 lg:grid-cols-[0.75fr_0.5fr]">
@@ -84,7 +115,7 @@ export default function SettingsPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-[var(--text)]">
-                    Full name
+                    {t("Full name")}
                   </label>
                   <input
                     id="name"
@@ -96,7 +127,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-[var(--text)]">
-                    Email
+                    {t("Email")}
                   </label>
                   <input
                     id="email"
@@ -121,7 +152,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-semibold text-[var(--text)]">
-                    Password
+                    {t("Password")}
                   </label>
                   <input
                     id="password"
@@ -152,7 +183,7 @@ export default function SettingsPage() {
                   type="submit"
                   className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[var(--accent-contrast)] transition hover:brightness-110"
                 >
-                  Save changes
+                  {t("Save changes")}
                 </button>
               </form>
             </div>

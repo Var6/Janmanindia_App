@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export interface NavItem {
   href: string;
@@ -276,6 +277,7 @@ interface Props {
 export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, initialAvatarUrl }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
+  const t        = useT();
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initialAvatarUrl);
   const [unreadChat, setUnreadChat] = useState(0);
@@ -362,7 +364,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
           {!collapsed && (
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{roleLabel}</p>
+              <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{t(roleLabel)}</p>
             </div>
           )}
         </button>
@@ -376,7 +378,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
             <Link
               key={item.href}
               href={item.href}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? t(item.label) : undefined}
               className={`flex items-center ${collapsed ? "justify-center px-0" : "gap-2.5 px-2.5"} py-2 rounded-lg text-[13px] font-medium transition-all duration-150`}
               style={{
                 background: active ? "var(--sidebar-active-bg)" : "transparent",
@@ -404,7 +406,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
                   </span>
                 )}
               </span>
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate">{t(item.label)}</span>}
               {!collapsed && item.href === "/chat" && unreadChat > 0 && (
                 <span className="ml-auto min-w-4.5 h-4.5 rounded-full text-[10px] font-bold flex items-center justify-center px-1.5 shrink-0"
                   style={{ background: "var(--error, #dc2626)", color: "white" }}>
@@ -434,9 +436,9 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
             <>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
-                <p className="text-[10px] text-(--muted) mt-0.5 truncate">{roleLabel}</p>
+                <p className="text-[10px] text-(--muted) mt-0.5 truncate">{t(roleLabel)}</p>
               </div>
-              <button type="button" onClick={handleLogout} title="Sign out"
+              <button type="button" onClick={handleLogout} title={t("Sign out")}
                 className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>

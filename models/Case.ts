@@ -178,7 +178,7 @@ export interface ICase extends Document {
    *  we can warn on defect deadlines without losing the broader state. */
   reportingStatus?: IReportingStatus;
 
-  community: mongoose.Types.ObjectId;
+  community?: mongoose.Types.ObjectId;
   /** The user who first filed / registered this case. Always retains access
    *  to it regardless of role or assignment — visibility is "assigned OR
    *  created". Also one of the roles permitted to delete the case. */
@@ -531,7 +531,9 @@ const caseSchema = new Schema<ICase>(
     filingStatus: { type: String, enum: ["drafting", "filing", "filed"] },
     reportingStatus: reportingStatusSchema,
 
-    community: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    // Optional — a staff member can register a case before the community
+    // member is on the system; the beneficiary can be linked later.
+    community: { type: Schema.Types.ObjectId, ref: "User" },
     /** Who created the case. Retains visibility + may delete it. */
     createdBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
     /** Lead litigation member (back-compat). New rows mirror

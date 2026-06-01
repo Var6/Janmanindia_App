@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 import { useRouter } from "next/navigation";
 import {
   COURT_TYPES, INDIAN_STATES, HIGH_COURTS, DISTRICT_COURTS,
@@ -50,6 +51,7 @@ function buildPartyTitle(petitioners: string[], respondents: string[]): string {
 
 export default function CreateLitigationCaseForm() {
   const router = useRouter();
+  const t = useT();
 
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -183,7 +185,6 @@ export default function CreateLitigationCaseForm() {
     e.preventDefault();
     setError("");
 
-    if (!community) { setError("Pick the community member this case is for."); return; }
     if (!finalTitle.trim()) { setError("Add at least one petitioner and one respondent — the case title is built from these."); return; }
     if (!caseType) { setError("Pick a case type so we can route the workflow (criminal vs civil/HC)."); return; }
 
@@ -218,7 +219,7 @@ export default function CreateLitigationCaseForm() {
         caseTitle: finalTitle.trim(),
         caseType,
         path: meta.path,
-        communityId: community._id,
+        communityId: community?._id,
         status: caseStatus,
         // Court taxonomy
         courtType,
@@ -286,7 +287,7 @@ export default function CreateLitigationCaseForm() {
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
           <path d="M3 8h10M8 3v10"/>
         </svg>
-        Add new case
+        {t("Add new case")}
       </button>
     );
   }
@@ -296,12 +297,12 @@ export default function CreateLitigationCaseForm() {
       style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-(--text)">Add new case</h2>
-          <p className="text-xs text-(--muted) mt-0.5">Fill what you have. Anything not yet known can be added later from the case page.</p>
+          <h2 className="text-lg font-bold text-(--text)">{t("Add new case")}</h2>
+          <p className="text-xs text-(--muted) mt-0.5">{t("Fill what you have. Anything not yet known can be added later from the case page.")}</p>
         </div>
         <button type="button" onClick={reset}
           className="text-xs text-(--muted) hover:text-(--text) px-2 py-1 rounded-lg hover:bg-(--bg-secondary) transition-colors">
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
 
@@ -549,7 +550,7 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── 7. Community member ────────────────────────────────── */}
-      <Section title="7. Community member" subtitle="Whose case is this?" required>
+      <Section title={t("7. Community member")} subtitle={t("Whose case is this? Optional — you can link the beneficiary later.")}>
         {community ? (
           <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border"
             style={{ background: "var(--bg)", borderColor: "var(--accent)" }}>
@@ -623,10 +624,10 @@ export default function CreateLitigationCaseForm() {
         </div>
       </Section>
 
-      <button type="submit" disabled={submitting || !community}
+      <button type="submit" disabled={submitting}
         className="w-full py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        {submitting ? "Creating…" : "Create case"}
+        {submitting ? t("Creating…") : t("Create case")}
       </button>
     </form>
   );

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
+import LanguageProvider from "@/components/i18n/LanguageProvider";
 
 const sans = Manrope({
   variable: "--font-sans",
@@ -63,9 +64,11 @@ export default function RootLayout({
       className={`${sans.variable} ${serif.variable} ${mono.variable} ${devanagari.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300 app-bg">
         <ThemeProvider>
-          <SessionProvider>
-            {children}
-          </SessionProvider>
+          <LanguageProvider>
+            <SessionProvider>
+              {children}
+            </SessionProvider>
+          </LanguageProvider>
         </ThemeProvider>
         <Analytics />
       </body>

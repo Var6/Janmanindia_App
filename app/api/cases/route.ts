@@ -204,9 +204,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Community members can only file under their own name; staff can pick
-    // any community member they're authoring for.
-    const communityRef = session.role === "community" ? session.id : communityId;
-    if (!communityRef) {
+    // any community member they're authoring for — or leave it blank now and
+    // link the beneficiary later from the case page.
+    const communityRef = session.role === "community" ? session.id : (communityId || undefined);
+    if (session.role === "community" && !communityRef) {
       return NextResponse.json({ error: "communityId is required" }, { status: 400 });
     }
 
