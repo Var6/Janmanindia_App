@@ -120,15 +120,10 @@ const STAFF_ITEMS: NavItem[] = [
 const LOGISTICS_ROLES = ["administrator", "director", "superadmin"];
 const LOGISTICS_ITEM: NavItem = { href: "/logistics", label: "Logistics", icon: "briefcase" };
 
-const PROFILE_ITEM = (role: string): NavItem => ({
-  href: `/${role}/profile`,
-  label: "My Profile",
-  icon: "user-circle",
-});
-
 /** Build the full sidebar for a given role.
- *  Dashboard always pinned to top; everything else sorted alphabetically by label;
- *  My Profile pinned to bottom. */
+ *  Dashboard always pinned to top; everything else sorted alphabetically by
+ *  label. The profile is reached from the user's name in the sidebar footer
+ *  (standard practice), so it's no longer a separate nav item. */
 export function navItemsFor(role: string): NavItem[] {
   const base = ROLE_ITEMS[role] ?? [];
   // Activities is staff-only (community gated out). Logistics is gated to
@@ -165,7 +160,6 @@ export function navItemsFor(role: string): NavItem[] {
   return [
     ...(dashboardItem ? [dashboardItem] : []),
     ...rest,
-    PROFILE_ITEM(role),
   ];
 }
 

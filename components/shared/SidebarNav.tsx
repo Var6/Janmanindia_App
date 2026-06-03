@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { useT, useLang } from "@/components/i18n/LanguageProvider";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export interface NavItem {
   href: string;
@@ -278,7 +278,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
   const pathname = usePathname();
   const router   = useRouter();
   const t        = useT();
-  const { lang, setLang } = useLang();
+  const profileHref = `/${roleSlug}/profile`;
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initialAvatarUrl);
   const [unreadChat, setUnreadChat] = useState(0);
@@ -422,59 +422,36 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
         })}
       </nav>
 
-      {/* Language switcher — English ⇄ हिन्दी, visible on every page. */}
-      <div className="px-2 pt-2 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
-        {collapsed ? (
-          <button type="button" onClick={() => setLang(lang === "hi" ? "en" : "hi")}
-            title={lang === "hi" ? "Switch to English" : "हिन्दी में बदलें"}
-            className="mx-auto flex items-center justify-center w-9 h-8 rounded-lg text-xs font-bold transition-colors hover:bg-(--sidebar-hover)"
-            style={{ color: "var(--muted)" }}>
-            {lang === "hi" ? "अ" : "A"}
-          </button>
-        ) : (
-          <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: "var(--bg-secondary)" }}>
-            {([["en", "English"], ["hi", "हिन्दी"]] as const).map(([code, label]) => {
-              const active = lang === code;
-              return (
-                <button key={code} type="button" onClick={() => setLang(code)}
-                  className="flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-colors"
-                  style={{
-                    background: active ? "var(--accent)" : "transparent",
-                    color: active ? "var(--accent-contrast)" : "var(--muted)",
-                  }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* User footer */}
+      {/* User footer — the avatar + name link to the profile (where the
+          language switch and other personal settings now live). Logout sits
+          beside it. "My Profile" is no longer a separate nav item. */}
       <div className="px-2 py-2.5 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
-        <div className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5 px-2"} py-2 rounded-lg`}
+        <div className={`flex items-center ${collapsed ? "justify-center" : "gap-1 px-1"} py-1 rounded-lg`}
           style={{ background: collapsed ? "transparent" : "var(--bg-secondary)" }}>
-          <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold"
-            style={{ background: avatarUrl ? "transparent" : "var(--accent-muted)", color: "var(--sidebar-active-text)" }}
-            title={collapsed ? userName : undefined}>
-            {avatarUrl
-              ? <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
-              : initials}
-          </div>
-          {!collapsed && (
-            <>
+          <Link href={profileHref}
+            title={collapsed ? userName : t("My Profile")}
+            className={`flex items-center min-w-0 rounded-lg transition-colors hover:bg-(--sidebar-hover) ${collapsed ? "justify-center" : "gap-2.5 flex-1 px-1.5 py-1"}`}>
+            <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold"
+              style={{ background: avatarUrl ? "transparent" : "var(--accent-muted)", color: "var(--sidebar-active-text)" }}>
+              {avatarUrl
+                ? <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+                : initials}
+            </div>
+            {!collapsed && (
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
                 <p className="text-[10px] text-(--muted) mt-0.5 truncate">{t(roleLabel)}</p>
               </div>
-              <button type="button" onClick={handleLogout} title={t("Sign out")}
-                className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                  <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
-                  <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
-                </svg>
-              </button>
-            </>
+            )}
+          </Link>
+          {!collapsed && (
+            <button type="button" onClick={handleLogout} title={t("Sign out")}
+              className="p-1 rounded-md transition-colors text-(--muted) hover:text-(--error) hover:bg-(--error-bg)">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="M13 10H3m10 0l-3-3m3 3l-3 3"/>
+                <path d="M7 5V4a2 2 0 012-2h5a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2v-1"/>
+              </svg>
+            </button>
           )}
         </div>
       </div>

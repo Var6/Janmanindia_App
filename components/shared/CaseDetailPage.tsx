@@ -1097,10 +1097,10 @@ function CourtPartiesSubjectCard({
         {showCourt && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
             {courtTypeLabel && <Line label={t("Court Type")}>{courtTypeLabel}</Line>}
-            {has(caseData.state) && <Line label={t("State")}>{caseData.state}</Line>}
+            {has(caseData.state) && <Line label={t("State")}><Translatable text={caseData.state} preLine={false} /></Line>}
             {has(caseData.courtName) && (
               <div className="sm:col-span-3">
-                <Line label={t("Court / Forum")} wide>{caseData.courtName}</Line>
+                <Line label={t("Court / Forum")} wide><Translatable text={caseData.courtName} preLine={false} /></Line>
               </div>
             )}
           </div>
@@ -1154,6 +1154,7 @@ function PartiesEditor({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [pets, setPets] = useState<string[]>(petitioners);
   const [resps, setResps] = useState<string[]>(respondents);
@@ -1197,11 +1198,11 @@ function PartiesEditor({
     return (
       <div className="pt-3 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Parties</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Parties")}</p>
           {canEdit && (
             <button type="button" onClick={() => setEditing(true)}
               className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-              {hasParties ? "Edit" : "+ Add parties"}
+              {hasParties ? t("Edit") : `+ ${t("Add parties")}`}
             </button>
           )}
         </div>
@@ -1209,27 +1210,27 @@ function PartiesEditor({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             {petitioners.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Petitioner(s)</p>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Petitioner(s)")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {petitioners.map((name, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}>{name}</span>
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}><Translatable text={name} preLine={false} /></span>
                   ))}
                 </div>
               </div>
             )}
             {respondents.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Respondent(s) / Defendant(s)</p>
+                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Respondent(s) / Defendant(s)")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {respondents.map((name, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}>{name}</span>
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}><Translatable text={name} preLine={false} /></span>
                   ))}
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-xs text-(--muted) italic">No parties recorded yet.</p>
+          <p className="text-xs text-(--muted) italic">{t("No parties recorded yet.")}</p>
         )}
       </div>
     );
@@ -1238,7 +1239,7 @@ function PartiesEditor({
   return (
     <div className="pt-3 border-t space-y-3" style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-(--text)">Edit Parties</p>
+        <p className="text-xs font-semibold text-(--text)">{t("Edit Parties")}</p>
         <button type="button" onClick={() => { setEditing(false); setPets(petitioners); setResps(respondents); }}
           className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
       </div>

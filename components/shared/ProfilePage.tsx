@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AvatarUpload from "@/components/shared/AvatarUpload";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { useT, useLang } from "@/components/i18n/LanguageProvider";
+import { LANGUAGES } from "@/lib/i18n";
 
 type UserProfile = {
   _id: string;
@@ -29,6 +31,8 @@ function initials(name: string) {
 }
 
 export default function ProfilePage() {
+  const t = useT();
+  const { lang, setLang } = useLang();
   const [profile, setProfile]        = useState<UserProfile | null>(null);
   const [loadingProfile, setLoading] = useState(true);
 
@@ -152,14 +156,38 @@ export default function ProfilePage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">My Profile</h1>
-        <p className="text-sm text-(--muted) mt-1">Manage your photo, contact details, and password.</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("My Profile")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Manage your photo, contact details, language, and password.")}</p>
       </div>
+
+      {/* Language — switches the whole app between English and Hindi. Lives
+          here (in the profile) so all personal settings sit in one place. */}
+      <section className="rounded-2xl border p-6"
+        style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+        <h2 className="font-semibold text-(--text)">{t("Language")} · भाषा</h2>
+        <p className="text-sm text-(--muted) mt-1">{t("Choose the language for the entire app.")}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {LANGUAGES.map((l) => {
+            const active = lang === l.code;
+            return (
+              <button key={l.code} type="button" onClick={() => setLang(l.code)} aria-pressed={active}
+                className="rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+                style={{
+                  background: active ? "var(--accent)" : "var(--bg)",
+                  color: active ? "var(--accent-contrast)" : "var(--text)",
+                  borderColor: active ? "var(--accent)" : "var(--border)",
+                }}>
+                {l.native}{active ? " ✓" : ""}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Avatar */}
       <section className="rounded-2xl border p-6"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h2 className="font-semibold text-(--text) mb-4">Profile Photo</h2>
+        <h2 className="font-semibold text-(--text) mb-4">{t("Profile Photo")}</h2>
         <AvatarUpload
           currentUrl={avatarUrl}
           name={displayName}
@@ -172,7 +200,7 @@ export default function ProfilePage() {
       {/* Personal info */}
       <form onSubmit={handleInfoSubmit} className="rounded-2xl border p-6 space-y-4"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h2 className="font-semibold text-(--text)">Personal Information</h2>
+        <h2 className="font-semibold text-(--text)">{t("Personal Information")}</h2>
 
         {infoMsg && (
           <Alert ok={infoMsg.ok} text={infoMsg.text} />
@@ -218,7 +246,7 @@ export default function ProfilePage() {
       {/* Password */}
       <form onSubmit={handlePasswordSubmit} className="rounded-2xl border p-6 space-y-4"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h2 className="font-semibold text-(--text)">Change Password</h2>
+        <h2 className="font-semibold text-(--text)">{t("Change Password")}</h2>
 
         {pwMsg && <Alert ok={pwMsg.ok} text={pwMsg.text} />}
 
