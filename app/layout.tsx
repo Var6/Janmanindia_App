@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Manrope, Fraunces, JetBrains_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
 import LanguageProvider from "@/components/i18n/LanguageProvider";
+import { isLang, DEFAULT_LANG } from "@/lib/i18n";
 
 const sans = Manrope({
   variable: "--font-sans",
@@ -54,17 +56,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read the language cookie on the server so the entire tree — server AND
+  // client components — renders in the chosen language from the very first
+  // paint. Without this the provider booted to English and only switched to
+  // Hindi after mount, which is the "flashes English / need to refresh" bug.
+  const cookieLang = (await cookies()).get("lang")?.value;
+  const lang = isLang(cookieLang) ? cookieLang : DEFAULT_LANG;
   return (
-    <html lang="en"
+    <html lang={lang}
       className={`${sans.variable} ${serif.variable} ${mono.variable} ${devanagari.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300 app-bg">
         <ThemeProvider>
-          <LanguageProvider>
+          <LanguageProvider initialLang={lang}>
             <SessionProvider>
               {children}
             </SessionProvider>

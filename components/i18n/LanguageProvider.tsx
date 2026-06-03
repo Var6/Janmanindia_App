@@ -24,12 +24,22 @@ function readStoredLang(): Lang {
   return DEFAULT_LANG;
 }
 
-export default function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Start at the default to keep SSR + first client render identical (no
-  // hydration mismatch); adopt the stored choice right after mount.
-  const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
+export default function LanguageProvider({
+  children,
+  initialLang,
+}: {
+  children: React.ReactNode;
+  /** Language read from the `lang` cookie on the server, so SSR + the first
+   *  client render agree and there's no English→Hindi flash on load. */
+  initialLang?: Lang;
+}) {
+  // Seed from the server-provided cookie language so SSR and the first client
+  // render match exactly. Fall back to the stored choice only when the server
+  // didn't pass one (keeps the component usable in isolation).
+  const [lang, setLangState] = useState<Lang>(initialLang ?? DEFAULT_LANG);
 
   useEffect(() => {
+    if (initialLang) return; // server already gave us the right language
     const stored = readStoredLang();
     if (stored !== lang) setLangState(stored);
     // eslint-disable-next-line react-hooks/exhaustive-deps
