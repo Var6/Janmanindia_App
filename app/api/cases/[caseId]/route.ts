@@ -59,9 +59,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const session = await requireSession();
-    if (!["litigation", "director", "superadmin"].includes(session.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
 
     const { caseId } = await params;
     await connectDB();
@@ -69,26 +66,43 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const caseDoc = await Case.findById(caseId);
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Litigation can write when they're the lead OR a shared member. Other
-    // privileged roles (director / superadmin) skip this check.
+    // Write access. The person who created the case can always edit it — every
+    // field on the detail page — regardless of their role. Director /
+    // superadmin can edit any case. A litigation member can edit a case they're
+    // the lead on OR a shared member of. Everyone else is forbidden.
+    const isCreator = String(caseDoc.createdBy ?? "") !== "" && String(caseDoc.createdBy) === session.id;
+    const isPrivileged = session.role === "director" || session.role === "superadmin";
+    let isAssignedLitigation = false;
     if (session.role === "litigation") {
       const lead = String(caseDoc.litigationMember ?? "");
       const sharedIdsW = (caseDoc.litigationMembers ?? []).map(String);
-      if (lead !== session.id && !sharedIdsW.includes(session.id)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+      isAssignedLitigation = lead === session.id || sharedIdsW.includes(session.id);
+    }
+    if (!isCreator && !isPrivileged && !isAssignedLitigation) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
+
+    // The internal case number (JMI-…) is the unique identifier for the case.
+    // It is NEVER editable — silently drop any attempt to change it so a stray
+    // payload can't rename a case onto another's number and resurface the
+    // duplicate-key conflict. `courtCaseNumber` is handled set-once below.
+    if (body && typeof body === "object") delete (body as Record<string, unknown>).caseNumber;
+
     const allowedFields = [
       "status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath",
       "district", "causeTitle",
       // District Legal Fellow Case Management form — lawyer-managed metadata.
-      "courtCaseNumber", "courtName", "relevantSections",
+      // `courtCaseNumber` is intentionally NOT here — it's set-once (below).
+      "courtName", "relevantSections",
       "bailAndAppearanceStatus", "stage", "compensationStatus",
       // Court-type-aware create-form fields, editable from case detail too.
       "courtType", "state", "parties", "subject", "eCourtLink",
       "filingStatus", "reportingStatus",
+      // Intake facts — the creator (and editors) can correct the full
+      // Case Enquiry record from the detail page.
+      "enquiry",
     ];
     const update: Record<string, unknown> = {};
     const pushOps: Record<string, unknown> = {};
@@ -109,6 +123,49 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (body.status !== undefined && body.status !== caseDoc.status) {
       logAudit("status_changed", `Status: ${caseDoc.status} → ${body.status}`);
     }
+    if (body.caseTitle !== undefined && body.caseTitle !== caseDoc.caseTitle) {
+      logAudit("metadata_updated", `Renamed case to "${body.caseTitle}"`);
+    }
+    if (body.subject !== undefined) {
+      logAudit("metadata_updated", "Updated case subject");
+    }
+    if (body.enquiry !== undefined) {
+      logAudit("metadata_updated", "Updated intake / enquiry details");
+    }
+
+    // Court-assigned case number is SET-ONCE. It's recordable while the case
+    // doesn't have one yet (often assigned after filing), but an official
+    // number, once set, can never be changed — matching the same immutability
+    // we give the internal case number.
+    if (body.courtCaseNumber !== undefined) {
+      const existing = String(caseDoc.courtCaseNumber ?? "").trim();
+      const incoming = String(body.courtCaseNumber ?? "").trim();
+      if (existing && incoming !== existing) {
+        return NextResponse.json(
+          { error: "The court case number can't be changed once it's been set." },
+          { status: 400 }
+        );
+      }
+      if (!existing && incoming) {
+        update.courtCaseNumber = incoming;
+        logAudit("metadata_updated", `Recorded court case number ${incoming}`);
+      }
+    }
+
+    // Verdict text (criminal path). Set the verdict string and stamp the
+    // verdict date the first time a verdict is recorded so the workflow
+    // stepper can surface "verdict reached". Ignored for non-criminal matters
+    // so we never create a stray criminalPath sub-document on a HC case.
+    if (body.verdict !== undefined && caseDoc.path === "criminal") {
+      const verdict = typeof body.verdict === "string" ? body.verdict.trim() : "";
+      update["criminalPath.verdict"] = verdict || undefined;
+      if (verdict && !caseDoc.criminalPath?.verdictDate) {
+        update["criminalPath.verdictDate"] = new Date();
+      } else if (!verdict) {
+        update["criminalPath.verdictDate"] = null;
+      }
+      logAudit("metadata_updated", verdict ? "Recorded verdict" : "Cleared verdict");
+    }
     if (body.nextHearingDate !== undefined) {
       const incoming = body.nextHearingDate ? new Date(body.nextHearingDate).toISOString() : null;
       const current  = caseDoc.nextHearingDate ? new Date(caseDoc.nextHearingDate).toISOString() : null;
@@ -120,7 +177,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // Generic metadata field changes — log each one with field name. Skip
     // criminalPath / highCourtPath here because they're handled by the
     // stage-transition + doc-upload branches below with richer summaries.
-    const META_FIELDS = ["caseTitle", "district", "causeTitle", "courtCaseNumber", "courtName", "relevantSections", "bailAndAppearanceStatus", "stage", "compensationStatus"];
+    const META_FIELDS = ["caseTitle", "district", "causeTitle", "courtName", "relevantSections", "bailAndAppearanceStatus", "stage", "compensationStatus"];
     for (const f of META_FIELDS) {
       if (body[f] !== undefined && body[f] !== (caseDoc as unknown as Record<string, unknown>)[f]) {
         logAudit("metadata_updated", `Updated ${f}`);

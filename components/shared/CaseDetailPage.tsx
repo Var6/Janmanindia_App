@@ -141,11 +141,6 @@ function fmtDateTime(d: string | Date) {
   const date = new Date(d);
   return date.toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
-function fmtTimelineTitle(d: string | Date) {
-  const date = new Date(d);
-  return `${date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}\n${date.getFullYear()}`;
-}
-
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:       { bg: "var(--info-bg)",      text: "var(--info-text)"     },
   Escalated:  { bg: "var(--error-bg)",     text: "var(--error-text)"    },
@@ -154,13 +149,6 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Dismissed:  { bg: "var(--error-bg)",     text: "var(--error-text)"    },
   Disposal:   { bg: "var(--success-bg)",   text: "var(--success-text)"  },
   Withdrawn:  { bg: "var(--bg-secondary)", text: "var(--muted)"         },
-};
-
-const OCR_STYLE: Record<string, { bg: string; text: string }> = {
-  pending:    { bg: "var(--bg-secondary)", text: "var(--muted)"         },
-  processing: { bg: "var(--warning-bg)",   text: "var(--warning-text)"  },
-  processed:  { bg: "var(--success-bg)",   text: "var(--success-text)"  },
-  failed:     { bg: "var(--error-bg)",     text: "var(--error-text)"    },
 };
 
 /* ── Small UI atoms ─────────────────────────────────────────────────────── */
@@ -181,76 +169,11 @@ function EventCard({ color, label, children }: {
   );
 }
 
-function DocLink({ doc }: { doc: DocMeta }) {
-  const ocr = OCR_STYLE[doc.ocrStatus ?? "pending"] ?? OCR_STYLE.pending;
-  // Derive a sensible filename for the browser to suggest on download.
-  const downloadName = (() => {
-    try {
-      const tail = decodeURIComponent(new URL(doc.url, "http://x").pathname.split("/").pop() ?? "");
-      return tail || doc.label;
-    } catch {
-      return doc.label;
-    }
-  })();
-  return (
-    <div className="flex items-center justify-between gap-3 py-2 border-t first:border-0"
-      style={{ borderColor: "var(--border)" }}>
-      <a href={doc.url} target="_blank" rel="noopener noreferrer"
-        className="flex items-center gap-1.5 text-sm font-medium hover:underline underline-offset-2 min-w-0 truncate"
-        style={{ color: "var(--accent)" }}>
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0">
-          <path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
-          <polyline points="10 2 10 5 13 5"/>
-        </svg>
-        <span className="truncate">{doc.label}</span>
-      </a>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <a href={doc.url} target="_blank" rel="noopener noreferrer" title="Preview"
-          aria-label="Preview document"
-          className="inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:bg-(--bg-secondary)"
-          style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-            <path d="M1.5 8s2.5-5 6.5-5 6.5 5 6.5 5-2.5 5-6.5 5S1.5 8 1.5 8z"/>
-            <circle cx="8" cy="8" r="2"/>
-          </svg>
-        </a>
-        <a href={doc.url} download={downloadName} title="Download"
-          aria-label="Download document"
-          className="inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors hover:bg-(--bg-secondary)"
-          style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-            <path d="M8 2v8m0 0l-3-3m3 3l3-3"/>
-            <path d="M2.5 12.5v1A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5v-1"/>
-          </svg>
-        </a>
-        {doc.ocrStatus && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: ocr.bg, color: ocr.text }}>
-            OCR: {doc.ocrStatus}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StepBadge({ filed, date }: { filed: boolean; date?: string }) {
-  return (
-    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-      style={filed
-        ? { background: "var(--success-bg)", color: "var(--success-text)" }
-        : { background: "var(--bg-secondary)", color: "var(--muted)" }}>
-      {filed ? (date ? `Filed ${fmtDate(date)}` : "Filed") : "Pending"}
-    </span>
-  );
-}
-
 /* The old buildTimeline + Aceternity Timeline render were removed — the
  * workflow graph is now the single chronological view. Document uploads,
  * court appearances, and case-diary entries each live in their own
  * dedicated collapsible section, and the audit log captures every change
- * across them. EventCard / DocLink are kept for the FIR alert and HC
- * step rendering. */
+ * across them. EventCard is kept for the FIR alert. */
 
 /* ── Add diary form ─────────────────────────────────────────────────────── */
 function AddDiaryForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => void }) {
@@ -351,71 +274,15 @@ function UpdateHearingForm({ caseId, current, onSuccess }: { caseId: string; cur
   );
 }
 
-/* ── Progress stepper ────────────────────────────────────────────────────── */
-function CaseProgressStepper({ caseData }: { caseData: PopulatedCase }) {
-  if (caseData.path === "criminal" && caseData.criminalPath) {
-    const cp = caseData.criminalPath;
-    const steps = [
-      { label: "FIR",         done: cp.firFiled },
-      { label: "Chargesheet", done: cp.chargesheetFiled },
-      { label: "Cognizance",  done: !!cp.cognizanceOrderDoc },
-      { label: "Charges",     done: cp.chargesFramed },
-      { label: "Trial",       done: (cp.trial?.prosecutionWitnesses?.length ?? 0) > 0 },
-      { label: "Verdict",     done: !!cp.verdict },
-    ];
-    return <StepperRow steps={steps} />;
-  }
-  if (caseData.path === "highcourt" && caseData.highCourtPath) {
-    const hcp = caseData.highCourtPath;
-    const steps = [
-      { label: "Petition",      done: hcp.petitionFiled.filed },
-      { label: "Affidavit",     done: hcp.supportingAffidavit.filed },
-      { label: "Admission",     done: hcp.admission.filed },
-      { label: "Counter Aff.",  done: hcp.counterAffidavit.filed },
-      { label: "Rejoinder",     done: hcp.rejoinder.filed },
-      { label: "Plea Close",    done: hcp.pleaClose.filed },
-      { label: "Inducement",    done: hcp.inducement.filed },
-    ];
-    return <StepperRow steps={steps} />;
-  }
-  return null;
-}
-
-function StepperRow({ steps }: { steps: { label: string; done: boolean }[] }) {
-  const doneCount = steps.filter(s => s.done).length;
-  return (
-    <div className="rounded-2xl border p-4"
-      style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-(--text)">Progress</p>
-        <p className="text-xs text-(--muted)">{doneCount}/{steps.length} steps</p>
-      </div>
-      {/* Progress bar */}
-      <div className="w-full h-1.5 rounded-full mb-4" style={{ background: "var(--border)" }}>
-        <div className="h-full rounded-full transition-all"
-          style={{ width: `${(doneCount / steps.length) * 100}%`, background: "var(--accent)" }} />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {steps.map((s, i) => (
-          <span key={i} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
-            style={s.done
-              ? { background: "var(--success-bg)", color: "var(--success-text)" }
-              : { background: "var(--bg-secondary)", color: "var(--muted)" }}>
-            <span className="w-1.5 h-1.5 rounded-full"
-              style={{ background: s.done ? "var(--success)" : "var(--muted)" }} />
-            {s.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ── FIR alert ──────────────────────────────────────────────────────────── */
 function FirAlert({ caseData }: { caseData: PopulatedCase }) {
+  // Capture "now" once via a lazy initializer rather than calling Date.now()
+  // in the render body — the latter is impure (changes between renders).
+  const [now] = useState(() => Date.now());
+
   if (caseData.path !== "criminal" || !caseData.criminalPath?.firFiled || !caseData.criminalPath.firDoc) return null;
   const firDate = new Date(caseData.criminalPath.firDoc.uploadedAt);
-  const days    = Math.floor((Date.now() - firDate.getTime()) / 86_400_000);
+  const days    = Math.floor((now - firDate.getTime()) / 86_400_000);
   if (days <= 60) return null;
 
   const critical = days > 90;
@@ -436,10 +303,14 @@ function FirAlert({ caseData }: { caseData: PopulatedCase }) {
 }
 
 /* ── Enquiry summary ────────────────────────────────────────────────────── */
-function EnquirySummary({ enquiry, district, causeTitle }: { enquiry?: Enquiry; district?: string; causeTitle?: string }) {
+function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChanged }: {
+  caseId: string; enquiry?: Enquiry; district?: string; causeTitle?: string;
+  canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
   // Skip the whole block if there's truly nothing to show — keeps cases that
   // were filed before the structured intake form was rolled out from showing
-  // an empty card.
+  // an empty card. Editors always see the card so they can add intake facts.
   const has = (v?: string | number | string[]) =>
     v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== "");
   const anything =
@@ -451,7 +322,12 @@ function EnquirySummary({ enquiry, district, causeTitle }: { enquiry?: Enquiry; 
       has(enquiry.firNumber) || has(enquiry.policeStation) ||
       has(enquiry.placeOfOccurrence) || has(enquiry.incidentDateTime)
     );
-  if (!anything) return null;
+  if (!anything && !canEdit) return null;
+
+  if (editing) {
+    return <EnquiryEditor caseId={caseId} enquiry={enquiry} district={district} causeTitle={causeTitle}
+      onClose={() => setEditing(false)} onSaved={() => { setEditing(false); onChanged(); }} />;
+  }
 
   return (
     <div className="rounded-2xl border overflow-hidden"
@@ -459,8 +335,19 @@ function EnquirySummary({ enquiry, district, causeTitle }: { enquiry?: Enquiry; 
       <div className="px-4 py-2 border-b flex items-center gap-2"
         style={{ background: "color-mix(in srgb, var(--info) 8%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--info)" }} />
-        <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>Case Enquiry — Intake Facts</span>
+        <span className="text-xs font-semibold flex-1" style={{ color: "var(--info-text)" }}>Case Enquiry — Intake Facts</span>
+        {canEdit && (
+          <button type="button" onClick={() => setEditing(true)}
+            className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+            {anything ? "Edit" : "+ Add intake facts"}
+          </button>
+        )}
       </div>
+      {!anything ? (
+        <div className="px-5 py-4">
+          <p className="text-xs text-(--muted) italic">No intake facts recorded yet.</p>
+        </div>
+      ) : (
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
         {has(enquiry?.victimName) && (
           <Line label="Victim">
@@ -515,6 +402,151 @@ function EnquirySummary({ enquiry, district, causeTitle }: { enquiry?: Enquiry; 
             <span className="block whitespace-pre-line text-(--text)">{enquiry!.factsOfTheCase}</span>
           </Line>
         )}
+      </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Enquiry editor — the full Case Enquiry intake form, inline ──────────── */
+function EnquiryEditor({ caseId, enquiry, district, causeTitle, onClose, onSaved }: {
+  caseId: string; enquiry?: Enquiry; district?: string; causeTitle?: string;
+  onClose: () => void; onSaved: () => void;
+}) {
+  const toDateInput = (v?: string) => {
+    if (!v) return "";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return "";
+    // datetime-local wants YYYY-MM-DDTHH:mm in local time.
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [draft, setDraft] = useState({
+    district: district ?? "",
+    causeTitle: causeTitle ?? "",
+    filerName: enquiry?.filerName ?? "",
+    filerPhone: enquiry?.filerPhone ?? "",
+    relationshipWithVictim: enquiry?.relationshipWithVictim ?? "",
+    victimName: enquiry?.victimName ?? "",
+    victimAddress: enquiry?.victimAddress ?? "",
+    victimContact: enquiry?.victimContact ?? "",
+    accusedNames: enquiry?.accusedNames ?? "",
+    accusedCount: enquiry?.accusedCount != null ? String(enquiry.accusedCount) : "",
+    factsOfTheCase: enquiry?.factsOfTheCase ?? "",
+    firNumber: enquiry?.firNumber ?? "",
+    policeStation: enquiry?.policeStation ?? "",
+    placeOfOccurrence: enquiry?.placeOfOccurrence ?? "",
+    incidentDateTime: toDateInput(enquiry?.incidentDateTime),
+  });
+  const [issues, setIssues] = useState<string[]>(enquiry?.issues ?? []);
+  const [issueDraft, setIssueDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const set = (k: keyof typeof draft) => (v: string) => setDraft(s => ({ ...s, [k]: v }));
+
+  async function save() {
+    setSaving(true); setErr("");
+    const t = (v: string) => v.trim() || undefined;
+    const countNum = draft.accusedCount.trim() === "" ? undefined : Number(draft.accusedCount);
+    if (countNum !== undefined && (isNaN(countNum) || countNum < 0)) {
+      setErr("Accused count must be a non-negative number."); setSaving(false); return;
+    }
+    // Guard the date parse — `new Date("…").toISOString()` throws a RangeError
+    // on an invalid value, so only send a well-formed timestamp.
+    let incidentISO: string | undefined;
+    if (draft.incidentDateTime) {
+      const d = new Date(draft.incidentDateTime);
+      if (!isNaN(d.getTime())) incidentISO = d.toISOString();
+    }
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          district: t(draft.district),
+          causeTitle: t(draft.causeTitle),
+          enquiry: {
+            filerName: t(draft.filerName),
+            filerPhone: t(draft.filerPhone),
+            relationshipWithVictim: t(draft.relationshipWithVictim),
+            victimName: t(draft.victimName),
+            victimAddress: t(draft.victimAddress),
+            victimContact: t(draft.victimContact),
+            issues: issues.length ? issues : undefined,
+            accusedNames: t(draft.accusedNames),
+            accusedCount: countNum,
+            factsOfTheCase: t(draft.factsOfTheCase),
+            firNumber: t(draft.firNumber),
+            policeStation: t(draft.policeStation),
+            placeOfOccurrence: t(draft.placeOfOccurrence),
+            incidentDateTime: incidentISO,
+          },
+        }),
+      });
+      if (res.ok) onSaved();
+      else { const d = await res.json(); setErr(d.error ?? "Failed to save."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--accent)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center justify-between"
+        style={{ background: "color-mix(in srgb, var(--info) 8%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>Edit Intake Facts</span>
+        <button type="button" onClick={onClose} className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <CmInput label="District" value={draft.district} onChange={set("district")} placeholder="Patna" />
+          <CmInput label="Cause Title" value={draft.causeTitle} onChange={set("causeTitle")} placeholder="State vs Accused" />
+          <CmInput label="Victim Name" value={draft.victimName} onChange={set("victimName")} />
+          <CmInput label="Victim Contact" value={draft.victimContact} onChange={set("victimContact")} />
+          <div className="sm:col-span-2">
+            <CmInput label="Victim Address" value={draft.victimAddress} onChange={set("victimAddress")} />
+          </div>
+          <CmInput label="Filer Name" value={draft.filerName} onChange={set("filerName")} />
+          <CmInput label="Filer Phone" value={draft.filerPhone} onChange={set("filerPhone")} />
+          <div className="sm:col-span-2">
+            <CmInput label="Relationship with Victim" value={draft.relationshipWithVictim} onChange={set("relationshipWithVictim")} placeholder="Father, neighbour, NGO worker…" />
+          </div>
+          <CmInput label="Accused Name(s)" value={draft.accusedNames} onChange={set("accusedNames")} />
+          <CmInput label="Accused Count" value={draft.accusedCount} onChange={set("accusedCount")} placeholder="e.g. 3" />
+          <CmInput label="FIR Number" value={draft.firNumber} onChange={set("firNumber")} />
+          <CmInput label="Police Station" value={draft.policeStation} onChange={set("policeStation")} />
+          <CmInput label="Place of Occurrence" value={draft.placeOfOccurrence} onChange={set("placeOfOccurrence")} />
+          <div>
+            <label className="block text-xs font-semibold text-(--muted) mb-1">Date / time of incident</label>
+            <input type="datetime-local" value={draft.incidentDateTime} onChange={e => set("incidentDateTime")(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+          </div>
+        </div>
+        <ChipField label="Issues" chips={issues} draft={issueDraft}
+          onDraftChange={setIssueDraft}
+          onCommit={() => { const v = issueDraft.trim(); if (v && !issues.includes(v)) setIssues([...issues, v]); setIssueDraft(""); }}
+          onRemove={i => setIssues(issues.filter((_, idx) => idx !== i))} />
+        <div>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">Facts of the case</label>
+          <textarea value={draft.factsOfTheCase} onChange={e => set("factsOfTheCase")(e.target.value)} rows={4}
+            placeholder="What happened, in the filer's words…"
+            className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y"
+            style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={save} disabled={saving}
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+          <button type="button" onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+        </div>
       </div>
     </div>
   );
@@ -644,7 +676,9 @@ function CaseManagementSection({
               placeholder="CJM Court, Patna" />
             <CmInput label="Court Case / Registration No." value={draft.courtCaseNumber}
               onChange={v => setDraft(s => ({ ...s, courtCaseNumber: v }))}
-              placeholder="GR 123/2026" />
+              placeholder="GR 123/2026"
+              disabled={!!caseData.courtCaseNumber}
+              hint="The court case number is an official identifier — it can be recorded once but can't be changed afterwards." />
             <div className="sm:col-span-2">
               <CmInput label="Relevant Sections" value={draft.relevantSections}
                 onChange={v => setDraft(s => ({ ...s, relevantSections: v }))}
@@ -680,15 +714,28 @@ function CaseManagementSection({
   );
 }
 
-function CmInput({ label, value, onChange, placeholder }: {
+function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+  disabled?: boolean; hint?: string;
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-(--muted) mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-(--muted) mb-1">
+        {label}
+        {disabled && (
+          <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-normal text-(--muted)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-3 h-3">
+              <rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/>
+            </svg>
+            locked
+          </span>
+        )}
+      </label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
-        style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+        disabled={disabled} readOnly={disabled} title={disabled ? hint : undefined}
+        className={`w-full px-3 py-2 rounded-xl border text-sm focus:outline-none ${disabled ? "cursor-not-allowed opacity-70" : ""}`}
+        style={{ background: disabled ? "var(--bg-secondary)" : "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+      {disabled && hint && <p className="text-[10px] text-(--muted) mt-1">{hint}</p>}
     </div>
   );
 }
@@ -1062,22 +1109,8 @@ function CourtPartiesSubjectCard({
           onChanged={onChanged}
         />
 
-        {/* Subject */}
-        {showSubject && (
-          <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Subject</p>
-            {has(s?.courtThey) && (
-              <Line label="Subject of the court" wide>
-                <span className="block whitespace-pre-line">{s!.courtThey}</span>
-              </Line>
-            )}
-            {has(s?.ourPoints) && (
-              <Line label="Our points" wide>
-                <span className="block whitespace-pre-line">{s!.ourPoints}</span>
-              </Line>
-            )}
-          </div>
-        )}
+        {/* Subject — read view + inline editor (incl. "why we believe"). */}
+        <SubjectEditor caseId={caseId} subject={s} canEdit={canEdit} onChanged={onChanged} />
 
         {/* Filing + e-Court row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 pt-3 border-t text-sm"
@@ -1495,7 +1528,7 @@ function LitigationTeamPanel({
               </div>
             )}
             {query.length >= 2 && !searching && results.length === 0 && (
-              <p className="text-[11px] text-(--muted)">No matches for "{query}".</p>
+              <p className="text-[11px] text-(--muted)">No matches for &quot;{query}&quot;.</p>
             )}
           </div>
         )}
@@ -1602,6 +1635,294 @@ function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
   );
 }
 
+/* ── Inline case-title editor (header) ──────────────────────────────────── */
+function TitleEditor({ caseId, value, canEdit, onChanged }: {
+  caseId: string; value: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
+
+  async function save() {
+    const title = draft.trim();
+    if (!title) { setErr("Title cannot be empty."); return; }
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseTitle: title }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed to save."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  if (!editing) {
+    return (
+      <h1 className="text-xl sm:text-2xl font-bold text-(--text) leading-tight flex items-start gap-2">
+        <span className="min-w-0">{value}</span>
+        {canEdit && (
+          <button type="button" onClick={() => setEditing(true)} title="Edit title"
+            className="shrink-0 mt-1 text-(--muted) hover:text-(--accent) transition-colors">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10l7.5-7.5z"/>
+            </svg>
+          </button>
+        )}
+      </h1>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={2} autoFocus
+        className="w-full px-3 py-2 rounded-xl border text-lg font-bold focus:outline-none resize-y"
+        style={{ background: "var(--bg)", borderColor: "var(--accent)", color: "var(--text)" }} />
+      {err && <p className="text-xs" style={{ color: "var(--error-text)" }}>{err}</p>}
+      <div className="flex gap-2">
+        <button type="button" onClick={save} disabled={saving}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" onClick={() => { setEditing(false); setDraft(value); setErr(""); }}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Inline status editor (header pill) ─────────────────────────────────── */
+const STATUS_OPTIONS = ["Open", "Pending", "Escalated", "Disposal", "Withdrawn", "Closed", "Dismissed"] as const;
+function StatusEditor({ caseId, value, canEdit, onChanged }: {
+  caseId: string; value: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const st = STATUS_STYLE[value] ?? STATUS_STYLE.Closed;
+
+  async function change(next: string) {
+    if (next === value) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+    } finally { setSaving(false); }
+  }
+
+  if (canEdit && editing) {
+    return (
+      <select autoFocus defaultValue={value} disabled={saving}
+        onChange={e => change(e.target.value)}
+        onBlur={() => setEditing(false)}
+        className="text-xs font-semibold px-2 py-1 rounded-full border focus:outline-none"
+        style={{ background: st.bg, color: st.text, borderColor: "var(--border)" }}>
+        {STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    );
+  }
+
+  return (
+    <button type="button" disabled={!canEdit} onClick={() => setEditing(true)}
+      title={canEdit ? "Change status" : undefined}
+      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${canEdit ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+      style={{ background: st.bg, color: st.text }}>
+      {value}{canEdit && " ▾"}
+    </button>
+  );
+}
+
+/* ── Subject editor — strategic notes (court they / our points / why) ───── */
+function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
+  caseId: string;
+  subject?: { courtThey?: string; ourPoints?: string; reason?: string };
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    courtThey: subject?.courtThey ?? "",
+    ourPoints: subject?.ourPoints ?? "",
+    reason: subject?.reason ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (!editing) setDraft({
+      courtThey: subject?.courtThey ?? "",
+      ourPoints: subject?.ourPoints ?? "",
+      reason: subject?.reason ?? "",
+    });
+  }, [subject, editing]);
+
+  const has = (v?: string) => v !== undefined && v !== null && String(v).trim() !== "";
+  const anything = has(subject?.courtThey) || has(subject?.ourPoints) || has(subject?.reason);
+  if (!anything && !canEdit) return null;
+
+  async function save() {
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: {
+          courtThey: draft.courtThey.trim(),
+          ourPoints: draft.ourPoints.trim(),
+          reason: draft.reason.trim(),
+        } }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  if (!editing) {
+    return (
+      <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Subject</p>
+          {canEdit && (
+            <button type="button" onClick={() => setEditing(true)}
+              className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+              {anything ? "Edit" : "+ Add subject"}
+            </button>
+          )}
+        </div>
+        {has(subject?.courtThey) && (
+          <Line label="Subject of the court" wide><span className="block whitespace-pre-line">{subject!.courtThey}</span></Line>
+        )}
+        {has(subject?.ourPoints) && (
+          <Line label="Our points" wide><span className="block whitespace-pre-line">{subject!.ourPoints}</span></Line>
+        )}
+        {has(subject?.reason) && (
+          <Line label="Why we believe we have a case" wide><span className="block whitespace-pre-line">{subject!.reason}</span></Line>
+        )}
+        {!anything && <p className="text-xs text-(--muted) italic">No subject notes yet.</p>}
+      </div>
+    );
+  }
+
+  const taCls = "w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y";
+  const taStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" };
+  return (
+    <div className="space-y-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-(--text)">Edit Subject</p>
+        <button type="button" onClick={() => setEditing(false)} className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+      </div>
+      {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+      <div>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">Subject of the court (their line)</label>
+        <textarea value={draft.courtThey} onChange={e => setDraft(s => ({ ...s, courtThey: e.target.value }))} rows={2} className={taCls} style={taStyle} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">Our points</label>
+        <textarea value={draft.ourPoints} onChange={e => setDraft(s => ({ ...s, ourPoints: e.target.value }))} rows={2} className={taCls} style={taStyle} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">Why we believe we have a case</label>
+        <textarea value={draft.reason} onChange={e => setDraft(s => ({ ...s, reason: e.target.value }))} rows={2} className={taCls} style={taStyle} />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={save} disabled={saving}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" onClick={() => setEditing(false)}
+          className="px-4 py-2 rounded-xl text-sm font-semibold"
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Verdict editor (criminal path) ─────────────────────────────────────── */
+function VerdictEditor({ caseId, verdict, verdictDate, canEdit, onChanged }: {
+  caseId: string; verdict?: string; verdictDate?: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(verdict ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => { if (!editing) setDraft(verdict ?? ""); }, [verdict, editing]);
+
+  const has = verdict !== undefined && verdict !== null && String(verdict).trim() !== "";
+  if (!has && !canEdit) return null;
+
+  async function save() {
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verdict: draft.trim() }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center justify-between"
+        style={{ background: "color-mix(in srgb, var(--success) 8%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--success-text)" }}>
+          Verdict{verdictDate ? ` · ${fmtDate(verdictDate)}` : ""}
+        </span>
+        {canEdit && !editing && (
+          <button type="button" onClick={() => setEditing(true)}
+            className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+            {has ? "Edit" : "+ Record verdict"}
+          </button>
+        )}
+      </div>
+      {!editing ? (
+        <div className="px-5 py-4">
+          {has
+            ? <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{verdict}</p>
+            : <p className="text-xs text-(--muted) italic">No verdict recorded yet.</p>}
+        </div>
+      ) : (
+        <div className="px-5 py-4 space-y-3">
+          {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+          <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={4}
+            placeholder="Summarise the verdict / final order…"
+            className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y"
+            style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+          <div className="flex gap-2">
+            <button type="button" onClick={save} disabled={saving}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button type="button" onClick={() => { setEditing(false); setDraft(verdict ?? ""); }}
+              className="px-4 py-2 rounded-xl text-sm font-semibold"
+              style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -1612,13 +1933,23 @@ interface Props {
   dashboardHref?: string;    // optional dashboard link shown before the back link
 }
 
-export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = false, backHref, backLabel = "Cases", dashboardHref }: Props) {
+export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManageCarePlan = false, backHref, backLabel = "Cases", dashboardHref }: Props) {
   const [caseData, setCaseData]   = useState<PopulatedCase | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [hearingDate, setHearingDate] = useState<string | undefined>();
   const [timelineKey, setTimelineKey] = useState(0);
   const [tab, setTab] = useState<"legal" | "icp" | "finance">("legal");
+  // The current user — used to grant the case creator full edit rights on the
+  // detail page regardless of their role (the server enforces the same rule).
+  const [meId, setMeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/users/me")
+      .then(r => r.json())
+      .then(d => { if (d.user) setMeId(String(d.user._id)); })
+      .catch(() => {});
+  }, []);
 
   async function fetchCase() {
     try {
@@ -1634,6 +1965,9 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
     }
   }
 
+  // Re-fetch only when the case id changes; fetchCase is stable enough for
+  // this purpose and intentionally excluded from the dep list.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchCase(); }, [caseId]);
 
   if (loading) return (
@@ -1664,7 +1998,10 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
   );
 
   const c  = caseData;
-  const st = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
+  // Effective edit permission: the role-derived prop OR "I created this case".
+  // The creator can edit everything on the page; the server enforces the same.
+  const isCreator = meId != null && c.createdBy != null && String(c.createdBy) === meId;
+  const canEdit = canEditProp || isCreator;
   // Bump on every successful mutation so collapsible children re-render
   // their internal state (e.g. close their own forms after a save).
   const refresh = () => { setTimelineKey(k => k + 1); fetchCase(); };
@@ -1709,8 +2046,7 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
               {c.caseNumber}
             </span>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ background: st.bg, color: st.text }}>{c.status}</span>
+          <StatusEditor caseId={c._id} value={c.status} canEdit={canEdit} onChanged={fetchCase} />
           <span className="text-xs px-2.5 py-1 rounded-full"
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
             {c.path === "criminal" ? "⚖ Criminal" : "🏛 High Court"}
@@ -1718,8 +2054,8 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
         </div>
 
         <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-(--text) leading-tight">{c.caseTitle}</h1>
+          <div className="min-w-0 flex-1">
+            <TitleEditor caseId={c._id} value={c.caseTitle} canEdit={canEdit} onChanged={fetchCase} />
             <p className="text-xs text-(--muted) mt-1">Filed {fmtDate(c.createdAt)} · Last updated {fmtDate(c.updatedAt)}</p>
           </div>
 
@@ -1803,7 +2139,8 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
 
       {/* Intake facts captured by the Case Enquiry form. Visible to anyone with
           access to the case so SW + lawyers see the same paper-form data. */}
-      <EnquirySummary enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle} />
+      <EnquirySummary caseId={c._id} enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle}
+        canEdit={canEdit} onChanged={fetchCase} />
 
       {/* Court-side metadata managed by the assigned lawyer. */}
       <CaseManagementSection
@@ -1906,8 +2243,8 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
             standalone stepper + duplicate timeline are gone. */}
         <CaseWorkflowGraph
           path={c.path}
-          criminalPath={c.criminalPath as any}
-          highCourtPath={c.highCourtPath as any}
+          criminalPath={c.criminalPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["criminalPath"]}
+          highCourtPath={c.highCourtPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["highCourtPath"]}
           firFiled={c.criminalPath?.firFiled}
           createdAt={c.createdAt}
           canEdit={canEdit}
@@ -1920,6 +2257,12 @@ export default function CaseDetailPage({ caseId, canEdit, canManageCarePlan = fa
             for HC matters; criminal cases are covered by the workflow graph. */}
         {c.path === "highcourt" && (
           <HighCourtStagesAndDocs caseId={c._id} caseData={c} canEdit={canEdit} onChanged={refresh} />
+        )}
+
+        {/* Verdict — final order text for criminal matters. */}
+        {c.path === "criminal" && (
+          <VerdictEditor caseId={c._id} verdict={c.criminalPath?.verdict} verdictDate={c.criminalPath?.verdictDate}
+            canEdit={canEdit} onChanged={refresh} />
         )}
 
         {/* Documents — visible to everyone; editors get upload + rename/delete. */}

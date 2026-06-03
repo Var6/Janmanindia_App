@@ -220,9 +220,22 @@ export async function POST(request: NextRequest) {
     // explicitly for in-progress matters. Staff can set the flag explicitly.
     const flaggedExisting = Boolean(isExistingCase) || session.role === "community";
 
-    // Generate unique case number
-    const count = await Case.countDocuments({});
-    const caseNumber = `JMI-${new Date().getFullYear()}-${String(count + 1).padStart(5, "0")}`;
+    // Generate the next case number for this year. Derive it from the highest
+    // EXISTING number — not a document count — so deletions / seed data with
+    // explicit numbers don't make us re-pick a number that's already taken
+    // (which previously caused E11000 duplicate-key errors on create). The
+    // actual create below also retries on collision to cover concurrent files.
+    const year = new Date().getFullYear();
+    const numberPrefix = `JMI-${year}-`;
+    const latest = await Case.findOne({ caseNumber: { $regex: `^${numberPrefix}` } })
+      .sort({ caseNumber: -1 })
+      .select("caseNumber")
+      .lean();
+    let nextSeq = 1;
+    if (latest?.caseNumber) {
+      const parsed = parseInt(latest.caseNumber.slice(numberPrefix.length), 10);
+      if (!isNaN(parsed)) nextSeq = parsed + 1;
+    }
 
     // Whitelist enquiry input — issues go through the controlled vocabulary
     // filter, dates are parsed, and trimmed strings drop empty values so we
@@ -304,9 +317,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const newCase = await Case.create({
+    const baseDoc = {
       caseTitle,
-      caseNumber,
       // Whoever files the case keeps visibility + delete rights on it.
       createdBy: session.id,
       path,
@@ -378,7 +390,23 @@ export async function POST(request: NextRequest) {
               inducement: { filed: false },
             },
           }),
-    });
+    };
+
+    // Create with a few retries: if two cases are filed at the same instant
+    // (or a stale gap slips through), the unique index throws E11000 — we just
+    // bump the sequence and try the next number rather than failing the user.
+    let newCase = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const caseNumber = `${numberPrefix}${String(nextSeq).padStart(5, "0")}`;
+      try {
+        newCase = await Case.create({ ...baseDoc, caseNumber });
+        break;
+      } catch (e) {
+        const dup = (e as { code?: number })?.code === 11000;
+        if (dup && attempt < 4) { nextSeq++; continue; }
+        throw e;
+      }
+    }
 
     return NextResponse.json({ case: newCase }, { status: 201 });
   } catch (error) {
