@@ -6,7 +6,8 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import { CommunityCasesTabs } from "@/components/community/SectionTabs";
-import { getServerT } from "@/lib/i18n-server";
+import { getServerT, getServerLang } from "@/lib/i18n-server";
+import { translateTitles } from "@/lib/translate-batch-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -25,6 +26,9 @@ export default async function CaseTrackerPage() {
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Case.find({ community: new mongoose.Types.ObjectId(session.id) }).sort({ updatedAt: -1 }).lean()
     : [];
+
+  // Batch-translate case titles once (server-side, cached).
+  const tt = await translateTitles(cases.map((c) => c.caseTitle), await getServerLang());
 
   return (
     <div className="space-y-6">
@@ -76,7 +80,7 @@ export default async function CaseTrackerPage() {
                       <span className="text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("High Court")}</span>
                     </div>
                     <p className="font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
-                      {c.caseTitle}
+                      {tt(c.caseTitle)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

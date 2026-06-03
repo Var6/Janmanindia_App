@@ -6,7 +6,8 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
-import { getServerT } from "@/lib/i18n-server";
+import { getServerT, getServerLang } from "@/lib/i18n-server";
+import { translateTitles } from "@/lib/translate-batch-server";
 
 const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = {
   Open:       { background: "var(--info-bg)",      color: "var(--info-text)"    },
@@ -46,6 +47,10 @@ export default async function LitigationCasesPage() {
   const FINAL_STATES = new Set(["Closed", "Dismissed", "Disposal", "Withdrawn"]);
   const open   = cases.filter((c) => !FINAL_STATES.has(c.status));
   const closed = cases.filter((c) =>  FINAL_STATES.has(c.status));
+
+  // Batch-translate case titles once (server-side, cached) so list rows show
+  // in the active language without per-row API calls.
+  const tt = await translateTitles(cases.map((c) => c.caseTitle), await getServerLang());
 
   return (
     <div className="space-y-8">
@@ -99,7 +104,7 @@ export default async function LitigationCasesPage() {
                           : c.courtName               ?? t("High Court")}
                         </span>
                       </div>
-                      <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
+                      <p className="font-semibold text-(--text) truncate">{tt(c.caseTitle)}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
                         {t("Community")}: {community?.name ?? "—"} · {t("SW")}: {sw?.name ?? "—"}
                       </p>
@@ -145,7 +150,7 @@ export default async function LitigationCasesPage() {
                       {c.caseNumber}
                     </span>
                   )}
-                  <p className="text-sm text-(--muted) truncate flex-1">{c.caseTitle}</p>
+                  <p className="text-sm text-(--muted) truncate flex-1">{tt(c.caseTitle)}</p>
                   <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full" style={cst}>
                     {c.status}
                   </span>

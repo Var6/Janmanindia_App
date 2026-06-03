@@ -7,7 +7,8 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
-import { getServerT } from "@/lib/i18n-server";
+import { getServerT, getServerLang } from "@/lib/i18n-server";
+import { translateTitles } from "@/lib/translate-batch-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -41,6 +42,9 @@ export default async function SWCasesPage() {
         .select("name email communityProfile")
         .lean()
     : [];
+
+  // Batch-translate case titles once (server-side, cached).
+  const tt = await translateTitles(cases.map((c) => c.caseTitle), await getServerLang());
 
   return (
     <div className="space-y-8">
@@ -130,7 +134,7 @@ export default async function SWCasesPage() {
                         )}
                         <span className="text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("High Court")}</span>
                       </div>
-                      <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
+                      <p className="font-semibold text-(--text) truncate">{tt(c.caseTitle)}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
                         {community && <>{t("Community")}: <span className="font-medium">{community.name}</span></>}
                         {lawyer  && <> · {t("Lawyer")}: {lawyer.name}</>}

@@ -5,7 +5,8 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
-import { getServerT } from "@/lib/i18n-server";
+import { getServerT, getServerLang } from "@/lib/i18n-server";
+import { translateTitles } from "@/lib/translate-batch-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -43,6 +44,12 @@ export default async function AdminCasesPage() {
     acc[c.status] = (acc[c.status] ?? 0) + 1;
     return acc;
   }, {});
+
+  // Batch-translate titles + the "current step" note once (server-side, cached).
+  const tt = await translateTitles(
+    cases.flatMap((c) => [c.caseTitle, c.currentStep]),
+    await getServerLang(),
+  );
 
   return (
     <div className="space-y-6">
@@ -115,10 +122,10 @@ export default async function AdminCasesPage() {
                       )}
                     </div>
                     <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
-                      {c.caseTitle}
+                      {tt(c.caseTitle)}
                     </p>
                     {c.currentStep && (
-                      <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{c.currentStep}</p>
+                      <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{tt(c.currentStep)}</p>
                     )}
                     <p className="text-xs text-(--muted)">{community?.name ?? "—"}</p>
                   </Link>
