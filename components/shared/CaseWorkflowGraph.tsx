@@ -456,7 +456,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                          n.status === "active" ? "var(--accent)" :
                                                  "var(--muted)",
                 }}>
-                {n.label}
+                {t(n.label)}
               </span>
               {isBranch && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
@@ -484,7 +484,12 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
               <p className={`text-xs mt-0.5 leading-relaxed ${isAlt ? "text-right" : ""}`} style={{ color: "var(--muted)" }}>
                 {n.date && <span>{n.date}</span>}
                 {n.date && n.sub && <span> · </span>}
-                {n.sub && <span>{n.sub}</span>}
+                {n.sub && <span>{(() => {
+                  // "N deposed" is built dynamically with a count, so translate
+                  // the word and keep the number rather than miss the dict key.
+                  const m = n.sub.match(/^(\d+) deposed$/);
+                  return m ? `${m[1]} ${t("deposed")}` : t(n.sub);
+                })()}</span>}
               </p>
             )}
             {n.doc && (
