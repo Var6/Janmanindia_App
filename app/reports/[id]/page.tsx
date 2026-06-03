@@ -5,6 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Report from "@/models/Report";
 import { lookupTemplate } from "@/lib/report-templates";
+import { getServerT } from "@/lib/i18n-server";
 
 const PRIVILEGED = ["director", "superadmin", "administrator"];
 
@@ -13,12 +14,14 @@ export default async function ReportDetail({ params }: { params: Promise<{ id: s
   if (!session) redirect("/login");
   if (session.role === "community") redirect("/community");
 
+  const t = await getServerT();
+
   const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) notFound();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) {
-    return <p className="text-sm text-(--muted)">Database is unreachable.</p>;
+    return <p className="text-sm text-(--muted)">{t("Database is unreachable.")}</p>;
   }
 
   const report = await Report.findById(id)
@@ -33,10 +36,10 @@ export default async function ReportDetail({ params }: { params: Promise<{ id: s
       <div className="space-y-4 max-w-xl">
         <p className="text-sm rounded-xl px-4 py-3"
           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-          You don&apos;t have access to this report.
+          {t("You don't have access to this report.")}
         </p>
         <Link href="/reports" className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-          ← Back to reports
+          ← {t("Back to reports")}
         </Link>
       </div>
     );
@@ -50,11 +53,11 @@ export default async function ReportDetail({ params }: { params: Promise<{ id: s
     <div className="space-y-6 max-w-3xl">
       <div>
         <Link href="/reports" className="text-xs font-medium text-(--muted) hover:text-(--accent) transition-colors">
-          ← All reports
+          ← {t("All reports")}
         </Link>
         <h1 className="text-2xl font-bold text-(--text) mt-2">{template?.name ?? report.template}</h1>
         <p className="text-xs text-(--muted) mt-1">
-          Filed by {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
+          {t("Filed by")} {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
           {submittedAt && ` · ${new Date(submittedAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`}
         </p>
       </div>
@@ -62,7 +65,7 @@ export default async function ReportDetail({ params }: { params: Promise<{ id: s
       {!template ? (
         <div className="rounded-2xl border p-5 text-sm text-(--muted)"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          This report uses an unknown template ({report.template}). Raw data:
+          {t("This report uses an unknown template")} ({report.template}). {t("Raw data:")}
           <pre className="mt-3 p-3 rounded-lg text-[11px] overflow-auto"
             style={{ background: "var(--bg-secondary, #f3f4f6)" }}>{JSON.stringify(data, null, 2)}</pre>
         </div>

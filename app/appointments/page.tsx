@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BookAppointmentForm from "@/components/appointments/BookAppointmentForm";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type UserRef = { _id: string; name: string; email: string; role?: string };
 type Hearing = {
@@ -43,6 +44,7 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> 
 };
 
 export default function AppointmentsHub() {
+  const t = useT();
   const [me, setMe] = useState<{ _id: string; role: string } | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
   const [hearings, setHearings] = useState<Hearing[]>([]);
@@ -125,9 +127,9 @@ export default function AppointmentsHub() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Appointments</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Appointments")}</h1>
           <p className="text-sm text-(--muted) mt-1">
-            Book a slot with anyone in the org. Calendar conflicts are checked before sending.
+            {t("Book a slot with anyone in the org. Calendar conflicts are checked before sending.")}
           </p>
         </div>
         {me && (
@@ -152,20 +154,20 @@ export default function AppointmentsHub() {
         <>
           <HearingsSection hearings={hearings} role={me?.role} />
           {litigationPending.length > 0 && (
-            <Section title={`Awaiting your confirmation (${litigationPending.length})`}
+            <Section title={`${t("Awaiting your confirmation")} (${litigationPending.length})`}
               empty="" appts={litigationPending}
               myId={myId} onRespond={respond} onCancel={cancel}
               onLitigationDecide={decideLitigation} />
           )}
-          <Section title={`Incoming requests${incoming.length ? ` (${incoming.length})` : ""}`}
-            empty="No pending requests need your response." appts={incoming}
+          <Section title={`${t("Incoming requests")}${incoming.length ? ` (${incoming.length})` : ""}`}
+            empty={t("No pending requests need your response.")} appts={incoming}
             myId={myId} onRespond={respond} onCancel={cancel} />
-          <Section title={`Upcoming${upcoming.length ? ` (${upcoming.length})` : ""}`}
-            empty="No confirmed meetings scheduled." appts={upcoming}
+          <Section title={`${t("Upcoming")}${upcoming.length ? ` (${upcoming.length})` : ""}`}
+            empty={t("No confirmed meetings scheduled.")} appts={upcoming}
             myId={myId} onRespond={respond} onCancel={cancel} />
-          <Section title="My outgoing requests" empty="You haven't requested any meetings yet." appts={outgoing}
+          <Section title={t("My outgoing requests")} empty={t("You haven't requested any meetings yet.")} appts={outgoing}
             myId={myId} onRespond={respond} onCancel={cancel} />
-          <Section title="Other" empty="" appts={others}
+          <Section title={t("Other")} empty="" appts={others}
             myId={myId} onRespond={respond} onCancel={cancel} />
         </>
       )}
@@ -183,6 +185,7 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
   /** Optional — only the litigation-chain section passes this in. */
   onLitigationDecide?: (id: string, decision: "approve" | "reject") => void;
 }) {
+  const t = useT();
   if (appts.length === 0 && !empty) return null;
   return (
     <section>
@@ -213,38 +216,38 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
                 <p className="text-sm text-(--text)">{a.reason}</p>
                 {a.coAttendees && a.coAttendees.length > 0 && (
                   <p className="text-xs text-(--muted) mt-1">
-                    Also invited: {a.coAttendees.map((u) => u.name).join(", ")}
+                    {t("Also invited:")} {a.coAttendees.map((u) => u.name).join(", ")}
                   </p>
                 )}
-                {a.responseNotes && <p className="text-xs text-(--muted) mt-1">Note: {a.responseNotes}</p>}
-                {a.swNotes && <p className="text-xs text-(--muted) mt-1">SW note: {a.swNotes}</p>}
-                {a.litigationNotes && <p className="text-xs text-(--muted) mt-1">Lawyer note: {a.litigationNotes}</p>}
+                {a.responseNotes && <p className="text-xs text-(--muted) mt-1">{t("Note:")} {a.responseNotes}</p>}
+                {a.swNotes && <p className="text-xs text-(--muted) mt-1">{t("SW note:")} {a.swNotes}</p>}
+                {a.litigationNotes && <p className="text-xs text-(--muted) mt-1">{t("Lawyer note:")} {a.litigationNotes}</p>}
 
                 {isRequestee && a.status === "pending" && (
                   <div className="flex items-center gap-2 mt-3">
                     <button onClick={() => onRespond(a._id, "approve")}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-                      style={{ background: "var(--success)", color: "#fff" }}>Approve</button>
+                      style={{ background: "var(--success)", color: "#fff" }}>{t("Approve")}</button>
                     <button onClick={() => onRespond(a._id, "reject")}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-                      style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>Decline</button>
+                      style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Decline")}</button>
                   </div>
                 )}
                 {onLitigationDecide && a.status === "approved_sw" && a.litigationMember?._id === myId && (
                   <div className="flex flex-col gap-2 mt-3">
                     {a.swNotes && (
-                      <p className="text-xs text-(--muted)">Social worker note: {a.swNotes}</p>
+                      <p className="text-xs text-(--muted)">{t("Social worker note:")} {a.swNotes}</p>
                     )}
                     <div className="flex items-center gap-2 flex-wrap">
                       <button onClick={() => onLitigationDecide(a._id, "approve")}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold"
                         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                        Confirm appointment
+                        {t("Confirm appointment")}
                       </button>
                       <button onClick={() => onLitigationDecide(a._id, "reject")}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold"
                         style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                        Decline
+                        {t("Decline")}
                       </button>
                     </div>
                   </div>
@@ -253,7 +256,7 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
                   <div className="mt-3">
                     <button onClick={() => onCancel(a._id)}
                       className="px-3 py-1 rounded-lg text-xs"
-                      style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel request</button>
+                      style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel request")}</button>
                   </div>
                 )}
               </article>
@@ -266,6 +269,7 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
 }
 
 function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: string }) {
+  const t = useT();
   if (hearings.length === 0) return null;
   const baseHref = role === "litigation" ? "/litigation/cases" : role === "director" || role === "superadmin" ? "/director/cases" : null;
   if (!baseHref) return null;
@@ -273,9 +277,9 @@ function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: strin
   return (
     <section>
       <h2 className="font-semibold text-(--text) mb-3">
-        Upcoming court hearings
+        {t("Upcoming court hearings")}
         <span className="ml-2 text-xs font-normal text-(--muted)">
-          ({hearings.length} in next 60 days)
+          ({hearings.length} {t("in next 60 days")})
         </span>
       </h2>
       <div className="space-y-2">
@@ -283,16 +287,16 @@ function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: strin
           const d = new Date(h.nextHearingDate);
           const days = Math.ceil((d.getTime() - today.getTime()) / 86400000);
           const courtLabel = h.courtName
-            ?? (h.courtType === "supreme" ? "Supreme Court"
-              : h.courtType === "district" ? "District Court"
-              : "High Court");
+            ?? (h.courtType === "supreme" ? t("Supreme Court")
+              : h.courtType === "district" ? t("District Court")
+              : t("High Court"));
           return (
             <Link key={h._id} href={`${baseHref}/${h._id}`}
               className="flex items-start gap-3 px-4 py-3 rounded-2xl border transition-colors hover:border-(--accent)"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
               <span className="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded mt-0.5"
                 style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                Hearing
+                {t("Hearing")}
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-(--text) truncate">{h.caseTitle}</p>
@@ -306,7 +310,7 @@ function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: strin
                 </p>
                 <p className="text-[10px]"
                   style={{ color: days <= 3 ? "var(--error-text)" : "var(--muted)" }}>
-                  {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `in ${days}d`}
+                  {days === 0 ? t("Today") : days === 1 ? t("Tomorrow") : `in ${days}d`}
                 </p>
               </div>
             </Link>

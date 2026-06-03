@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { tryConnectDB } from "@/lib/mongoose";
 import Report from "@/models/Report";
 import { REPORT_TEMPLATES, lookupTemplate } from "@/lib/report-templates";
@@ -14,6 +15,8 @@ export default async function ReportsIndex() {
   if (!session) redirect("/login");
   if (session.role === "community") redirect("/community");
 
+  const t = await getServerT();
+  const startLabel = t("Start →");
   const dbOk = await tryConnectDB();
 
   // Privileged roles see everyone's reports; rank-and-file only see their own.
@@ -35,17 +38,17 @@ export default async function ReportsIndex() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Field Reports</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Field Reports")}</h1>
         <p className="text-sm text-(--muted) mt-1">
           {PRIVILEGED.includes(session.role)
-            ? "All field reports submitted by the team. Pick a template to file a new one."
-            : "Reports you've submitted. Pick a template to file a new one."}
+            ? t("All field reports submitted by the team. Pick a template to file a new one.")
+            : t("Reports you've submitted. Pick a template to file a new one.")}
         </p>
       </div>
 
       {/* Template grid — entry point for filing a new report */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-(--muted) mb-3">File a new report</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-(--muted) mb-3">{t("File a new report")}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {REPORT_TEMPLATES.filter((t) => t.authorRoles.includes(session.role)).map((t) => (
             <Link key={t.id} href={`/reports/new/${t.id}`}
@@ -53,7 +56,7 @@ export default async function ReportsIndex() {
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
               <p className="text-sm font-bold text-(--text) group-hover:text-(--accent) transition-colors">{t.name}</p>
               {t.description && <p className="text-xs text-(--muted) mt-1.5 leading-relaxed line-clamp-2">{t.description}</p>}
-              <p className="mt-3 text-xs font-semibold" style={{ color: "var(--accent)" }}>Start →</p>
+              <p className="mt-3 text-xs font-semibold" style={{ color: "var(--accent)" }}>{startLabel}</p>
             </Link>
           ))}
         </div>
@@ -62,12 +65,12 @@ export default async function ReportsIndex() {
       {/* Submitted reports list */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-(--muted) mb-3">
-          Recent submissions {reports.length > 0 && <span className="font-normal lowercase">· {reports.length}</span>}
+          {t("Recent submissions")} {reports.length > 0 && <span className="font-normal lowercase">· {reports.length}</span>}
         </h2>
         {reports.length === 0 ? (
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="text-sm text-(--muted)">{dbOk ? "No reports yet — pick a template above to file the first one." : "Connect database."}</p>
+            <p className="text-sm text-(--muted)">{dbOk ? t("No reports yet — pick a template above to file the first one.") : t("Connect database.")}</p>
           </div>
         ) : (
           <div className="rounded-2xl border overflow-hidden"

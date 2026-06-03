@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DEMO_ACCOUNTS, SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman";
 import RoleCard from "@/components/shared/RoleCard";
+import { getServerT } from "@/lib/i18n-server";
 
 const ROLE_CONFIG = [
   { icon: "👤", color: "var(--info-bg)",    border: "var(--info)",    label: "Community"       },
@@ -16,7 +17,8 @@ const PLATFORM_FEATURES = [
   { icon: "📊", label: "Role-specific live dashboards" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const t = await getServerT();
   return (
     <main className="min-h-screen bg-(--bg) text-(--text)">
 
@@ -30,12 +32,12 @@ export default function Home() {
                 <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold ring-1"
                   style={{ background: "var(--accent-subtle)", color: "var(--accent)", ["--tw-ring-color" as string]: "var(--accent-muted)" }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                  Legal aid for Bihar&apos;s most vulnerable communities
+                  {t("Legal aid for Bihar's most vulnerable communities")}
                 </span>
 
                 <h1 className="text-4xl font-extrabold tracking-tight text-(--text) sm:text-5xl lg:text-6xl leading-[1.1]">
                   Janman<br />
-                  <span style={{ color: "var(--accent)" }}>Legal Aid</span>
+                  <span style={{ color: "var(--accent)" }}>{t("Legal Aid")}</span>
                 </h1>
 
                 <p className="text-lg leading-relaxed text-(--muted) max-w-xl">{SITE_SUBTITLE}</p>
@@ -45,23 +47,23 @@ export default function Home() {
                 <Link href="/login"
                   className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
                   style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
-                  Login to Dashboard
+                  {t("Login to Dashboard")}
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
                     <path d="M3 8h10M9 4l4 4-4 4"/>
                   </svg>
                 </Link>
                 <Link href="/jan-sahayak"
                   className="inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--bg) px-6 py-3 text-sm font-semibold text-(--text) hover:border-(--accent) hover:bg-(--surface) transition">
-                  Explore Community
+                  {t("Explore Community")}
                 </Link>
               </div>
 
               {/* Stats row */}
               <div className="flex flex-wrap gap-6 pt-2 border-t border-(--border)">
                 {[
-                  { value: "7",    label: "Role types" },
-                  { value: "Bihar", label: "Focus state" },
-                  { value: "Free",  label: "Legal aid" },
+                  { value: "7",    label: t("Role types") },
+                  { value: "Bihar", label: t("Focus state") },
+                  { value: t("Free"),  label: t("Legal aid") },
                 ].map((s) => (
                   <div key={s.label}>
                     <p className="text-xl font-bold text-(--text)">{s.value}</p>
@@ -75,21 +77,21 @@ export default function Home() {
             <div className="rounded-2xl border border-(--border) p-7 space-y-6"
               style={{ background: "linear-gradient(135deg, var(--accent-subtle) 0%, var(--surface) 60%)", boxShadow: "var(--shadow-lg)" }}>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Platform features</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Platform features")}</p>
                 <p className="mt-2 text-sm text-(--text-2) leading-relaxed">
-                  A unified workspace for community members, advocates, social workers, and administrators to collaborate on case management and legal support.
+                  {t("A unified workspace for community members, advocates, social workers, and administrators to collaborate on case management and legal support.")}
                 </p>
               </div>
               <ul className="space-y-3">
                 {PLATFORM_FEATURES.map((f) => (
                   <li key={f.label} className="flex items-center gap-3">
                     <span className="text-lg w-8 text-center shrink-0">{f.icon}</span>
-                    <span className="text-sm text-(--text-2)">{f.label}</span>
+                    <span className="text-sm text-(--text-2)">{t(f.label)}</span>
                   </li>
                 ))}
               </ul>
               <div className="pt-2 border-t border-(--border)">
-                <p className="text-xs text-(--muted)">All roles share one platform — separate dashboards, same mission.</p>
+                <p className="text-xs text-(--muted)">{t("All roles share one platform — separate dashboards, same mission.")}</p>
               </div>
             </div>
           </div>
@@ -100,10 +102,10 @@ export default function Home() {
       <section id="roles" className="border-b border-(--border) bg-(--bg)">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
           <div className="mb-10 max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Separate journeys for each role</p>
-            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">One platform, seven roles</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Separate journeys for each role")}</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("One platform, seven roles")}</h2>
             <p className="mt-3 text-(--muted) leading-relaxed">
-              Community members, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.
+              {t("Community members, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.")}
             </p>
           </div>
 
@@ -128,36 +130,36 @@ export default function Home() {
       <section className="border-b border-(--border) bg-(--surface)">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
           <div className="mb-10 max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Integrated workflows</p>
-            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Tools for community and campaigns</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Integrated workflows")}</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("Tools for community and campaigns")}</h2>
             <p className="mt-3 text-(--muted) leading-relaxed">
-              Mobilize communities with integrated tools for schemes, laws, campaigns and events.
+              {t("Mobilize communities with integrated tools for schemes, laws, campaigns and events.")}
             </p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             {[
               {
-                tag: "⚖️ Legal knowledge",
+                tag: `⚖️ ${t("Legal knowledge")}`,
                 title: "Jan Sahayak Community",
-                desc: "Search government schemes, understand your legal rights, and access district-level support information.",
+                desc: t("Search government schemes, understand your legal rights, and access district-level support information."),
                 bullets: [
-                  "Central and Bihar welfare schemes with eligibility checks",
-                  "Laws and rights guides: BNS, BNSS, POCSO, SC/ST Act",
-                  "Live case intake and community health monitoring",
+                  t("Central and Bihar welfare schemes with eligibility checks"),
+                  t("Laws and rights guides: BNS, BNSS, POCSO, SC/ST Act"),
+                  t("Live case intake and community health monitoring"),
                 ],
-                cta: { href: "/jan-sahayak", label: "Open Community Tool", primary: true },
+                cta: { href: "/jan-sahayak", label: t("Open Community Tool"), primary: true },
               },
               {
-                tag: "📢 Campaign design",
+                tag: `📢 ${t("Campaign design")}`,
                 title: "Janman Events Planner",
-                desc: "Plan awareness campaigns and community mobilization using guided AI-powered workflows.",
+                desc: t("Plan awareness campaigns and community mobilization using guided AI-powered workflows."),
                 bullets: [
-                  "Generate agendas and campaigns inspired by Indian people's movements",
-                  "Coordinate paralegal and advocate teams on one timeline",
-                  "Track progress and document impact across districts",
+                  t("Generate agendas and campaigns inspired by Indian people's movements"),
+                  t("Coordinate paralegal and advocate teams on one timeline"),
+                  t("Track progress and document impact across districts"),
                 ],
-                cta: { href: "/events", label: "Open Events Planner", primary: false },
+                cta: { href: "/events", label: t("Open Events Planner"), primary: false },
               },
             ].map((tool) => (
               <article key={tool.title} className="rounded-2xl border border-(--border) bg-(--bg) p-7 flex flex-col" style={{ boxShadow: "var(--shadow-sm)" }}>
@@ -199,8 +201,8 @@ export default function Home() {
       <section className="border-b border-(--border) bg-(--bg)">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
           <div className="mb-10 max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Quick reference</p>
-            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Key schemes everyone should know</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Quick reference")}</p>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("Key schemes everyone should know")}</h2>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -227,16 +229,16 @@ export default function Home() {
           <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
             <div className="space-y-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">Get started now</p>
-                <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">Sign in to your dashboard</h2>
+                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Get started now")}</p>
+                <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("Sign in to your dashboard")}</h2>
                 <p className="mt-3 text-(--muted) leading-relaxed max-w-lg">
-                  Use a demo account to explore the platform designed for your role. Each dashboard is built to match your workflow.
+                  {t("Use a demo account to explore the platform designed for your role. Each dashboard is built to match your workflow.")}
                 </p>
               </div>
               <Link href="/login"
                 className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
                 style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
-                Sign in now
+                {t("Sign in now")}
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
                   <path d="M3 8h10M9 4l4 4-4 4"/>
                 </svg>
@@ -254,7 +256,7 @@ export default function Home() {
                       <p className="text-sm font-semibold text-(--text)">{account.role}</p>
                     </div>
                     <p className="text-xs font-mono text-(--accent) truncate">{account.id}</p>
-                    <p className="text-xs text-(--muted) mt-0.5">Pass: <span className="font-mono">{account.password}</span></p>
+                    <p className="text-xs text-(--muted) mt-0.5">{t("Pass:")} <span className="font-mono">{account.password}</span></p>
                   </div>
                 );
               })}
@@ -267,25 +269,25 @@ export default function Home() {
       <footer className="bg-(--bg) border-t border-(--border) px-5 py-8">
         <div className="mx-auto max-w-7xl flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between text-xs text-(--muted)">
           <div className="space-y-1">
-            <p className="font-semibold text-(--text)">Janman Legal Aid</p>
-            <p>Operated by Janman People&apos;s Foundation · Bihar, India</p>
+            <p className="font-semibold text-(--text)">{t("Janman Legal Aid")}</p>
+            <p>{t("Operated by Janman People's Foundation · Bihar, India")}</p>
             <p>
-              Contact:{" "}
+              {t("Contact:")}{" "}
               <a href="mailto:shashwat@janmanindia.org" className="underline hover:text-(--text)">
                 shashwat@janmanindia.org
               </a>
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/jan-sahayak" className="hover:text-(--text) transition-colors">Community</Link>
-            <Link href="/events" className="hover:text-(--text) transition-colors">Events</Link>
-            <Link href="/login" className="hover:text-(--text) transition-colors">Sign in</Link>
-            <Link href="/privacy" className="hover:text-(--text) transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-(--text) transition-colors">Terms of Service</Link>
+            <Link href="/jan-sahayak" className="hover:text-(--text) transition-colors">{t("Community")}</Link>
+            <Link href="/events" className="hover:text-(--text) transition-colors">{t("Events")}</Link>
+            <Link href="/login" className="hover:text-(--text) transition-colors">{t("Sign in")}</Link>
+            <Link href="/privacy" className="hover:text-(--text) transition-colors">{t("Privacy Policy")}</Link>
+            <Link href="/terms" className="hover:text-(--text) transition-colors">{t("Terms of Service")}</Link>
           </div>
         </div>
         <p className="mx-auto max-w-7xl mt-6 pt-4 border-t border-(--border) text-[11px] text-(--muted)">
-          © 2026 Janman People&apos;s Foundation. All rights reserved.
+          {t("© 2026 Janman People's Foundation. All rights reserved.")}
         </p>
       </footer>
     </main>

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { POLICIES } from "@/lib/policies";
 import PolicyViewer from "@/components/policies/PolicyViewer";
 
@@ -13,12 +14,14 @@ export default async function PoliciesPage() {
   const session = await getSessionFromCookies();
   if (!session) redirect("/login");
 
+  const t = await getServerT();
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Policies</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Policies")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Official HR, Finance, and POSH policies of Janman People&apos;s Foundation. Switch tabs to read each one, search to jump to a section, or download the original signed PDF.
+          {t("Official HR, Finance, and POSH policies of Janman People's Foundation. Switch tabs to read each one, search to jump to a section, or download the original signed PDF.")}
         </p>
       </div>
 

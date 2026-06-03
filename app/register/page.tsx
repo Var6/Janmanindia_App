@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import Spotlight from "@/components/ui/Spotlight";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const ID_TYPES: { value: string; label: string; hi?: string }[] = [
   { value: "Aadhar",         label: "Aadhaar",         hi: "आधार" },
@@ -16,6 +17,7 @@ const ID_TYPES: { value: string; label: string; hi?: string }[] = [
 ];
 
 export default function RegisterPage() {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function RegisterPage() {
       fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "ID upload failed."); return; }
+      if (!res.ok) { setError(data.error ?? t("ID upload failed.")); return; }
       setIdDocUrl(data.url);
       setError(null);
     } finally {
@@ -64,7 +66,7 @@ export default function RegisterPage() {
     };
 
     if (!payload.govtIdUrl && !payload.voiceIntroUrl) {
-      setError("Attach an ID document OR record a short voice intro so a social worker can verify you.");
+      setError(t("Attach an ID document OR record a short voice intro so a social worker can verify you."));
       setLoading(false);
       return;
     }
@@ -77,16 +79,16 @@ export default function RegisterPage() {
       });
       const data = await res.json() as { error?: string; message?: string; redirectTo?: string };
       if (!res.ok) {
-        setError(data.error ?? "Registration failed.");
+        setError(data.error ?? t("Registration failed."));
         setLoading(false);
         return;
       }
-      setSuccess(data.message ?? "Welcome to Janman. Taking you to your dashboard…");
+      setSuccess(data.message ?? t("Welcome to Janman. Taking you to your dashboard…"));
       // The register endpoint also sets the auth cookie, so a hard navigation
       // is enough to land the user inside /community as a signed-in member.
       window.location.href = data.redirectTo ?? "/community";
     } catch {
-      setError("Network error — please try again.");
+      setError(t("Network error — please try again."));
       setLoading(false);
     }
   }
@@ -102,11 +104,11 @@ export default function RegisterPage() {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div>
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">Legal Aid · निःशुल्क कानूनी सहायता</p>
+              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")} · निःशुल्क कानूनी सहायता</p>
             </div>
           </Link>
           <Link href="/login" className="text-sm font-medium text-(--muted) hover:text-(--text) transition-colors">
-            Already registered? Sign in →
+            {t("Already registered? Sign in →")}
           </Link>
         </div>
 
@@ -118,10 +120,10 @@ export default function RegisterPage() {
               <Spotlight color="var(--accent)" />
               <div className="relative">
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--accent)" }}>
-                  Free legal aid · Bihar
+                  {t("Free legal aid · Bihar")}
                 </p>
                 <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-(--text)">
-                  Welcome.
+                  {t("Welcome.")}
                   <span className="block text-xl sm:text-2xl mt-2 font-medium" style={{ color: "var(--muted)" }}>
                     आप अकेले नहीं हैं — हम आपके साथ हैं।
                   </span>
@@ -139,13 +141,13 @@ export default function RegisterPage() {
 
             <section className="rounded-2xl border p-6"
               style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-              <h2 className="text-base font-bold text-(--text)">What happens after you register?</h2>
+              <h2 className="text-base font-bold text-(--text)">{t("What happens after you register?")}</h2>
               <ol className="mt-3 space-y-3">
                 {[
-                  ["📥", "We receive your registration", "A social worker in your district reviews your details — usually within 48 hours."],
-                  ["📞", "A social worker calls you", "They listen to your story (in your language), and confirm what kind of help you need."],
-                  ["⚖️", "A lawyer is assigned to your case", "If your case needs court action, our District Legal Fellow takes it up — free of cost."],
-                  ["🤝", "You're never alone in the process", "Your social worker stays in touch — through the case, schemes, counselling, and follow-up."],
+                  ["📥", t("We receive your registration"), t("A social worker in your district reviews your details — usually within 48 hours.")],
+                  ["📞", t("A social worker calls you"), t("They listen to your story (in your language), and confirm what kind of help you need.")],
+                  ["⚖️", t("A lawyer is assigned to your case"), t("If your case needs court action, our District Legal Fellow takes it up — free of cost.")],
+                  ["🤝", t("You're never alone in the process"), t("Your social worker stays in touch — through the case, schemes, counselling, and follow-up.")],
                 ].map(([icon, title, body], i) => (
                   <li key={i} className="flex items-start gap-3">
                     <span className="text-xl shrink-0">{icon}</span>
@@ -160,7 +162,7 @@ export default function RegisterPage() {
 
             <section className="rounded-2xl border p-6 space-y-3"
               style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-              <h2 className="text-base font-bold text-(--text)">Can&apos;t read or write?</h2>
+              <h2 className="text-base font-bold text-(--text)">{t("Can't read or write?")}</h2>
               <p className="text-sm text-(--muted) leading-relaxed">
                 Tap the <span className="font-semibold text-(--text)">🎤 Record voice introduction</span> button on the form
                 instead of writing anything. Tell us your name, where you live, and what happened — in <span className="font-semibold">Hindi, Maithili, Bhojpuri, Urdu</span> or any language you&apos;re comfortable in.
@@ -173,11 +175,9 @@ export default function RegisterPage() {
 
             <section className="rounded-2xl p-5 text-xs leading-relaxed"
               style={{ background: "color-mix(in srgb, var(--accent) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)" }}>
-              <p className="font-semibold text-(--text)">A note on privacy</p>
+              <p className="font-semibold text-(--text)">{t("A note on privacy")}</p>
               <p className="mt-1 text-(--muted)">
-                Janman never shares your information with police, employer, family member, or anyone else without your written
-                consent. Your records are encrypted at rest and only your assigned social worker and lawyer can read them.
-                If you change your mind, you can delete your account from your profile at any time.
+                {t("Janman never shares your information with police, employer, family member, or anyone else without your written consent. Your records are encrypted at rest and only your assigned social worker and lawyer can read them. If you change your mind, you can delete your account from your profile at any time.")}
               </p>
             </section>
           </article>
@@ -187,55 +187,55 @@ export default function RegisterPage() {
             style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
             <div className="mb-5">
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--accent)" }}>
-                Register
+                {t("Register")}
               </p>
-              <h2 className="text-xl font-bold text-(--text) mt-1">New community member</h2>
+              <h2 className="text-xl font-bold text-(--text) mt-1">{t("New community member")}</h2>
               <p className="text-xs text-(--muted) mt-1">
                 Fields marked <span style={{ color: "var(--error)" }}>*</span> are required. Everything else helps us help you faster.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Full name (पूरा नाम)" required>
-                <input name="name" required type="text" autoComplete="name" placeholder="Your name as on ID"
+              <Field label={t("Full name (पूरा नाम)")} required>
+                <input name="name" required type="text" autoComplete="name" placeholder={t("Your name as on ID")}
                   className="form-input" />
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Phone (मोबाइल)" required>
+                <Field label={t("Phone (मोबाइल)")} required>
                   <input name="phone" required type="tel" autoComplete="tel" inputMode="tel" placeholder="+91 99999 99999"
                     className="form-input" />
                 </Field>
-                <Field label="Preferred language">
+                <Field label={t("Preferred language")}>
                   <select name="preferredLanguage" defaultValue="" className="form-input">
-                    <option value="">Choose…</option>
+                    <option value="">{t("Choose…")}</option>
                     <option value="Hindi">Hindi (हिंदी)</option>
                     <option value="Maithili">Maithili (मैथिली)</option>
                     <option value="Bhojpuri">Bhojpuri (भोजपुरी)</option>
                     <option value="Urdu">Urdu (اردو)</option>
                     <option value="English">English</option>
-                    <option value="Other">Other</option>
+                    <option value="Other">{t("Other")}</option>
                   </select>
                 </Field>
               </div>
 
-              <Field label="Email (so we can reach you)" required>
+              <Field label={t("Email (so we can reach you)")} required>
                 <input name="email" required type="email" autoComplete="email" placeholder="you@example.com"
                   className="form-input" />
               </Field>
 
-              <Field label="Password (8+ characters)" required>
+              <Field label={t("Password (8+ characters)")} required>
                 <input name="password" required type="password" minLength={8} autoComplete="new-password"
                   className="form-input" />
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="District (ज़िला)">
-                  <input name="district" type="text" placeholder="e.g. Patna / Purnia"
+                <Field label={t("District (ज़िला)")}>
+                  <input name="district" type="text" placeholder={t("e.g. Patna / Purnia")}
                     className="form-input" />
                 </Field>
-                <Field label="Village / area (गाँव / मोहल्ला)">
-                  <input name="village" type="text" placeholder="optional"
+                <Field label={t("Village / area (गाँव / मोहल्ला)")}>
+                  <input name="village" type="text" placeholder={t("optional")}
                     className="form-input" />
                 </Field>
               </div>
@@ -243,10 +243,10 @@ export default function RegisterPage() {
               {/* ID document */}
               <fieldset className="rounded-xl border p-3 space-y-2"
                 style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                <legend className="text-xs font-semibold text-(--text) px-1">ID document (or skip and record voice below)</legend>
+                <legend className="text-xs font-semibold text-(--text) px-1">{t("ID document (or skip and record voice below)")}</legend>
                 <div className="grid grid-cols-2 gap-2">
                   <select name="govtIdType" defaultValue="" className="form-input">
-                    <option value="">Choose…</option>
+                    <option value="">{t("Choose…")}</option>
                     {ID_TYPES.map(t => (
                       <option key={t.value} value={t.value}>{t.label}{t.hi ? ` · ${t.hi}` : ""}</option>
                     ))}
@@ -256,17 +256,17 @@ export default function RegisterPage() {
                   {idDocUrl ? (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs"
                       style={{ background: "var(--success-bg)", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)", color: "var(--success-text)" }}>
-                      <span>✓ ID attached</span>
+                      <span>✓ {t("ID attached")}</span>
                       <button type="button" onClick={() => setIdDocUrl("")}
                         className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                        Replace
+                        {t("Replace")}
                       </button>
                     </div>
                   ) : (
                     <button type="button" disabled={uploadingId} onClick={() => idFileRef.current?.click()}
                       className="px-3 py-2 rounded-lg border text-xs font-medium disabled:opacity-50"
                       style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }}>
-                      {uploadingId ? "Uploading…" : "📎 Upload ID (PDF / image)"}
+                      {uploadingId ? t("Uploading…") : t("📎 Upload ID (PDF / image)")}
                     </button>
                   )}
                 </div>
@@ -275,19 +275,19 @@ export default function RegisterPage() {
               {/* Voice intro */}
               <fieldset className="rounded-xl border p-3 space-y-2"
                 style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                <legend className="text-xs font-semibold text-(--text) px-1">Voice introduction (आवाज़ में परिचय)</legend>
+                <legend className="text-xs font-semibold text-(--text) px-1">{t("Voice introduction (आवाज़ में परिचय)")}</legend>
                 {voiceUrl ? (
                   <div className="flex items-center gap-3 px-3 py-2 rounded-lg border"
                     style={{ background: "var(--success-bg)", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)" }}>
                     <span className="text-lg">🎤</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold" style={{ color: "var(--success-text)" }}>Voice recorded ({voiceDur}s)</p>
+                      <p className="text-xs font-semibold" style={{ color: "var(--success-text)" }}>{t("Voice recorded")} ({voiceDur}s)</p>
                       <audio controls preload="metadata" src={voiceUrl} className="block w-full mt-1" />
                     </div>
                     <button type="button" onClick={() => { setVoiceUrl(""); setVoiceDur(0); }}
                       className="text-[11px] px-2 py-0.5 rounded shrink-0"
                       style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                      Re-record
+                      {t("Re-record")}
                     </button>
                   </div>
                 ) : (
@@ -311,7 +311,7 @@ export default function RegisterPage() {
               <button type="submit" disabled={loading || uploadingId}
                 className="w-full rounded-xl py-3 text-sm font-bold transition hover:brightness-110 disabled:opacity-60"
                 style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 8px 20px -8px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
-                {loading ? "Submitting…" : "Submit registration"}
+                {loading ? t("Submitting…") : t("Submit registration")}
               </button>
 
               <p className="text-[11px] text-(--muted) text-center leading-relaxed">

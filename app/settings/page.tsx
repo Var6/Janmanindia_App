@@ -63,7 +63,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-[var(--accent)]">{t("Settings")}</p>
               <h1 className="mt-3 text-3xl font-semibold">{t("Profile & Settings")}</h1>
-              <p className="mt-2 max-w-2xl text-[var(--muted)]">Update your name, profile image, password, and personal details here.</p>
+              <p className="mt-2 max-w-2xl text-[var(--muted)]">{t("Update your name, profile image, password, and personal details here.")}</p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
               <button
@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label htmlFor="avatar" className="block text-sm font-semibold text-[var(--text)]">
-                    Profile picture URL
+                    {t("Profile picture URL")}
                   </label>
                   <input
                     id="avatar"
@@ -165,7 +165,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label htmlFor="about" className="block text-sm font-semibold text-[var(--text)]">
-                    About you
+                    {t("About you")}
                   </label>
                   <textarea
                     id="about"
@@ -173,7 +173,7 @@ export default function SettingsPage() {
                     onChange={(event) => setAbout(event.target.value)}
                     rows={5}
                     className="mt-3 w-full rounded-3xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-                    placeholder="Add a short profile bio."
+                    placeholder={t("Add a short profile bio.")}
                   />
                 </div>
 
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-[var(--muted)]">No image</div>
+                    <div className="flex h-full items-center justify-center text-[var(--muted)]">{t("No image")}</div>
                   )}
                 </div>
                 <div>
@@ -203,16 +203,16 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)]">
-                <p className="font-semibold text-[var(--text)]">Assigned advocate</p>
-                <p className="mt-2">{user.assignedLawyer ?? "None assigned yet"}</p>
+                <p className="font-semibold text-[var(--text)]">{t("Assigned advocate")}</p>
+                <p className="mt-2">{user.assignedLawyer ?? t("None assigned yet")}</p>
               </div>
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)]">
-                <p className="font-semibold text-[var(--text)]">Assigned paralegal</p>
-                <p className="mt-2">{user.assignedParalegal ?? "None assigned yet"}</p>
+                <p className="font-semibold text-[var(--text)]">{t("Assigned paralegal")}</p>
+                <p className="mt-2">{user.assignedParalegal ?? t("None assigned yet")}</p>
               </div>
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)]">
-                <p className="font-semibold text-[var(--text)]">Next court date</p>
-                <p className="mt-2">{user.nextCourtDate ?? "No date scheduled"}</p>
+                <p className="font-semibold text-[var(--text)]">{t("Next court date")}</p>
+                <p className="mt-2">{user.nextCourtDate ?? t("No date scheduled")}</p>
               </div>
             </aside>
           </div>

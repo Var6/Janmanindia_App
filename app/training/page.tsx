@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { tryConnectDB } from "@/lib/mongoose";
 import TrainingMaterial from "@/models/TrainingMaterial";
 import UploadForm from "@/components/training/UploadForm";
@@ -60,6 +61,7 @@ export default async function TrainingPage() {
   const session = await getSessionFromCookies();
   if (!session) redirect("/login");
 
+  const t = await getServerT();
   const dbOk = await tryConnectDB();
   const canReview = ["hr", "director", "superadmin"].includes(session.role);
   const canUpload = session.role !== "community";
@@ -85,18 +87,18 @@ export default async function TrainingPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Legal Training Center</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Legal Training Center")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Free tutorials and team-uploaded materials on rights, schemes, and legal procedure.
+          {t("Free tutorials and team-uploaded materials on rights, schemes, and legal procedure.")}
         </p>
       </div>
 
       {canReview && pending.length > 0 && <ApprovalQueue materials={pending} />}
 
       <section>
-        <h2 className="text-lg font-semibold text-(--text) mb-1">Interactive Training Modules</h2>
+        <h2 className="text-lg font-semibold text-(--text) mb-1">{t("Interactive Training Modules")}</h2>
         <p className="text-xs text-(--muted) mb-4">
-          Self-paced legal modules from Janman People's Foundation — Jan Nyaya Abhiyan.
+          {t("Self-paced legal modules from Janman People's Foundation — Jan Nyaya Abhiyan.")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {INTERACTIVE_MODULES.map((mod) => (
@@ -109,7 +111,7 @@ export default async function TrainingPage() {
             >
               <p className="font-semibold text-sm text-(--text)">{mod.title}</p>
               <p className="text-xs text-(--muted) mt-1">{mod.description}</p>
-              <p className="text-xs text-(--accent) mt-3">Open module ↗</p>
+              <p className="text-xs text-(--accent) mt-3">{t("Open module ↗")}</p>
             </a>
           ))}
         </div>
@@ -123,7 +125,7 @@ export default async function TrainingPage() {
       {canUpload && <UploadForm />}
 
       <section>
-        <h2 className="text-lg font-semibold text-(--text) mb-4">Community Library</h2>
+        <h2 className="text-lg font-semibold text-(--text) mb-4">{t("Community Library")}</h2>
         <MaterialList materials={approved} currentUserId={session.id} currentRole={session.role} />
       </section>
 
@@ -149,7 +151,7 @@ export default async function TrainingPage() {
                   <div className="p-4">
                     <p className="font-semibold text-sm text-(--text) leading-snug">{mod.title}</p>
                     <p className="text-xs text-(--muted) mt-1 line-clamp-2">{mod.description}</p>
-                    <p className="text-xs text-(--accent) mt-2">{mod.durationMins} min</p>
+                    <p className="text-xs text-(--accent) mt-2">{mod.durationMins} {t("min")}</p>
                   </div>
                 </div>
               ))}
