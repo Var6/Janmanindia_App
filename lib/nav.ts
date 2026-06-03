@@ -85,6 +85,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
     { href: "/director/cases",              label: "Cases",             icon: "scale"       },
     { href: "/director/users",              label: "Users",             icon: "users"       },
+    { href: "/director/grievances",         label: "Grievances",        icon: "inbox"       },
     { href: "/director/assign",             label: "Assign",            icon: "refresh"     },
     { href: "/director/head-lawyers",       label: "Head Lawyers",      icon: "award"       },
     { href: "/director/jan-sahayak-pro",    label: "JNA Pro",           icon: "gavel"       },

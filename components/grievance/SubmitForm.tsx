@@ -37,6 +37,7 @@ export default function SubmitForm() {
       incidentLocation: String(fd.get("incidentLocation") ?? "").trim() || undefined,
       involvedPersons:  String(fd.get("involvedPersons") ?? "").trim() || undefined,
       anonymous:        fd.get("anonymous") === "on",
+      againstHr:        fd.get("againstHr") === "on",
     };
 
     try {
@@ -105,6 +106,12 @@ export default function SubmitForm() {
         <label className="flex items-center gap-2 text-xs text-(--text) cursor-pointer select-none">
           <input type="checkbox" name="anonymous" />
           {t("Submit anonymously — HR will not see my name (you can still view the response from your own list)")}
+        </label>
+
+        <label className="flex items-start gap-2 text-xs text-(--text) cursor-pointer select-none rounded-lg px-3 py-2"
+          style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
+          <input type="checkbox" name="againstHr" className="mt-0.5" />
+          {t("This grievance is about the HR team itself — route it to the directors instead of HR")}
         </label>
 
         {error && (
