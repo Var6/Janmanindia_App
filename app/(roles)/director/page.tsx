@@ -8,6 +8,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -20,6 +21,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
 export default async function AdminDashboard() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "director" && session.role !== "superadmin")) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -82,8 +84,8 @@ export default async function AdminDashboard() {
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Admin Dashboard</h1>
-          <p className="text-sm text-(--muted) mt-0.5">Platform overview and management</p>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Admin Dashboard")}</h1>
+          <p className="text-sm text-(--muted) mt-0.5">{t("Platform overview and management")}</p>
         </div>
         <Link href="/director/assign"
           className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-(--accent-contrast) hover:brightness-110 transition shrink-0"

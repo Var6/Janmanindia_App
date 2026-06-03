@@ -6,6 +6,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLE_LIT: Record<string, { background: string; color: string }> = {
   Open:       { background: "var(--info-bg)",      color: "var(--info-text)"    },
@@ -21,6 +22,7 @@ export default async function LitigationCasesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
 
+  const t = await getServerT();
   const dbOk = await tryConnectDB();
   // Litigation sees cases where they are the lead OR a shared member —
   // supports the multi-lawyer flow. Director / administrator / superadmin
@@ -51,19 +53,19 @@ export default async function LitigationCasesPage() {
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">My Cases</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("My Cases")}</h1>
           <p className="text-sm text-(--muted) mt-1">
-            {open.length} active · {closed.length} closed · sorted by next hearing date
+            {open.length} {t("active")} · {closed.length} {t("closed")} · {t("sorted by next hearing date")}
           </p>
         </div>
         <CreateLitigationCaseForm />
       </div>
 
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Active Cases</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Active Cases")}</h2>
         {open.length === 0 ? (
           <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
-            <p className="text-sm text-(--muted)">{dbOk ? "No active cases assigned." : "Connect database."}</p>
+            <p className="text-sm text-(--muted)">{dbOk ? t("No active cases assigned.") : t("Connect database.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -90,16 +92,16 @@ export default async function LitigationCasesPage() {
                           </span>
                         )}
                         <span className="text-xs text-(--muted)">
-                          {c.courtType === "district"  ? (c.courtName ?? "Civil / District Court")
-                          : c.courtType === "supreme"  ? "Supreme Court"
-                          : c.courtType === "other"    ? (c.courtName ?? "Tribunal / Forum")
-                          : c.path === "criminal"      ? "Criminal"
-                          : c.courtName               ?? "High Court"}
+                          {c.courtType === "district"  ? (c.courtName ?? t("Civil / District Court"))
+                          : c.courtType === "supreme"  ? t("Supreme Court")
+                          : c.courtType === "other"    ? (c.courtName ?? t("Tribunal / Forum"))
+                          : c.path === "criminal"      ? t("Criminal")
+                          : c.courtName               ?? t("High Court")}
                         </span>
                       </div>
                       <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        Community: {community?.name ?? "—"} · SW: {sw?.name ?? "—"}
+                        {t("Community")}: {community?.name ?? "—"} · {t("SW")}: {sw?.name ?? "—"}
                       </p>
                     </div>
                     <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full`}
@@ -111,14 +113,14 @@ export default async function LitigationCasesPage() {
                     {hearingDate ? (
                       <span className="font-medium"
                         style={{ color: daysToHearing !== null && daysToHearing <= 3 ? "var(--error-text)" : "var(--muted)" }}>
-                        Next hearing: {hearingDate.toLocaleDateString("en-IN")}
+                        {t("Next hearing")}: {hearingDate.toLocaleDateString("en-IN")}
                         {daysToHearing !== null && daysToHearing >= 0 && ` (${daysToHearing}d)`}
                       </span>
                     ) : (
-                      <span className="text-(--muted)">No hearing date set</span>
+                      <span className="text-(--muted)">{t("No hearing date set")}</span>
                     )}
-                    <span className="text-(--muted)">{c.documents?.length ?? 0} doc(s)</span>
-                    <span className="text-(--muted)">{c.caseDiary?.length ?? 0} diary entries</span>
+                    <span className="text-(--muted)">{c.documents?.length ?? 0} {t("doc(s)")}</span>
+                    <span className="text-(--muted)">{c.caseDiary?.length ?? 0} {t("diary entries")}</span>
                   </div>
                 </Link>
               );
@@ -129,7 +131,7 @@ export default async function LitigationCasesPage() {
 
       {closed.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(--text) mb-3">Closed / Dismissed</h2>
+          <h2 className="font-semibold text-(--text) mb-3">{t("Closed / Dismissed")}</h2>
           <div className="space-y-2">
             {closed.map((c) => {
               const cst = STATUS_STYLE_LIT[c.status] ?? STATUS_STYLE_LIT.Closed;

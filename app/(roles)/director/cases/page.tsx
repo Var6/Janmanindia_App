@@ -5,6 +5,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -26,6 +27,7 @@ export default async function AdminCasesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "director" && session.role !== "superadmin")) redirect("/login");
 
+  const t = await getServerT();
   const dbOk  = await tryConnectDB();
   const cases = dbOk
     ? await Case.find({})
@@ -48,8 +50,8 @@ export default async function AdminCasesPage() {
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">All Cases</h1>
-          <p className="text-sm text-(--muted) mt-1">{cases.length} total cases across all litigation members.</p>
+          <h1 className="text-2xl font-bold text-(--text)">{t("All Cases")}</h1>
+          <p className="text-sm text-(--muted) mt-1">{cases.length} {t("total cases across all litigation members.")}</p>
         </div>
         <CreateCaseForm />
       </div>
@@ -62,7 +64,7 @@ export default async function AdminCasesPage() {
             <div key={s} className="p-3.5 rounded-2xl border text-center"
               style={{ background: sc.card, borderColor: `color-mix(in srgb,${sc.num} 20%,transparent)` }}>
               <p className="text-2xl font-bold" style={{ color: sc.num }}>{byStatus[s] ?? 0}</p>
-              <p className="text-xs mt-0.5 font-medium" style={{ color: sc.label }}>{s}</p>
+              <p className="text-xs mt-0.5 font-medium" style={{ color: sc.label }}>{t(s)}</p>
             </div>
           );
         })}
@@ -72,7 +74,7 @@ export default async function AdminCasesPage() {
         <div className="py-16 text-center rounded-2xl border"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">⚖️</p>
-          <p className="text-sm text-(--muted)">{dbOk ? "No cases in the system yet." : "Connect database."}</p>
+          <p className="text-sm text-(--muted)">{dbOk ? t("No cases in the system yet.") : t("Connect database.")}</p>
         </div>
       ) : (
         <div className="rounded-2xl border overflow-hidden"
@@ -81,11 +83,11 @@ export default async function AdminCasesPage() {
           {/* Table header */}
           <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b text-xs font-semibold text-(--muted) uppercase tracking-wide"
             style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
-            <span>Case</span>
-            <span className="px-3 text-center">Type</span>
-            <span className="px-3 text-center">Lawyer</span>
-            <span className="px-3 text-center">Status</span>
-            <span className="px-3 text-center">Actions</span>
+            <span>{t("Case")}</span>
+            <span className="px-3 text-center">{t("Type")}</span>
+            <span className="px-3 text-center">{t("Lawyer")}</span>
+            <span className="px-3 text-center">{t("Status")}</span>
+            <span className="px-3 text-center">{t("Actions")}</span>
           </div>
 
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -108,7 +110,7 @@ export default async function AdminCasesPage() {
                         <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}
                           title="Tracked — already in progress when added">
-                          Existing
+                          {t("Existing")}
                         </span>
                       )}
                     </div>
@@ -121,8 +123,8 @@ export default async function AdminCasesPage() {
                     <p className="text-xs text-(--muted)">{community?.name ?? "—"}</p>
                   </Link>
 
-                  <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "HC"}</span>
-                  <span className="px-3 text-xs text-(--text)">{lawyer?.name ?? <span className="text-(--muted) italic">Unassigned</span>}</span>
+                  <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("HC")}</span>
+                  <span className="px-3 text-xs text-(--text)">{lawyer?.name ?? <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
 
                   <span className="mx-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
                     style={{ background: st.bg, color: st.text }}>
@@ -133,12 +135,12 @@ export default async function AdminCasesPage() {
                     <Link href={`/director/cases/${String(c._id)}`}
                       className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
                       style={{ color: "var(--accent)", background: "color-mix(in srgb,var(--accent) 8%,transparent)" }}>
-                      View
+                      {t("View")}
                     </Link>
                     <Link href={`/director/assign?caseId=${String(c._id)}`}
                       className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
                       style={{ color: "var(--muted)", background: "var(--bg-secondary)" }}>
-                      Reassign
+                      {t("Reassign")}
                     </Link>
                   </div>
                 </div>

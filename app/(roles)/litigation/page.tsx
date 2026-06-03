@@ -11,6 +11,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_COLORS: Record<string, string> = {
   Open: "bg-blue-100 text-blue-700",
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default async function LitigationDashboard() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -60,8 +62,8 @@ export default async function LitigationDashboard() {
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Litigation Dashboard</h1>
-        <p className="text-sm text-(--muted) mt-1">Welcome, {session.name}</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Litigation Dashboard")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Welcome")}, {session.name}</p>
       </div>
 
       {/* KPI row */}

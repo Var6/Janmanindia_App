@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Field, { Input } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import AnimatedShinyText from "@/components/ui/AnimatedShinyText";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
   google_denied: "Google sign-in was cancelled.",
@@ -48,6 +49,7 @@ function safeClientNext(raw: string | null | undefined): string | null {
 }
 
 function LoginFormInner({ googleEnabled }: Props) {
+  const t = useT();
   const searchParams = useSearchParams();
   const next = safeClientNext(searchParams.get("next"));
   const googleHref = next
@@ -74,7 +76,7 @@ function LoginFormInner({ googleEnabled }: Props) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.trim() || !password) { setError("Enter your email and password."); return; }
+    if (!email.trim() || !password) { setError(t("Enter your email and password.")); return; }
     setLoading(true);
     setError("");
     try {
@@ -84,10 +86,10 @@ function LoginFormInner({ googleEnabled }: Props) {
         body: JSON.stringify({ email: email.trim().toLowerCase(), password, next }),
       });
       const data = await res.json() as { error?: string; redirectTo?: string };
-      if (!res.ok) { setError(data.error ?? "Invalid credentials."); return; }
+      if (!res.ok) { setError(data.error ?? t("Invalid credentials.")); return; }
       window.location.href = data.redirectTo ?? "/";
     } catch {
-      setError("Network error — please try again.");
+      setError(t("Network error — please try again."));
     } finally {
       setLoading(false);
     }
@@ -103,11 +105,11 @@ function LoginFormInner({ googleEnabled }: Props) {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div>
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">Legal Aid</p>
+              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")}</p>
             </div>
           </Link>
           <Link href="/" className="text-sm font-medium text-(--muted) hover:text-(--text) transition-colors">
-            ← Back to home
+            ← {t("Back to home")}
           </Link>
         </div>
 
@@ -116,32 +118,32 @@ function LoginFormInner({ googleEnabled }: Props) {
           <section className="relative overflow-hidden rounded-2xl glass p-7">
             <Spotlight color="var(--accent)" />
             <div className="relative">
-              <p className="text-xs font-bold uppercase tracking-widest text-(--accent) mb-2">Welcome back</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-(--accent) mb-2">{t("Welcome back")}</p>
               <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-                <AnimatedShinyText>Sign in to your dashboard</AnimatedShinyText>
+                <AnimatedShinyText>{t("Sign in to your dashboard")}</AnimatedShinyText>
               </h1>
               <p className="mt-2 text-sm text-(--muted) max-w-md">
-                One login for every role — community member, social worker, advocate, HR, finance, administrator, director.
+                {t("One login for every role — community member, social worker, advocate, HR, finance, administrator, director.")}
               </p>
 
               <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-                <Field label="Email" required
-                  hint="Use the email your account was created with."
+                <Field label={t("Email")} required
+                  hint={t("Use the email your account was created with.")}
                   example="priya.sharma@example.com">
                   <Input id="email" type="email" autoComplete="email"
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com" />
                 </Field>
 
-                <Field label="Password" required
-                  hint="At least 8 characters. Click the eye to show/hide.">
+                <Field label={t("Password")} required
+                  hint={t("At least 8 characters. Click the eye to show/hide.")}>
                   <div className="relative">
                     <Input id="password" type={showPw ? "text" : "password"} autoComplete="current-password"
                       value={password} onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" className="pr-11" />
                     <button type="button" onClick={() => setShowPw((v) => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-(--muted) hover:text-(--text) transition-colors p-1"
-                      title={showPw ? "Hide password" : "Show password"}>
+                      title={showPw ? t("Hide password") : t("Show password")}>
                       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-4 h-4">
                         {showPw
                           ? <path d="M3 3l14 14M12.9 12.9A3 3 0 017.1 7.1M6.1 6.1A7.9 7.9 0 002 10s3.1 5.5 8 5.5a7.8 7.8 0 003.9-1.1M8.5 4.6A7.9 7.9 0 0118 10s-1.2 2.2-3.1 3.7"/>
@@ -162,7 +164,7 @@ function LoginFormInner({ googleEnabled }: Props) {
                 <button type="submit" disabled={loading}
                   className="w-full rounded-xl py-3 text-sm font-bold text-(--accent-contrast) hover:brightness-110 transition disabled:opacity-60"
                   style={{ background: "var(--accent)", boxShadow: "0 8px 20px -8px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
-                  {loading ? "Signing in…" : "Sign in"}
+                  {loading ? t("Signing in…") : t("Sign in")}
                 </button>
               </form>
 
@@ -170,7 +172,7 @@ function LoginFormInner({ googleEnabled }: Props) {
                 <>
                   <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-(--muted)">
                     <div className="flex-1 h-px bg-(--border)" />
-                    <span>or</span>
+                    <span>{t("or")}</span>
                     <div className="flex-1 h-px bg-(--border)" />
                   </div>
 
@@ -188,15 +190,15 @@ function LoginFormInner({ googleEnabled }: Props) {
                       <path fill="#FBBC05" d="M5.84 14.12a6.6 6.6 0 010-4.24V7.04H2.18a11 11 0 000 9.92l3.66-2.84z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.04l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
                     </svg>
-                    Sign in with Google
+                    {t("Sign in with Google")}
                   </a>
                 </>
               )}
 
               <div className="mt-6 pt-5 border-t border-(--border)/60 flex items-center justify-between text-sm">
-                <span className="text-(--muted)">New community member?</span>
+                <span className="text-(--muted)">{t("New community member?")}</span>
                 <Link href="/register" className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
-                  Register for free legal aid →
+                  {t("Register for free legal aid")} →
                 </Link>
               </div>
             </div>

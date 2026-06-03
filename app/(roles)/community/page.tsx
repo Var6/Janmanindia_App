@@ -10,6 +10,7 @@ import BentoCard from "@/components/ui/BentoCard";
 import Spotlight from "@/components/ui/Spotlight";
 import AnimatedShinyText from "@/components/ui/AnimatedShinyText";
 import QueriesBox from "@/components/shared/QueriesBox";
+import { getServerT } from "@/lib/i18n-server";
 
 const RTPS_GUIDES = [
   { title: "Right to Information",  hi: "RTI",         description: "Ask any government office for information — they must reply in 30 days.", link: "https://rtionline.gov.in",   accent: "#3b82f6" },
@@ -38,6 +39,7 @@ interface AptLean {
 export default async function CommunityDashboard() {
   const session = await getSessionFromCookies();
   if (!session || session.role !== "community") redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   let cases: CaseLean[] = [];
@@ -59,12 +61,12 @@ export default async function CommunityDashboard() {
       <section className="relative overflow-hidden rounded-3xl border border-(--border) bg-(--surface) px-6 sm:px-8 py-8">
         <Spotlight color="var(--accent)" />
         <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-widest text-(--accent) mb-2">Welcome back</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-(--accent) mb-2">{t("Welcome back")}</p>
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-            <AnimatedShinyText>Hi {session.name.split(" ")[0]}, what do you need help with today?</AnimatedShinyText>
+            <AnimatedShinyText>{t("Hi")} {session.name.split(" ")[0]}, {t("what do you need help with today?")}</AnimatedShinyText>
           </h1>
           <p className="text-sm text-(--muted) mt-3 max-w-2xl">
-            Track your cases, raise an emergency alert, or browse government schemes you can apply for. Your assigned social worker is one tap away.
+            {t("Track your cases, raise an emergency alert, or browse government schemes you can apply for. Your assigned social worker is one tap away.")}
           </p>
         </div>
       </section>

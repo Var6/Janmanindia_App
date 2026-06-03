@@ -6,6 +6,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import { CommunityCasesTabs } from "@/components/community/SectionTabs";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
@@ -19,6 +20,7 @@ export default async function CaseTrackerPage() {
   const session = await getSessionFromCookies();
   if (!session || session.role !== "community") redirect("/login");
 
+  const t = await getServerT();
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Case.find({ community: new mongoose.Types.ObjectId(session.id) }).sort({ updatedAt: -1 }).lean()
@@ -32,9 +34,9 @@ export default async function CaseTrackerPage() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Case Tracker</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Case Tracker")}</h1>
           <p className="text-sm text-(--muted) mt-1">
-            Cases registered for you by Janman&apos;s social worker / lawyer team. View-only — your team handles updates.
+            {t("Cases registered for you by Janman's social worker / lawyer team. View-only — your team handles updates.")}
           </p>
         </div>
       </div>
@@ -45,8 +47,8 @@ export default async function CaseTrackerPage() {
           <p className="text-3xl mb-3">⚖️</p>
           <p className="text-sm text-(--muted)">
             {dbOk
-              ? "No cases registered yet — your social worker will add one when there's a matter to track."
-              : "Connect database to see your cases."}
+              ? t("No cases registered yet — your social worker will add one when there's a matter to track.")
+              : t("Connect database to see your cases.")}
           </p>
         </div>
       ) : (
@@ -71,7 +73,7 @@ export default async function CaseTrackerPage() {
                           {c.caseNumber}
                         </span>
                       )}
-                      <span className="text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "High Court"}</span>
+                      <span className="text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("High Court")}</span>
                     </div>
                     <p className="font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
                       {c.caseTitle}
@@ -88,7 +90,7 @@ export default async function CaseTrackerPage() {
 
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">Next Hearing</p>
+                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
                     <p className="text-sm font-semibold text-(--text) mt-0.5">
                       {c.nextHearingDate
                         ? new Date(c.nextHearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
@@ -96,11 +98,11 @@ export default async function CaseTrackerPage() {
                     </p>
                   </div>
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">Documents</p>
-                    <p className="text-sm font-semibold text-(--text) mt-0.5">{docsCount} file{docsCount !== 1 ? "s" : ""}</p>
+                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Documents")}</p>
+                    <p className="text-sm font-semibold text-(--text) mt-0.5">{docsCount} {t("files")}</p>
                   </div>
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">Updated</p>
+                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Updated")}</p>
                     <p className="text-sm font-semibold text-(--text) mt-0.5">
                       {new Date((c as unknown as { updatedAt: Date }).updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </p>
@@ -110,7 +112,7 @@ export default async function CaseTrackerPage() {
                 {lastDiary && (
                   <div className="p-3 rounded-xl border"
                     style={{ background: "color-mix(in srgb,var(--accent) 5%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 20%,transparent)" }}>
-                    <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Latest diary entry</p>
+                    <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Latest diary entry")}</p>
                     <p className="text-sm text-(--text) line-clamp-2">{lastDiary.findings}</p>
                     <p className="text-xs text-(--muted) mt-1">
                       {new Date(lastDiary.date).toLocaleDateString("en-IN")}

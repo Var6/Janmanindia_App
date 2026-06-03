@@ -7,6 +7,7 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -20,6 +21,7 @@ export default async function SWCasesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "socialworker" && session.role !== "superadmin")) redirect("/login");
 
+  const t = await getServerT();
   const dbOk = await tryConnectDB();
   const cases = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await Case.find({
@@ -46,8 +48,8 @@ export default async function SWCasesPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Cases</h1>
-          <p className="text-sm text-(--muted) mt-1">Assigned cases, ID verifications, and case creation.</p>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Cases")}</h1>
+          <p className="text-sm text-(--muted) mt-1">{t("Assigned cases, ID verifications, and case creation.")}</p>
         </div>
         <CreateCaseForm />
       </div>
@@ -60,7 +62,7 @@ export default async function SWCasesPage() {
             style={{ borderColor: "color-mix(in srgb,var(--warning) 25%,transparent)" }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--warning)" }} />
             <h2 className="font-semibold text-sm" style={{ color: "var(--warning-text)" }}>
-              ID Verification Queue ({pendingVerifications.length})
+              {t("ID Verification Queue")} ({pendingVerifications.length})
             </h2>
           </div>
           <div className="divide-y" style={{ borderColor: "color-mix(in srgb,var(--warning) 15%,transparent)" }}>
@@ -77,7 +79,7 @@ export default async function SWCasesPage() {
                     <button type="submit"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-opacity hover:opacity-80"
                       style={{ background: "var(--success)", color: "#fff" }}>
-                      Verify
+                      {t("Verify")}
                     </button>
                   </form>
                   <form method="POST" action="/api/users/verify-id">
@@ -86,7 +88,7 @@ export default async function SWCasesPage() {
                     <button type="submit"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-opacity hover:opacity-80"
                       style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb,var(--error) 30%,transparent)" }}>
-                      Reject
+                      {t("Reject")}
                     </button>
                   </form>
                 </div>
@@ -98,13 +100,13 @@ export default async function SWCasesPage() {
 
       {/* Assigned Cases */}
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Assigned Cases ({cases.length})</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Assigned Cases")} ({cases.length})</h2>
         {cases.length === 0 ? (
           <div className="py-16 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-2xl mb-2">📁</p>
             <p className="text-sm text-(--muted)">
-              {dbOk ? "No cases assigned yet." : "Connect database to see cases."}
+              {dbOk ? t("No cases assigned yet.") : t("Connect database to see cases.")}
             </p>
           </div>
         ) : (
@@ -126,13 +128,13 @@ export default async function SWCasesPage() {
                             {c.caseNumber}
                           </span>
                         )}
-                        <span className="text-xs text-(--muted)">{c.path === "criminal" ? "Criminal" : "High Court"}</span>
+                        <span className="text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("High Court")}</span>
                       </div>
                       <p className="font-semibold text-(--text) truncate">{c.caseTitle}</p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        {community && <>Community: <span className="font-medium">{community.name}</span></>}
-                        {lawyer  && <> · Lawyer: {lawyer.name}</>}
-                        {!lawyer && <> · <span style={{ color: "var(--warning-text)" }}>Lawyer unassigned</span></>}
+                        {community && <>{t("Community")}: <span className="font-medium">{community.name}</span></>}
+                        {lawyer  && <> · {t("Lawyer")}: {lawyer.name}</>}
+                        {!lawyer && <> · <span style={{ color: "var(--warning-text)" }}>{t("Lawyer unassigned")}</span></>}
                       </p>
                     </div>
                     <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -143,7 +145,7 @@ export default async function SWCasesPage() {
                   <div className="flex items-center justify-between mt-1">
                     {c.nextHearingDate && (
                       <p className="text-xs text-(--muted)">
-                        Next hearing: {new Date(c.nextHearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                        {t("Next hearing")}: {new Date(c.nextHearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                       </p>
                     )}
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 text-(--muted) ml-auto">
