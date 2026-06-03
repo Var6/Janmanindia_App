@@ -179,6 +179,7 @@ function EventCard({ color, label, children }: {
 
 /* ── Add diary form ─────────────────────────────────────────────────────── */
 function AddDiaryForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => void }) {
+  const t = useT();
   const [findings, setFindings] = useState("");
   const [date, setDate]         = useState(() => new Date().toISOString().split("T")[0]);
   const [saving, setSaving]     = useState(false);
@@ -208,10 +209,10 @@ function AddDiaryForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => 
   }
 
   return (
-    <EventCard color="var(--accent)" label="Add Diary Entry">
+    <EventCard color="var(--accent)" label={t("Add Diary Entry")}>
       <form onSubmit={submit} className="space-y-3">
         <textarea value={findings} onChange={e => setFindings(e.target.value)} required rows={3}
-          placeholder="Write today's case findings, observations, or proceedings…"
+          placeholder={t("Write today's case findings, observations, or proceedings…")}
           className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
           style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}
         />
@@ -223,7 +224,7 @@ function AddDiaryForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => 
           <button type="submit" disabled={saving || !findings.trim()}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {saving ? "Saving…" : "Add Entry"}
+            {saving ? t("Saving…") : t("Add Entry")}
           </button>
         </div>
         {err && <p className="text-xs" style={{ color: "var(--error-text)" }}>{err}</p>}
@@ -234,6 +235,7 @@ function AddDiaryForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => 
 
 /* ── Update hearing form ─────────────────────────────────────────────────── */
 function UpdateHearingForm({ caseId, current, onSuccess }: { caseId: string; current?: string; onSuccess: (date: string) => void }) {
+  const t = useT();
   const [date, setDate]     = useState(current ? new Date(current).toISOString().split("T")[0] : "");
   const [saving, setSaving] = useState(false);
   const [err, setErr]       = useState("");
@@ -269,7 +271,7 @@ function UpdateHearingForm({ caseId, current, onSuccess }: { caseId: string; cur
       <button type="submit" disabled={saving || !date}
         className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        {saving ? "Saving…" : "Save & Sync Calendar"}
+        {saving ? t("Saving…") : t("Save & Sync Calendar")}
       </button>
       {err && <p className="text-xs" style={{ color: "var(--error-text)" }}>{err}</p>}
     </form>
@@ -416,6 +418,7 @@ function EnquiryEditor({ caseId, enquiry, district, causeTitle, onClose, onSaved
   caseId: string; enquiry?: Enquiry; district?: string; causeTitle?: string;
   onClose: () => void; onSaved: () => void;
 }) {
+  const t = useT();
   const toDateInput = (v?: string) => {
     if (!v) return "";
     const d = new Date(v);
@@ -499,44 +502,44 @@ function EnquiryEditor({ caseId, enquiry, district, causeTitle, onClose, onSaved
       style={{ background: "var(--surface)", borderColor: "var(--accent)", boxShadow: "var(--shadow-sm)" }}>
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--info) 8%, var(--surface))", borderColor: "var(--border)" }}>
-        <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>Edit Intake Facts</span>
-        <button type="button" onClick={onClose} className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+        <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>{t("Edit Intake Facts")}</span>
+        <button type="button" onClick={onClose} className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
       </div>
       <div className="px-5 py-4 space-y-3">
         {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <CmInput label="District" value={draft.district} onChange={set("district")} placeholder="Patna" />
-          <CmInput label="Cause Title" value={draft.causeTitle} onChange={set("causeTitle")} placeholder="State vs Accused" />
-          <CmInput label="Victim Name" value={draft.victimName} onChange={set("victimName")} />
-          <CmInput label="Victim Contact" value={draft.victimContact} onChange={set("victimContact")} />
+          <CmInput label={t("District")} value={draft.district} onChange={set("district")} placeholder={t("Patna")} />
+          <CmInput label={t("Cause Title")} value={draft.causeTitle} onChange={set("causeTitle")} placeholder={t("State vs Accused")} />
+          <CmInput label={t("Victim Name")} value={draft.victimName} onChange={set("victimName")} />
+          <CmInput label={t("Victim Contact")} value={draft.victimContact} onChange={set("victimContact")} />
           <div className="sm:col-span-2">
-            <CmInput label="Victim Address" value={draft.victimAddress} onChange={set("victimAddress")} />
+            <CmInput label={t("Victim Address")} value={draft.victimAddress} onChange={set("victimAddress")} />
           </div>
-          <CmInput label="Filer Name" value={draft.filerName} onChange={set("filerName")} />
-          <CmInput label="Filer Phone" value={draft.filerPhone} onChange={set("filerPhone")} />
+          <CmInput label={t("Filer Name")} value={draft.filerName} onChange={set("filerName")} />
+          <CmInput label={t("Filer Phone")} value={draft.filerPhone} onChange={set("filerPhone")} />
           <div className="sm:col-span-2">
-            <CmInput label="Relationship with Victim" value={draft.relationshipWithVictim} onChange={set("relationshipWithVictim")} placeholder="Father, neighbour, NGO worker…" />
+            <CmInput label={t("Relationship with Victim")} value={draft.relationshipWithVictim} onChange={set("relationshipWithVictim")} placeholder={t("Father, neighbour, NGO worker…")} />
           </div>
-          <CmInput label="Accused Name(s)" value={draft.accusedNames} onChange={set("accusedNames")} />
-          <CmInput label="Accused Count" value={draft.accusedCount} onChange={set("accusedCount")} placeholder="e.g. 3" />
-          <CmInput label="FIR Number" value={draft.firNumber} onChange={set("firNumber")} />
-          <CmInput label="Police Station" value={draft.policeStation} onChange={set("policeStation")} />
-          <CmInput label="Place of Occurrence" value={draft.placeOfOccurrence} onChange={set("placeOfOccurrence")} />
+          <CmInput label={t("Accused Name(s)")} value={draft.accusedNames} onChange={set("accusedNames")} />
+          <CmInput label={t("Accused Count")} value={draft.accusedCount} onChange={set("accusedCount")} placeholder={t("e.g. 3")} />
+          <CmInput label={t("FIR Number")} value={draft.firNumber} onChange={set("firNumber")} />
+          <CmInput label={t("Police Station")} value={draft.policeStation} onChange={set("policeStation")} />
+          <CmInput label={t("Place of Occurrence")} value={draft.placeOfOccurrence} onChange={set("placeOfOccurrence")} />
           <div>
-            <label className="block text-xs font-semibold text-(--muted) mb-1">Date / time of incident</label>
+            <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Date / time of incident")}</label>
             <input type="datetime-local" value={draft.incidentDateTime} onChange={e => set("incidentDateTime")(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
         </div>
-        <ChipField label="Issues" chips={issues} draft={issueDraft}
+        <ChipField label={t("Issues")} chips={issues} draft={issueDraft}
           onDraftChange={setIssueDraft}
           onCommit={() => { const v = issueDraft.trim(); if (v && !issues.includes(v)) setIssues([...issues, v]); setIssueDraft(""); }}
           onRemove={i => setIssues(issues.filter((_, idx) => idx !== i))} />
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Facts of the case</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Facts of the case")}</label>
           <textarea value={draft.factsOfTheCase} onChange={e => set("factsOfTheCase")(e.target.value)} rows={4}
-            placeholder="What happened, in the filer's words…"
+            placeholder={t("What happened, in the filer's words…")}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
@@ -544,11 +547,11 @@ function EnquiryEditor({ caseId, enquiry, district, causeTitle, onClose, onSaved
           <button type="button" onClick={save} disabled={saving}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("Saving…") : t("Save")}
           </button>
           <button type="button" onClick={onClose}
             className="px-4 py-2 rounded-xl text-sm font-semibold"
-            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
         </div>
       </div>
     </div>
@@ -677,27 +680,27 @@ function CaseManagementSection({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CmInput label={t("Court Name")} value={draft.courtName}
               onChange={v => setDraft(s => ({ ...s, courtName: v }))}
-              placeholder="CJM Court, Patna" />
+              placeholder={t("CJM Court, Patna")} />
             <CmInput label={t("Court Case / Registration No.")} value={draft.courtCaseNumber}
               onChange={v => setDraft(s => ({ ...s, courtCaseNumber: v }))}
-              placeholder="GR 123/2026"
+              placeholder={t("GR 123/2026")}
               disabled={!!caseData.courtCaseNumber}
-              hint="The court case number is an official identifier — it can be recorded once but can't be changed afterwards." />
+              hint={t("The court case number is an official identifier — it can be recorded once but can't be changed afterwards.")} />
             <div className="sm:col-span-2">
               <CmInput label={t("Relevant Sections")} value={draft.relevantSections}
                 onChange={v => setDraft(s => ({ ...s, relevantSections: v }))}
-                placeholder="BNS 64, 351 r/w POCSO §6" />
+                placeholder={t("BNS 64, 351 r/w POCSO §6")} />
             </div>
             <CmInput label={t("Stage of the Case")} value={draft.stage}
               onChange={v => setDraft(s => ({ ...s, stage: v }))}
-              placeholder="Evidence / Arguments / Judgment" />
+              placeholder={t("Evidence / Arguments / Judgment")} />
             <CmInput label={t("Bail / Accused Appearance")} value={draft.bailAndAppearanceStatus}
               onChange={v => setDraft(s => ({ ...s, bailAndAppearanceStatus: v }))}
-              placeholder="Bail granted; accused appearing" />
+              placeholder={t("Bail granted; accused appearing")} />
             <div className="sm:col-span-2">
               <CmInput label={t("Compensation status")} value={draft.compensationStatus}
                 onChange={v => setDraft(s => ({ ...s, compensationStatus: v }))}
-                placeholder="₹3,00,000 awarded; disbursement pending" />
+                placeholder={t("₹3,00,000 awarded; disbursement pending")} />
             </div>
           </div>
           <div className="flex gap-2">
@@ -722,6 +725,7 @@ function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string;
   disabled?: boolean; hint?: string;
 }) {
+  const t = useT();
   return (
     <div>
       <label className="block text-xs font-semibold text-(--muted) mb-1">
@@ -731,7 +735,7 @@ function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-3 h-3">
               <rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/>
             </svg>
-            locked
+            {t("locked")}
           </span>
         )}
       </label>
@@ -817,7 +821,7 @@ function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
             {canEdit && (
               <button type="button" onClick={() => setEditing(true)}
                 className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-                Edit
+                {t("Edit")}
               </button>
             )}
           </div>
@@ -842,54 +846,54 @@ function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
     <div className="rounded-2xl border p-4 space-y-3"
       style={{ background: "var(--surface)", borderColor: "var(--accent)" }}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-(--text)">Edit Appearance</p>
+        <p className="text-sm font-semibold text-(--text)">{t("Edit Appearance")}</p>
         <button type="button" onClick={() => setEditing(false)}
-          className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+          className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
       </div>
       {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Date of Appearance</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Date of Appearance")}</label>
           <input type="date" value={draft.date} onChange={e => setDraft(s => ({ ...s, date: e.target.value }))}
             className={inputCls} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Current Status</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Current Status")}</label>
           <input value={draft.currentStatus} onChange={e => setDraft(s => ({ ...s, currentStatus: e.target.value }))}
-            placeholder="e.g. Adjourned, Argued, Reserved"
+            placeholder={t("e.g. Adjourned, Argued, Reserved")}
             className={inputCls} style={inputStyle} />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Daily Order Brief *</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Daily Order Brief *")}</label>
           <textarea value={draft.dailyOrderBrief} onChange={e => setDraft(s => ({ ...s, dailyOrderBrief: e.target.value }))} rows={3}
             className={`${inputCls} resize-y`} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Last Date of Hearing</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Last Date of Hearing")}</label>
           <input type="date" value={draft.lastHearingDate} onChange={e => setDraft(s => ({ ...s, lastHearingDate: e.target.value }))}
             className={inputCls} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Next Date of Hearing</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Next Date of Hearing")}</label>
           <input type="date" value={draft.nextHearingDate} onChange={e => setDraft(s => ({ ...s, nextHearingDate: e.target.value }))}
             className={inputCls} style={inputStyle} />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Remarks</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Remarks")}</label>
           <input value={draft.remarks} onChange={e => setDraft(s => ({ ...s, remarks: e.target.value }))}
-            placeholder="Optional comment" className={inputCls} style={inputStyle} />
+            placeholder={t("Optional comment")} className={inputCls} style={inputStyle} />
         </div>
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={save} disabled={saving}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("Saving…") : t("Save")}
         </button>
         <button type="button" onClick={() => setEditing(false)}
           className="px-4 py-2 rounded-xl text-sm"
           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
     </div>
@@ -905,16 +909,17 @@ function CourtAppearancesSection({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const sorted = [...appearances].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-bold text-(--text)">Case History</h2>
-        <p className="text-xs text-(--muted)">{sorted.length} appearance{sorted.length === 1 ? "" : "s"} logged</p>
+        <h2 className="text-lg font-bold text-(--text)">{t("Case History")}</h2>
+        <p className="text-xs text-(--muted)">{sorted.length} {sorted.length === 1 ? t("appearance logged") : t("appearances logged")}</p>
       </div>
 
       {sorted.length === 0 && !canEdit && (
-        <p className="text-sm text-(--muted) italic px-1">No court appearances logged yet.</p>
+        <p className="text-sm text-(--muted) italic px-1">{t("No court appearances logged yet.")}</p>
       )}
 
       {sorted.map(ap => (
@@ -929,6 +934,7 @@ function CourtAppearancesSection({
 }
 
 function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSuccess: () => void }) {
+  const t = useT();
   const today = new Date().toISOString().slice(0, 10);
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(today);
@@ -989,7 +995,7 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
       <button type="button" onClick={() => setOpen(true)}
         className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold border border-dashed transition-colors hover:bg-(--bg-secondary)"
         style={{ borderColor: "var(--border)", color: "var(--accent)" }}>
-        + Log Court Appearance
+        + {t("Log Court Appearance")}
       </button>
     );
   }
@@ -998,48 +1004,48 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
     <form onSubmit={submit} className="rounded-2xl border p-4 space-y-3"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-(--text)">Log Court Appearance</p>
+        <p className="text-sm font-semibold text-(--text)">{t("Log Court Appearance")}</p>
         <button type="button" onClick={() => { reset(); setOpen(false); }}
-          className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+          className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
       </div>
       {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Date of Appearance *</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Date of Appearance *")}</label>
           <input type="date" required value={date} onChange={e => setDate(e.target.value)}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Current Status</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Current Status")}</label>
           <input value={currentStatus} onChange={e => setCurrentStatus(e.target.value)}
-            placeholder="e.g. Adjourned, Argued, Reserved"
+            placeholder={t("e.g. Adjourned, Argued, Reserved")}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Daily Order Brief *</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Daily Order Brief *")}</label>
           <textarea required value={dailyOrderBrief} onChange={e => setDailyOrderBrief(e.target.value)} rows={3}
-            placeholder="What the court ordered today, what was argued, who appeared…"
+            placeholder={t("What the court ordered today, what was argued, who appeared…")}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Last Date of Hearing</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Last Date of Hearing")}</label>
           <input type="date" value={lastHearingDate} onChange={e => setLastHearingDate(e.target.value)}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Next Date of Hearing</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Next Date of Hearing")}</label>
           <input type="date" value={nextHearingDate} onChange={e => setNextHearingDate(e.target.value)}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-(--muted) mb-1">Remarks</label>
+          <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Remarks")}</label>
           <input value={remarks} onChange={e => setRemarks(e.target.value)}
-            placeholder="Optional comment"
+            placeholder={t("Optional comment")}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
@@ -1047,7 +1053,7 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
       <button type="submit" disabled={saving || !dailyOrderBrief.trim()}
         className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        {saving ? "Saving…" : "Save Appearance"}
+        {saving ? t("Saving…") : t("Save Appearance")}
       </button>
     </form>
   );
@@ -1241,14 +1247,14 @@ function PartiesEditor({
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-(--text)">{t("Edit Parties")}</p>
         <button type="button" onClick={() => { setEditing(false); setPets(petitioners); setResps(respondents); }}
-          className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+          className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
       </div>
       {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <ChipField label="Petitioner(s)" chips={pets} draft={petDraft}
+        <ChipField label={t("Petitioner(s)")} chips={pets} draft={petDraft}
           onDraftChange={setPetDraft} onCommit={() => commit("pet")}
           onRemove={i => setPets(pets.filter((_, idx) => idx !== i))} />
-        <ChipField label="Respondent(s) / Defendant(s)" chips={resps} draft={respDraft}
+        <ChipField label={t("Respondent(s) / Defendant(s)")} chips={resps} draft={respDraft}
           onDraftChange={setRespDraft} onCommit={() => commit("resp")}
           onRemove={i => setResps(resps.filter((_, idx) => idx !== i))} />
       </div>
@@ -1256,12 +1262,12 @@ function PartiesEditor({
         <button type="button" onClick={save} disabled={saving}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("Saving…") : t("Save")}
         </button>
         <button type="button" onClick={() => { setEditing(false); setPets(petitioners); setResps(respondents); }}
           className="px-4 py-2 rounded-xl text-sm font-semibold"
           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
     </div>
@@ -1272,6 +1278,7 @@ function ChipField({ label, chips, draft, onDraftChange, onCommit, onRemove }: {
   label: string; chips: string[]; draft: string;
   onDraftChange: (s: string) => void; onCommit: () => void; onRemove: (i: number) => void;
 }) {
+  const t = useT();
   return (
     <div>
       <label className="block text-xs font-semibold text-(--muted) mb-1">{label}</label>
@@ -1287,7 +1294,7 @@ function ChipField({ label, chips, draft, onDraftChange, onCommit, onRemove }: {
         </div>
       )}
       <input value={draft} onChange={e => onDraftChange(e.target.value)}
-        placeholder="Type a name and press Enter"
+        placeholder={t("Type a name and press Enter")}
         className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
         style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}
         onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); onCommit(); } }}
@@ -1299,6 +1306,7 @@ function ChipField({ label, chips, draft, onDraftChange, onCommit, onRemove }: {
 function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
   caseId: string; value?: string; canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
   const [saving, setSaving] = useState(false);
@@ -1319,27 +1327,27 @@ function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
 
   if (!editing) {
     return (
-      <Line label="e-Courts link">
+      <Line label={t("e-Courts link")}>
         {value ? (
           <span className="flex items-center gap-2">
             <a href={value} target="_blank" rel="noopener noreferrer"
               className="hover:underline truncate inline-block max-w-[160px]" style={{ color: "var(--accent)" }}>
-              Open ↗
+              {t("Open ↗")}
             </a>
             {canEdit && (
               <button type="button" onClick={() => setEditing(true)}
                 className="text-[10px] hover:underline shrink-0" style={{ color: "var(--muted)" }}>
-                Edit
+                {t("Edit")}
               </button>
             )}
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <span className="text-xs text-(--muted) italic">Not set</span>
+            <span className="text-xs text-(--muted) italic">{t("Not set")}</span>
             {canEdit && (
               <button type="button" onClick={() => setEditing(true)}
                 className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
-                + Add
+                + {t("Add")}
               </button>
             )}
           </span>
@@ -1350,21 +1358,21 @@ function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
 
   return (
     <div className="sm:col-span-3">
-      <label className="block text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">e-Courts link</label>
+      <label className="block text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("e-Courts link")}</label>
       <div className="flex gap-2">
         <input value={draft} onChange={e => setDraft(e.target.value)} type="url"
-          placeholder="https://services.ecourts.gov.in/…"
+          placeholder={t("https://services.ecourts.gov.in/…")}
           className="flex-1 px-3 py-1.5 rounded-lg border text-sm focus:outline-none"
           style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         <button type="button" onClick={save} disabled={saving}
           className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {saving ? "…" : "Save"}
+          {saving ? "…" : t("Save")}
         </button>
         <button type="button" onClick={() => setEditing(false)}
           className="px-3 py-1.5 rounded-lg text-xs font-semibold"
           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
     </div>
@@ -1380,6 +1388,7 @@ function LitigationTeamPanel({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [adding, setAdding]   = useState(false);
   const [query, setQuery]     = useState("");
   const [results, setResults] = useState<LawyerRef[]>([]);
@@ -1398,7 +1407,7 @@ function LitigationTeamPanel({
 
   useEffect(() => {
     if (!query || query.length < 2) { setResults([]); return; }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setSearching(true);
       try {
         const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=litigation,director`);
@@ -1411,7 +1420,7 @@ function LitigationTeamPanel({
         setSearching(false);
       }
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [query, teamIdsKey]);
 
   async function share(userId: string) {
@@ -1460,12 +1469,12 @@ function LitigationTeamPanel({
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--info) 6%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="text-xs font-semibold" style={{ color: "var(--info-text)" }}>
-          Litigation Team · {team.length}
+          {t("Litigation Team")} · {team.length}
         </span>
         {canEdit && !adding && (
           <button type="button" onClick={() => setAdding(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-            + Share with another lawyer
+            + {t("Share with another lawyer")}
           </button>
         )}
       </div>
@@ -1476,7 +1485,7 @@ function LitigationTeamPanel({
           </div>
         )}
         {team.length === 0 ? (
-          <p className="text-xs text-(--muted) italic">No lawyer assigned yet.</p>
+          <p className="text-xs text-(--muted) italic">{t("No lawyer assigned yet.")}</p>
         ) : (
           <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
             {team.map((m, i) => (
@@ -1486,7 +1495,7 @@ function LitigationTeamPanel({
                     {m.name}
                     {i === 0 && (
                       <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>Lead</span>
+                        style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>{t("Lead")}</span>
                     )}
                   </p>
                   <p className="text-xs text-(--muted)">{m.email}</p>
@@ -1494,7 +1503,7 @@ function LitigationTeamPanel({
                 {canEdit && i > 0 && (
                   <button type="button" disabled={busyId === m._id} onClick={() => unshare(m._id)}
                     className="text-xs hover:underline" style={{ color: "var(--error)" }}>
-                    {busyId === m._id ? "…" : "Remove"}
+                    {busyId === m._id ? "…" : t("Remove")}
                   </button>
                 )}
               </li>
@@ -1506,15 +1515,15 @@ function LitigationTeamPanel({
           <div className="rounded-xl border p-3 space-y-2"
             style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-(--text)">Add a lawyer</p>
+              <p className="text-xs font-semibold text-(--text)">{t("Add a lawyer")}</p>
               <button type="button" onClick={() => { setAdding(false); setQuery(""); setResults([]); }}
-                className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+                className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
             </div>
             <input value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="Search by name or email…"
+              placeholder={t("Search by name or email…")}
               className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
-            {searching && <p className="text-[11px] text-(--muted)">Searching…</p>}
+            {searching && <p className="text-[11px] text-(--muted)">{t("Searching…")}</p>}
             {results.length > 0 && (
               <div className="rounded-lg border overflow-hidden"
                 style={{ borderColor: "var(--border)" }}>
@@ -1528,14 +1537,14 @@ function LitigationTeamPanel({
                       <span className="text-xs text-(--muted) ml-2">{u.email}</span>
                     </span>
                     <span className="text-xs" style={{ color: "var(--accent)" }}>
-                      {busyId === u._id ? "Sharing…" : "Share"}
+                      {busyId === u._id ? t("Sharing…") : t("Share")}
                     </span>
                   </button>
                 ))}
               </div>
             )}
             {query.length >= 2 && !searching && results.length === 0 && (
-              <p className="text-[11px] text-(--muted)">No matches for &quot;{query}&quot;.</p>
+              <p className="text-[11px] text-(--muted)">{t("No matches for")} &quot;{query}&quot;.</p>
             )}
           </div>
         )}
@@ -1552,6 +1561,7 @@ function LitigationTeamPanel({
 function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
   caseId: string; caseNumber: string; createdBy?: string; backHref: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [me, setMe] = useState<{ id: string; role: string } | null>(null);
   const [open, setOpen] = useState(false);
@@ -1597,25 +1607,25 @@ function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
       style={{ borderColor: "color-mix(in srgb, var(--error) 35%, var(--border))", background: "var(--surface)" }}>
       <div className="px-4 py-2 border-b"
         style={{ background: "var(--error-bg)", borderColor: "color-mix(in srgb, var(--error) 25%, transparent)" }}>
-        <span className="text-xs font-semibold" style={{ color: "var(--error-text)" }}>Danger Zone</span>
+        <span className="text-xs font-semibold" style={{ color: "var(--error-text)" }}>{t("Danger Zone")}</span>
       </div>
       <div className="px-5 py-4 space-y-3">
         <p className="text-sm text-(--text)">
-          Permanently delete this case and everything attached to it (documents, diary, appearances, finances).
-          <span className="font-semibold"> This cannot be undone.</span>
+          {t("Permanently delete this case and everything attached to it (documents, diary, appearances, finances).")}
+          <span className="font-semibold"> {t("This cannot be undone.")}</span>
         </p>
 
         {!open ? (
           <button type="button" onClick={() => setOpen(true)}
             className="px-4 py-2 rounded-xl text-sm font-semibold"
             style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
-            Delete this case
+            {t("Delete this case")}
           </button>
         ) : (
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-semibold text-(--muted) mb-1">
-                Type <span className="font-mono font-bold text-(--text)">{caseNumber}</span> to confirm
+                {t("Type")} <span className="font-mono font-bold text-(--text)">{caseNumber}</span> {t("to confirm")}
               </label>
               <input value={confirmText} onChange={e => setConfirmText(e.target.value)}
                 placeholder={caseNumber} autoComplete="off"
@@ -1627,12 +1637,12 @@ function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
               <button type="button" onClick={remove} disabled={busy || confirmText.trim() !== caseNumber}
                 className="px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
                 style={{ background: "var(--error)", color: "#fff" }}>
-                {busy ? "Deleting…" : "Delete permanently"}
+                {busy ? t("Deleting…") : t("Delete permanently")}
               </button>
               <button type="button" onClick={() => { setOpen(false); setConfirmText(""); setErr(""); }}
                 className="px-4 py-2 rounded-xl text-sm font-semibold"
                 style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                Cancel
+                {t("Cancel")}
               </button>
             </div>
           </div>
@@ -1696,12 +1706,12 @@ function TitleEditor({ caseId, value, canEdit, onChanged }: {
         <button type="button" onClick={save} disabled={saving}
           className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("Saving…") : t("Save")}
         </button>
         <button type="button" onClick={() => { setEditing(false); setDraft(value); setErr(""); }}
           className="px-3 py-1.5 rounded-lg text-xs font-semibold"
           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
     </div>
@@ -1713,6 +1723,7 @@ const STATUS_OPTIONS = ["Open", "Pending", "Escalated", "Disposal", "Withdrawn",
 function StatusEditor({ caseId, value, canEdit, onChanged }: {
   caseId: string; value: string; canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const st = STATUS_STYLE[value] ?? STATUS_STYLE.Closed;
@@ -1744,7 +1755,7 @@ function StatusEditor({ caseId, value, canEdit, onChanged }: {
 
   return (
     <button type="button" disabled={!canEdit} onClick={() => setEditing(true)}
-      title={canEdit ? "Change status" : undefined}
+      title={canEdit ? t("Change status") : undefined}
       className={`text-xs font-semibold px-2.5 py-1 rounded-full ${canEdit ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
       style={{ background: st.bg, color: st.text }}>
       {value}{canEdit && " ▾"}
@@ -1830,31 +1841,31 @@ function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
   return (
     <div className="space-y-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-(--text)">Edit Subject</p>
-        <button type="button" onClick={() => setEditing(false)} className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+        <p className="text-xs font-semibold text-(--text)">{t("Edit Subject")}</p>
+        <button type="button" onClick={() => setEditing(false)} className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
       </div>
       {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
       <div>
-        <label className="block text-xs font-semibold text-(--muted) mb-1">Subject of the court (their line)</label>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Subject of the court (their line)")}</label>
         <textarea value={draft.courtThey} onChange={e => setDraft(s => ({ ...s, courtThey: e.target.value }))} rows={2} className={taCls} style={taStyle} />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-(--muted) mb-1">Our points</label>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Our points")}</label>
         <textarea value={draft.ourPoints} onChange={e => setDraft(s => ({ ...s, ourPoints: e.target.value }))} rows={2} className={taCls} style={taStyle} />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-(--muted) mb-1">Why we believe we have a case</label>
+        <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Why we believe we have a case")}</label>
         <textarea value={draft.reason} onChange={e => setDraft(s => ({ ...s, reason: e.target.value }))} rows={2} className={taCls} style={taStyle} />
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={save} disabled={saving}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("Saving…") : t("Save")}
         </button>
         <button type="button" onClick={() => setEditing(false)}
           className="px-4 py-2 rounded-xl text-sm font-semibold"
-          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
       </div>
     </div>
   );
@@ -1914,18 +1925,18 @@ function VerdictEditor({ caseId, verdict, verdictDate, canEdit, onChanged }: {
         <div className="px-5 py-4 space-y-3">
           {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
           <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={4}
-            placeholder="Summarise the verdict / final order…"
+            placeholder={t("Summarise the verdict / final order…")}
             className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-y"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           <div className="flex gap-2">
             <button type="button" onClick={save} disabled={saving}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("Saving…") : t("Save")}
             </button>
             <button type="button" onClick={() => { setEditing(false); setDraft(verdict ?? ""); }}
               className="px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+              style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
           </div>
         </div>
       )}
@@ -2148,8 +2159,8 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
   if (error || !caseData) return (
     <div className="py-16 text-center rounded-2xl border"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-      <p className="text-sm" style={{ color: "var(--error-text)" }}>{error || "Case not found."}</p>
-      <Link href={backHref} className="mt-3 inline-block text-sm hover:underline" style={{ color: "var(--accent)" }}>← Back</Link>
+      <p className="text-sm" style={{ color: "var(--error-text)" }}>{error || t("Case not found.")}</p>
+      <Link href={backHref} className="mt-3 inline-block text-sm hover:underline" style={{ color: "var(--accent)" }}>{t("← Back")}</Link>
     </div>
   );
 
@@ -2173,7 +2184,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             <Link href={dashboardHref}
               className="font-medium underline underline-offset-2 transition-colors hover:opacity-80"
               style={{ color: "var(--accent)" }}>
-              Dashboard
+              {t("Dashboard")}
             </Link>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 shrink-0 text-(--muted)"><path d="M6 4l4 4-4 4"/></svg>
           </>
@@ -2324,7 +2335,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         c.community?._id ? (
           <IcpForm caseId={c._id} canEdit={canManageCarePlan} caseNumber={c.caseNumber} caseTitle={c.caseTitle} />
         ) : (
-          <p className="text-sm text-(--muted) px-1">No community member linked to this case yet.</p>
+          <p className="text-sm text-(--muted) px-1">{t("No community member linked to this case yet.")}</p>
         )
       ) : tab === "finance" ? (
         <CaseFinanceTab caseId={c._id} />
@@ -2462,7 +2473,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           title={t("Activity log")}
           badge={auditCount > 0 ? <CountPill n={auditCount} /> : null}
           defaultOpen={false}
-          description="Every change to this case — stage flips, document uploads, status updates — is recorded here with the user who did it.">
+          description={t("Every change to this case — stage flips, document uploads, status updates — is recorded here with the user who did it.")}>
           <CaseAuditLog entries={c.auditLog ?? []} />
         </CollapsibleSection>
       </div>
@@ -2487,9 +2498,10 @@ function CaseDocsList({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [err, setErr] = useState("");
+  const t = useT();
 
   if (!docs.length) {
-    return <p className="text-sm text-(--muted) px-1 pb-1">No documents attached yet.</p>;
+    return <p className="text-sm text-(--muted) px-1 pb-1">{t("No documents attached yet.")}</p>;
   }
 
   async function startEdit(doc: DocMeta) {
@@ -2565,12 +2577,12 @@ function CaseDocsList({
                   <button onClick={() => saveEdit(docId)} disabled={isSaving}
                     className="text-xs font-semibold px-2.5 py-1 rounded-lg disabled:opacity-60"
                     style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                    {isSaving ? "…" : "Save"}
+                    {isSaving ? "…" : t("Save")}
                   </button>
                   <button onClick={() => setEditingId(null)}
                     className="text-xs font-semibold px-2.5 py-1 rounded-lg"
                     style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                    Cancel
+                    {t("Cancel")}
                   </button>
                 </div>
               ) : (
@@ -2590,12 +2602,12 @@ function CaseDocsList({
                 <button onClick={() => startEdit(doc)}
                   className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
                   style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
-                  Rename
+                  {t("Rename")}
                 </button>
                 <button onClick={() => deleteDoc(docId)} disabled={isDeleting}
                   className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
                   style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                  {isDeleting ? "…" : "Delete"}
+                  {isDeleting ? "…" : t("Delete")}
                 </button>
               </div>
             )}
@@ -2618,8 +2630,9 @@ function CountPill({ n }: { n: number }) {
 /** Read-only diary list — pulled out of the old Timeline so the case-diary
  *  section can stand on its own without the broader chronological view. */
 function DiaryList({ entries }: { entries: Array<{ _id: string; date: string; findings: string }> }) {
+  const t = useT();
   if (!entries.length) {
-    return <p className="text-sm text-(--muted) px-1">No diary entries yet.</p>;
+    return <p className="text-sm text-(--muted) px-1">{t("No diary entries yet.")}</p>;
   }
   // Newest first — matches the audit log convention.
   const sorted = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

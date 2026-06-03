@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Reply = {
   _id: string;
@@ -53,6 +54,7 @@ function fmtRel(iso: string) {
 }
 
 export default function CaseCheatcodes({ caseId, comments, currentUserId: cuidProp, onChanged }: Props) {
+  const t = useT();
   const [draft, setDraft]     = useState("");
   const [pinDraft, setPinDraft] = useState(true);
   const [adding, setAdding]   = useState(false);
@@ -85,13 +87,13 @@ export default function CaseCheatcodes({ caseId, comments, currentUserId: cuidPr
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr((d as { error?: string }).error ?? "Failed.");
+        setErr((d as { error?: string }).error ?? t("Failed."));
         return false;
       }
       onChanged();
       return true;
     } catch {
-      setErr("Network error.");
+      setErr(t("Network error."));
       return false;
     } finally {
       setBusy(false);
@@ -110,12 +112,12 @@ export default function CaseCheatcodes({ caseId, comments, currentUserId: cuidPr
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--warning) 8%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: "var(--warning-text)" }}>
-          <span>📌</span> Cheatcodes &amp; Notes <span className="text-(--muted) font-normal">· {comments.length}</span>
+          <span>📌</span> {t("Cheatcodes & Notes")} <span className="text-(--muted) font-normal">· {comments.length}</span>
         </span>
         {!adding && (
           <button type="button" onClick={() => setAdding(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-            + Add note
+            {t("+ Add note")}
           </button>
         )}
       </div>
@@ -127,21 +129,21 @@ export default function CaseCheatcodes({ caseId, comments, currentUserId: cuidPr
           <div className="rounded-xl border p-3 space-y-2"
             style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
             <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={3}
-              placeholder="e.g. Police negligence visible from para 7 of FIR — useful at admission stage"
+              placeholder={t("e.g. Police negligence visible from para 7 of FIR — useful at admission stage")}
               className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none resize-y"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
             <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={pinDraft} onChange={e => setPinDraft(e.target.checked)} className="accent-(--accent)" />
-                <span className="text-(--muted)">Pin to top</span>
+                <span className="text-(--muted)">{t("Pin to top")}</span>
               </label>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => { setAdding(false); setDraft(""); setErr(""); }}
-                  className="text-(--muted) hover:text-(--text)">Cancel</button>
+                  className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
                 <button type="button" onClick={add} disabled={busy || !draft.trim()}
                   className="px-3 py-1.5 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                  {busy ? "Saving…" : "Save"}
+                  {busy ? t("Saving…") : t("Save")}
                 </button>
               </div>
             </div>
@@ -149,7 +151,7 @@ export default function CaseCheatcodes({ caseId, comments, currentUserId: cuidPr
         )}
 
         {sorted.length === 0 && !adding && (
-          <p className="text-xs text-(--muted) italic px-1 py-2">No notes yet. Pin the one or two facts that make this case winnable.</p>
+          <p className="text-xs text-(--muted) italic px-1 py-2">{t("No notes yet. Pin the one or two facts that make this case winnable.")}</p>
         )}
 
         {sorted.map(c => (
@@ -167,6 +169,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
   currentUserId?: string;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft]     = useState(comment.text);
   const [replying, setReplying] = useState(false);
@@ -190,13 +193,13 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr((d as { error?: string }).error ?? "Failed.");
+        setErr((d as { error?: string }).error ?? t("Failed."));
         return false;
       }
       onChanged();
       return true;
     } catch {
-      setErr("Network error.");
+      setErr(t("Network error."));
       return false;
     } finally {
       setBusy(false);
@@ -220,7 +223,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
             <span className="font-semibold text-(--text)">{comment.byName}</span>
             {comment.byRole && <span className="ml-1.5">· {comment.byRole}</span>}
             <span className="ml-1.5">· {fmtRel(comment.createdAt)}</span>
-            {comment.editedAt && <span className="ml-1.5 italic">(edited)</span>}
+            {comment.editedAt && <span className="ml-1.5 italic">{t("(edited)")}</span>}
           </p>
           {editing ? (
             <div className="mt-2 space-y-2">
@@ -234,9 +237,9 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
                     if (ok) setEditing(false);
                   }}
                   className="px-3 py-1 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
-                  style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>Save</button>
+                  style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Save")}</button>
                 <button type="button" onClick={() => { setEditing(false); setDraft(comment.text); }}
-                  className="text-(--muted) hover:text-(--text)">Cancel</button>
+                  className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
               </div>
             </div>
           ) : (
@@ -248,16 +251,16 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
           <div className="flex items-center gap-2 text-[11px] shrink-0">
             <button type="button" onClick={() => call({ op: "togglePin", commentId: comment._id })}
               className="hover:underline" style={{ color: "var(--muted)" }}>
-              {comment.pinned ? "Unpin" : "Pin"}
+              {comment.pinned ? t("Unpin") : t("Pin")}
             </button>
             <button type="button" onClick={() => setEditing(true)}
-              className="hover:underline" style={{ color: "var(--accent)" }}>Edit</button>
+              className="hover:underline" style={{ color: "var(--accent)" }}>{t("Edit")}</button>
             <button type="button" onClick={() => {
-              if (confirm("Delete this note? This can't be undone.")) {
+              if (confirm(t("Delete this note? This can't be undone."))) {
                 call({ op: "delete", commentId: comment._id });
               }
             }}
-              className="hover:underline" style={{ color: "var(--error)" }}>Delete</button>
+              className="hover:underline" style={{ color: "var(--error)" }}>{t("Delete")}</button>
           </div>
         )}
       </div>
@@ -277,7 +280,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
         {replying ? (
           <div className="flex items-end gap-2">
             <textarea value={replyDraft} onChange={e => setReplyDraft(e.target.value)} rows={2}
-              placeholder="Reply…"
+              placeholder={t("Reply…")}
               className="flex-1 px-3 py-2 rounded-lg border text-xs focus:outline-none resize-y"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <button type="button" disabled={busy || !replyDraft.trim()}
@@ -286,13 +289,13 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
                 if (ok) { setReplyDraft(""); setReplying(false); }
               }}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
-              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>Reply</button>
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Reply")}</button>
             <button type="button" onClick={() => { setReplying(false); setReplyDraft(""); }}
-              className="text-xs text-(--muted) hover:text-(--text)">Cancel</button>
+              className="text-xs text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
           </div>
         ) : (
           <button type="button" onClick={() => setReplying(true)}
-            className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>+ Reply</button>
+            className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>{t("+ Reply")}</button>
         )}
       </div>
     </div>
@@ -306,6 +309,7 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
   currentUserId?: string;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft]     = useState(reply.text);
   const [busy, setBusy]       = useState(false);
@@ -333,7 +337,7 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
         <span className="font-semibold text-(--text)">{reply.byName}</span>
         {reply.byRole && <span className="ml-1.5">· {reply.byRole}</span>}
         <span className="ml-1.5">· {fmtRel(reply.createdAt)}</span>
-        {reply.editedAt && <span className="ml-1.5 italic">(edited)</span>}
+        {reply.editedAt && <span className="ml-1.5 italic">{t("(edited)")}</span>}
       </p>
       {editing ? (
         <div className="mt-1 space-y-1">
@@ -347,9 +351,9 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
                 setEditing(false);
               }}
               className="px-2 py-0.5 rounded text-[11px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
-              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>Save</button>
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Save")}</button>
             <button type="button" onClick={() => { setEditing(false); setDraft(reply.text); }}
-              className="text-(--muted) hover:text-(--text)">Cancel</button>
+              className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
           </div>
         </div>
       ) : (
@@ -357,10 +361,10 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
       )}
       {isMine && !editing && (
         <div className="flex items-center gap-2 mt-1 text-[11px]">
-          <button type="button" onClick={() => setEditing(true)} className="hover:underline" style={{ color: "var(--accent)" }}>Edit</button>
+          <button type="button" onClick={() => setEditing(true)} className="hover:underline" style={{ color: "var(--accent)" }}>{t("Edit")}</button>
           <button type="button" onClick={() => {
-            if (confirm("Delete this reply?")) call({ op: "deleteReply", commentId, replyId: reply._id });
-          }} className="hover:underline" style={{ color: "var(--error)" }}>Delete</button>
+            if (confirm(t("Delete this reply?"))) call({ op: "deleteReply", commentId, replyId: reply._id });
+          }} className="hover:underline" style={{ color: "var(--error)" }}>{t("Delete")}</button>
         </div>
       )}
     </div>

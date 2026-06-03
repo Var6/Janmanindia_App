@@ -15,6 +15,7 @@
  */
 
 import { useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string };
 type Step = { filed: boolean; filedAt?: string };
@@ -61,6 +62,7 @@ function fmtDate(d?: string) {
 }
 
 export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onChanged }: Props) {
+  const t = useT();
   const hcp = caseData.highCourtPath ?? {};
   const [busyStage, setBusyStage] = useState<string | null>(null);
   const [err, setErr] = useState("");
@@ -75,7 +77,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr((d as { error?: string }).error ?? "Failed to update stage.");
+        setErr((d as { error?: string }).error ?? t("Failed to update stage."));
         return;
       }
       onChanged();
@@ -90,7 +92,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-          High Court Tracker
+          {t("High Court Tracker")}
         </span>
       </div>
 
@@ -99,7 +101,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
 
         {/* 4-stage strip */}
         <div>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">Stages</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Stages")}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {STAGES.map(stage => {
               const step = (hcp as Record<string, Step | undefined>)[stage.id];
@@ -118,17 +120,17 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full"
                       style={{ background: done ? "var(--success)" : "var(--muted)" }} />
-                    <p className="text-xs font-semibold text-(--text)">{stage.label}</p>
+                    <p className="text-xs font-semibold text-(--text)">{t(stage.label)}</p>
                   </div>
-                  <p className="text-[10px] text-(--muted) leading-snug">{stage.sub}</p>
+                  <p className="text-[10px] text-(--muted) leading-snug">{t(stage.sub)}</p>
                   {done && step?.filedAt && (
-                    <p className="text-[10px] text-(--success-text)">Reached {fmtDate(step.filedAt)}</p>
+                    <p className="text-[10px] text-(--success-text)">{t("Reached")} {fmtDate(step.filedAt)}</p>
                   )}
                   {canEdit && (
                     <button type="button" disabled={busy} onClick={() => flipStage(stage.id, !done)}
                       className="text-[10px] font-medium mt-auto self-start hover:underline"
                       style={{ color: done ? "var(--muted)" : "var(--accent)" }}>
-                      {busy ? "…" : done ? "Mark not reached" : "Mark reached"}
+                      {busy ? "…" : done ? t("Mark not reached") : t("Mark reached")}
                     </button>
                   )}
                 </div>
@@ -139,7 +141,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
 
         {/* Document slots */}
         <div>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">Documents</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Documents")}</p>
           <div className="space-y-2">
             {SLOTS.map(slot => {
               const value = (hcp as Record<string, unknown>)[slot.key];
@@ -173,6 +175,7 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const [url, setUrl] = useState("");
   const [docLabel, setDocLabel] = useState("");
@@ -180,7 +183,7 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
   const [err, setErr] = useState("");
 
   async function add() {
-    if (!url.trim()) { setErr("Paste the file URL first."); return; }
+    if (!url.trim()) { setErr(t("Paste the file URL first.")); return; }
     setBusy(true); setErr("");
     try {
       const r = await fetch(`/api/cases/${caseId}`, {
@@ -196,7 +199,7 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr((d as { error?: string }).error ?? "Failed to attach.");
+        setErr((d as { error?: string }).error ?? t("Failed to attach."));
         return;
       }
       setUrl(""); setDocLabel(""); setAdding(false);
@@ -212,19 +215,19 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-(--text)">
-            {label}
+            {t(label)}
             {docs.length > 0 && (
-              <span className="ml-2 text-[10px] font-normal text-(--muted)">{docs.length} on file</span>
+              <span className="ml-2 text-[10px] font-normal text-(--muted)">{docs.length} {t("on file")}</span>
             )}
           </p>
           {docs.length === 0 && (
-            <p className="text-[11px] text-(--muted) italic">Not yet attached.</p>
+            <p className="text-[11px] text-(--muted) italic">{t("Not yet attached.")}</p>
           )}
         </div>
         {canEdit && (multi || docs.length === 0) && !adding && (
           <button type="button" onClick={() => setAdding(true)}
             className="text-xs hover:underline shrink-0" style={{ color: "var(--accent)" }}>
-            + Attach
+            {t("+ Attach")}
           </button>
         )}
       </div>
@@ -247,11 +250,11 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
           {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input value={url} onChange={e => setUrl(e.target.value)}
-              placeholder="File URL (uploaded to S3 / drive)"
+              placeholder={t("File URL (uploaded to S3 / drive)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <input value={docLabel} onChange={e => setDocLabel(e.target.value)}
-              placeholder="Label (optional)"
+              placeholder={t("Label (optional)")}
               className="px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
@@ -259,10 +262,10 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
             <button type="button" disabled={busy || !url.trim()} onClick={add}
               className="px-3 py-1.5 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {busy ? "Attaching…" : "Attach"}
+              {busy ? t("Attaching…") : t("Attach")}
             </button>
             <button type="button" onClick={() => { setAdding(false); setUrl(""); setDocLabel(""); setErr(""); }}
-              className="text-(--muted) hover:text-(--text)">Cancel</button>
+              className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
           </div>
         </div>
       )}
@@ -276,6 +279,7 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [adding, setAdding]   = useState(false);
   const [date, setDate]       = useState(() => new Date().toISOString().slice(0, 10));
   const [label, setLabel]     = useState("");
@@ -285,7 +289,7 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
   const sorted = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   async function add() {
-    if (!label.trim() || !date) { setErr("Date + label are required."); return; }
+    if (!label.trim() || !date) { setErr(t("Date + label are required.")); return; }
     setBusy(true); setErr("");
     try {
       const r = await fetch(`/api/cases/${caseId}`, {
@@ -300,7 +304,7 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr((d as { error?: string }).error ?? "Failed to add entry.");
+        setErr((d as { error?: string }).error ?? t("Failed to add entry."));
         return;
       }
       setLabel(""); setDocUrl(""); setAdding(false);
@@ -313,15 +317,15 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">List of Dates · {sorted.length}</p>
+        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("List of Dates")} · {sorted.length}</p>
         {canEdit && !adding && (
           <button type="button" onClick={() => setAdding(true)}
-            className="text-xs hover:underline" style={{ color: "var(--accent)" }}>+ Add entry</button>
+            className="text-xs hover:underline" style={{ color: "var(--accent)" }}>{t("+ Add entry")}</button>
         )}
       </div>
 
       {sorted.length === 0 && !adding && (
-        <p className="text-xs text-(--muted) italic">No dates logged yet.</p>
+        <p className="text-xs text-(--muted) italic">{t("No dates logged yet.")}</p>
       )}
 
       {sorted.length > 0 && (
@@ -351,11 +355,11 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
               className="px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
             <input value={label} onChange={e => setLabel(e.target.value)}
-              placeholder="What happened on this date"
+              placeholder={t("What happened on this date")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
             <input value={docUrl} onChange={e => setDocUrl(e.target.value)}
-              placeholder="Supporting doc URL (optional)"
+              placeholder={t("Supporting doc URL (optional)")}
               className="sm:col-span-3 px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
@@ -363,10 +367,10 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
             <button type="button" disabled={busy || !label.trim() || !date} onClick={add}
               className="px-3 py-1.5 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {busy ? "Adding…" : "Add"}
+              {busy ? t("Adding…") : t("Add")}
             </button>
             <button type="button" onClick={() => { setAdding(false); setLabel(""); setDocUrl(""); setErr(""); }}
-              className="text-(--muted) hover:text-(--text)">Cancel</button>
+              className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
           </div>
         </div>
       )}

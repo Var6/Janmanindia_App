@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type UserRef = { _id: string; name: string; email?: string; role?: string } | null;
@@ -65,6 +66,7 @@ function fmtDate(d: string) {
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 export default function CaseFinanceTab({ caseId }: { caseId: string }) {
+  const t = useT();
   const [role, setRole] = useState<string>("");
   const [expenses, setExpenses] = useState<CaseExpense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,10 +77,10 @@ export default function CaseFinanceTab({ caseId }: { caseId: string }) {
     try {
       const res = await fetch(`/api/expenses?case=${caseId}`);
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to load case finances."); return; }
+      if (!res.ok) { setError(data.error ?? t("Failed to load case finances.")); return; }
       setExpenses(data.expenses ?? []);
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ export default function CaseFinanceTab({ caseId }: { caseId: string }) {
             <button key={k} type="button" onClick={() => setLane(k)}
               className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
               style={{ background: sel ? "var(--accent)" : "transparent", color: sel ? "var(--accent-contrast)" : "var(--muted)" }}>
-              {label}{count > 0 ? ` · ${count}` : ""}
+              {t(label)}{count > 0 ? ` · ${count}` : ""}
             </button>
           );
         })}
@@ -121,11 +123,11 @@ export default function CaseFinanceTab({ caseId }: { caseId: string }) {
 
       <p className="text-xs text-(--muted) px-1">
         {lane === "requisition"
-          ? "Costs the organisation pays directly for this case (advance / requisition)."
-          : "Money paid out of pocket on this case, claimed back from the organisation."}
+          ? t("Costs the organisation pays directly for this case (advance / requisition).")
+          : t("Money paid out of pocket on this case, claimed back from the organisation.")}
         {totalApproved > 0 && (
           <span className="ml-1 font-semibold text-(--text)">
-            · ₹{totalApproved.toLocaleString("en-IN")} approved/paid
+            · ₹{totalApproved.toLocaleString("en-IN")} {t("approved/paid")}
           </span>
         )}
       </p>
@@ -137,12 +139,12 @@ export default function CaseFinanceTab({ caseId }: { caseId: string }) {
       )}
 
       {loading ? (
-        <p className="text-sm text-(--muted) px-1">Loading…</p>
+        <p className="text-sm text-(--muted) px-1">{t("Loading…")}</p>
       ) : inLane.length === 0 ? (
         <div className="py-10 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-2xl mb-1">🧾</p>
           <p className="text-sm text-(--muted)">
-            No {lane === "requisition" ? "requisitions" : "reimbursement claims"} for this case yet.
+            {lane === "requisition" ? t("No requisitions for this case yet.") : t("No reimbursement claims for this case yet.")}
           </p>
         </div>
       ) : (
@@ -160,6 +162,7 @@ export default function CaseFinanceTab({ caseId }: { caseId: string }) {
 function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
   caseId: string; paidByOrg: boolean; onCreated: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -179,7 +182,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (res.ok) setReceiptUrl(data.url);
-      else alert(data.error ?? "Upload failed");
+      else alert(data.error ?? t("Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -205,7 +208,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed"); return; }
+      if (!res.ok) { setError(data.error ?? t("Failed")); return; }
       (e.target as HTMLFormElement).reset();
       setReceiptUrl("");
       setOpen(false);
@@ -220,7 +223,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
       <button onClick={() => setOpen(true)}
         className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        + Add {paidByOrg ? "Requisition" : "Reimbursement"}
+        + {paidByOrg ? t("Add Requisition") : t("Add Reimbursement")}
       </button>
     );
   }
@@ -232,9 +235,9 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
     <form onSubmit={submit} className="rounded-2xl border p-5 space-y-3"
       style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-(--text)">Add case expense</h3>
+        <h3 className="text-base font-bold text-(--text)">{t("Add case expense")}</h3>
         <button type="button" onClick={() => { setOpen(false); setReceiptUrl(""); setError(""); }}
-          className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+          className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
       </div>
 
       {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{error}</p>}
@@ -252,7 +255,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
               style={sel
                 ? { background: "var(--accent)", color: "var(--accent-contrast)", borderColor: "var(--accent)" }
                 : { background: "var(--bg)", color: "var(--muted)", borderColor: "var(--border)" }}>
-              {label}
+              {t(label)}
             </button>
           );
         })}
@@ -260,19 +263,19 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select name="category" required defaultValue="legal" className={inputCls} style={inputStyle}>
-          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{t(c.label)}</option>)}
         </select>
-        <input name="amount" required type="number" min={1} step="0.01" placeholder="Amount (₹)"
+        <input name="amount" required type="number" min={1} step="0.01" placeholder={t("Amount (₹)")}
           className={inputCls} style={inputStyle} />
       </div>
 
-      <input name="title" required maxLength={200} placeholder="Short title (e.g. Court filing fee)"
+      <input name="title" required maxLength={200} placeholder={t("Short title (e.g. Court filing fee)")}
         className={inputCls} style={inputStyle} />
-      <textarea name="description" rows={2} placeholder="What the cost was for (optional)"
+      <textarea name="description" rows={2} placeholder={t("What the cost was for (optional)")}
         className={`${inputCls} resize-none`} style={inputStyle} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input name="vendor" placeholder="Paid to / vendor (optional)" className={inputCls} style={inputStyle} />
+        <input name="vendor" placeholder={t("Paid to / vendor (optional)")} className={inputCls} style={inputStyle} />
         <input name="incurredAt" type="date" className={inputCls} style={inputStyle} />
       </div>
 
@@ -281,15 +284,15 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
           onChange={e => { const f = e.target.files?.[0]; if (f) uploadReceipt(f); e.target.value = ""; }} />
         {receiptUrl ? (
           <div className="flex items-center gap-2 text-xs">
-            <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 receipt attached</a>
+            <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 {t("receipt attached")}</a>
             <button type="button" onClick={() => setReceiptUrl("")}
-              className="px-2 py-0.5 rounded text-[11px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Remove</button>
+              className="px-2 py-0.5 rounded text-[11px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
           </div>
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
             className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            {uploading ? "Uploading…" : "📎 Attach receipt"}
+            {uploading ? t("Uploading…") : `📎 ${t("Attach receipt")}`}
           </button>
         )}
       </div>
@@ -297,10 +300,10 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
       <button type="submit" disabled={busy}
         className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        {busy ? "Submitting…" : "Submit for Approval"}
+        {busy ? t("Submitting…") : t("Submit for Approval")}
       </button>
       <p className="text-[11px] text-(--muted)">
-        Routing: HR verifies → Director approves → Finance marks it paid.
+        {t("Routing: HR verifies → Director approves → Finance marks it paid.")}
       </p>
     </form>
   );
@@ -310,6 +313,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
 function ExpenseCard({ expense: x, role, onChanged }: {
   expense: CaseExpense; role: string; onChanged: () => void;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
@@ -332,7 +336,7 @@ function ExpenseCard({ expense: x, role, onChanged }: {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       if (res.ok) { setRejecting(false); setReason(""); setNotes(""); onChanged(); }
-      else { const d = await res.json(); alert(d.error ?? "Failed"); }
+      else { const d = await res.json(); alert(d.error ?? t("Failed")); }
     } finally {
       setBusy(false);
     }
@@ -349,14 +353,14 @@ function ExpenseCard({ expense: x, role, onChanged }: {
           </div>
           <p className="text-xs text-(--muted) mt-0.5">
             <span className="capitalize">{x.category}</span>
-            {" · "}filed by {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
+            {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
             {" · "}{fmtDate(x.submittedAt)}
           </p>
         </div>
         <div className="text-right shrink-0">
           <p className="text-base font-bold text-(--text)">₹{x.amount.toLocaleString("en-IN")}</p>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
-            style={{ background: stat.bg, color: stat.text }}>{stat.label}</span>
+            style={{ background: stat.bg, color: stat.text }}>{t(stat.label)}</span>
         </div>
       </div>
 
@@ -364,20 +368,20 @@ function ExpenseCard({ expense: x, role, onChanged }: {
 
       <div className="flex items-center gap-3 flex-wrap text-xs text-(--muted)">
         <span className="font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-          {x.paidByOrg ? "Requisition (org-funded)" : "Reimbursement (self-paid)"}
+          {x.paidByOrg ? t("Requisition (org-funded)") : t("Reimbursement (self-paid)")}
         </span>
-        {x.vendor && <span>Paid to: <span className="text-(--text) font-medium">{x.vendor}</span></span>}
-        {x.incurredAt && <span>Incurred: {fmtDate(x.incurredAt)}</span>}
+        {x.vendor && <span>{t("Paid to:")} <span className="text-(--text) font-medium">{x.vendor}</span></span>}
+        {x.incurredAt && <span>{t("Incurred:")} {fmtDate(x.incurredAt)}</span>}
         {x.receiptUrl && (
-          <a href={x.receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 receipt</a>
+          <a href={x.receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 {t("receipt")}</a>
         )}
       </div>
 
       {(x.hrVerification || x.directorApproval || x.payment) && (
         <div className="rounded-xl border p-3 space-y-1 text-xs" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-          {x.hrVerification && <Step label="Verified" decision={x.hrVerification} />}
-          {x.directorApproval && <Step label="Director approved" decision={x.directorApproval} />}
-          {x.payment && <Step label="Paid" decision={x.payment} />}
+          {x.hrVerification && <Step label={t("Verified")} decision={x.hrVerification} />}
+          {x.directorApproval && <Step label={t("Director approved")} decision={x.directorApproval} />}
+          {x.payment && <Step label={t("Paid")} decision={x.payment} />}
         </div>
       )}
 
@@ -385,10 +389,10 @@ function ExpenseCard({ expense: x, role, onChanged }: {
         <div className="rounded-xl p-3 text-xs"
           style={{ background: "var(--error-bg)", border: "1px solid color-mix(in srgb, var(--error) 25%, transparent)" }}>
           <p className="font-semibold text-(--error-text)">
-            Rejected at {x.rejection.stage === "hr" ? "verification" : "director"} stage
-            {x.rejection.by?.name ? ` by ${x.rejection.by.name}` : ""}
+            {x.rejection.stage === "hr" ? t("Rejected at verification stage") : t("Rejected at director stage")}
+            {x.rejection.by?.name ? ` ${t("by")} ${x.rejection.by.name}` : ""}
           </p>
-          {x.rejection.notes && <p className="text-(--text) mt-0.5">Reason: {x.rejection.notes}</p>}
+          {x.rejection.notes && <p className="text-(--text) mt-0.5">{t("Reason:")} {x.rejection.notes}</p>}
         </div>
       )}
 
@@ -396,35 +400,35 @@ function ExpenseCard({ expense: x, role, onChanged }: {
         rejecting ? (
           <form onSubmit={(e) => { e.preventDefault(); patch({ action: "reject", notes: reason }); }}
             className="rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-            <p className="text-xs font-semibold text-(--text)">Reason</p>
+            <p className="text-xs font-semibold text-(--text)">{t("Reason")}</p>
             <textarea value={reason} onChange={e => setReason(e.target.value)} required minLength={5} rows={2}
               className="w-full px-3 py-1.5 rounded-lg border text-sm resize-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
             <div className="flex items-center gap-2">
               <button type="submit" disabled={busy || !reason.trim()}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
-                style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>Reject</button>
+                style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Reject")}</button>
               <button type="button" onClick={() => { setRejecting(false); setReason(""); }}
-                className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+                className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
             </div>
           </form>
         ) : (
           <div className="space-y-2">
             <input value={notes} onChange={e => setNotes(e.target.value)} maxLength={300}
-              placeholder="Optional notes for this approval"
+              placeholder={t("Optional notes for this approval")}
               className="w-full px-3 py-1.5 rounded-lg border text-xs"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={() => patch({ action, notes })} disabled={busy}
                 className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                 style={{ background: "var(--success)", color: "#fff" }}>
-                {action === "hr_verify" ? "✓ Verify" : action === "director_approve" ? "✓ Director Approve" : "✓ Mark Paid"}
+                {action === "hr_verify" ? `✓ ${t("Verify")}` : action === "director_approve" ? `✓ ${t("Director Approve")}` : `✓ ${t("Mark Paid")}`}
               </button>
               {canReject && (
                 <button onClick={() => setRejecting(true)} disabled={busy}
                   className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
                   style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
-                  Reject
+                  {t("Reject")}
                 </button>
               )}
             </div>

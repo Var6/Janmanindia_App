@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Tab = "file" | "url";
 
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) {
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("file");
   const [uploading, setUploading] = useState(false);
@@ -47,8 +49,8 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
     const file = fileRef.current?.files?.[0];
     const label = String(fd.get("label") ?? "").trim();
     const category = String(fd.get("category") ?? "general");
-    if (!file) { setError("Please choose a file."); return; }
-    if (!label) { setError("Label is required."); return; }
+    if (!file) { setError(t("Please choose a file.")); return; }
+    if (!label) { setError(t("Label is required.")); return; }
 
     setUploading(true);
     try {
@@ -56,7 +58,7 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
       upForm.append("file", file);
       const up = await fetch("/api/upload", { method: "POST", body: upForm });
       const upData = await up.json();
-      if (!up.ok) { setError(upData.error ?? "Upload failed."); return; }
+      if (!up.ok) { setError(upData.error ?? t("Upload failed.")); return; }
 
       const attach = await fetch(`/api/cases/${caseId}`, {
         method: "PATCH",
@@ -64,9 +66,9 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
         body: JSON.stringify({ addDocument: { label, url: upData.url, category } }),
       });
       const attachData = await attach.json();
-      if (!attach.ok) { setError(attachData.error ?? "Failed to attach."); return; }
+      if (!attach.ok) { setError(attachData.error ?? t("Failed to attach.")); return; }
 
-      setSuccess("Document attached.");
+      setSuccess(t("Document attached."));
       (e.target as HTMLFormElement).reset();
       onUploaded();
       setTimeout(() => setSuccess(""), 3000);
@@ -80,9 +82,9 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
     setError(""); setSuccess("");
     const url = urlValue.trim();
     const label = urlLabel.trim();
-    if (!url) { setError("Paste a URL."); return; }
-    if (!label) { setError("Label is required."); return; }
-    try { new URL(url); } catch { setError("That doesn't look like a valid URL."); return; }
+    if (!url) { setError(t("Paste a URL.")); return; }
+    if (!label) { setError(t("Label is required.")); return; }
+    try { new URL(url); } catch { setError(t("That doesn't look like a valid URL.")); return; }
 
     setUploading(true);
     try {
@@ -92,8 +94,8 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
         body: JSON.stringify({ addDocument: { label, url, category: urlCategory } }),
       });
       const attachData = await attach.json();
-      if (!attach.ok) { setError(attachData.error ?? "Failed to attach."); return; }
-      setSuccess("Document linked.");
+      if (!attach.ok) { setError(attachData.error ?? t("Failed to attach.")); return; }
+      setSuccess(t("Document linked."));
       setUrlValue(""); setUrlLabel(""); setUrlCategory("general");
       onUploaded();
       setTimeout(() => setSuccess(""), 3000);
@@ -106,18 +108,18 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
     <div className="rounded-2xl border p-4 space-y-3"
       style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-(--text)">Attach Document</p>
+        <p className="text-sm font-bold text-(--text)">{t("Attach Document")}</p>
         {/* Tab toggle */}
         <div className="flex gap-1 p-0.5 rounded-lg border text-xs"
           style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-          {(["file", "url"] as Tab[]).map(t => (
-            <button key={t} type="button" onClick={() => { setTab(t); setError(""); setSuccess(""); }}
+          {(["file", "url"] as Tab[]).map(tv => (
+            <button key={tv} type="button" onClick={() => { setTab(tv); setError(""); setSuccess(""); }}
               className="px-2.5 py-1 rounded-md font-semibold transition-colors"
               style={{
-                background: tab === t ? "var(--accent)" : "transparent",
-                color: tab === t ? "var(--accent-contrast)" : "var(--muted)",
+                background: tab === tv ? "var(--accent)" : "transparent",
+                color: tab === tv ? "var(--accent-contrast)" : "var(--muted)",
               }}>
-              {t === "file" ? "Upload file" : "Paste URL (S3 / external)"}
+              {tv === "file" ? t("Upload file") : t("Paste URL (S3 / external)")}
             </button>
           ))}
         </div>
@@ -129,13 +131,13 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
       {tab === "file" ? (
         <form onSubmit={handleFileSubmit} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input name="label" required maxLength={200} placeholder="Label (e.g. Chargesheet copy, Final order)"
+            <input name="label" required maxLength={200} placeholder={t("Label (e.g. Chargesheet copy, Final order)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <select name="category" defaultValue="general"
               className="px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-              {cats.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {cats.map(c => <option key={c.value} value={c.value}>{t(c.label)}</option>)}
             </select>
           </div>
           <input ref={fileRef} type="file" name="file"
@@ -144,34 +146,34 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
           <button type="submit" disabled={uploading}
             className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {uploading ? "Uploading…" : "Attach to Case"}
+            {uploading ? t("Uploading…") : t("Attach to Case")}
           </button>
-          <p className="text-[11px] text-(--muted)">PDF / Word / Excel / image · up to 15 MB · choosing a milestone category marks that step as filed.</p>
+          <p className="text-[11px] text-(--muted)">{t("PDF / Word / Excel / image · up to 15 MB · choosing a milestone category marks that step as filed.")}</p>
         </form>
       ) : (
         <form onSubmit={handleUrlSubmit} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input value={urlLabel} onChange={e => setUrlLabel(e.target.value)} required maxLength={200}
-              placeholder="Label (e.g. Order dated 12 Apr)"
+              placeholder={t("Label (e.g. Order dated 12 Apr)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <select value={urlCategory} onChange={e => setUrlCategory(e.target.value)}
               className="px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-              {cats.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {cats.map(c => <option key={c.value} value={c.value}>{t(c.label)}</option>)}
             </select>
           </div>
           <input value={urlValue} onChange={e => setUrlValue(e.target.value)} required
-            placeholder="https://s3.amazonaws.com/… or any public document URL"
+            placeholder={t("https://s3.amazonaws.com/… or any public document URL")}
             type="url"
             className="w-full px-3 py-2 rounded-lg border text-sm"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           <button type="submit" disabled={uploading}
             className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {uploading ? "Linking…" : "Link to Case"}
+            {uploading ? t("Linking…") : t("Link to Case")}
           </button>
-          <p className="text-[11px] text-(--muted)">Paste any publicly accessible S3 or external document URL — it will be stored as a case document.</p>
+          <p className="text-[11px] text-(--muted)">{t("Paste any publicly accessible S3 or external document URL — it will be stored as a case document.")}</p>
         </form>
       )}
     </div>

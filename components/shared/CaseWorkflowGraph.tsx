@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 // Layout is now centred: the SVG sits in the middle of the row, with
@@ -430,6 +431,7 @@ interface LabelProps {
   busyNodeId?: string | null;
 }
 function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelProps) {
+  const t = useT();
   const wantedCol: 0 | 1 = side === "main" ? 0 : 1;
   const visible = nodes.filter(n => n.col === wantedCol);
   const isAlt = side === "alt";
@@ -459,13 +461,13 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
               {isBranch && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning, #92400e)" }}>
-                  alt path
+                  {t("alt path")}
                 </span>
               )}
               {n.terminal && n.status === "done" && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "color-mix(in srgb, var(--success) 15%, transparent)", color: "#166534" }}>
-                  closed
+                  {t("closed")}
                 </span>
               )}
               {clickable && (
@@ -474,7 +476,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                     background: "color-mix(in srgb, var(--accent) 12%, transparent)",
                     color: "var(--accent)",
                   }}>
-                  {busy ? "…" : n.status === "done" ? "click to undo" : "click to mark done"}
+                  {busy ? "…" : n.status === "done" ? t("click to undo") : t("click to mark done")}
                 </span>
               )}
             </div>
@@ -532,7 +534,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                 borderRadius: 8,
               }}
               className="hover:bg-(--bg-secondary) transition-colors"
-              title={n.status === "done" ? "Click to undo this step" : "Click to mark this step done"}>
+              title={n.status === "done" ? t("Click to undo this step") : t("Click to mark this step done")}>
               {labelBody}
             </button>
           );
@@ -549,10 +551,11 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
 
 // ── Legend ──────────────────────────────────────────────────────────────────
 function Legend() {
+  const t = useT();
   const items = [
-    { color: "#22c55e", label: "Completed",   fill: true  },
-    { color: "#6366f1", label: "Current step", fill: true  },
-    { color: "#9ca3af", label: "Pending",      fill: false },
+    { color: "#22c55e", label: t("Completed"),   fill: true  },
+    { color: "#6366f1", label: t("Current step"), fill: true  },
+    { color: "#9ca3af", label: t("Pending"),      fill: false },
   ];
   return (
     <div className="flex items-center gap-4 flex-wrap px-1 pb-1">
@@ -571,7 +574,7 @@ function Legend() {
       ))}
       <div className="flex items-center gap-1.5">
         <svg width={20} height={6}><line x1={0} y1={3} x2={20} y2={3} stroke="#9ca3af" strokeWidth={1.5} strokeDasharray="4 3" /></svg>
-        <span className="text-xs" style={{ color: "var(--muted)" }}>Alt branch</span>
+        <span className="text-xs" style={{ color: "var(--muted)" }}>{t("Alt branch")}</span>
       </div>
     </div>
   );
@@ -598,6 +601,7 @@ interface Props {
 }
 
 export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt, canEdit, caseId, onChanged, pinnedNotes }: Props) {
+  const t = useT();
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
@@ -631,7 +635,7 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        alert((d as { error?: string }).error ?? "Failed to update stage.");
+        alert((d as { error?: string }).error ?? t("Failed to update stage."));
         return;
       }
       await onChanged?.();
@@ -657,11 +661,11 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         <div>
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
             {path === "criminal"
-              ? (firFiled ? "Criminal — FIR Workflow" : "Criminal — Complaint Workflow")
-              : "High Court Workflow"}
+              ? (firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))
+              : t("High Court Workflow")}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-            {done} of {total} steps completed
+            {done} {t("of")} {total} {t("steps completed")}
           </p>
         </div>
         {/* Mini progress bar */}
@@ -700,7 +704,7 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         {pinnedNotes && pinnedNotes.length > 0 && (
           <aside className="shrink-0 w-56 space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
-              📌 Pinned notes
+              📌 {t("Pinned notes")}
             </p>
             {pinnedNotes.map((n, i) => (
               <div key={n._id}

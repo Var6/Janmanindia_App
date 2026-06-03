@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/i18n/LanguageProvider";
+
 interface Entry {
   _id?: string;
   action: string;
@@ -17,8 +19,9 @@ interface Props {
  *  entry sits on top; each row collapses an action into one line so a
  *  reader can scan the whole life of a case quickly. */
 export default function CaseAuditLog({ entries }: Props) {
+  const t = useT();
   if (!entries.length) {
-    return <p className="text-sm text-(--muted) px-1">No activity logged yet.</p>;
+    return <p className="text-sm text-(--muted) px-1">{t("No activity logged yet.")}</p>;
   }
   // Reverse-chronological so the most recent action is on top.
   const sorted = [...entries].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -39,7 +42,7 @@ export default function CaseAuditLog({ entries }: Props) {
             <div className="min-w-0 flex-1">
               <p className="text-sm text-(--text) leading-snug">{e.summary}</p>
               <p className="text-[11px] text-(--muted) mt-0.5">
-                <span className="font-semibold">{author?.name ?? "Unknown"}</span>
+                <span className="font-semibold">{author?.name ?? t("Unknown")}</span>
                 {role && <span> · {role}</span>}
                 <span> · {dateStr} {timeStr}</span>
               </p>
