@@ -1923,6 +1923,150 @@ function VerdictEditor({ caseId, verdict, verdictDate, canEdit, onChanged }: {
   );
 }
 
+/* ── Assign / change the community member or social worker ──────────────── */
+/** Single-select people picker rendered as a party tile. Lets an editor
+ *  assign, change, or clear the beneficiary community member or the social
+ *  worker after the case is registered (both are often created later). */
+function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href, onChanged }: {
+  caseId: string;
+  label: string;
+  field: "community" | "socialWorker";
+  role: "community" | "socialworker";
+  person?: { _id: string; name: string; email: string };
+  canEdit: boolean;
+  href?: string;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Array<{ _id: string; name: string; email: string }>>([]);
+  const [searching, setSearching] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (!editing || query.trim().length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&role=${role}`);
+        const d = await r.json();
+        setResults(d.users ?? []);
+      } catch { setResults([]); }
+      finally { setSearching(false); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query, editing, role]);
+
+  async function assign(userId: string | null) {
+    setBusy(true); setErr("");
+    try {
+      const r = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: userId }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setErr((d as { error?: string }).error ?? "Failed to update.");
+        return;
+      }
+      setEditing(false); setQuery(""); setResults([]);
+      onChanged();
+    } catch {
+      setErr("Network error.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const wrapperStyle = { background: "var(--bg)", borderColor: "var(--border)" };
+
+  if (canEdit && editing) {
+    return (
+      <div className="rounded-xl p-3 border" style={wrapperStyle}>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+          <button type="button" onClick={() => { setEditing(false); setQuery(""); setResults([]); setErr(""); }}
+            className="text-[10px] text-(--muted) hover:text-(--text)">Cancel</button>
+        </div>
+        {err && <p className="text-[11px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
+        <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+          placeholder={`Search ${label.toLowerCase()} by name or email…`}
+          className="w-full px-2.5 py-1.5 rounded-lg border text-sm focus:outline-none"
+          style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+        {searching && <p className="text-[10px] text-(--muted) mt-1">Searching…</p>}
+        {results.length > 0 && (
+          <div className="mt-1 rounded-lg border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+            {results.map(u => (
+              <button key={u._id} type="button" disabled={busy} onClick={() => assign(u._id)}
+                className="w-full text-left px-2.5 py-1.5 text-sm hover:bg-(--bg-secondary)"
+                style={{ borderBottom: "1px solid var(--border)" }}>
+                <span className="font-medium text-(--text)">{u.name}</span>
+                <span className="text-[11px] text-(--muted) ml-1.5">{u.email}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {query.trim().length >= 2 && !searching && results.length === 0 && (
+          <p className="text-[10px] text-(--muted) mt-1">No active {label.toLowerCase()} matches &quot;{query}&quot;.</p>
+        )}
+      </div>
+    );
+  }
+
+  const inner = person
+    ? <>
+        <p className="text-sm font-semibold text-(--text)">{person.name}</p>
+        <p className="text-xs text-(--muted)">{person.email}</p>
+      </>
+    : <p className="text-xs text-(--muted) italic">Not assigned</p>;
+
+  // Read-only view for viewers who can't edit — preserve the clickable link
+  // to the community-member page when a href is supplied (social-worker UI).
+  if (!canEdit) {
+    if (href && person) {
+      return (
+        <Link href={href} className="rounded-xl p-3 border transition-colors hover:border-(--accent)" style={wrapperStyle}>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{label} →</p>
+          {inner}
+        </Link>
+      );
+    }
+    return (
+      <div className="rounded-xl p-3 border" style={wrapperStyle}>
+        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{label}</p>
+        {inner}
+      </div>
+    );
+  }
+
+  // Editor view — tile with inline Assign / Change / Remove controls.
+  return (
+    <div className="rounded-xl p-3 border" style={wrapperStyle}>
+      <div className="flex items-center justify-between mb-1 gap-2">
+        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+        <span className="flex items-center gap-2 shrink-0">
+          <button type="button" onClick={() => setEditing(true)}
+            className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
+            {person ? "Change" : "Assign"}
+          </button>
+          {person && (
+            <button type="button" disabled={busy} onClick={() => assign(null)}
+              className="text-[10px] hover:underline disabled:opacity-50" style={{ color: "var(--error)" }}>
+              Remove
+            </button>
+          )}
+        </span>
+      </div>
+      {err && <p className="text-[11px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
+      {href && person ? (
+        <Link href={href} className="block hover:opacity-80">{inner}</Link>
+      ) : inner}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -2077,34 +2221,26 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             — without leaving the case context. Other roles see the same tile
             as plain text since they don't have access to that page. */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { role: "Community",          person: c.community,         href: canManageCarePlan && c.community?._id ? `/socialworker/community/${c.community._id}` : undefined },
-            { role: "Litigation Member", person: c.litigationMember,   href: undefined },
-            { role: "Social Worker",    person: c.socialWorker,        href: undefined },
-          ].map(({ role, person, href }) => {
-            const inner = person
+          {/* Community + Social Worker can be assigned (or changed / cleared)
+              after registration — both are often created/linked later. The
+              lead litigation member is managed in the Litigation Team panel. */}
+          <PersonAssignEditor
+            caseId={c._id} label="Community" field="community" role="community"
+            person={c.community} canEdit={canEdit}
+            href={canManageCarePlan && c.community?._id ? `/socialworker/community/${c.community._id}` : undefined}
+            onChanged={fetchCase} />
+          <div className="rounded-xl p-3 border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Litigation Member</p>
+            {c.litigationMember
               ? <>
-                  <p className="text-sm font-semibold text-(--text)">{person.name}</p>
-                  <p className="text-xs text-(--muted)">{person.email}</p>
+                  <p className="text-sm font-semibold text-(--text)">{c.litigationMember.name}</p>
+                  <p className="text-xs text-(--muted)">{c.litigationMember.email}</p>
                 </>
-              : <p className="text-xs text-(--muted) italic">Not assigned</p>;
-            const wrapperStyle = { background: "var(--bg)", borderColor: "var(--border)" };
-            if (href && person) {
-              return (
-                <Link key={role} href={href} className="rounded-xl p-3 border transition-colors hover:border-(--accent)"
-                  style={wrapperStyle}>
-                  <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{role} →</p>
-                  {inner}
-                </Link>
-              );
-            }
-            return (
-              <div key={role} className="rounded-xl p-3 border" style={wrapperStyle}>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{role}</p>
-                {inner}
-              </div>
-            );
-          })}
+              : <p className="text-xs text-(--muted) italic">Not assigned</p>}
+          </div>
+          <PersonAssignEditor
+            caseId={c._id} label="Social Worker" field="socialWorker" role="socialworker"
+            person={c.socialWorker} canEdit={canEdit} onChanged={fetchCase} />
         </div>
 
         {/* Hearing date editor (litigation only) */}

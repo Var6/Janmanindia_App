@@ -228,6 +228,30 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("case_unshared", `Removed ${target?.name ?? "lawyer"}`);
     }
 
+    /* (Re)assign the beneficiary community member and/or the social worker.
+       Either can be set AFTER registration — the community member or social
+       worker is often created/linked later. Pass a user id to assign, or
+       null / "" to clear. The target must be an active user with the matching
+       role. Handled outside `allowedFields` so the role is always validated. */
+    for (const [field, wantRole, label] of [
+      ["community", "community", "community member"],
+      ["socialWorker", "socialworker", "social worker"],
+    ] as const) {
+      if (body[field] === undefined) continue;
+      const userId = String(body[field] ?? "").trim();
+      if (!userId) {
+        update[field] = null;
+        logAudit("metadata_updated", `Unassigned ${label}`);
+        continue;
+      }
+      const target = await User.findById(userId).select("role isActive name").lean();
+      if (!target || !target.isActive || target.role !== wantRole) {
+        return NextResponse.json({ error: `Target must be an active ${label}.` }, { status: 400 });
+      }
+      update[field] = userId;
+      logAudit("metadata_updated", `Assigned ${label}: ${target.name}`);
+    }
+
     /* List of Dates entry — append a chronological note to the HC matter's
        timeline. Each entry is a date + label (+ optional doc). Editors:
        litigation members on the case (already gated above). */
