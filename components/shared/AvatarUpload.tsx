@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 function initials(name: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
@@ -20,13 +21,14 @@ export default function AvatarUpload({ currentUrl, name, size = 96, onUploaded, 
   const [err, setErr]           = useState("");
   const [dragging, setDragging] = useState(false);
   const fileRef                 = useRef<HTMLInputElement>(null);
+  const t = useT();
 
   const upload = useCallback(async (file: File) => {
     const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
     const MAX     = 5 * 1024 * 1024;
 
-    if (!ALLOWED.includes(file.type)) { setErr("Only JPG, PNG or WebP images allowed."); return; }
-    if (file.size > MAX)              { setErr("Image must be under 5 MB."); return; }
+    if (!ALLOWED.includes(file.type)) { setErr(t("Only JPG, PNG or WebP images allowed.")); return; }
+    if (file.size > MAX)              { setErr(t("Image must be under 5 MB.")); return; }
 
     setErr("");
     // Instant local preview
@@ -40,16 +42,16 @@ export default function AvatarUpload({ currentUrl, name, size = 96, onUploaded, 
       form.append("file", file);
       const res  = await fetch("/api/upload", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) { setErr(data.error ?? "Upload failed."); setPreview(currentUrl); return; }
+      if (!res.ok) { setErr(data.error ?? t("Upload failed.")); setPreview(currentUrl); return; }
       setPreview(data.url);
       onUploaded(data.url);
     } catch {
-      setErr("Network error.");
+      setErr(t("Network error."));
       setPreview(currentUrl);
     } finally {
       setUploading(false);
     }
-  }, [currentUrl, onUploaded]);
+  }, [currentUrl, onUploaded, t]);
 
   const handleFile = (file: File | null | undefined) => { if (file) upload(file); };
 
@@ -110,7 +112,7 @@ export default function AvatarUpload({ currentUrl, name, size = 96, onUploaded, 
             <svg viewBox="0 0 20 20" fill="white" style={{ width: 22, height: 22 }}>
               <path d="M7 3a2 2 0 00-1.732 1H4a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.268A2 2 0 0013 3H7zm3 3a4 4 0 110 8 4 4 0 010-8zm0 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"/>
             </svg>
-            <span style={{ color: "white", fontSize: 10, fontWeight: 600 }}>Upload</span>
+            <span style={{ color: "white", fontSize: 10, fontWeight: 600 }}>{t("Upload")}</span>
           </div>
         )}
 
@@ -143,7 +145,7 @@ export default function AvatarUpload({ currentUrl, name, size = 96, onUploaded, 
             <path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5"/>
             <path d="M3 14v1a2 2 0 002 2h10a2 2 0 002-2v-1"/>
           </svg>
-          {uploading ? "Uploading…" : preview ? "Change photo" : "Upload photo"}
+          {uploading ? t("Uploading…") : preview ? t("Change photo") : t("Upload photo")}
         </button>
 
         {preview && onRemoved && (
@@ -153,13 +155,13 @@ export default function AvatarUpload({ currentUrl, name, size = 96, onUploaded, 
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ width: 15, height: 15 }}>
               <path d="M6 6l8 8M14 6l-8 8"/>
             </svg>
-            Remove photo
+            {t("Remove photo")}
           </button>
         )}
 
         <p className="text-xs" style={{ color: "var(--muted)" }}>
-          JPG, PNG or WebP · max 5 MB<br/>
-          Click or drag &amp; drop onto the circle
+          {t("JPG, PNG or WebP · max 5 MB")}<br/>
+          {t("Click or drag & drop onto the circle")}
         </p>
 
         {err && (

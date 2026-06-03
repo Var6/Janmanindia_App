@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Field, { Input, Textarea, Select } from "@/components/ui/Field";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type FoundUser = { _id: string; name: string; email: string; role: string };
 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState("socialworker");
   const [q, setQ] = useState("");
@@ -112,9 +114,9 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!picked) { setError("Choose someone to meet first."); return; }
-    if (!proposedDate) { setError("Pick a date and time."); return; }
-    if (reason.trim().length < 5) { setError("Add a brief reason (5+ characters)."); return; }
+    if (!picked) { setError(t("Choose someone to meet first.")); return; }
+    if (!proposedDate) { setError(t("Pick a date and time.")); return; }
+    if (reason.trim().length < 5) { setError(t("Add a brief reason (5+ characters).")); return; }
     setBusy(true); setError(""); setSuccess(""); setSuggestions([]); setConflictNames([]);
     try {
       const start = new Date(proposedDate);
@@ -135,12 +137,12 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
         // Calendar conflict returns slot suggestions — surface those so the
         // user can pick a free time without leaving the form.
         if (res.status === 409 && data?.code === "calendar_conflict" && Array.isArray(data.suggestions)) {
-          setError(data.error ?? "Calendar clash — try another slot.");
+          setError(data.error ?? t("Calendar clash — try another slot."));
           setSuggestions(data.suggestions as string[]);
           setConflictNames(Array.isArray(data.conflicts) ? data.conflicts.map((c: { name: string }) => c.name) : []);
           return;
         }
-        setError(data.error ?? "Booking failed.");
+        setError(data.error ?? t("Booking failed."));
         return;
       }
       const extra = coAttendees.length > 0
@@ -160,7 +162,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
       <button onClick={() => { setOpen(true); reset(); }}
         className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent)" }}>
-        + Book Appointment
+        + {t("Book Appointment")}
       </button>
     );
   }
@@ -170,14 +172,14 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
       style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-(--text)">Book an appointment</h3>
+          <h3 className="text-base font-bold text-(--text)">{t("Book an appointment")}</h3>
           <p className="text-xs text-(--muted) mt-0.5">
-            Find a teammate, propose a time, and we'll check both calendars before sending the request.
+            {t("Find a teammate, propose a time, and we'll check both calendars before sending the request.")}
           </p>
         </div>
         <button type="button" onClick={() => { setOpen(false); reset(); }}
           className="text-xs px-2.5 py-1 rounded-lg shrink-0"
-          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
       </div>
 
       {error && suggestions.length === 0 && (
@@ -199,8 +201,8 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
             <div className="space-y-0.5">
               <p className="font-semibold">{conflictNames.length > 0
                 ? `${conflictNames.join(", ")} ${conflictNames.length === 1 ? "is" : "are"} busy at that time.`
-                : "That slot doesn't work."}</p>
-              <p>Pick one of these free slots instead — they work for everyone in this meeting.</p>
+                : t("That slot doesn't work.")}</p>
+              <p>{t("Pick one of these free slots instead — they work for everyone in this meeting.")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -215,7 +217,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
           <button type="button"
             onClick={() => { setSuggestions([]); setConflictNames([]); setError(""); }}
             className="text-[11px] underline" style={{ color: "var(--warning-text)" }}>
-            Dismiss
+            {t("Dismiss")}
           </button>
         </div>
       )}
@@ -228,18 +230,18 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Who do you want to meet?" required htmlFor="appt-role"
-          hint="Pick the role first — we'll only search inside that role.">
+        <Field label={t("Who do you want to meet?")} required htmlFor="appt-role"
+          hint={t("Pick the role first — we'll only search inside that role.")}>
           <Select id="appt-role" value={role}
             onChange={e => { setRole(e.target.value); setPicked(null); }}>
-            {visible.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {visible.map(r => <option key={r.value} value={r.value}>{t(r.label)}</option>)}
           </Select>
         </Field>
-        <Field label="Search by name or email" htmlFor="appt-q"
+        <Field label={t("Search by name or email")} htmlFor="appt-q"
           example="Anita Kumar  or  anita@janmanindia.org">
           <Input id="appt-q" value={q}
             onChange={e => { setQ(e.target.value); setPicked(null); }}
-            placeholder="Type at least 2 letters" />
+            placeholder={t("Type at least 2 letters")} />
         </Field>
       </div>
 
@@ -261,26 +263,26 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
         <div className="rounded-xl border p-3.5 flex items-center justify-between gap-3"
           style={{ borderColor: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)" }}>
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-(--accent) font-semibold">Meeting with</p>
+            <p className="text-xs uppercase tracking-wide text-(--accent) font-semibold">{t("Meeting with")}</p>
             <p className="text-sm font-semibold text-(--text) mt-0.5">{picked.name}</p>
             <p className="text-xs text-(--muted)">{picked.email} · {picked.role}</p>
           </div>
           <button type="button" onClick={() => { setPicked(null); setQ(""); }}
             className="text-xs px-2.5 py-1 rounded-lg shrink-0"
-            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Change</button>
+            style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Change")}</button>
         </div>
       )}
 
       {/* Optional co-attendees — collapsed by default so the form stays simple
           for 1:1 meetings; expand to make it a group meeting. */}
-      <Field label="Also invite"
-        hint="Add anyone else who should be on this call. Each person gets a Google Calendar invite.">
+      <Field label={t("Also invite")}
+        hint={t("Add anyone else who should be on this call. Each person gets a Google Calendar invite.")}>
         <div className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
           <button type="button" onClick={() => setCoOpen((v) => !v)}
             className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-(--muted) hover:text-(--text) transition-colors">
             <span>
               {coAttendees.length === 0
-                ? <span className="italic">No one extra — keep it 1-on-1</span>
+                ? <span className="italic">{t("No one extra — keep it 1-on-1")}</span>
                 : <span className="font-semibold text-(--text)">{coAttendees.length} other{coAttendees.length === 1 ? "" : "s"} invited</span>}
             </span>
             <span className="opacity-60">{coOpen ? "▲" : "▼"}</span>
@@ -303,10 +305,10 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select value={coRole} onChange={(e) => setCoRole(e.target.value)}>
-                  {visible.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  {visible.map((r) => <option key={r.value} value={r.value}>{t(r.label)}</option>)}
                 </Select>
                 <Input value={coQ} onChange={(e) => setCoQ(e.target.value)}
-                  placeholder="Search by name or email" />
+                  placeholder={t("Search by name or email")} />
               </div>
               {coResults.length > 0 && (
                 <ul className="rounded-xl border overflow-hidden divide-y" style={{ borderColor: "var(--border)" }}>
@@ -330,42 +332,42 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-2">
-          <Field label="Proposed date & time" required htmlFor="appt-when"
-            hint="Pick a future slot. We'll auto-check both calendars before sending."
+          <Field label={t("Proposed date & time")} required htmlFor="appt-when"
+            hint={t("Pick a future slot. We'll auto-check both calendars before sending.")}
             example="04 Apr 2026, 14:30">
             <Input id="appt-when" type="datetime-local" required
               value={proposedDate} onChange={e => setProposedDate(e.target.value)}
               min={new Date(Date.now() + 30 * 60_000).toISOString().slice(0, 16)} />
           </Field>
         </div>
-        <Field label="Duration" htmlFor="appt-duration">
+        <Field label={t("Duration")} htmlFor="appt-duration">
           <Select id="appt-duration" value={duration} onChange={e => setDuration(Number(e.target.value))}>
-            <option value={15}>15 min</option>
-            <option value={30}>30 min</option>
-            <option value={45}>45 min</option>
-            <option value={60}>1 hour</option>
-            <option value={90}>1.5 hours</option>
+            <option value={15}>{t("15 min")}</option>
+            <option value={30}>{t("30 min")}</option>
+            <option value={45}>{t("45 min")}</option>
+            <option value={60}>{t("1 hour")}</option>
+            <option value={90}>{t("1.5 hours")}</option>
           </Select>
         </Field>
       </div>
 
-      <Field label="Reason" required htmlFor="appt-reason"
-        hint="A short note so they know what the meeting is about."
+      <Field label={t("Reason")} required htmlFor="appt-reason"
+        hint={t("A short note so they know what the meeting is about.")}
         example="Discuss FIR draft for the SC/ST Act case (community member: Sita Devi)">
         <Textarea id="appt-reason" value={reason} onChange={e => setReason(e.target.value)}
           required rows={3}
-          placeholder="What's this meeting about?" />
+          placeholder={t("What's this meeting about?")} />
       </Field>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t"
         style={{ borderColor: "var(--border)" }}>
         <p className="text-[11px] text-(--muted)">
-          We'll automatically check both calendars are free before sending.
+          {t("We'll automatically check both calendars are free before sending.")}
         </p>
         <button type="submit" disabled={busy}
           className="px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:brightness-110 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 14px -4px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
-          {busy ? "Sending…" : "Send request"}
+          {busy ? t("Sending…") : t("Send request")}
         </button>
       </div>
     </form>

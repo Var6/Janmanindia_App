@@ -7,6 +7,7 @@ import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 import { localInputToISO } from "@/lib/datetime";
 import MentionInput, { MentionText, type MentionMember } from "./MentionInput";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface Todo {
   _id: string;
@@ -69,6 +70,7 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
 const ASSIGNABLE_ROLES = ["director", "superadmin", "administrator", "hr", "litigation"];
 
 export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
+  const t = useT();
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine" | "created">("all");
@@ -158,7 +160,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
     });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed to create");
+      alert(d.error ?? t("Failed to create"));
       return;
     }
     form.reset();
@@ -185,20 +187,20 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Failed");
+        alert(d.error ?? t("Failed"));
       }
       await load();
     } finally { setBusyId(null); }
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this activity?")) return;
+    if (!confirm(t("Delete this activity?"))) return;
     setBusyId(id);
     try {
       const res = await fetch(`/api/activities/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Failed");
+        alert(d.error ?? t("Failed"));
       }
       await load();
     } finally { setBusyId(null); }
@@ -233,9 +235,9 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       {!formOpen ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 sm:p-5 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-(--text)">Plan an activity</p>
+            <p className="text-sm font-semibold text-(--text)">{t("Plan an activity")}</p>
             <p className="text-xs text-(--muted) mt-0.5">
-              Assign work to yourself, a teammate, or a group — with optional Google Calendar scheduling.
+              {t("Assign work to yourself, a teammate, or a group — with optional Google Calendar scheduling.")}
             </p>
           </div>
           <button type="button" onClick={() => setFormOpen(true)}
@@ -245,7 +247,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
               <line x1="3" y1="8" x2="13" y2="8"/>
               <line x1="8" y1="3" x2="8" y2="13"/>
             </svg>
-            New activity
+            {t("New activity")}
           </button>
         </div>
       ) : (
@@ -256,11 +258,11 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
           style={{ boxShadow: "var(--shadow-sm)" }}>
           <header className="flex items-center justify-between gap-3 px-5 py-3 border-b"
             style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-semibold text-(--text) text-sm">New activity</h2>
+            <h2 className="font-semibold text-(--text) text-sm">{t("New activity")}</h2>
             <button type="button" onClick={() => setFormOpen(false)}
               className="text-xs px-2 py-1 rounded-lg transition-colors hover:bg-(--bg-secondary)"
               style={{ color: "var(--muted)" }}>
-              Close
+              {t("Close")}
             </button>
           </header>
 
@@ -268,31 +270,31 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
             {/* Title (wider) + Priority (narrow) on one row */}
             <div className="flex gap-2">
               <input name="title" required maxLength={200}
-                placeholder="What needs doing?"
+                placeholder={t("What needs doing?")}
                 className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm placeholder:text-(--muted)/60 focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
-              <select name="priority" defaultValue="medium" title="Priority"
+              <select name="priority" defaultValue="medium" title={t("Priority")}
                 className="w-28 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
+                <option value="low">{t("Low")}</option>
+                <option value="medium">{t("Medium")}</option>
+                <option value="high">{t("High")}</option>
               </select>
             </div>
 
             {/* Category + Primary assignee on one row */}
             <div className="flex gap-2">
-              <select name="category" defaultValue="other" title="Category"
+              <select name="category" defaultValue="other" title={t("Category")}
                 className="w-44 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all">
-                {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+                {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{t(c.l)}</option>)}
               </select>
               {canAssign ? (
-                <select value={primaryAssignee} title="Assign to"
+                <select value={primaryAssignee} title={t("Assign to")}
                   onChange={(e) => {
                     const v = e.target.value;
                     setPrimaryAssignee(v);
                     if (v) setCoAssignees((prev) => prev.filter((id) => id !== v));
                   }}
                   className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all">
-                  <option value="">Assign to: myself</option>
+                  <option value="">{t("Assign to: myself")}</option>
                   {staff.map((u) => (
                     <option key={u._id} value={u._id}>
                       {u.name} · {u.role}
@@ -300,14 +302,14 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   ))}
                 </select>
               ) : (
-                <input disabled placeholder="Assigned to me"
+                <input disabled placeholder={t("Assigned to me")}
                   className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-(--border) bg-(--bg-secondary) text-(--muted) text-sm" />
               )}
             </div>
 
             {/* Description — kept compact at 2 rows */}
             <textarea name="description" rows={2}
-              placeholder="Details (optional)"
+              placeholder={t("Details (optional)")}
               className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm resize-none placeholder:text-(--muted)/60 focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
 
             {/* Co-assignees — collapsible inline strip */}
@@ -318,8 +320,8 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   <span className="flex items-center gap-1.5">
                     <span className="text-(--muted)">+</span>
                     {coAssignees.length === 0
-                      ? <span>Co-assignees</span>
-                      : <span className="font-semibold text-(--text)">{coAssignees.length} co-assignee{coAssignees.length === 1 ? "" : "s"}</span>}
+                      ? <span>{t("Co-assignees")}</span>
+                      : <span className="font-semibold text-(--text)">{coAssignees.length} {coAssignees.length === 1 ? t("co-assignee") : t("co-assignees")}</span>}
                   </span>
                   <span className="opacity-60 text-[10px]">{coOpen ? "▲" : "▼"}</span>
                 </button>
@@ -356,23 +358,23 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
               <button type="button" onClick={() => setTimeOpen(true)}
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-dashed transition-colors hover:border-(--accent) hover:text-(--accent) text-(--muted)"
                 style={{ borderColor: "var(--border)" }}>
-                <span className="text-sm">📅</span> Schedule
-                <span className="text-[10px] text-(--muted) font-normal italic">— supports multi-day, syncs to Google Calendar</span>
+                <span className="text-sm">📅</span> {t("Schedule")}
+                <span className="text-[10px] text-(--muted) font-normal italic">{t("— supports multi-day, syncs to Google Calendar")}</span>
               </button>
             ) : (
               <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">Schedule</p>
+                  <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Schedule")}</p>
                   <button type="button"
                     onClick={() => { setTimeOpen(false); setStartDate(""); setStartTime(""); setEndDate(""); setEndTime(""); }}
                     className="text-xs text-(--muted) hover:text-(--error) transition-colors px-1.5 py-0.5"
-                    title="Clear schedule">
-                    Clear ×
+                    title={t("Clear schedule")}>
+                    {t("Clear ×")}
                   </button>
                 </div>
                 {/* Start row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">From</span>
+                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">{t("From")}</span>
                   <input type="date" value={startDate}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -386,24 +388,24 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   {/* w-36 (~144px) is enough for the native time picker to show
                       "12:00 AM" / "12:00 PM" without truncation. */}
                   <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
-                    title="Start time (leave blank for all-day)"
+                    title={t("Start time (leave blank for all-day)")}
                     className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
                 </div>
                 {/* End row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">To</span>
+                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">{t("To")}</span>
                   <input type="date" value={endDate}
                     min={startDate || undefined}
                     onChange={(e) => setEndDate(e.target.value)}
-                    title="End date (defaults to start date for same-day events)"
+                    title={t("End date (defaults to start date for same-day events)")}
                     className="w-44 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
                   <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
-                    title="End time (optional)"
+                    title={t("End time (optional)")}
                     className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
                 </div>
                 {endDate && startDate && endDate !== startDate && (
                   <p className="text-[10px] text-(--muted) italic">
-                    Multi-day activity — runs across {dayCount(startDate, endDate)} days.
+                    {t("Multi-day activity — runs across")} {dayCount(startDate, endDate)} {t("days.")}
                   </p>
                 )}
               </div>
@@ -414,12 +416,12 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
               <button type="button" onClick={() => setFormOpen(false)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-(--bg-secondary)"
                 style={{ color: "var(--muted)" }}>
-                Cancel
+                {t("Cancel")}
               </button>
               <button type="submit"
                 className="px-4 py-1.5 rounded-lg text-xs font-semibold text-(--accent-contrast) transition-opacity hover:brightness-110"
                 style={{ background: "var(--accent)" }}>
-                Add activity
+                {t("Add activity")}
               </button>
             </div>
           </form>
@@ -430,9 +432,9 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
           {([
-            { k: "all",     l: `All (${items.length})` },
-            { k: "mine",    l: `Assigned to me (${items.filter(isMine).length})` },
-            { k: "created", l: `Created by me (${items.filter((i) => i.createdBy?._id === currentUserId).length})` },
+            { k: "all",     l: `${t("All")} (${items.length})` },
+            { k: "mine",    l: `${t("Assigned to me")} (${items.filter(isMine).length})` },
+            { k: "created", l: `${t("Created by me")} (${items.filter((i) => i.createdBy?._id === currentUserId).length})` },
           ] as const).map((t) => (
             <button key={t.k} onClick={() => setFilter(t.k)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -450,7 +452,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 view === v ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
               }`}
               style={view === v ? { background: "var(--accent)" } : undefined}>
-              {v === "kanban" ? "🗂 Kanban" : "☰ List"}
+              {v === "kanban" ? t("🗂 Kanban") : t("☰ List")}
             </button>
           ))}
         </div>
@@ -473,7 +475,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">📅</p>
-          <p className="text-sm text-(--muted)">No activities in this view.</p>
+          <p className="text-sm text-(--muted)">{t("No activities in this view.")}</p>
         </div>
       ) : view === "kanban" ? (
         <KanbanBoard items={filtered} onStatus={(id, status) => patch(id, { status })} busyId={busyId} />
@@ -501,7 +503,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                       {overdue && (
                         <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded text-white"
                           style={{ background: "var(--error, #dc2626)" }}>
-                          Overdue
+                          {t("Overdue")}
                         </span>
                       )}
                     </div>
@@ -513,7 +515,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                         <span className="font-medium text-(--text-2)">+ {a.coAssignees.map((c) => c.name).join(", ")}</span>
                       )}
                       <span className="opacity-50">·</span>
-                      <span>by {a.createdBy?.name ?? "—"}</span>
+                      <span>{t("by")} {a.createdBy?.name ?? "—"}</span>
                       {a.dueDate && (
                         <>
                           <span className="opacity-50">·</span>
@@ -524,7 +526,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   </div>
                   <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full"
                     style={{ background: st.bg, color: st.color }}>
-                    {st.label}
+                    {t(st.label)}
                   </span>
                 </header>
 
@@ -549,27 +551,27 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                     <button onClick={() => patch(a._id, { status: "in_progress" })} disabled={busyId === a._id}
                       className="px-2.5 py-1 text-[11px] font-semibold rounded text-white disabled:opacity-50"
                       style={{ background: "var(--warning, #f59e0b)" }}>
-                      Start
+                      {t("Start")}
                     </button>
                   )}
                   {a.status !== "done" && (
                     <button onClick={() => patch(a._id, { status: "done" })} disabled={busyId === a._id}
                       className="px-2.5 py-1 text-[11px] font-semibold rounded text-white disabled:opacity-50"
                       style={{ background: "var(--success, #16a34a)" }}>
-                      Done
+                      {t("Done")}
                     </button>
                   )}
                   {a.status !== "cancelled" && (
                     <button onClick={() => patch(a._id, { status: "cancelled" })} disabled={busyId === a._id}
                       className="px-2.5 py-1 text-[11px] font-semibold rounded border border-(--border) text-(--muted) disabled:opacity-50">
-                      Cancel
+                      {t("Cancel")}
                     </button>
                   )}
                   {(a.createdBy?._id === currentUserId || canAssign) && (
                     <button onClick={() => remove(a._id)} disabled={busyId === a._id}
                       className="px-2.5 py-1 text-[11px] font-semibold rounded ml-auto disabled:opacity-50"
                       style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                      Delete
+                      {t("Delete")}
                     </button>
                   )}
                 </div>
@@ -591,6 +593,7 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
   members: MentionMember[];
   onChanged: () => void | Promise<void>;
 }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const [draft,  setDraft]  = useState("");
   const [draftMentions, setDraftMentions] = useState<string[]>([]);
@@ -616,7 +619,7 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        alert((d as { error?: string }).error ?? "Failed");
+        alert((d as { error?: string }).error ?? t("Failed"));
         return;
       }
       await onChanged();
@@ -654,7 +657,7 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
     return (
       <button type="button" onClick={() => setAdding(true)}
         className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-(--muted) hover:text-(--accent) transition-colors">
-        <span className="text-xs">＋</span> Add a checklist
+        <span className="text-xs">＋</span> {t("Add a checklist")}
       </button>
     );
   }
@@ -664,7 +667,7 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
       style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-(--muted)">
-          Checklist {total > 0 && <span className="font-normal">· {done}/{total} done</span>}
+          {t("Checklist")} {total > 0 && <span className="font-normal">· {done}/{total} {t("done")}</span>}
         </p>
         {total > 0 && (
           <div className="flex-1 mx-3 h-1 rounded-full overflow-hidden" style={{ background: "var(--bg-secondary, #f3f4f6)" }}>
@@ -677,17 +680,17 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
         )}
         <button type="button" onClick={() => setAdding((v) => !v)}
           className="text-[11px] text-(--muted) hover:text-(--accent) transition-colors px-1">
-          {adding ? "Cancel" : "+ Add"}
+          {adding ? t("Cancel") : t("+ Add")}
         </button>
       </div>
 
       <ul className="space-y-0.5">
-        {todos.map((t) => {
-          const isEditing = editingId === t._id;
+        {todos.map((todo) => {
+          const isEditing = editingId === todo._id;
           return (
-            <li key={t._id} className="flex items-center gap-2 group/item">
-              <input type="checkbox" checked={t.done} disabled={busy || isEditing}
-                onChange={(e) => call({ toggleTodo: { id: t._id, done: e.target.checked } })}
+            <li key={todo._id} className="flex items-center gap-2 group/item">
+              <input type="checkbox" checked={todo.done} disabled={busy || isEditing}
+                onChange={(e) => call({ toggleTodo: { id: todo._id, done: e.target.checked } })}
                 className="accent-(--accent) cursor-pointer" />
               {isEditing ? (
                 <MentionInput
@@ -700,24 +703,24 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
                   className="flex-1 w-full px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
                 />
               ) : (
-                <button type="button" onClick={() => startEdit(t)}
-                  title="Click to edit"
+                <button type="button" onClick={() => startEdit(todo)}
+                  title={t("Click to edit")}
                   className="flex-1 text-left cursor-text">
-                  <MentionText text={t.title} members={members} struck={t.done} />
+                  <MentionText text={todo.title} members={members} struck={todo.done} />
                 </button>
               )}
               {!isEditing && (
                 <>
                   <button type="button" disabled={busy}
-                    onClick={() => startEdit(t)}
+                    onClick={() => startEdit(todo)}
                     className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--accent) transition-all px-1"
-                    title="Edit">
+                    title={t("Edit")}>
                     ✎
                   </button>
                   <button type="button" disabled={busy}
-                    onClick={() => call({ removeTodo: { id: t._id } })}
+                    onClick={() => call({ removeTodo: { id: todo._id } })}
                     className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
-                    title="Remove">
+                    title={t("Remove")}>
                     ×
                   </button>
                 </>
@@ -736,12 +739,12 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
             onCommit={add}
             onCancel={() => { setAdding(false); setDraft(""); setDraftMentions([]); }}
             autoFocus
-            placeholder="Sub-task — type @ to assign someone"
+            placeholder={t("Sub-task — type @ to assign someone")}
           />
           <button type="button" onClick={add} disabled={busy || !draft.trim()}
             className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            Add
+            {t("Add")}
           </button>
         </div>
       )}

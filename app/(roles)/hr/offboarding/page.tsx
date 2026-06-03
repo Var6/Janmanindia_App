@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type StaffUser = {
   _id: string; name: string; email: string; role: string;
@@ -23,6 +24,7 @@ const RETURN_OPTIONS: { value: "returned" | "lost" | "damaged"; label: string; t
 ];
 
 export default function OffboardingPage() {
+  const t = useT();
   const [staff, setStaff] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export default function OffboardingPage() {
   }
 
   async function markAsset(assetId: string, employeeId: string, status: "returned" | "lost" | "damaged") {
-    const notes = status === "returned" ? undefined : (prompt(`Reason for marking ${status}:`) ?? "");
+    const notes = status === "returned" ? undefined : (prompt(`${t("Reason for marking")} ${status}:`) ?? "");
     setBusyAsset(assetId);
     try {
       const res = await fetch(`/api/hr/assets/${assetId}`, {
@@ -69,7 +71,7 @@ export default function OffboardingPage() {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Failed");
+        alert(d.error ?? t("Failed"));
       } else {
         await loadAssets(employeeId);
       }
@@ -79,16 +81,16 @@ export default function OffboardingPage() {
   }
 
   async function offboard(employeeId: string) {
-    if (!confirm("Deactivate this employee account? They will no longer be able to log in.")) return;
+    if (!confirm(t("Deactivate this employee account? They will no longer be able to log in."))) return;
     setBusyToggle(employeeId);
     setMessage(null);
     try {
       const res = await fetch(`/api/users/toggle?id=${employeeId}&active=false`, { method: "POST" });
       const d = await res.json();
       if (!res.ok) {
-        setMessage({ id: employeeId, text: d.error ?? "Failed to offboard", type: "err" });
+        setMessage({ id: employeeId, text: d.error ?? t("Failed to offboard"), type: "err" });
       } else {
-        setMessage({ id: employeeId, text: "Account deactivated successfully.", type: "ok" });
+        setMessage({ id: employeeId, text: t("Account deactivated successfully."), type: "ok" });
         await loadStaff();
       }
     } finally {
@@ -103,9 +105,9 @@ export default function OffboardingPage() {
       const res = await fetch(`/api/users/toggle?id=${employeeId}&active=true`, { method: "POST" });
       if (!res.ok) {
         const d = await res.json();
-        setMessage({ id: employeeId, text: d.error ?? "Failed", type: "err" });
+        setMessage({ id: employeeId, text: d.error ?? t("Failed"), type: "err" });
       } else {
-        setMessage({ id: employeeId, text: "Account reactivated.", type: "ok" });
+        setMessage({ id: employeeId, text: t("Account reactivated."), type: "ok" });
         await loadStaff();
       }
     } finally {
@@ -119,9 +121,9 @@ export default function OffboardingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Offboarding</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Offboarding")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Collect every assigned asset before deactivating an employee. The system blocks offboarding while assets are outstanding.
+          {t("Collect every assigned asset before deactivating an employee. The system blocks offboarding while assets are outstanding.")}
         </p>
       </div>
 
@@ -137,10 +139,10 @@ export default function OffboardingPage() {
       ) : (
         <>
           <section>
-            <h2 className="text-lg font-semibold text-(--text) mb-3">Active Staff ({active.length})</h2>
+            <h2 className="text-lg font-semibold text-(--text) mb-3">{t("Active Staff")} ({active.length})</h2>
             {active.length === 0 ? (
               <div className="py-10 text-center bg-(--surface) rounded-2xl border border-(--border) text-sm text-(--muted)">
-                No active staff.
+                {t("No active staff.")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -173,7 +175,7 @@ export default function OffboardingPage() {
                           {open && outstanding > 0 && (
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                               style={{ background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }}>
-                              {outstanding} outstanding
+                              {outstanding} {t("outstanding")}
                             </span>
                           )}
                           <span className="text-xs text-(--muted)">{open ? "▾" : "▸"}</span>
@@ -191,9 +193,9 @@ export default function OffboardingPage() {
                             </div>
                           )}
 
-                          <h3 className="text-sm font-semibold text-(--text)">Assets</h3>
+                          <h3 className="text-sm font-semibold text-(--text)">{t("Assets")}</h3>
                           {assets.length === 0 ? (
-                            <p className="text-xs text-(--muted)">No assets recorded for this employee.</p>
+                            <p className="text-xs text-(--muted)">{t("No assets recorded for this employee.")}</p>
                           ) : (
                             <ul className="divide-y divide-(--border) rounded-lg border border-(--border)">
                               {assets.map((a) => (
@@ -205,8 +207,8 @@ export default function OffboardingPage() {
                                       {a.identifier && <span className="text-(--muted) text-xs"> · {a.identifier}</span>}
                                     </p>
                                     <p className="text-[11px] text-(--muted)">
-                                      Assigned {new Date(a.assignedAt).toLocaleDateString("en-IN")}
-                                      {a.returnedAt ? ` · Closed ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
+                                      {t("Assigned")} {new Date(a.assignedAt).toLocaleDateString("en-IN")}
+                                      {a.returnedAt ? ` · ${t("Closed")} ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
                                     </p>
                                   </div>
                                   {a.status === "assigned" ? (
@@ -221,7 +223,7 @@ export default function OffboardingPage() {
                                           : opt.tone === "warn" ? { background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }
                                           : { background: "var(--error-bg)", color: "var(--error-text)" }
                                           }>
-                                          {opt.label}
+                                          {t(opt.label)}
                                         </button>
                                       ))}
                                     </div>
@@ -240,15 +242,15 @@ export default function OffboardingPage() {
 
                           <div className="pt-3 border-t border-(--border) flex items-center justify-between">
                             {outstanding > 0 ? (
-                              <p className="text-xs text-(--muted)">Resolve {outstanding} outstanding asset{outstanding === 1 ? "" : "s"} before offboarding.</p>
+                              <p className="text-xs text-(--muted)">{t("Resolve")} {outstanding} {outstanding === 1 ? t("outstanding asset") : t("outstanding assets")} {t("before offboarding.")}</p>
                             ) : (
-                              <p className="text-xs text-(--muted)">All assets resolved — safe to offboard.</p>
+                              <p className="text-xs text-(--muted)">{t("All assets resolved — safe to offboard.")}</p>
                             )}
                             <button onClick={() => offboard(s._id)}
                               disabled={!canOffboard || busyToggle === s._id}
                               className="px-4 py-1.5 text-xs font-semibold rounded-lg text-white disabled:opacity-40 disabled:cursor-not-allowed"
                               style={{ background: "var(--error, #dc2626)" }}>
-                              {busyToggle === s._id ? "Working…" : "Offboard"}
+                              {busyToggle === s._id ? t("Working…") : t("Offboard")}
                             </button>
                           </div>
                         </div>
@@ -262,7 +264,7 @@ export default function OffboardingPage() {
 
           {inactive.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-(--text) mb-3">Inactive ({inactive.length})</h2>
+              <h2 className="text-lg font-semibold text-(--text) mb-3">{t("Inactive")} ({inactive.length})</h2>
               <div className="bg-(--surface) rounded-2xl border border-(--border) divide-y divide-(--border)">
                 {inactive.map((s) => (
                   <div key={s._id} className="px-5 py-3 flex items-center justify-between">
@@ -278,12 +280,12 @@ export default function OffboardingPage() {
                       </div>
                       <p className="text-xs text-(--muted)">
                         {s.email} · <span className="capitalize">{s.role}</span>
-                        {s.exitedAt ? ` · Exited ${new Date(s.exitedAt).toLocaleDateString("en-IN")}` : ""}
+                        {s.exitedAt ? ` · ${t("Exited")} ${new Date(s.exitedAt).toLocaleDateString("en-IN")}` : ""}
                       </p>
                     </div>
                     <button onClick={() => reactivate(s._id)} disabled={busyToggle === s._id}
                       className="text-xs font-semibold px-3 py-1 rounded-lg border border-(--border) text-(--text) hover:border-(--accent) disabled:opacity-50">
-                      {busyToggle === s._id ? "…" : "Reactivate"}
+                      {busyToggle === s._id ? "…" : t("Reactivate")}
                     </button>
                   </div>
                 ))}
@@ -294,7 +296,7 @@ export default function OffboardingPage() {
       )}
 
       <div className="mt-6 p-4 rounded-xl border border-(--border) bg-(--surface) text-xs text-(--muted)">
-        <span className="font-semibold text-(--text)">Note:</span> Deactivating an account preserves all data — cases, reports, and history remain. Reactivation restores access immediately.
+        <span className="font-semibold text-(--text)">{t("Note:")}</span> {t("Deactivating an account preserves all data — cases, reports, and history remain. Reactivation restores access immediately.")}
       </div>
     </div>
   );

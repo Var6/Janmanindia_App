@@ -5,6 +5,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import DailyReport from "@/models/DailyReport";
 import "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   draft:     { bg: "var(--warning-bg)",   text: "var(--warning-text)" },
@@ -15,6 +16,7 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
 export default async function HrDailyReportsPage() {
   const session = await getSessionFromCookies();
   if (!session || !["hr", "director", "superadmin"].includes(session.role)) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   const reports = dbOk
@@ -33,14 +35,14 @@ export default async function HrDailyReportsPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Daily Reports — Supervisor Review</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Daily Reports — Supervisor Review")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Read social workers' submitted daily reports, add remarks, and mark them reviewed. Click a row to open the full report (printable / downloadable as PDF).
+          {t("Read social workers' submitted daily reports, add remarks, and mark them reviewed. Click a row to open the full report (printable / downloadable as PDF).")}
         </p>
       </div>
 
-      <Section title="Awaiting review" rows={submitted as Lean[]} />
-      <Section title="Recently reviewed" rows={reviewed as Lean[]} />
+      <Section title={t("Awaiting review")} rows={submitted as Lean[]} t={t} />
+      <Section title={t("Recently reviewed")} rows={reviewed as Lean[]} t={t} />
     </div>
   );
 }
@@ -55,12 +57,12 @@ type Lean = {
   reviewedAt?: Date;
 };
 
-function Section({ title, rows }: { title: string; rows: Lean[] }) {
+function Section({ title, rows, t }: { title: string; rows: Lean[]; t: (s: string) => string }) {
   if (rows.length === 0) {
     return (
       <section>
         <h2 className="font-semibold text-(--text) mb-3">{title} (0)</h2>
-        <p className="text-sm text-(--muted) px-1">Nothing here.</p>
+        <p className="text-sm text-(--muted) px-1">{t("Nothing here.")}</p>
       </section>
     );
   }
@@ -82,9 +84,9 @@ function Section({ title, rows }: { title: string; rows: Lean[] }) {
                   <p className="text-xs text-(--muted) mt-0.5">
                     {new Date(r.reportDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                     {r.preparedBy?.socialWorkerProfile?.district && ` · ${r.preparedBy.socialWorkerProfile.district}`}
-                    {" · "}{r.summary?.totalCases ?? 0} cases
-                    {(r.summary?.urgentFlagged ?? 0) > 0 && ` · ${r.summary?.urgentFlagged} urgent`}
-                    {(r.summary?.needSupervisorReview ?? 0) > 0 && ` · ${r.summary?.needSupervisorReview} for review`}
+                    {" · "}{r.summary?.totalCases ?? 0} {t("cases")}
+                    {(r.summary?.urgentFlagged ?? 0) > 0 && ` · ${r.summary?.urgentFlagged} ${t("urgent")}`}
+                    {(r.summary?.needSupervisorReview ?? 0) > 0 && ` · ${r.summary?.needSupervisorReview} ${t("for review")}`}
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"

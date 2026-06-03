@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export interface Ticket {
   _id: string;
@@ -43,6 +44,7 @@ const URGENCY_STYLE: Record<string, { bg: string; color: string }> = {
 const STATUS_TABS = ["all", "open", "in_progress", "fulfilled", "rejected", "closed"] as const;
 
 export default function TicketList({ mode }: Props) {
+  const tr = useT();
   const [items, setItems] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<typeof STATUS_TABS[number]>("all");
@@ -70,7 +72,7 @@ export default function TicketList({ mode }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Failed");
+        alert(d.error ?? tr("Failed"));
       } else {
         await load();
         setResponding(null);
@@ -107,7 +109,7 @@ export default function TicketList({ mode }: Props) {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">📭</p>
-          <p className="text-sm text-(--muted)">Nothing in this view.</p>
+          <p className="text-sm text-(--muted)">{tr("Nothing in this view.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -131,19 +133,19 @@ export default function TicketList({ mode }: Props) {
                     </div>
                     <p className="font-semibold text-sm text-(--text)">{t.title}</p>
                     <p className="text-[11px] text-(--muted) mt-0.5">
-                      Raised by {t.raisedBy?.name ?? "—"}
+                      {tr("Raised by")} {t.raisedBy?.name ?? "—"}
                       {t.raisedBy?.role ? ` (${t.raisedBy.role}` : ""}
                       {t.raisedBy?.employeeId ? ` · ${t.raisedBy.employeeId})` : t.raisedBy?.role ? ")" : ""}
                       {" · "}{new Date(t.createdAt).toLocaleString("en-IN")}
                     </p>
                     <p className="text-[11px] text-(--muted)">
-                      {t.beneficiary ? `For: ${t.beneficiary} · ` : ""}
+                      {t.beneficiary ? `${tr("For:")} ${t.beneficiary} · ` : ""}
                       {t.district ? `${t.district}` : ""}{t.location ? ` · ${t.location}` : ""}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
                     style={{ background: st.bg, color: st.color }}>
-                    {st.label}
+                    {tr(st.label)}
                   </span>
                 </header>
 
@@ -153,7 +155,7 @@ export default function TicketList({ mode }: Props) {
                   <div className="rounded-lg border-l-4 px-3 py-2 mb-3"
                     style={{ borderColor: "var(--accent)", background: "var(--accent-subtle)" }}>
                     <p className="text-[11px] font-bold uppercase tracking-wide text-(--accent) mb-1">
-                      Administrator response{t.assignedTo ? ` · ${t.assignedTo.name}` : ""}
+                      {tr("Administrator response")}{t.assignedTo ? ` · ${t.assignedTo.name}` : ""}
                     </p>
                     <p className="text-sm text-(--text) whitespace-pre-wrap">{t.response}</p>
                   </div>
@@ -162,7 +164,7 @@ export default function TicketList({ mode }: Props) {
                   <div className="rounded-lg border-l-4 px-3 py-2 mb-3"
                     style={{ borderColor: "var(--error, #dc2626)", background: "var(--error-bg)" }}>
                     <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--error-text)" }}>
-                      Rejected
+                      {tr("Rejected")}
                     </p>
                     <p className="text-sm text-(--text) whitespace-pre-wrap">{t.rejectedReason}</p>
                   </div>
@@ -178,23 +180,23 @@ export default function TicketList({ mode }: Props) {
                       patch(t._id, { response: text, status });
                     }} className="space-y-2 pt-2 border-t border-(--border)">
                       <textarea name="response" required rows={2} defaultValue={t.response ?? ""}
-                        placeholder="Response to the requester (when, how, by whom)…"
+                        placeholder={tr("Response to the requester (when, how, by whom)…")}
                         className="w-full px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) resize-none focus:outline-none focus:border-(--accent)" />
                       <div className="flex flex-wrap gap-2 items-center">
                         <select name="status" defaultValue="in_progress"
                           className="px-3 py-1.5 text-xs rounded-lg border border-(--border) bg-(--bg) text-(--text)">
-                          <option value="in_progress">In progress</option>
-                          <option value="fulfilled">Fulfilled</option>
-                          <option value="rejected">Rejected</option>
+                          <option value="in_progress">{tr("In progress")}</option>
+                          <option value="fulfilled">{tr("Fulfilled")}</option>
+                          <option value="rejected">{tr("Rejected")}</option>
                         </select>
                         <button type="button" onClick={() => setResponding(null)}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-(--border) text-(--text)">
-                          Cancel
+                          {tr("Cancel")}
                         </button>
                         <button type="submit" disabled={busyId === t._id}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg text-(--accent-contrast) disabled:opacity-60"
                           style={{ background: "var(--accent)" }}>
-                          {busyId === t._id ? "Saving…" : "Save"}
+                          {busyId === t._id ? tr("Saving…") : tr("Save")}
                         </button>
                       </div>
                     </form>
@@ -203,25 +205,25 @@ export default function TicketList({ mode }: Props) {
                       <button onClick={() => setResponding(t._id)}
                         className="px-3 py-1.5 text-xs font-semibold rounded-lg text-(--accent-contrast)"
                         style={{ background: "var(--accent)" }}>
-                        Respond / change status
+                        {tr("Respond / change status")}
                       </button>
                       {t.status === "open" && (
                         <button onClick={() => patch(t._id, { status: "in_progress" })} disabled={busyId === t._id}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-(--border) text-(--text) disabled:opacity-50">
-                          Mark in-progress
+                          {tr("Mark in-progress")}
                         </button>
                       )}
                       {t.status !== "fulfilled" && (
                         <button onClick={() => patch(t._id, { status: "fulfilled" })} disabled={busyId === t._id}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white disabled:opacity-50"
                           style={{ background: "var(--success, #16a34a)" }}>
-                          Mark fulfilled
+                          {tr("Mark fulfilled")}
                         </button>
                       )}
                       {t.status !== "closed" && (
                         <button onClick={() => patch(t._id, { status: "closed" })} disabled={busyId === t._id}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-(--border) text-(--muted) disabled:opacity-50">
-                          Close
+                          {tr("Close")}
                         </button>
                       )}
                     </div>

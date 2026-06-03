@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Expense = {
   description: string;
@@ -81,9 +82,12 @@ interface Props {
 }
 
 export default function EodReportsPanel({
-  title = "Daily Report & Invoices",
-  subtitle = "Submit your daily work report and expense claims for HR review.",
+  title,
+  subtitle,
 }: Props) {
+  const t = useT();
+  const resolvedTitle = title ?? t("Daily Report & Invoices");
+  const resolvedSubtitle = subtitle ?? t("Submit your daily work report and expense claims for HR review.");
   const [reports, setReports]     = useState<Report[]>([]);
   const [loading, setLoading]     = useState(true);
   const [showForm, setShowForm]   = useState(false);
@@ -161,11 +165,11 @@ export default function EodReportsPanel({
       if (res.ok) {
         updateExpense(i, { receiptUrl: data.url, uploading: false });
       } else {
-        alert(data.error ?? "Upload failed");
+        alert(data.error ?? t("Upload failed"));
         updateExpense(i, { uploading: false });
       }
     } catch {
-      alert("Upload failed — network error");
+      alert(t("Upload failed — network error"));
       updateExpense(i, { uploading: false });
     }
   }
@@ -194,17 +198,17 @@ export default function EodReportsPanel({
       });
       if (!res.ok) {
         const d = await res.json();
-        setError(d.error ?? "Failed to submit report.");
+        setError(d.error ?? t("Failed to submit report."));
       } else {
         const d = await res.json();
         setReports((prev) => [d.report, ...prev]);
-        setSuccess("Daily report submitted successfully.");
+        setSuccess(t("Daily report submitted successfully."));
         setShowForm(false);
         setExpenses([{ description: "", amount: "" }]);
         setTimeout(() => setSuccess(""), 4000);
       }
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setSubmitting(false);
     }
@@ -214,15 +218,15 @@ export default function EodReportsPanel({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">{title}</h1>
-          <p className="text-sm text-(--muted) mt-1">{subtitle}</p>
+          <h1 className="text-2xl font-bold text-(--text)">{resolvedTitle}</h1>
+          <p className="text-sm text-(--muted) mt-1">{resolvedSubtitle}</p>
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setError(""); }}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
         >
-          {showForm ? "Cancel" : "+ Today's Report"}
+          {showForm ? t("Cancel") : t("+ Today's Report")}
         </button>
       </div>
 
@@ -236,7 +240,7 @@ export default function EodReportsPanel({
       {showForm && (
         <form onSubmit={handleSubmit} className="rounded-2xl border p-6 space-y-5"
           style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-          <h2 className="font-semibold text-(--text)">Daily Report</h2>
+          <h2 className="font-semibold text-(--text)">{t("Daily Report")}</h2>
 
           {error && (
             <div className="p-3 rounded-lg text-sm"
@@ -248,7 +252,7 @@ export default function EodReportsPanel({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">
-                Date <span style={{ color: "var(--error)" }}>*</span>
+                {t("Date")} <span style={{ color: "var(--error)" }}>*</span>
               </label>
               <input type="date" name="date" required
                 defaultValue={new Date().toISOString().split("T")[0]}
@@ -258,7 +262,7 @@ export default function EodReportsPanel({
             </div>
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">
-                Hours Worked <span style={{ color: "var(--error)" }}>*</span>
+                {t("Hours Worked")} <span style={{ color: "var(--error)" }}>*</span>
               </label>
               <input type="number" name="hoursWorked" required min="1" max="16" placeholder="8"
                 className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
@@ -269,10 +273,10 @@ export default function EodReportsPanel({
 
           <div>
             <label className="block text-sm font-medium text-(--text) mb-1.5">
-              Summary of Work Done <span style={{ color: "var(--error)" }}>*</span>
+              {t("Summary of Work Done")} <span style={{ color: "var(--error)" }}>*</span>
             </label>
             <textarea name="summary" required rows={4}
-              placeholder="What did you work on today? Which tickets, cases, or tasks did you handle?"
+              placeholder={t("What did you work on today? Which tickets, cases, or tasks did you handle?")}
               className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}
             />
@@ -281,11 +285,11 @@ export default function EodReportsPanel({
           {/* Expenses */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-(--text)">Expenses <span className="text-(--muted) font-normal">(optional)</span></label>
+              <label className="text-sm font-medium text-(--text)">{t("Expenses")} <span className="text-(--muted) font-normal">{t("(optional)")}</span></label>
               <button type="button"
                 onClick={() => setExpenses([...expenses, { description: "", amount: "" }])}
                 className="text-xs font-medium hover:underline" style={{ color: "var(--accent)" }}>
-                + Add line
+                {t("+ Add line")}
               </button>
             </div>
 
@@ -297,7 +301,7 @@ export default function EodReportsPanel({
                     <input
                       value={ex.description}
                       onChange={(e) => updateExpense(i, { description: e.target.value })}
-                      placeholder="Expense description"
+                      placeholder={t("Expense description")}
                       className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none"
                       style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
                     />
@@ -305,7 +309,7 @@ export default function EodReportsPanel({
                       type="number"
                       value={ex.amount}
                       onChange={(e) => updateExpense(i, { amount: e.target.value })}
-                      placeholder="₹ Amount"
+                      placeholder={t("₹ Amount")}
                       className="w-28 px-3 py-2 rounded-lg border text-sm focus:outline-none"
                       style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
                     />
@@ -338,13 +342,13 @@ export default function EodReportsPanel({
                         <a href={ex.receiptUrl} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-xs font-medium underline-offset-2 hover:underline"
                           style={{ color: "var(--info)" }}>
-                          <img src={ex.receiptUrl} alt="receipt" className="w-7 h-7 rounded object-cover border" style={{ borderColor: "var(--border)" }} />
-                          Receipt attached
+                          <img src={ex.receiptUrl} alt={t("receipt")} className="w-7 h-7 rounded object-cover border" style={{ borderColor: "var(--border)" }} />
+                          {t("Receipt attached")}
                         </a>
                         <button type="button"
                           onClick={() => updateExpense(i, { receiptUrl: undefined })}
                           className="text-xs hover:underline" style={{ color: "var(--error)" }}>
-                          Remove
+                          {t("Remove")}
                         </button>
                       </div>
                     ) : (
@@ -354,7 +358,7 @@ export default function EodReportsPanel({
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-60"
                         style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--surface)" }}>
                         {ex.uploading ? <Spinner /> : <CameraIcon />}
-                        {ex.uploading ? "Uploading…" : "Attach receipt photo"}
+                        {ex.uploading ? t("Uploading…") : t("Attach receipt photo")}
                       </button>
                     )}
                   </div>
@@ -366,7 +370,7 @@ export default function EodReportsPanel({
           <button type="submit" disabled={submitting}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {submitting ? "Submitting…" : "Submit Report"}
+            {submitting ? t("Submitting…") : t("Submit Report")}
           </button>
         </form>
       )}
@@ -381,7 +385,7 @@ export default function EodReportsPanel({
         <div className="py-16 text-center rounded-2xl border"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-2xl mb-2">📋</p>
-          <p className="text-sm text-(--muted)">No reports submitted yet.</p>
+          <p className="text-sm text-(--muted)">{t("No reports submitted yet.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -399,12 +403,12 @@ export default function EodReportsPanel({
                       {new Date(r.date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                     </p>
                     <p className="text-xs text-(--muted) mt-0.5">
-                      {r.hoursWorked} hrs worked · {r.expenses.length} expense{r.expenses.length !== 1 ? "s" : ""} · ₹{total.toLocaleString("en-IN")}
+                      {r.hoursWorked} {t("hrs worked")} · {r.expenses.length} {r.expenses.length !== 1 ? t("expenses") : t("expense")} · ₹{total.toLocaleString("en-IN")}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
                     style={{ background: st.bg, color: st.text }}>
-                    {st.label}
+                    {t(st.label)}
                   </span>
                 </div>
                 <p className="text-sm text-(--muted) line-clamp-2 mb-3">{r.summary}</p>
@@ -419,7 +423,7 @@ export default function EodReportsPanel({
                             <a href={ex.receiptUrl} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 hover:underline" style={{ color: "var(--info)" }}>
                               <UploadIcon />
-                              receipt
+                              {t("receipt")}
                             </a>
                           )}
                           <span className="font-medium text-(--text)">₹{ex.amount.toLocaleString("en-IN")}</span>
@@ -434,12 +438,12 @@ export default function EodReportsPanel({
                   <button onClick={() => toggleDetail(r._id)}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg"
                     style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-                    {open ? "Hide approval detail" : (loadingDetailId === r._id ? "Loading…" : "View approval detail")}
+                    {open ? t("Hide approval detail") : (loadingDetailId === r._id ? t("Loading…") : t("View approval detail"))}
                   </button>
                   <button onClick={() => downloadPdf(r._id)} disabled={downloadingId === r._id}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
                     style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                    {downloadingId === r._id ? "Building PDF…" : "⬇ Download PDF"}
+                    {downloadingId === r._id ? t("Building PDF…") : t("⬇ Download PDF")}
                   </button>
                 </div>
 
@@ -457,16 +461,17 @@ export default function EodReportsPanel({
 
 /* ── approval timeline ──────────────────────────────────────────────── */
 function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
+  const t = useT();
   const stages: { label: string; person?: string; at?: string; notes?: string; tone: "muted" | "info" | "success" | "error" }[] = [];
   stages.push({
-    label: "Submitted",
+    label: t("Submitted"),
     person: detail.submittedBy?.name,
     at: detail.createdAt,
     tone: "muted",
   });
   if (detail.hrVerifiedBy || detail.hrVerifiedAt) {
     stages.push({
-      label: detail.invoiceStatus === "approved" && detail.submitterRole === "socialworker" ? "HR verified & approved" : "HR verified",
+      label: detail.invoiceStatus === "approved" && detail.submitterRole === "socialworker" ? t("HR verified & approved") : t("HR verified"),
       person: detail.hrVerifiedBy?.name,
       at: detail.hrVerifiedAt,
       notes: detail.hrNotes,
@@ -475,7 +480,7 @@ function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
   }
   if (detail.finalApprovedBy || detail.finalApprovedAt) {
     stages.push({
-      label: "Final approval (paid)",
+      label: t("Final approval (paid)"),
       person: detail.finalApprovedBy?.name,
       at: detail.finalApprovedAt,
       notes: detail.approvalNotes,
@@ -484,9 +489,9 @@ function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
   }
   if (detail.invoiceStatus === "rejected") {
     stages.push({
-      label: "Rejected",
+      label: t("Rejected"),
       person: detail.reviewedBy?.name,
-      notes: detail.rejectionReason ?? "No reason recorded",
+      notes: detail.rejectionReason ?? t("No reason recorded"),
       tone: "error",
     });
   }
@@ -499,7 +504,7 @@ function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
 
   return (
     <div className="mt-4 pt-3 border-t space-y-3" style={{ borderColor: "var(--border)" }}>
-      <p className="text-xs font-semibold text-(--text)">Approval pipeline</p>
+      <p className="text-xs font-semibold text-(--text)">{t("Approval pipeline")}</p>
 
       <ol className="space-y-2.5">
         {stages.map((st, i) => (

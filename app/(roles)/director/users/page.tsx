@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
@@ -44,6 +45,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "director" && session.role !== "superadmin")) redirect("/login");
 
+  const t = await getServerT();
   const sp = await searchParams;
   const tab: Tab = (TAB_FILTERS as readonly string[]).includes(sp.tab ?? "")
     ? (sp.tab as Tab) : "active";
@@ -76,9 +78,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">User Management</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("User Management")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          {activeUsers.length} active · {pastUsers.length} NPA · {allUsers.length} total accounts.
+          {activeUsers.length} {t("active")} · {pastUsers.length} {t("NPA")} · {allUsers.length} {t("total accounts.")}
         </p>
       </div>
 
@@ -101,10 +103,10 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
             style={{ borderColor: "color-mix(in srgb,var(--warning) 25%,transparent)" }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--warning)" }} />
             <h2 className="font-semibold text-sm" style={{ color: "var(--warning-text)" }}>
-              Pending Google sign-ups ({pendingUsers.length})
+              {t("Pending Google sign-ups")} ({pendingUsers.length})
             </h2>
             <span className="text-xs" style={{ color: "var(--warning-text)" }}>
-              · waiting for you to pick a role before they can use the app
+              {t("· waiting for you to pick a role before they can use the app")}
             </span>
           </div>
           <div className="divide-y" style={{ borderColor: "color-mix(in srgb,var(--warning) 20%,transparent)" }}>
@@ -119,7 +121,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                   <select name="role" required defaultValue=""
                     className="px-3 py-1.5 rounded-lg border text-xs"
                     style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                    <option value="" disabled>Pick a role…</option>
+                    <option value="" disabled>{t("Pick a role…")}</option>
                     {ASSIGNABLE_ROLES.map((r) => (
                       <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>
                     ))}
@@ -127,7 +129,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                   <button type="submit"
                     className="px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-90"
                     style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                    Assign role
+                    {t("Assign role")}
                   </button>
                 </form>
               </div>
@@ -139,16 +141,16 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       {/* Tab switcher */}
       <div className="flex items-center gap-1 p-1 rounded-xl w-fit"
         style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)" }}>
-        {TAB_FILTERS.map((t) => {
-          const count = t === "active" ? activeUsers.length : t === "past" ? pastUsers.length : allUsers.length;
-          const label = t === "active" ? "Active" : t === "past" ? "NPA" : "All";
-          const href = `/director/users?tab=${t}${roleFilter ? `&role=${roleFilter}` : ""}`;
+        {TAB_FILTERS.map((tabKey) => {
+          const count = tabKey === "active" ? activeUsers.length : tabKey === "past" ? pastUsers.length : allUsers.length;
+          const label = tabKey === "active" ? t("Active") : tabKey === "past" ? t("NPA") : t("All");
+          const href = `/director/users?tab=${tabKey}${roleFilter ? `&role=${roleFilter}` : ""}`;
           return (
-            <Link key={t} href={href}
+            <Link key={tabKey} href={href}
               className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
               style={{
-                background: tab === t ? "var(--accent)" : "transparent",
-                color: tab === t ? "var(--accent-contrast)" : "var(--muted)",
+                background: tab === tabKey ? "var(--accent)" : "transparent",
+                color: tab === tabKey ? "var(--accent-contrast)" : "var(--muted)",
               }}>
               {label} <span className="opacity-70">({count})</span>
             </Link>
@@ -157,7 +159,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         {roleFilter && (
           <Link href={`/director/users?tab=${tab}`}
             className="px-3 py-1.5 rounded-lg text-xs text-(--muted) hover:text-(--text)">
-            Clear role filter
+            {t("Clear role filter")}
           </Link>
         )}
       </div>
@@ -165,7 +167,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       {visibleUsers.length === 0 ? (
         <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
           <p className="text-sm text-(--muted)">
-            {dbOk ? (tab === "past" ? "No NPA users yet." : "No users match this view.") : "Connect database."}
+            {dbOk ? (tab === "past" ? t("No NPA users yet.") : t("No users match this view.")) : t("Connect database.")}
           </p>
         </div>
       ) : (
@@ -175,14 +177,14 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
               <thead>
                 <tr className="text-xs font-semibold text-(--muted) uppercase tracking-wide"
                   style={{ background: "var(--bg-secondary)" }}>
-                  <th className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: "var(--border)" }}>User</th>
+                  <th className="text-left font-semibold px-5 py-3 border-b" style={{ borderColor: "var(--border)" }}>{t("User")}</th>
                   <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
-                    {tab === "past" ? "Last role" : "Role"}
+                    {tab === "past" ? t("Last role") : t("Role")}
                   </th>
                   <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
-                    {tab === "past" ? "NPA since" : "Status"}
+                    {tab === "past" ? t("NPA since") : t("Status")}
                   </th>
-                  <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>Action</th>
+                  <th className="text-left font-semibold px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>{t("Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,15 +219,15 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                       <td className={`px-4 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
                         {!u.isActive ? (
                           <div className="flex flex-col items-start gap-1">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 uppercase tracking-wide">NPA</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 uppercase tracking-wide">{t("NPA")}</span>
                             <span className="text-[10px] text-(--muted)">
                               {exitedAt ? exitedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                              {tenure ? ` · ~${tenure} mo` : ""}
+                              {tenure ? ` · ~${tenure} ${t("mo")}` : ""}
                             </span>
                           </div>
                         ) : (
                           <span className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                            Active
+                            {t("Active")}
                           </span>
                         )}
                       </td>

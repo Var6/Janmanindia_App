@@ -64,20 +64,23 @@ const colorMap: Record<string, { bg: string; badge: string; dot: string }> = {
   teal: { bg: "bg-teal-50 border-teal-200", badge: "bg-teal-100 text-teal-700", dot: "bg-teal-500" },
 };
 
-export default function RtpsPage() {
+import { getServerT } from "@/lib/i18n-server";
+
+export default async function RtpsPage() {
+  const t = await getServerT();
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(text)">Government Schemes &amp; Rights</h1>
+        <h1 className="text-2xl font-bold text-(text)">{t("Government Schemes & Rights")}</h1>
         <p className="text-sm text-(muted) mt-1">
-          Know your entitlements. Click any scheme to apply on the official government portal.
+          {t("Know your entitlements. Click any scheme to apply on the official government portal.")}
         </p>
       </div>
 
       <div className="p-4 rounded-xl bg-(accent)/10 border border-(accent)/30">
-        <p className="text-sm text-(text) font-medium">Need help applying?</p>
+        <p className="text-sm text-(text) font-medium">{t("Need help applying?")}</p>
         <p className="text-xs text-(muted) mt-0.5">
-          Your social worker can assist you with the application process. Request an appointment from the Appointments section.
+          {t("Your social worker can assist you with the application process. Request an appointment from the Appointments section.")}
         </p>
       </div>
 
@@ -89,19 +92,19 @@ export default function RtpsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${c.badge}`}>
-                    {scheme.category}
+                    {t(scheme.category)}
                   </span>
-                  <h2 className="font-bold text-(text)">{scheme.title}</h2>
-                  <p className="text-xs text-(muted) mt-1 leading-relaxed">{scheme.description}</p>
+                  <h2 className="font-bold text-(text)">{t(scheme.title)}</h2>
+                  <p className="text-xs text-(muted) mt-1 leading-relaxed">{t(scheme.description)}</p>
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-(text) mb-1.5">How to apply:</p>
+                <p className="text-xs font-semibold text-(text) mb-1.5">{t("How to apply:")}</p>
                 <ol className="space-y-1">
                   {scheme.steps.map((step, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-(muted)">
                       <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
-                      {step}
+                      {t(step)}
                     </li>
                   ))}
                 </ol>
@@ -112,7 +115,7 @@ export default function RtpsPage() {
                 rel="noopener noreferrer"
                 className="mt-auto text-xs font-semibold underline text-(text) hover:opacity-70 transition-opacity"
               >
-                Apply at {new URL(scheme.link).hostname} →
+                {t("Apply at")} {new URL(scheme.link).hostname} →
               </a>
             </div>
           );
@@ -121,9 +124,9 @@ export default function RtpsPage() {
 
       <div className="p-5 rounded-2xl bg-(surface) border border-(border) text-center">
         <p className="text-sm text-(muted)">
-          Don't see the scheme you need?{" "}
+          {t("Don't see the scheme you need?")}{" "}
           <a href="https://services.india.gov.in" target="_blank" rel="noopener noreferrer" className="text-(accent) hover:underline font-medium">
-            Browse all schemes on India.gov.in
+            {t("Browse all schemes on India.gov.in")}
           </a>
         </p>
       </div>

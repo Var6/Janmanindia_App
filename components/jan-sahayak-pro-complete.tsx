@@ -1,6 +1,7 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const C={bg:"#09101F",surface:"#101724",card:"#182030",border:"#1C2B46",accent:"#E8A243",accentSoft:"rgba(232,162,67,0.09)",red:"#E05C5C",green:"#4CAF82",blue:"#4A90D9",purple:"#9B72CF",muted:"#3F5070",text:"#CBD8ED",dim:"#6278A0"};
 const PIN="janman2025";
@@ -463,6 +464,7 @@ function Alert({emoji,color,label,text}){return <div style={{display:"flex",gap:
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function Login({onAuth}){
+  const t=useT();
   const [mode,setMode]=useState("select");
   const [pin,setPin]=useState("");
   const [email,setEmail]=useState("");
@@ -475,25 +477,25 @@ function Login({onAuth}){
       <Card style={{width:370,textAlign:"center",padding:"36px 30px"}}>
         <div style={{width:50,height:50,borderRadius:12,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,margin:"0 auto 16px"}}>⚖</div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,color:C.text,marginBottom:3}}>Jan Sahayak Pro</div>
-        <div style={{fontSize:11,color:C.dim,marginBottom:22}}>Janman Peoples Foundation · Restricted Access</div>
+        <div style={{fontSize:11,color:C.dim,marginBottom:22}}>Janman Peoples Foundation · {t("Restricted Access")}</div>
         {mode==="select"&&<div>
-          <button onClick={function(){setMode("google");}} style={{width:"100%",padding:"12px",borderRadius:8,border:"1px solid "+C.border,background:C.surface,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:9,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:17,fontWeight:700,color:C.accent}}>G</span> Sign in with Google Workspace</button>
-          <button onClick={function(){setMode("pin");}} style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid "+C.border,background:"transparent",color:C.dim,fontSize:12,cursor:"pointer"}}>Admin PIN Login</button>
+          <button onClick={function(){setMode("google");}} style={{width:"100%",padding:"12px",borderRadius:8,border:"1px solid "+C.border,background:C.surface,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:9,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span style={{fontSize:17,fontWeight:700,color:C.accent}}>G</span> {t("Sign in with Google Workspace")}</button>
+          <button onClick={function(){setMode("pin");}} style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid "+C.border,background:"transparent",color:C.dim,fontSize:12,cursor:"pointer"}}>{t("Admin PIN Login")}</button>
         </div>}
         {mode==="google"&&<div>
-          <div style={{fontSize:11,color:C.dim,marginBottom:12,textAlign:"left"}}>Enter your Janman Google Workspace email</div>
-          <Inp label="Email" value={email} onChange={function(e){setEmail(e.target.value);}} placeholder="name@janman.org" onKeyDown={function(e){if(e.key==="Enter")checkGoogle();}}/>
-          {err&&<div style={{color:C.red,fontSize:11,marginBottom:8}}>Email not found in authorised users list.</div>}
-          <Btn onClick={checkGoogle} style={{width:"100%",marginBottom:8}}>Sign In</Btn>
-          <button onClick={function(){setMode("select");setErr(false);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer"}}>← Back</button>
+          <div style={{fontSize:11,color:C.dim,marginBottom:12,textAlign:"left"}}>{t("Enter your Janman Google Workspace email")}</div>
+          <Inp label={t("Email")} value={email} onChange={function(e){setEmail(e.target.value);}} placeholder="name@janman.org" onKeyDown={function(e){if(e.key==="Enter")checkGoogle();}}/>
+          {err&&<div style={{color:C.red,fontSize:11,marginBottom:8}}>{t("Email not found in authorised users list.")}</div>}
+          <Btn onClick={checkGoogle} style={{width:"100%",marginBottom:8}}>{t("Sign In")}</Btn>
+          <button onClick={function(){setMode("select");setErr(false);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer"}}>← {t("Back")}</button>
         </div>}
         {mode==="pin"&&<div>
-          <Inp label="Admin PIN" type="password" value={pin} onChange={function(e){setPin(e.target.value);}} placeholder="Enter PIN" onKeyDown={function(e){if(e.key==="Enter")checkPin();}}/>
-          {err&&<div style={{color:C.red,fontSize:11,marginBottom:8}}>Incorrect PIN.</div>}
-          <Btn onClick={checkPin} style={{width:"100%",marginBottom:8}}>Access System</Btn>
-          <button onClick={function(){setMode("select");setErr(false);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer"}}>← Back</button>
+          <Inp label={t("Admin PIN")} type="password" value={pin} onChange={function(e){setPin(e.target.value);}} placeholder={t("Enter PIN")} onKeyDown={function(e){if(e.key==="Enter")checkPin();}}/>
+          {err&&<div style={{color:C.red,fontSize:11,marginBottom:8}}>{t("Incorrect PIN.")}</div>}
+          <Btn onClick={checkPin} style={{width:"100%",marginBottom:8}}>{t("Access System")}</Btn>
+          <button onClick={function(){setMode("select");setErr(false);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer"}}>← {t("Back")}</button>
         </div>}
-        <div style={{fontSize:10,color:C.muted,marginTop:14}}>Authorised Janman team members only.</div>
+        <div style={{fontSize:10,color:C.muted,marginTop:14}}>{t("Authorised Janman team members only.")}</div>
       </Card>
     </div>
   );
@@ -501,6 +503,7 @@ function Login({onAuth}){
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({cases,activities,finance,tasks,team}){
+  const t=useT();
   const ov=cases.filter(function(c){return dF(c.updatedAt)>7&&c.status==="active";});
   const uh=cases.flatMap(function(c){return c.hearings.filter(function(h){return dT(h.nextDate)>=0&&dT(h.nextDate)<=7;}).map(function(h){return Object.assign({},h,{cas:c});});}).sort(function(a,b){return new Date(a.nextDate)-new Date(b.nextDate);});
   const pt=tasks.filter(function(t){return t.status!=="done";});
@@ -508,25 +511,25 @@ function Dashboard({cases,activities,finance,tasks,team}){
   const mo=new Date().toISOString().slice(0,7);
   const mG=finance.filter(function(f){return f.type==="grant"&&f.date.startsWith(mo);}).reduce(function(s,f){return s+f.amount;},0);
   const mE=finance.filter(function(f){return f.type==="expense"&&f.date.startsWith(mo);}).reduce(function(s,f){return s+f.amount;},0);
-  const hr=new Date().getHours();const greet=hr<12?"morning":hr<17?"afternoon":"evening";
-  const stats=[{l:"Active Cases",v:cases.filter(function(c){return c.status==="active";}).length,icon:"⚖",col:C.blue},{l:"Overdue",v:ov.length,icon:"⚠",col:C.red},{l:"Activities (month)",v:activities.filter(function(a){return a.date.startsWith(mo);}).length,icon:"🏕",col:C.green},{l:"Pending Tasks",v:pt.length,icon:"📋",col:C.accent},{l:"Month Grants",v:"₹"+(mG/1e5).toFixed(1)+"L",icon:"💰",col:C.green},{l:"Month Expenses",v:"₹"+(mE/1000).toFixed(0)+"K",icon:"💸",col:C.red}];
+  const hr=new Date().getHours();const greet=hr<12?t("morning"):hr<17?t("afternoon"):t("evening");
+  const stats=[{l:t("Active Cases"),v:cases.filter(function(c){return c.status==="active";}).length,icon:"⚖",col:C.blue},{l:t("Overdue"),v:ov.length,icon:"⚠",col:C.red},{l:t("Activities (month)"),v:activities.filter(function(a){return a.date.startsWith(mo);}).length,icon:"🏕",col:C.green},{l:t("Pending Tasks"),v:pt.length,icon:"📋",col:C.accent},{l:t("Month Grants"),v:"₹"+(mG/1e5).toFixed(1)+"L",icon:"💰",col:C.green},{l:t("Month Expenses"),v:"₹"+(mE/1000).toFixed(0)+"K",icon:"💸",col:C.red}];
   return(
     <div>
       <Card style={{marginBottom:13}}>
         <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:16}}>
           <div style={{width:42,height:42,borderRadius:10,background:C.accentSoft,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>☀️</div>
-          <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.text}}>Good {greet}, Shashwat</div><div style={{fontSize:12,color:C.dim}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div>
+          <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.text}}>{t("Good")} {greet}, Shashwat</div><div style={{fontSize:12,color:C.dim}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div>
         </div>
-        {ov.length>0&&<Alert emoji="🔴" color={C.red} label="Overdue Cases" text={ov.length+" case(s) not updated in 7+ days: "+ov.map(function(c){return c.client;}).join(", ")}/>}
-        {odt.length>0&&<Alert emoji="⏰" color={C.red} label="Overdue Tasks" text={odt.length+" task(s) past deadline: "+odt.slice(0,2).map(function(t){return t.title;}).join("; ")}/>}
-        {uh.length>0&&<Alert emoji="🗓" color={C.accent} label="Hearings This Week" text={uh.map(function(h){return h.cas.client+" — "+fmt(h.nextDate)+" ("+(dT(h.nextDate)===0?"today":dT(h.nextDate)+"d")+")";}).join("; ")}/>}
-        {ov.length===0&&odt.length===0&&uh.length===0&&<Alert emoji="✅" color={C.green} label="All Clear" text="No critical alerts today."/>}
+        {ov.length>0&&<Alert emoji="🔴" color={C.red} label={t("Overdue Cases")} text={ov.length+" "+t("case(s) not updated in 7+ days:")+" "+ov.map(function(c){return c.client;}).join(", ")}/>}
+        {odt.length>0&&<Alert emoji="⏰" color={C.red} label={t("Overdue Tasks")} text={odt.length+" "+t("task(s) past deadline:")+" "+odt.slice(0,2).map(function(tk){return tk.title;}).join("; ")}/>}
+        {uh.length>0&&<Alert emoji="🗓" color={C.accent} label={t("Hearings This Week")} text={uh.map(function(h){return h.cas.client+" — "+fmt(h.nextDate)+" ("+(dT(h.nextDate)===0?t("today"):dT(h.nextDate)+"d")+")";}).join("; ")}/>}
+        {ov.length===0&&odt.length===0&&uh.length===0&&<Alert emoji="✅" color={C.green} label={t("All Clear")} text={t("No critical alerts today.")}/>}
       </Card>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:13}}>
         {stats.map(function(s){return <Card key={s.l} style={{padding:"12px 15px",display:"flex",alignItems:"center",gap:11}}><div style={{width:34,height:34,borderRadius:8,background:s.col+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{s.icon}</div><div><div style={{fontSize:20,fontWeight:700,color:s.col}}>{s.v}</div><div style={{fontSize:10,color:C.dim}}>{s.l}</div></div></Card>;})}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
-        <Card><Sec>Hearings This Week</Sec>{uh.length===0?<div style={{color:C.dim,fontSize:12}}>No hearings in the next 7 days.</div>:uh.map(function(h){return <div key={h.id} style={{display:"flex",gap:9,padding:"8px 11px",background:C.surface,borderRadius:8,marginBottom:6}}><div style={{width:32,height:32,borderRadius:7,background:C.accent+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🗓</div><div><div style={{fontWeight:600,fontSize:12,color:C.text}}>{h.cas.client}</div><div style={{fontSize:10,color:C.dim}}>{h.court} · {fmt(h.nextDate)} · {h.by}</div></div></div>;})}</Card>
-        <Card><Sec>Team Task Status</Sec>{team.filter(function(m){return m.status==="active";}).map(function(m){const mt=pt.filter(function(t){return t.assignedTo===m.name;});if(!mt.length)return null;return <div key={m.id} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:11,fontWeight:700,color:C.accent}}>{m.name}</span><div style={{display:"flex",gap:3}}><Badge label={mt.length+" tasks"} color="amber"/>{mt.filter(function(t){return dT(t.deadline)<0;}).length>0&&<Badge label="overdue" color="red"/>}</div></div>{mt.slice(0,1).map(function(t){return <div key={t.id} style={{fontSize:11,color:C.dim,paddingLeft:5}}>{t.title}</div>;})}</div>;})}
+        <Card><Sec>{t("Hearings This Week")}</Sec>{uh.length===0?<div style={{color:C.dim,fontSize:12}}>{t("No hearings in the next 7 days.")}</div>:uh.map(function(h){return <div key={h.id} style={{display:"flex",gap:9,padding:"8px 11px",background:C.surface,borderRadius:8,marginBottom:6}}><div style={{width:32,height:32,borderRadius:7,background:C.accent+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🗓</div><div><div style={{fontWeight:600,fontSize:12,color:C.text}}>{h.cas.client}</div><div style={{fontSize:10,color:C.dim}}>{h.court} · {fmt(h.nextDate)} · {h.by}</div></div></div>;})}</Card>
+        <Card><Sec>{t("Team Task Status")}</Sec>{team.filter(function(m){return m.status==="active";}).map(function(m){const mt=pt.filter(function(tk){return tk.assignedTo===m.name;});if(!mt.length)return null;return <div key={m.id} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:11,fontWeight:700,color:C.accent}}>{m.name}</span><div style={{display:"flex",gap:3}}><Badge label={mt.length+" "+t("tasks")} color="amber"/>{mt.filter(function(tk){return dT(tk.deadline)<0;}).length>0&&<Badge label={t("overdue")} color="red"/>}</div></div>{mt.slice(0,1).map(function(tk){return <div key={tk.id} style={{fontSize:11,color:C.dim,paddingLeft:5}}>{tk.title}</div>;})}</div>;})}
         </Card>
       </div>
     </div>
@@ -535,6 +538,7 @@ function Dashboard({cases,activities,finance,tasks,team}){
 
 // ── CASES ─────────────────────────────────────────────────────────────────────
 function Cases({cases,setCases,tasks,setTasks,team}){
+  const t=useT();
   const [view,setView]=useState("list");const [sel,setSel]=useState(null);const [filter,setFilter]=useState("all");
   const [form,setForm]=useState(bc());
   const [panel,setPanel]=useState("diary");
@@ -573,81 +577,81 @@ function Cases({cases,setCases,tasks,setTasks,team}){
   }
   if(view==="add")return(
     <div>
-      <div style={{display:"flex",gap:9,alignItems:"center",marginBottom:14}}><Btn color="ghost" size="sm" onClick={function(){setView("list");}}>← Back</Btn><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:C.text}}>Register New Case</div></div>
+      <div style={{display:"flex",gap:9,alignItems:"center",marginBottom:14}}><Btn color="ghost" size="sm" onClick={function(){setView("list");}}>← {t("Back")}</Btn><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:C.text}}>{t("Register New Case")}</div></div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:13}}>
         <Card>
-          <Sec>Case Particulars</Sec>
-          <Inp label="Case Title" value={form.title} onChange={function(e){setForm(function(p){return Object.assign({},p,{title:e.target.value});});}} placeholder="e.g. Rukmani Devi v. State of Bihar"/>
-          <Inp label="Client / Petitioner" value={form.client} onChange={function(e){setForm(function(p){return Object.assign({},p,{client:e.target.value});});}}/>
-          <Inp label="Respondent" value={form.respondent} onChange={function(e){setForm(function(p){return Object.assign({},p,{respondent:e.target.value});});}}/>
+          <Sec>{t("Case Particulars")}</Sec>
+          <Inp label={t("Case Title")} value={form.title} onChange={function(e){setForm(function(p){return Object.assign({},p,{title:e.target.value});});}} placeholder="e.g. Rukmani Devi v. State of Bihar"/>
+          <Inp label={t("Client / Petitioner")} value={form.client} onChange={function(e){setForm(function(p){return Object.assign({},p,{client:e.target.value});});}}/>
+          <Inp label={t("Respondent")} value={form.respondent} onChange={function(e){setForm(function(p){return Object.assign({},p,{respondent:e.target.value});});}}/>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-            <Sel label="Court" value={form.court} onChange={function(e){const nextCourt=e.target.value;const nextTypes=getCaseTypeOptions(nextCourt);setForm(function(p){return Object.assign({},p,{court:nextCourt,type:nextTypes.includes(p.type)?p.type:getPreferredCaseType(nextCourt)});});}} options={CTS}/>
-            <Sel label="Case Type" value={form.type} onChange={function(e){setForm(function(p){return Object.assign({},p,{type:e.target.value});});}} options={caseTypeOptions}/>
+            <Sel label={t("Court")} value={form.court} onChange={function(e){const nextCourt=e.target.value;const nextTypes=getCaseTypeOptions(nextCourt);setForm(function(p){return Object.assign({},p,{court:nextCourt,type:nextTypes.includes(p.type)?p.type:getPreferredCaseType(nextCourt)});});}} options={CTS}/>
+            <Sel label={t("Case Type")} value={form.type} onChange={function(e){setForm(function(p){return Object.assign({},p,{type:e.target.value});});}} options={caseTypeOptions}/>
           </div>
-          <div style={{fontSize:10,color:C.dim,marginTop:-2,marginBottom:9}}>Source: {getCaseTypeSource(form.court)}</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label="Case No." value={form.caseNo} onChange={function(e){setForm(function(p){return Object.assign({},p,{caseNo:e.target.value});});}} placeholder="e.g. CWJC 4521/2025"/><Inp label="FIR No." value={form.firNo} onChange={function(e){setForm(function(p){return Object.assign({},p,{firNo:e.target.value});});}} placeholder="e.g. 123/2023"/></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label="Sections / Articles" value={form.section} onChange={function(e){setForm(function(p){return Object.assign({},p,{section:e.target.value});});}} placeholder="e.g. Art. 226 / IPC 302"/><Inp label="Police Station" value={form.ps} onChange={function(e){setForm(function(p){return Object.assign({},p,{ps:e.target.value});});}} placeholder="e.g. Kotwali Purnia"/></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9}}><Sel label="District" value={form.district} onChange={function(e){setForm(function(p){return Object.assign({},p,{district:e.target.value});});}} options={BD}/><Sel label="Priority" value={form.priority} onChange={function(e){setForm(function(p){return Object.assign({},p,{priority:e.target.value});});}} options={["high","medium","low"]}/><Sel label="Advocate" value={form.advocate} onChange={function(e){setForm(function(p){return Object.assign({},p,{advocate:e.target.value});});}} options={lawyers}/></div>
-          <Sel label="Field Worker / Fellow" value={form.worker} onChange={function(e){setForm(function(p){return Object.assign({},p,{worker:e.target.value});});}} options={["—",...workers]}/>
+          <div style={{fontSize:10,color:C.dim,marginTop:-2,marginBottom:9}}>{t("Source")}: {getCaseTypeSource(form.court)}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label={t("Case No.")} value={form.caseNo} onChange={function(e){setForm(function(p){return Object.assign({},p,{caseNo:e.target.value});});}} placeholder="e.g. CWJC 4521/2025"/><Inp label={t("FIR No.")} value={form.firNo} onChange={function(e){setForm(function(p){return Object.assign({},p,{firNo:e.target.value});});}} placeholder="e.g. 123/2023"/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label={t("Sections / Articles")} value={form.section} onChange={function(e){setForm(function(p){return Object.assign({},p,{section:e.target.value});});}} placeholder="e.g. Art. 226 / IPC 302"/><Inp label={t("Police Station")} value={form.ps} onChange={function(e){setForm(function(p){return Object.assign({},p,{ps:e.target.value});});}} placeholder="e.g. Kotwali Purnia"/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9}}><Sel label={t("District")} value={form.district} onChange={function(e){setForm(function(p){return Object.assign({},p,{district:e.target.value});});}} options={BD}/><Sel label={t("Priority")} value={form.priority} onChange={function(e){setForm(function(p){return Object.assign({},p,{priority:e.target.value});});}} options={["high","medium","low"]}/><Sel label={t("Advocate")} value={form.advocate} onChange={function(e){setForm(function(p){return Object.assign({},p,{advocate:e.target.value});});}} options={lawyers}/></div>
+          <Sel label={t("Field Worker / Fellow")} value={form.worker} onChange={function(e){setForm(function(p){return Object.assign({},p,{worker:e.target.value});});}} options={["—",...workers]}/>
           <div style={{marginBottom:10}}>
-            <div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Case Documents (add names)</div>
-            <div style={{display:"flex",gap:7,marginBottom:7}}><input value={docF} onChange={function(e){setDocF(e.target.value);}} placeholder="e.g. Writ Petition, Vakalatnama, FIR Copy" style={{flex:1,background:C.surface,border:"1px solid "+C.border,borderRadius:7,padding:"7px 10px",color:C.text,fontSize:12}}/><Btn size="sm" onClick={function(){if(docF.trim()){setForm(function(p){return Object.assign({},p,{docs:[...p.docs,docF]});});setDocF("");}}} style={{flexShrink:0}}>+ Add</Btn></div>
+            <div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>{t("Case Documents (add names)")}</div>
+            <div style={{display:"flex",gap:7,marginBottom:7}}><input value={docF} onChange={function(e){setDocF(e.target.value);}} placeholder="e.g. Writ Petition, Vakalatnama, FIR Copy" style={{flex:1,background:C.surface,border:"1px solid "+C.border,borderRadius:7,padding:"7px 10px",color:C.text,fontSize:12}}/><Btn size="sm" onClick={function(){if(docF.trim()){setForm(function(p){return Object.assign({},p,{docs:[...p.docs,docF]});});setDocF("");}}} style={{flexShrink:0}}>+ {t("Add")}</Btn></div>
             {form.docs.length>0&&<div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{form.docs.map(function(d,i){return <span key={i} style={{background:C.accentSoft,color:C.accent,borderRadius:5,padding:"3px 8px",fontSize:11}}>📄 {d}</span>;})}</div>}
           </div>
           <div style={{marginBottom:10}}>
-            <div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Upload Case Files</div>
+            <div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>{t("Upload Case Files")}</div>
             <input type="file" multiple onChange={async function(e){await addFilesToForm(e.target.files);e.target.value="";}} style={{width:"100%",background:C.surface,border:"1px solid "+C.border,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,boxSizing:"border-box"}}/>
-            <div style={{fontSize:10,color:C.muted,marginTop:5}}>Files under about 2.2 MB are stored locally with preview/download support. Larger files are logged with metadata only.</div>
-            {form.attachments.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:8}}>{form.attachments.map(function(file){return <div key={file.id} style={{padding:"8px 10px",background:C.surface,borderRadius:8,border:"1px solid "+C.border}}><div style={{fontSize:12,color:C.text,fontWeight:600,lineHeight:1.4}}>{file.name}</div><div style={{fontSize:10,color:C.dim,marginTop:2}}>{formatBytes(file.size)} · {file.persisted?"saved locally":"metadata only"}</div></div>;})}</div>}
+            <div style={{fontSize:10,color:C.muted,marginTop:5}}>{t("Files under about 2.2 MB are stored locally with preview/download support. Larger files are logged with metadata only.")}</div>
+            {form.attachments.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:8}}>{form.attachments.map(function(file){return <div key={file.id} style={{padding:"8px 10px",background:C.surface,borderRadius:8,border:"1px solid "+C.border}}><div style={{fontSize:12,color:C.text,fontWeight:600,lineHeight:1.4}}>{file.name}</div><div style={{fontSize:10,color:C.dim,marginTop:2}}>{formatBytes(file.size)} · {file.persisted?t("saved locally"):t("metadata only")}</div></div>;})}</div>}
           </div>
         </Card>
         <Card>
-          <Sec>Legal Substance</Sec>
-          <Inp label="Statement of Facts" value={form.facts} onChange={function(e){setForm(function(p){return Object.assign({},p,{facts:e.target.value});});}} rows={5} placeholder="Chronological narrative of material facts..."/>
-          <Inp label="Legal Grounds (with citations)" value={form.grounds} onChange={function(e){setForm(function(p){return Object.assign({},p,{grounds:e.target.value});});}} rows={5} placeholder="1. Ground — citing case and year"/>
-          <Inp label="Relief Sought" value={form.relief} onChange={function(e){setForm(function(p){return Object.assign({},p,{relief:e.target.value});});}} rows={3}/>
-          <div style={{display:"flex",gap:8,marginTop:6}}><Btn onClick={save}>Save Case</Btn><Btn color="ghost" onClick={function(){setView("list");}}>Cancel</Btn></div>
+          <Sec>{t("Legal Substance")}</Sec>
+          <Inp label={t("Statement of Facts")} value={form.facts} onChange={function(e){setForm(function(p){return Object.assign({},p,{facts:e.target.value});});}} rows={5} placeholder={t("Chronological narrative of material facts...")}/>
+          <Inp label={t("Legal Grounds (with citations)")} value={form.grounds} onChange={function(e){setForm(function(p){return Object.assign({},p,{grounds:e.target.value});});}} rows={5} placeholder={t("1. Ground — citing case and year")}/>
+          <Inp label={t("Relief Sought")} value={form.relief} onChange={function(e){setForm(function(p){return Object.assign({},p,{relief:e.target.value});});}} rows={3}/>
+          <div style={{display:"flex",gap:8,marginTop:6}}><Btn onClick={save}>{t("Save Case")}</Btn><Btn color="ghost" onClick={function(){setView("list");}}>{t("Cancel")}</Btn></div>
         </Card>
       </div>
     </div>
   );
   if(view==="detail"&&cas)return(
     <div>
-      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:13,flexWrap:"wrap"}}><Btn color="ghost" size="sm" onClick={function(){setView("list");}}>← Cases</Btn><div style={{flex:1,fontFamily:"'Playfair Display',serif",fontSize:15,color:C.text}}>{cas.title}</div><Badge label={cas.type.length>18?cas.type.slice(0,18)+"…":cas.type} color={cas.type.includes("PIL")?"blue":cas.type.includes("Writ")?"red":"amber"}/><Badge label={cas.status} color={cas.status==="active"?"green":cas.status==="overdue"?"red":"gray"}/><Badge label={cas.priority+" priority"} color={cas.priority==="high"?"red":"amber"}/></div>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:13,flexWrap:"wrap"}}><Btn color="ghost" size="sm" onClick={function(){setView("list");}}>← {t("Cases")}</Btn><div style={{flex:1,fontFamily:"'Playfair Display',serif",fontSize:15,color:C.text}}>{cas.title}</div><Badge label={cas.type.length>18?cas.type.slice(0,18)+"…":cas.type} color={cas.type.includes("PIL")?"blue":cas.type.includes("Writ")?"red":"amber"}/><Badge label={cas.status} color={cas.status==="active"?"green":cas.status==="overdue"?"red":"gray"}/><Badge label={cas.priority+" "+t("priority")} color={cas.priority==="high"?"red":"amber"}/></div>
       <div style={{display:"grid",gridTemplateColumns:"1.1fr 1fr",gap:12,marginBottom:12}}>
         <Card>
-          <Sec>Case Particulars</Sec>
+          <Sec>{t("Case Particulars")}</Sec>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:11}}>
-            {[["Court",cas.court],["Case No.",cas.caseNo||"—"],["FIR No.",cas.firNo||"—"],["Sections",cas.section||"—"],["Police Station",cas.ps||"—"],["District",cas.district||"—"],["Advocate",cas.advocate],["Field Worker",cas.worker||"—"],["Last Updated",fmt(cas.updatedAt)+" ("+dF(cas.updatedAt)+"d ago)"]].map(function(item){return <div key={item[0]} style={{background:C.surface,borderRadius:7,padding:"7px 10px"}}><div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>{item[0]}</div><div style={{fontSize:12,color:C.text,fontWeight:600}}>{item[1]}</div></div>;})}
+            {[[t("Court"),cas.court],[t("Case No."),cas.caseNo||"—"],[t("FIR No."),cas.firNo||"—"],[t("Sections"),cas.section||"—"],[t("Police Station"),cas.ps||"—"],[t("District"),cas.district||"—"],[t("Advocate"),cas.advocate],[t("Field Worker"),cas.worker||"—"],[t("Last Updated"),fmt(cas.updatedAt)+" ("+dF(cas.updatedAt)+"d "+t("ago")+")"]].map(function(item){return <div key={item[0]} style={{background:C.surface,borderRadius:7,padding:"7px 10px"}}><div style={{fontSize:9,color:C.dim,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>{item[0]}</div><div style={{fontSize:12,color:C.text,fontWeight:600}}>{item[1]}</div></div>;})}
           </div>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{["active","overdue","stayed","closed"].map(function(s){return <Btn key={s} size="sm" color={cas.status===s?"accent":"ghost"} onClick={function(){upd(sel,{status:s});}} style={{textTransform:"capitalize"}}>{s}</Btn>;})}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{["active","overdue","stayed","closed"].map(function(s){return <Btn key={s} size="sm" color={cas.status===s?"accent":"ghost"} onClick={function(){upd(sel,{status:s});}} style={{textTransform:"capitalize"}}>{t(s)}</Btn>;})}</div>
         </Card>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <Card style={{flex:1}}><Sec>Statement of Facts</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{cas.facts||"No facts recorded."}</div></Card>
-          <Card><Sec>Relief Sought</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{cas.relief||"—"}</div></Card>
+          <Card style={{flex:1}}><Sec>{t("Statement of Facts")}</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{cas.facts||t("No facts recorded.")}</div></Card>
+          <Card><Sec>{t("Relief Sought")}</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{cas.relief||"—"}</div></Card>
         </div>
       </div>
-      {cas.grounds&&<Card style={{marginBottom:12}}><Sec>Legal Grounds</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.9,whiteSpace:"pre-wrap"}}>{cas.grounds}</div></Card>}
+      {cas.grounds&&<Card style={{marginBottom:12}}><Sec>{t("Legal Grounds")}</Sec><div style={{fontSize:12.5,color:C.text,lineHeight:1.9,whiteSpace:"pre-wrap"}}>{cas.grounds}</div></Card>}
       <Card>
         <div style={{display:"flex",gap:4,marginBottom:13,borderBottom:"1px solid "+C.border,paddingBottom:10,flexWrap:"wrap"}}>
-          {["diary","hearings","documents","tasks"].map(function(p){const labels={diary:"📓 Case Diary",hearings:"🗓 Hearings",documents:"📁 Documents ("+(((cas.docs||[]).length)+((cas.attachments||[]).length))+")",tasks:"✅ Tasks ("+tasks.filter(function(t){return t.caseId===sel&&t.status!=="done";}).length+")"};return <button key={p} onClick={function(){setPanel(p);}} style={{padding:"5px 12px",borderRadius:6,border:"none",background:panel===p?C.accentSoft:"transparent",color:panel===p?C.accent:C.dim,fontSize:11,fontWeight:panel===p?700:400,cursor:"pointer"}}>{labels[p]}</button>;})}
+          {["diary","hearings","documents","tasks"].map(function(p){const labels={diary:"📓 "+t("Case Diary"),hearings:"🗓 "+t("Hearings"),documents:"📁 "+t("Documents")+" ("+(((cas.docs||[]).length)+((cas.attachments||[]).length))+")",tasks:"✅ "+t("Tasks")+" ("+tasks.filter(function(tk){return tk.caseId===sel&&tk.status!=="done";}).length+")"};return <button key={p} onClick={function(){setPanel(p);}} style={{padding:"5px 12px",borderRadius:6,border:"none",background:panel===p?C.accentSoft:"transparent",color:panel===p?C.accent:C.dim,fontSize:11,fontWeight:panel===p?700:400,cursor:"pointer"}}>{labels[p]}</button>;})}
         </div>
         {panel==="diary"&&<div>
           <div style={{padding:"11px 13px",background:C.surface,borderRadius:8,marginBottom:11}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label="Action Taken" value={df.action} onChange={function(e){setDf(function(p){return Object.assign({},p,{action:e.target.value});});}} placeholder="e.g. Filed writ petition"/><Sel label="By" value={df.by} onChange={function(e){setDf(function(p){return Object.assign({},p,{by:e.target.value});});}} options={allNames}/></div>
-            <Inp label="Notes" value={df.notes} onChange={function(e){setDf(function(p){return Object.assign({},p,{notes:e.target.value});});}}/>
-            <Btn size="sm" onClick={addDiary}>Add Entry</Btn>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label={t("Action Taken")} value={df.action} onChange={function(e){setDf(function(p){return Object.assign({},p,{action:e.target.value});});}} placeholder="e.g. Filed writ petition"/><Sel label={t("By")} value={df.by} onChange={function(e){setDf(function(p){return Object.assign({},p,{by:e.target.value});});}} options={allNames}/></div>
+            <Inp label={t("Notes")} value={df.notes} onChange={function(e){setDf(function(p){return Object.assign({},p,{notes:e.target.value});});}}/>
+            <Btn size="sm" onClick={addDiary}>{t("Add Entry")}</Btn>
           </div>
           {(cas.diary||[]).slice().reverse().map(function(d){return <div key={d.id} style={{display:"flex",gap:11,padding:"9px 0",borderBottom:"1px solid "+C.border+"20"}}><div style={{width:62,fontSize:11,color:C.dim,flexShrink:0,paddingTop:2}}>{fmt(d.date)}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{d.action}</div>{d.notes&&<div style={{fontSize:11,color:C.dim,marginTop:2}}>{d.notes}</div>}<div style={{fontSize:11,color:C.accent,marginTop:2}}>— {d.by}</div></div></div>;})}
         </div>}
         {panel==="hearings"&&<div>
           <div style={{padding:"11px 13px",background:C.surface,borderRadius:8,marginBottom:11}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9}}><Inp label="Hearing Date" type="date" value={hf.date} onChange={function(e){setHf(function(p){return Object.assign({},p,{date:e.target.value});});}} /><Inp label="Next Date" type="date" value={hf.nextDate} onChange={function(e){setHf(function(p){return Object.assign({},p,{nextDate:e.target.value});});}} /><Sel label="By" value={hf.by} onChange={function(e){setHf(function(p){return Object.assign({},p,{by:e.target.value});});}} options={allNames}/></div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label="Purpose" value={hf.purpose} onChange={function(e){setHf(function(p){return Object.assign({},p,{purpose:e.target.value});});}} placeholder="e.g. Admission, Arguments"/><Inp label="Outcome" value={hf.outcome} onChange={function(e){setHf(function(p){return Object.assign({},p,{outcome:e.target.value});});}} placeholder="e.g. Notice to State"/></div>
-            <Btn size="sm" onClick={addHearing}>Add Hearing</Btn>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9}}><Inp label={t("Hearing Date")} type="date" value={hf.date} onChange={function(e){setHf(function(p){return Object.assign({},p,{date:e.target.value});});}} /><Inp label={t("Next Date")} type="date" value={hf.nextDate} onChange={function(e){setHf(function(p){return Object.assign({},p,{nextDate:e.target.value});});}} /><Sel label={t("By")} value={hf.by} onChange={function(e){setHf(function(p){return Object.assign({},p,{by:e.target.value});});}} options={allNames}/></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}><Inp label={t("Purpose")} value={hf.purpose} onChange={function(e){setHf(function(p){return Object.assign({},p,{purpose:e.target.value});});}} placeholder="e.g. Admission, Arguments"/><Inp label={t("Outcome")} value={hf.outcome} onChange={function(e){setHf(function(p){return Object.assign({},p,{outcome:e.target.value});});}} placeholder="e.g. Notice to State"/></div>
+            <Btn size="sm" onClick={addHearing}>{t("Add Hearing")}</Btn>
           </div>
           {calMsg&&<div style={{marginBottom:9,fontSize:12,color:C.accent,padding:"7px 11px",background:C.accentSoft,borderRadius:7}}>{calMsg}</div>}
-          {(cas.hearings||[]).slice().reverse().map(function(h){return <div key={h.id} style={{display:"flex",gap:11,padding:"10px 0",borderBottom:"1px solid "+C.border+"20",alignItems:"flex-start"}}><div style={{width:62,flexShrink:0}}><div style={{fontSize:11,color:C.dim}}>{fmt(h.date)}</div></div><div style={{flex:1}}><div style={{fontWeight:600,fontSize:13,color:C.text}}>{h.purpose||"Hearing"}</div><div style={{fontSize:11,color:C.dim}}>{h.court}</div>{h.outcome&&<div style={{fontSize:12,color:C.text,marginTop:2}}>Outcome: {h.outcome}</div>}{h.nextDate&&<div style={{fontSize:12,color:C.accent,marginTop:2}}>Next: {fmt(h.nextDate)} · {h.by}</div>}</div>{h.nextDate&&dT(h.nextDate)>=0&&<Btn size="sm" color="ghost" onClick={function(){syncCal(h);}}>📅 Calendar</Btn>}</div>;})}
+          {(cas.hearings||[]).slice().reverse().map(function(h){return <div key={h.id} style={{display:"flex",gap:11,padding:"10px 0",borderBottom:"1px solid "+C.border+"20",alignItems:"flex-start"}}><div style={{width:62,flexShrink:0}}><div style={{fontSize:11,color:C.dim}}>{fmt(h.date)}</div></div><div style={{flex:1}}><div style={{fontWeight:600,fontSize:13,color:C.text}}>{h.purpose||t("Hearing")}</div><div style={{fontSize:11,color:C.dim}}>{h.court}</div>{h.outcome&&<div style={{fontSize:12,color:C.text,marginTop:2}}>{t("Outcome")}: {h.outcome}</div>}{h.nextDate&&<div style={{fontSize:12,color:C.accent,marginTop:2}}>{t("Next")}: {fmt(h.nextDate)} · {h.by}</div>}</div>{h.nextDate&&dT(h.nextDate)>=0&&<Btn size="sm" color="ghost" onClick={function(){syncCal(h);}}>📅 {t("Calendar")}</Btn>}</div>;})}
         </div>}
         {panel==="documents"&&<div>
           <div style={{display:"flex",gap:7,marginBottom:11}}><input value={docF} onChange={function(e){setDocF(e.target.value);}} placeholder="Document name (e.g. Writ Petition, Vakalatnama, Affidavit)" style={{flex:1,background:C.surface,border:"1px solid "+C.border,borderRadius:7,padding:"7px 10px",color:C.text,fontSize:12.5}}/><Btn size="sm" onClick={addDoc}>Add</Btn></div>

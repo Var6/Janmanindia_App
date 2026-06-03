@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface User { _id: string; name: string; role: string; employeeId?: string }
 interface Conversation {
@@ -33,6 +34,7 @@ const POLL_MS_FOCUSED = 4000;
 const POLL_MS_HIDDEN  = 30000; // back off when tab hidden
 
 export default function ChatApp({ currentUserId, currentUserRole }: Props) {
+  const t = useT();
   // Community members can only DM their assigned social worker — group
   // chats are a staff coordination tool and aren't exposed to them.
   const canCreateGroups = currentUserRole !== "community";
@@ -123,7 +125,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
     });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed to start chat");
+      alert(d.error ?? t("Failed to start chat"));
       return;
     }
     const d = await res.json();
@@ -162,7 +164,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Failed to create group");
+        alert(d.error ?? t("Failed to create group"));
         return;
       }
       const d = await res.json();
@@ -188,7 +190,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Send failed");
+        alert(d.error ?? t("Send failed"));
       } else {
         const d = await res.json();
         setMessages((prev) => [...prev, d.message]);
@@ -209,7 +211,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error ?? "Voice send failed");
+        alert(d.error ?? t("Voice send failed"));
       } else {
         const d = await res.json();
         setMessages((prev) => [...prev, d.message]);
@@ -220,11 +222,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
 
   async function deleteConversation(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm("Delete this conversation? All messages are removed for both sides.")) return;
+    if (!confirm(t("Delete this conversation? All messages are removed for both sides."))) return;
     const res = await fetch(`/api/chat/conversations/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed");
+      alert(d.error ?? t("Failed"));
       return;
     }
     setConversations((prev) => prev.filter((c) => c._id !== id));
@@ -244,7 +246,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
     });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed");
+      alert(d.error ?? t("Failed"));
       return;
     }
     const d = await res.json();
@@ -253,11 +255,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   }
 
   async function deleteMessage(id: string) {
-    if (!confirm("Delete this message?")) return;
+    if (!confirm(t("Delete this message?"))) return;
     const res = await fetch(`/api/chat/messages/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed");
+      alert(d.error ?? t("Failed"));
       return;
     }
     setMessages((prev) => prev.filter((m) => m._id !== id));
@@ -274,9 +276,9 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
       if (c.title) return c.title;
       const others = c.participants.filter((p) => p._id !== currentUserId);
       const names = others.slice(0, 3).map((p) => p.name.split(" ")[0]).join(", ");
-      return others.length > 3 ? `${names} +${others.length - 3}` : names || "Group";
+      return others.length > 3 ? `${names} +${others.length - 3}` : names || t("Group");
     }
-    return peerOf(c)?.name ?? "Unknown";
+    return peerOf(c)?.name ?? t("Unknown");
   }
 
   function convSubtitle(c: Conversation): string {
@@ -295,7 +297,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
       <aside className="rounded-xl border border-(--border) bg-(--surface) overflow-hidden flex flex-col">
         <div className="px-3 py-2.5 border-b border-(--border) flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-wide text-(--muted)">
-            {showContacts ? (composeMode === "group" ? "New group" : "Start chat") : "Chats"}
+            {showContacts ? (composeMode === "group" ? t("New group") : t("Start chat")) : t("Chats")}
           </p>
           {currentUserRole !== "community" && (
             <button onClick={() => { if (showContacts) resetCompose(); setShowContacts(!showContacts); }}
@@ -320,7 +322,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                       color: composeMode === m ? "var(--accent-contrast)" : "var(--muted)",
                       border: "1px solid var(--border)",
                     }}>
-                    {m === "dm" ? "Direct" : "Group"}
+                    {m === "dm" ? t("Direct") : t("Group")}
                   </button>
                 ))}
               </div>
@@ -330,16 +332,16 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
             {composeMode === "group" && (
               <div className="px-3 pb-2 space-y-2 border-b border-(--border)">
                 <input value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)}
-                  placeholder="Group name (optional)" maxLength={80}
+                  placeholder={t("Group name (optional)")} maxLength={80}
                   className="w-full px-2.5 py-1.5 text-xs rounded-md border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-(--muted)">
-                    {groupSelected.size === 0 ? "Pick members below" : `${groupSelected.size} selected`}
+                    {groupSelected.size === 0 ? t("Pick members below") : `${groupSelected.size} selected`}
                   </p>
                   <button onClick={createGroup} disabled={groupSelected.size === 0 || creatingGroup}
                     className="text-[11px] px-2.5 py-1 rounded-md font-bold disabled:opacity-40"
                     style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                    {creatingGroup ? "Creating…" : "Create group"}
+                    {creatingGroup ? t("Creating…") : t("Create group")}
                   </button>
                 </div>
               </div>
@@ -392,7 +394,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
           <div className="overflow-y-auto flex-1">
             {conversations.length === 0 ? (
               <p className="px-3 py-6 text-xs text-center text-(--muted)">
-                No chats yet — tap <strong>＋</strong>.
+                {t("No chats yet — tap")} <strong>＋</strong>.
               </p>
             ) : (
               <ul className="divide-y divide-(--border)">
@@ -427,7 +429,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                         </div>
                       </button>
                       <button onClick={(e) => deleteConversation(c._id, e)}
-                        title="Delete chat"
+                        title={t("Delete chat")}
                         className="absolute right-1.5 top-1.5 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-md flex items-center justify-center text-xs"
                         style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                         ✕
@@ -446,7 +448,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
         {!activeId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
             <p className="text-4xl mb-2">💬</p>
-            <p className="text-sm text-(--muted)">Pick a conversation or start a new one.</p>
+            <p className="text-sm text-(--muted)">{t("Pick a conversation or start a new one.")}</p>
           </div>
         ) : (
           <>
@@ -457,7 +459,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-(--text) truncate">
-                  {active ? convLabel(active) : "Conversation"}
+                  {active ? convLabel(active) : t("Conversation")}
                 </p>
                 <p className="text-[10px] text-(--muted) capitalize truncate">
                   {active?.type === "group"
@@ -469,7 +471,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
               {messages.length === 0 ? (
-                <p className="text-xs text-center text-(--muted) py-6">No messages yet.</p>
+                <p className="text-xs text-center text-(--muted) py-6">{t("No messages yet.")}</p>
               ) : messages.map((m, i) => {
                 const mine = m.sender._id === currentUserId;
                 const prev = messages[i - 1];
@@ -481,11 +483,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                       {mine && !isEditing && (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5">
                           <button onClick={() => { setEditingId(m._id); setEditText(m.text); }}
-                            title="Edit" className="text-[10px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text)">
+                            title={t("Edit")} className="text-[10px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text)">
                             ✎
                           </button>
                           <button onClick={() => deleteMessage(m._id)}
-                            title="Delete" className="text-[10px] px-1.5 py-0.5 rounded text-(--error-text)"
+                            title={t("Delete")} className="text-[10px] px-1.5 py-0.5 rounded text-(--error-text)"
                             style={{ background: "var(--error-bg)" }}>
                             ✕
                           </button>
@@ -508,12 +510,12 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                             <div className="flex gap-1 justify-end">
                               <button onClick={() => setEditingId(null)}
                                 className="text-[10px] px-2 py-0.5 rounded border border-(--border) text-(--text)" style={{ background: "var(--bg)" }}>
-                                Cancel
+                                {t("Cancel")}
                               </button>
                               <button onClick={() => saveEdit(m._id)}
                                 className="text-[10px] px-2 py-0.5 rounded font-semibold text-(--accent-contrast)"
                                 style={{ background: "var(--accent)" }}>
-                                Save
+                                {t("Save")}
                               </button>
                             </div>
                           </div>
@@ -527,7 +529,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                             <p className="text-[10px] opacity-60 mt-0.5 text-right">
                               {m.audioUrl && typeof m.audioDurationSec === "number" && `🎤 ${m.audioDurationSec}s · `}
                               {new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                              {m.editedAt && " · edited"}
+                              {m.editedAt && ` · ${t("edited")}`}
                             </p>
                           </>
                         )}
@@ -541,7 +543,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
             <form onSubmit={send} className="p-2 border-t border-(--border) flex gap-2 items-center">
               <VoiceRecorder compact disabled={sending} onUploaded={sendVoice} />
               <input value={text} onChange={(e) => setText(e.target.value)}
-                placeholder="Type a message or tap 🎤 to record…" disabled={sending} maxLength={4000}
+                placeholder={t("Type a message or tap 🎤 to record…")} disabled={sending} maxLength={4000}
                 className="flex-1 px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
               <button type="submit" disabled={sending || !text.trim()}
                 className="px-3 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast) disabled:opacity-40"

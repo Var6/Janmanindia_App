@@ -5,6 +5,7 @@ import OnboardingDocsFields, { EMPTY_DOCS, type OnboardingDocs } from "@/compone
 import { SkeletonRow } from "@/components/ui/Skeleton";
 import { checkOnboardingDocs, missingOnboardingDocs, onboardingCompleteness, type OnboardingDocsLike } from "@/lib/onboarding-docs";
 import AvatarUpload from "@/components/shared/AvatarUpload";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type StaffUser = {
   _id: string; name: string; email: string; phone?: string; linkedinUrl?: string; avatarUrl?: string; role: string;
@@ -34,6 +35,7 @@ const ASSET_TYPES: { value: string; label: string }[] = [
 const STAFF_ROLES = "socialworker,litigation,hr,finance,admin";
 
 export default function OnboardingPage() {
+  const t = useT();
   const [tab, setTab] = useState<"onboard" | "active">("onboard");
   const [staff, setStaff] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,9 +98,9 @@ export default function OnboardingPage() {
       });
       const d = await res.json();
       if (!res.ok) {
-        setError(d.error ?? "Failed to create account.");
+        setError(d.error ?? t("Failed to create account."));
       } else {
-        setSuccess(`${d.user.name} onboarded — Employee ID: ${d.user.employeeId}`);
+        setSuccess(`${d.user.name} ${t("onboarded — Employee ID:")} ${d.user.employeeId}`);
         await loadStaff();
         setTab("active");
         setExpanded(d.user._id);
@@ -107,7 +109,7 @@ export default function OnboardingPage() {
         setNewAvatarUrl(undefined);
       }
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +132,7 @@ export default function OnboardingPage() {
     });
     if (!res.ok) {
       const d = await res.json();
-      alert(d.error ?? "Failed to assign asset");
+      alert(d.error ?? t("Failed to assign asset"));
       return;
     }
     form.reset();
@@ -151,20 +153,20 @@ export default function OnboardingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Onboarding</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Onboarding")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Create accounts with auto-generated Employee IDs and assign equipment in sequence.
+          {t("Create accounts with auto-generated Employee IDs and assign equipment in sequence.")}
         </p>
       </div>
 
       <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
-        {(["onboard", "active"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
+        {(["onboard", "active"] as const).map((t2) => (
+          <button key={t2} onClick={() => setTab(t2)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              tab === t ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
+              tab === t2 ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
             }`}
-            style={tab === t ? { background: "var(--accent)" } : undefined}>
-            {t === "onboard" ? "New Staff" : `Active Staff (${activeStaff.length})`}
+            style={tab === t2 ? { background: "var(--accent)" } : undefined}>
+            {t2 === "onboard" ? t("New Staff") : `${t("Active Staff")} (${activeStaff.length})`}
           </button>
         ))}
       </div>
@@ -174,11 +176,11 @@ export default function OnboardingPage() {
 
       {tab === "onboard" ? (
         <form onSubmit={handleOnboard} className="bg-(--surface) rounded-2xl border border-(--border) p-6 space-y-5">
-          <h2 className="font-semibold text-(--text)">New Staff Account</h2>
+          <h2 className="font-semibold text-(--text)">{t("New Staff Account")}</h2>
 
           {/* Profile photo */}
           <div className="pb-2 border-b" style={{ borderColor: "var(--border)" }}>
-            <p className="text-sm font-medium text-(--text) mb-3">Profile Photo <span className="text-xs text-(--muted) font-normal">(optional)</span></p>
+            <p className="text-sm font-medium text-(--text) mb-3">{t("Profile Photo")} <span className="text-xs text-(--muted) font-normal">({t("optional")})</span></p>
             <AvatarUpload
               currentUrl={newAvatarUrl}
               name="New Staff"
@@ -190,66 +192,66 @@ export default function OnboardingPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Full Name <span className="text-red-500">*</span></label>
-              <input name="name" required placeholder="Full name"
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Full Name")} <span className="text-red-500">*</span></label>
+              <input name="name" required placeholder={t("Full name")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Email <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Email")} <span className="text-red-500">*</span></label>
               <input name="email" type="email" required placeholder="email@example.com"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Phone</label>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Phone")}</label>
               <input name="phone" type="tel" placeholder="+91 XXXXX XXXXX"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">LinkedIn Profile URL <span className="text-xs text-(--muted)">(optional)</span></label>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("LinkedIn Profile URL")} <span className="text-xs text-(--muted)">({t("optional")})</span></label>
               <input name="linkedinUrl" type="url" placeholder="https://linkedin.com/in/username"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Role <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Role")} <span className="text-red-500">*</span></label>
               <select name="role" required defaultValue=""
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)">
-                <option value="" disabled>Select role…</option>
-                <option value="socialworker">Social Worker</option>
-                <option value="litigation">Litigation Team</option>
-                <option value="hr">HR</option>
-                <option value="finance">Finance</option>
-                <option value="director">Admin</option>
+                <option value="" disabled>{t("Select role…")}</option>
+                <option value="socialworker">{t("Social Worker")}</option>
+                <option value="litigation">{t("Litigation Team")}</option>
+                <option value="hr">{t("HR")}</option>
+                <option value="finance">{t("Finance")}</option>
+                <option value="director">{t("Admin")}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Temporary Password <span className="text-red-500">*</span></label>
-              <input name="password" type="password" required minLength={8} placeholder="Min 8 characters"
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Temporary Password")} <span className="text-red-500">*</span></label>
+              <input name="password" type="password" required minLength={8} placeholder={t("Min 8 characters")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">
-                Project Code <span className="text-red-500">*</span>
-                <span className="ml-1 text-[11px] font-normal text-(--muted)">3 letters · used in Employee ID</span>
+                {t("Project Code")} <span className="text-red-500">*</span>
+                <span className="ml-1 text-[11px] font-normal text-(--muted)">{t("3 letters · used in Employee ID")}</span>
               </label>
               <input name="project" required maxLength={3} pattern="[A-Za-z]{3}"
                 placeholder="JNA"
                 onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toUpperCase().replace(/[^A-Z]/g, ""); }}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm uppercase tracking-widest font-mono focus:outline-none focus:border-(--accent)" />
-              <p className="text-[11px] text-(--muted) mt-1 italic">e.g. JNA · DLF · COR — generates JPF/JNA/26/01</p>
+              <p className="text-[11px] text-(--muted) mt-1 italic">{t("e.g. JNA · DLF · COR — generates JPF/JNA/26/01")}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">Bar Council ID <span className="text-xs text-(--muted)">(Litigation)</span></label>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Bar Council ID")} <span className="text-xs text-(--muted)">({t("Litigation")})</span></label>
               <input name="barCouncilId" placeholder="BCI/UP/XXXX/XXXX"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">District <span className="text-xs text-(--muted)">(Litigation)</span></label>
-              <input name="district" placeholder="e.g. Patna"
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("District")} <span className="text-xs text-(--muted)">({t("Litigation")})</span></label>
+              <input name="district" placeholder={t("e.g. Patna")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(--text) mb-1.5">City <span className="text-xs text-(--muted)">(Litigation)</span></label>
-              <input name="city" placeholder="e.g. Patna"
+              <label className="block text-sm font-medium text-(--text) mb-1.5">{t("City")} <span className="text-xs text-(--muted)">({t("Litigation")})</span></label>
+              <input name="city" placeholder={t("e.g. Patna")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent)" />
             </div>
           </div>
@@ -259,7 +261,7 @@ export default function OnboardingPage() {
           <button type="submit" disabled={submitting}
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-(--accent-contrast) disabled:opacity-60"
             style={{ background: "var(--accent)" }}>
-            {submitting ? "Creating account…" : "Create Staff Account & Generate Employee ID"}
+            {submitting ? t("Creating account…") : t("Create Staff Account & Generate Employee ID")}
           </button>
         </form>
       ) : (
@@ -273,7 +275,7 @@ export default function OnboardingPage() {
             ))
           ) : activeStaff.length === 0 ? (
             <div className="py-16 text-center bg-(--surface) rounded-2xl border border-(--border)">
-              <p className="text-sm text-(--muted)">No active staff found.</p>
+              <p className="text-sm text-(--muted)">{t("No active staff found.")}</p>
             </div>
           ) : (
             activeStaff.map((s) => {
@@ -328,17 +330,17 @@ export default function OnboardingPage() {
                       {!isDocComplete && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
-                          ⚠ {docsMissing.length} doc{docsMissing.length === 1 ? "" : "s"} missing · {docCompletion.pct}%
+                          ⚠ {docsMissing.length} {docsMissing.length === 1 ? t("doc") : t("docs")} {t("missing")} · {docCompletion.pct}%
                         </span>
                       )}
                       {isDocComplete && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                          style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>✓ docs complete</span>
+                          style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>✓ {t("docs complete")}</span>
                       )}
                       {open && outstanding > 0 && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                           style={{ background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }}>
-                          {outstanding} asset{outstanding === 1 ? "" : "s"}
+                          {outstanding} {outstanding === 1 ? t("asset") : t("assets")}
                         </span>
                       )}
                       <span className="text-xs text-(--muted)">{open ? "▾" : "▸"}</span>
@@ -350,9 +352,9 @@ export default function OnboardingPage() {
                       {/* Onboarding documents — show what's missing + inline editor */}
                       <StaffDocsBlock staff={s} onSaved={loadStaff} />
 
-                      <h3 className="text-sm font-semibold text-(--text)">Assigned Assets</h3>
+                      <h3 className="text-sm font-semibold text-(--text)">{t("Assigned Assets")}</h3>
                       {assets.length === 0 ? (
-                        <p className="text-xs text-(--muted)">No assets assigned yet.</p>
+                        <p className="text-xs text-(--muted)">{t("No assets assigned yet.")}</p>
                       ) : (
                         <ul className="divide-y divide-(--border) rounded-lg border border-(--border)">
                           {assets.map((a) => (
@@ -364,8 +366,8 @@ export default function OnboardingPage() {
                                   {a.identifier && <span className="text-(--muted) text-xs"> · {a.identifier}</span>}
                                 </p>
                                 <p className="text-[11px] text-(--muted)">
-                                  Assigned {new Date(a.assignedAt).toLocaleDateString("en-IN")}
-                                  {a.returnedAt ? ` · Returned ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
+                                  {t("Assigned")} {new Date(a.assignedAt).toLocaleDateString("en-IN")}
+                                  {a.returnedAt ? ` · ${t("Returned")} ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
                                 </p>
                               </div>
                               <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
@@ -386,17 +388,17 @@ export default function OnboardingPage() {
                         className="grid grid-cols-1 sm:grid-cols-[150px_1fr_1fr_auto] gap-2 items-end pt-3 border-t border-(--border)">
                         <select name="type" required defaultValue=""
                           className="px-2 py-1.5 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text)">
-                          <option value="" disabled>Type…</option>
-                          {ASSET_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                          <option value="" disabled>{t("Type…")}</option>
+                          {ASSET_TYPES.map((at) => <option key={at.value} value={at.value}>{t(at.label)}</option>)}
                         </select>
-                        <input name="name" required placeholder="Item name (e.g. MacBook Air M2)"
+                        <input name="name" required placeholder={t("Item name (e.g. MacBook Air M2)")}
                           className="px-2 py-1.5 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text)" />
-                        <input name="identifier" placeholder="Serial / IMEI / email / reg no."
+                        <input name="identifier" placeholder={t("Serial / IMEI / email / reg no.")}
                           className="px-2 py-1.5 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text)" />
                         <button type="submit"
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg text-(--accent-contrast)"
                           style={{ background: "var(--accent)" }}>
-                          + Assign
+                          + {t("Assign")}
                         </button>
                       </form>
                     </div>
@@ -416,6 +418,7 @@ export default function OnboardingPage() {
  * (which has the freshest copy), shows a checklist of what's missing, and lets HR edit.
  */
 function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => void }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [docs, setDocs] = useState<OnboardingDocs>(() => normaliseDocs(staff.onboardingDocs));
   const [saving, setSaving] = useState(false);
@@ -435,9 +438,9 @@ function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => v
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsg({ ok: false, text: data.error ?? "Save failed." });
+        setMsg({ ok: false, text: data.error ?? t("Save failed.") });
       } else {
-        setMsg({ ok: true, text: "Saved." });
+        setMsg({ ok: true, text: t("Saved.") });
         setEditing(false);
         onSaved();
       }
@@ -450,15 +453,15 @@ function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => v
     <div className="rounded-xl border p-3 space-y-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h3 className="text-sm font-semibold text-(--text)">Onboarding documents</h3>
+          <h3 className="text-sm font-semibold text-(--text)">{t("Onboarding documents")}</h3>
           <p className="text-xs text-(--muted) mt-0.5">
-            {completion.present}/{completion.total} collected ({completion.pct}%)
+            {completion.present}/{completion.total} {t("collected")} ({completion.pct}%)
           </p>
         </div>
         <button onClick={() => { setEditing(s => !s); setMsg(null); }}
           className="text-xs px-3 py-1.5 rounded-lg font-semibold"
           style={{ background: editing ? "var(--bg-secondary)" : "var(--accent)", color: editing ? "var(--muted)" : "var(--accent-contrast)" }}>
-          {editing ? "Cancel" : (missing.length === 0 ? "Edit" : "Complete profile")}
+          {editing ? t("Cancel") : (missing.length === 0 ? t("Edit") : t("Complete profile"))}
         </button>
       </div>
 
@@ -474,7 +477,7 @@ function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => v
       )}
 
       {missing.length === 0 && !editing && (
-        <p className="text-xs" style={{ color: "var(--success-text)" }}>✓ All required documents collected.</p>
+        <p className="text-xs" style={{ color: "var(--success-text)" }}>✓ {t("All required documents collected.")}</p>
       )}
 
       {msg && (
@@ -487,18 +490,18 @@ function StaffDocsBlock({ staff, onSaved }: { staff: StaffUser; onSaved: () => v
       {editing && (
         <div className="space-y-3">
           <OnboardingDocsFields value={docs} onChange={setDocs}
-            title="Documentation" intro="Upload or paste in details that are missing. Saved straight to this staff member's profile."
+            title={t("Documentation")} intro={t("Upload or paste in details that are missing. Saved straight to this staff member's profile.")}
           />
           <div className="flex items-center gap-2">
             <button onClick={save} disabled={saving}
               className="px-4 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {saving ? "Saving…" : "Save documents"}
+              {saving ? t("Saving…") : t("Save documents")}
             </button>
             <button onClick={() => { setEditing(false); setDocs(normaliseDocs(staff.onboardingDocs)); }}
               className="px-3 py-1.5 rounded-lg text-xs"
               style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-              Discard
+              {t("Discard")}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getServerT } from "@/lib/i18n-server";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
@@ -8,6 +9,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 export default async function FinanceSalariesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "finance" && session.role !== "superadmin")) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -46,25 +48,25 @@ export default async function FinanceSalariesPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(text)">Salaries</h1>
+        <h1 className="text-2xl font-bold text-(text)">{t("Salaries")}</h1>
         <p className="text-sm text-(muted) mt-1">
-          Monthly salary overview based on approved daily reports for {monthStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}.
+          {t("Monthly salary overview based on approved daily reports for")} {monthStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}.
         </p>
       </div>
 
       {staff.length === 0 ? (
         <div className="py-16 text-center bg-(surface) rounded-2xl border border-(border)">
-          <p className="text-sm text-(muted)">{dbOk ? "No active staff." : "Connect database."}</p>
+          <p className="text-sm text-(muted)">{dbOk ? t("No active staff.") : t("Connect database.")}</p>
         </div>
       ) : (
         <>
           <div className="bg-(surface) rounded-2xl border border-(border) overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b border-(border) text-xs font-semibold text-(muted) uppercase tracking-wide">
-              <span>Staff Member</span>
-              <span className="px-4 text-right">Hours</span>
-              <span className="px-4 text-right">Rate/hr</span>
-              <span className="px-4 text-right">Expenses</span>
-              <span className="px-4 text-right">Total</span>
+              <span>{t("Staff Member")}</span>
+              <span className="px-4 text-right">{t("Hours")}</span>
+              <span className="px-4 text-right">{t("Rate/hr")}</span>
+              <span className="px-4 text-right">{t("Expenses")}</span>
+              <span className="px-4 text-right">{t("Total")}</span>
             </div>
             <div className="divide-y divide-(border)">
               {staff.map((s) => {
@@ -87,7 +89,7 @@ export default async function FinanceSalariesPage() {
               })}
             </div>
             <div className="px-5 py-3 border-t border-(border) flex justify-between items-center bg-(bg)">
-              <p className="text-sm font-semibold text-(text)">Total Payroll</p>
+              <p className="text-sm font-semibold text-(text)">{t("Total Payroll")}</p>
               <p className="text-sm font-bold text-(text)">
                 ₹{staff.reduce((sum, s) => {
                   const data = salaryMap[String(s._id)] ?? { hours: 0, expenses: 0 };
@@ -100,7 +102,7 @@ export default async function FinanceSalariesPage() {
 
           <div className="p-4 rounded-xl bg-(accent)/5 border border-(accent)/20">
             <p className="text-xs text-(muted)">
-              Salary is calculated as <strong>Approved Hours × Hourly Rate + Approved Expenses</strong>. Only HR-approved daily reports are counted. Contact Admin to adjust rates or disburse payments.
+              {t("Salary is calculated as")} <strong>{t("Approved Hours × Hourly Rate + Approved Expenses")}</strong>. {t("Only HR-approved daily reports are counted. Contact Admin to adjust rates or disburse payments.")}
             </p>
           </div>
         </>

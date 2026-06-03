@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface Tab {
   href: string;
@@ -57,14 +58,15 @@ export default function SectionTabs({ tabs, description }: Props) {
 /** Help & Support — Speak to Us / SOS / Chat. Used by the community
  *  pathway so all three help-seeking flows live under one sidebar item. */
 export function CommunityHelpTabs() {
+  const t = useT();
   return (
     <SectionTabs
       tabs={[
-        { href: "/community/speak-to-us", label: "Speak to us", icon: "🎤" },
-        { href: "/community/sos",         label: "SOS",         icon: "🚨" },
-        { href: "/chat",                  label: "Chat",        icon: "💬" },
+        { href: "/community/speak-to-us", label: t("Speak to us"), icon: "🎤" },
+        { href: "/community/sos",         label: t("SOS"),         icon: "🚨" },
+        { href: "/chat",                  label: t("Chat"),        icon: "💬" },
       ]}
-      description="Reach out for help — record a voice message, raise an emergency alert, or chat with your social worker."
+      description={t("Reach out for help — record a voice message, raise an emergency alert, or chat with your social worker.")}
     />
   );
 }
@@ -72,13 +74,14 @@ export function CommunityHelpTabs() {
 /** Cases & Appointments — surface case tracking and appointment booking
  *  under one sidebar entry. */
 export function CommunityCasesTabs() {
+  const t = useT();
   return (
     <SectionTabs
       tabs={[
-        { href: "/community/case-tracker", label: "Case tracker", icon: "📂" },
-        { href: "/community/appointments", label: "Appointments", icon: "📅" },
+        { href: "/community/case-tracker", label: t("Case tracker"), icon: "📂" },
+        { href: "/community/appointments", label: t("Appointments"), icon: "📅" },
       ]}
-      description="Track your cases and book meetings with your team."
+      description={t("Track your cases and book meetings with your team.")}
     />
   );
 }

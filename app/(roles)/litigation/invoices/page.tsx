@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import mongoose from "mongoose";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { tryConnectDB } from "@/lib/mongoose";
 import EodReport from "@/models/EodReport";
 import HeadLawyer from "@/models/HeadLawyer";
@@ -11,6 +12,8 @@ import InvoiceApprovalList from "@/components/reports/InvoiceApprovalList";
 export default async function LitigationInvoicesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "litigation" && session.role !== "superadmin")) redirect("/login");
+
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
@@ -52,11 +55,11 @@ export default async function LitigationInvoicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Invoice Approvals</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Invoice Approvals")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
           {myDistricts.length === 0
-            ? "You are not the head lawyer for any district yet. The director assigns this role from the Head Lawyer Assignments page."
-            : `You approve litigation invoices from ${myDistricts.join(", ")} after HR has verified them.`}
+            ? t("You are not the head lawyer for any district yet. The director assigns this role from the Head Lawyer Assignments page.")
+            : `${t("You approve litigation invoices from")} ${myDistricts.join(", ")} ${t("after HR has verified them.")}`}
         </p>
       </div>
 

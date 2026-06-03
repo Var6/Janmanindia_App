@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import CaseSearchInput, { type CaseRef } from "@/components/shared/CaseSearchInput";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type CaseRow = {
   case?: { _id: string } | string;
@@ -108,6 +109,7 @@ function makeBlankReport(): Report {
  * so an SW only types a few characters of the case number / title.
  */
 export default function DailyReportForm({ initialReport, canEdit, isSupervisor, onSaved }: Props) {
+  const t = useT();
   const [report, setReport] = useState<Report>(() => initialReport ?? makeBlankReport());
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState("");
@@ -185,7 +187,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
 
       const res = await fetch("/api/daily-reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Save failed"); return; }
+      if (!res.ok) { setError(data.error ?? t("Save failed")); return; }
       setReport(data.report);
       setSavedAt(new Date());
       onSaved?.(data.report);
@@ -203,7 +205,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
         body: JSON.stringify({ action: "review", supervisorRemarks }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed"); return; }
+      if (!res.ok) { setError(data.error ?? t("Failed")); return; }
       setReport(data.report);
       setSavedAt(new Date());
     } finally {
@@ -233,7 +235,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "PDF generation failed");
+      setError(e instanceof Error ? e.message : t("PDF generation failed"));
     } finally {
       setDownloading(false);
     }
@@ -262,30 +264,30 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       {/* Top bar */}
       <div className="dr-controls flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>Daily Social Worker Report</p>
+          <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>{t("Daily Social Worker Report")}</p>
           <p className="text-xs text-(--muted) mt-1">
-            Status: <span className="capitalize">{report.status}</span>
-            {report.submittedAt && ` · submitted ${new Date(report.submittedAt).toLocaleString("en-IN")}`}
-            {savedAt && ` · saved ${savedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
+            {t("Status:")} <span className="capitalize">{report.status}</span>
+            {report.submittedAt && ` · ${t("submitted")} ${new Date(report.submittedAt).toLocaleString("en-IN")}`}
+            {savedAt && ` · ${t("saved")} ${savedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={handleDownloadPdf} type="button" disabled={downloading}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            {downloading ? "Building PDF…" : "⬇ Download PDF"}
+            {downloading ? t("Building PDF…") : t("⬇ Download PDF")}
           </button>
           {canEdit && (
             <>
               <button onClick={() => save()} disabled={saving}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                 style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                {saving ? "Saving…" : "Save Draft"}
+                {saving ? t("Saving…") : t("Save Draft")}
               </button>
               <button onClick={() => save({ submit: true })} disabled={saving}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                 style={{ background: "var(--success)", color: "#fff" }}>
-                Submit for Review
+                {t("Submit for Review")}
               </button>
             </>
           )}
@@ -297,25 +299,25 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       {/* Header banner — reads as the printed cover */}
       <header className="dr-section rounded-2xl border p-5"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h1 className="text-base font-bold text-(--text)">Daily Social Worker Report — Survivor / Victim legal aid, rehabilitation and follow-up</h1>
+        <h1 className="text-base font-bold text-(--text)">{t("Daily Social Worker Report — Survivor / Victim legal aid, rehabilitation and follow-up")}</h1>
         <p className="text-[11px] text-(--muted) italic mt-1">
-          Confidential. Use Case ID / Client Code wherever possible. Avoid unnecessary disclosure of survivor/victim identity.
+          {t("Confidential. Use Case ID / Client Code wherever possible. Avoid unnecessary disclosure of survivor/victim identity.")}
         </p>
       </header>
 
       {/* Section A */}
-      <Section title="A. Reporting details">
+      <Section title={t("A. Reporting details")}>
         <Grid cols={2}>
-          <Field label="Date of report">
+          <Field label={t("Date of report")}>
             <input type="date" value={report.reportDate ?? ""} disabled={ro}
               onChange={e => setField("reportDate", e.target.value)}
               className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-100"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </Field>
-          <Field label="District / Block">
+          <Field label={t("District / Block")}>
             <input value={report.districtBlock ?? ""} disabled={ro}
               onChange={e => setField("districtBlock", e.target.value)}
-              placeholder="e.g. Patna / Phulwari Sharif"
+              placeholder={t("e.g. Patna / Phulwari Sharif")}
               className="w-full px-3 py-2 rounded-lg border text-sm disabled:opacity-100"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </Field>
@@ -323,33 +325,33 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       </Section>
 
       {/* Section B — auto-derived with manual override */}
-      <Section title="B. Daily summary"
-        subtitle="Counters auto-fill from the Case-wise table below as you type. Adjust any cell by hand if needed.">
+      <Section title={t("B. Daily summary")}
+        subtitle={t("Counters auto-fill from the Case-wise table below as you type. Adjust any cell by hand if needed.")}>
         <Grid cols={3}>
-          <Counter label="Total cases followed up"      value={report.summary?.totalCases}                  fallback={derived.totalCases}                  onChange={v => setSummary("totalCases", v)}                ro={ro} />
-          <Counter label="New cases received"           value={report.summary?.newCases}                    fallback={0}                                   onChange={v => setSummary("newCases", v)}                  ro={ro} />
-          <Counter label="Home / field visits"          value={report.summary?.homeFieldVisits}             fallback={derived.homeFieldVisits}             onChange={v => setSummary("homeFieldVisits", v)}           ro={ro} />
-          <Counter label="Phone follow-ups"             value={report.summary?.phoneFollowUps}              fallback={derived.phoneFollowUps}              onChange={v => setSummary("phoneFollowUps", v)}            ro={ro} />
-          <Counter label="Scheme applications / referrals" value={report.summary?.schemeApps}               fallback={derived.schemeApps}                  onChange={v => setSummary("schemeApps", v)}                ro={ro} />
-          <Counter label="Urgent cases flagged"         value={report.summary?.urgentFlagged}               fallback={derived.urgentFlagged}               onChange={v => setSummary("urgentFlagged", v)}             ro={ro} />
-          <Counter label="Counselling sessions"         value={report.summary?.counsellingSessions}         fallback={derived.counsellingSessions}         onChange={v => setSummary("counsellingSessions", v)}       ro={ro} />
-          <Counter label="Legal aid / court follow-ups" value={report.summary?.legalAidFollowUps}           fallback={derived.legalAidFollowUps}           onChange={v => setSummary("legalAidFollowUps", v)}         ro={ro} />
-          <Counter label="Networking meetings"          value={report.summary?.networkingMeetings}          fallback={derived.networkingMeetings}          onChange={v => setSummary("networkingMeetings", v)}        ro={ro} />
-          <Counter label="Documents collected / submitted" value={report.summary?.documentsCollectedSubmitted} fallback={derived.documentsCollectedSubmitted} onChange={v => setSummary("documentsCollectedSubmitted", v)} ro={ro} />
-          <Counter label="Rehabilitation actions"       value={report.summary?.rehabActions}                fallback={derived.rehabActions}                onChange={v => setSummary("rehabActions", v)}              ro={ro} />
-          <Counter label="Cases requiring supervisor review" value={report.summary?.needSupervisorReview}   fallback={derived.needSupervisorReview}        onChange={v => setSummary("needSupervisorReview", v)}      ro={ro} />
+          <Counter label={t("Total cases followed up")}      value={report.summary?.totalCases}                  fallback={derived.totalCases}                  onChange={v => setSummary("totalCases", v)}                ro={ro} />
+          <Counter label={t("New cases received")}           value={report.summary?.newCases}                    fallback={0}                                   onChange={v => setSummary("newCases", v)}                  ro={ro} />
+          <Counter label={t("Home / field visits")}          value={report.summary?.homeFieldVisits}             fallback={derived.homeFieldVisits}             onChange={v => setSummary("homeFieldVisits", v)}           ro={ro} />
+          <Counter label={t("Phone follow-ups")}             value={report.summary?.phoneFollowUps}              fallback={derived.phoneFollowUps}              onChange={v => setSummary("phoneFollowUps", v)}            ro={ro} />
+          <Counter label={t("Scheme applications / referrals")} value={report.summary?.schemeApps}               fallback={derived.schemeApps}                  onChange={v => setSummary("schemeApps", v)}                ro={ro} />
+          <Counter label={t("Urgent cases flagged")}         value={report.summary?.urgentFlagged}               fallback={derived.urgentFlagged}               onChange={v => setSummary("urgentFlagged", v)}             ro={ro} />
+          <Counter label={t("Counselling sessions")}         value={report.summary?.counsellingSessions}         fallback={derived.counsellingSessions}         onChange={v => setSummary("counsellingSessions", v)}       ro={ro} />
+          <Counter label={t("Legal aid / court follow-ups")} value={report.summary?.legalAidFollowUps}           fallback={derived.legalAidFollowUps}           onChange={v => setSummary("legalAidFollowUps", v)}         ro={ro} />
+          <Counter label={t("Networking meetings")}          value={report.summary?.networkingMeetings}          fallback={derived.networkingMeetings}          onChange={v => setSummary("networkingMeetings", v)}        ro={ro} />
+          <Counter label={t("Documents collected / submitted")} value={report.summary?.documentsCollectedSubmitted} fallback={derived.documentsCollectedSubmitted} onChange={v => setSummary("documentsCollectedSubmitted", v)} ro={ro} />
+          <Counter label={t("Rehabilitation actions")}       value={report.summary?.rehabActions}                fallback={derived.rehabActions}                onChange={v => setSummary("rehabActions", v)}              ro={ro} />
+          <Counter label={t("Cases requiring supervisor review")} value={report.summary?.needSupervisorReview}   fallback={derived.needSupervisorReview}        onChange={v => setSummary("needSupervisorReview", v)}      ro={ro} />
         </Grid>
       </Section>
 
       {/* Section C */}
-      <Section title="C. Case-wise daily activity report"
-        subtitle="One row per case handled today. Search by case number or title in the first column.">
+      <Section title={t("C. Case-wise daily activity report")}
+        subtitle={t("One row per case handled today. Search by case number or title in the first column.")}>
         <div className="overflow-x-auto">
           <table className="dr-table w-full text-xs border-collapse min-w-[1200px]">
             <thead>
               <tr className="text-left">
                 {["Case", "Client / Survivor code", "Case type / issue", "Mode of contact", "Work done today", "Scheme / entitlement linkage", "Rehabilitation support", "Counselling / psycho-social", "Legal aid coordination", "Networking / referral", "Risk / safety", "Outcome / next action", ""].map(h => (
-                  <th key={h} className="py-2 pr-2 font-semibold text-(--muted) align-bottom">{h}</th>
+                  <th key={h} className="py-2 pr-2 font-semibold text-(--muted) align-bottom">{h ? t(h) : h}</th>
                 ))}
               </tr>
             </thead>
@@ -366,24 +368,24 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
                           ? { case: { _id: c._id }, caseNumber: c.caseNumber, caseType: row.caseType }
                           : { case: undefined, caseNumber: undefined })} />
                     </td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.clientCode}        onChange={v => updateCaseRow(i, { clientCode: v })} placeholder="Code (optional)" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.caseType}          onChange={v => updateCaseRow(i, { caseType: v })}  placeholder="e.g. POCSO / FIR" /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.clientCode}        onChange={v => updateCaseRow(i, { clientCode: v })} placeholder={t("Code (optional)")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.caseType}          onChange={v => updateCaseRow(i, { caseType: v })}  placeholder={t("e.g. POCSO / FIR")} /></td>
                     <td className="py-1 pr-2 align-top">
                       <select value={row.modeOfContact ?? ""} disabled={ro}
                         onChange={e => updateCaseRow(i, { modeOfContact: e.target.value })}
                         className="w-full px-2 py-1 rounded border text-xs disabled:opacity-100"
                         style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                        {CONTACT_MODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        {CONTACT_MODES.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
                       </select>
                     </td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.workDoneToday}        onChange={v => updateCaseRow(i, { workDoneToday: v })}        placeholder="Brief work summary" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.schemeLinkage}        onChange={v => updateCaseRow(i, { schemeLinkage: v })}        placeholder="Scheme, dept, app no., status" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.rehabSupport}         onChange={v => updateCaseRow(i, { rehabSupport: v })}         placeholder="Shelter, compensation, education…" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.counsellingSupport}   onChange={v => updateCaseRow(i, { counsellingSupport: v })}   placeholder="Sessions, type, outcome" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.legalAidCoordination} onChange={v => updateCaseRow(i, { legalAidCoordination: v })} placeholder="Lawyer, court date, FIR, statement, documents" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.networkingReferral}   onChange={v => updateCaseRow(i, { networkingReferral: v })}   placeholder="Whom referred, partner org" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.riskSafety}           onChange={v => updateCaseRow(i, { riskSafety: v })}           placeholder="Threat, pressure, urgency" /></td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.outcomeNextAction}    onChange={v => updateCaseRow(i, { outcomeNextAction: v })}    placeholder="Result + next follow-up date / person" /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.workDoneToday}        onChange={v => updateCaseRow(i, { workDoneToday: v })}        placeholder={t("Brief work summary")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.schemeLinkage}        onChange={v => updateCaseRow(i, { schemeLinkage: v })}        placeholder={t("Scheme, dept, app no., status")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.rehabSupport}         onChange={v => updateCaseRow(i, { rehabSupport: v })}         placeholder={t("Shelter, compensation, education…")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.counsellingSupport}   onChange={v => updateCaseRow(i, { counsellingSupport: v })}   placeholder={t("Sessions, type, outcome")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.legalAidCoordination} onChange={v => updateCaseRow(i, { legalAidCoordination: v })} placeholder={t("Lawyer, court date, FIR, statement, documents")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.networkingReferral}   onChange={v => updateCaseRow(i, { networkingReferral: v })}   placeholder={t("Whom referred, partner org")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.riskSafety}           onChange={v => updateCaseRow(i, { riskSafety: v })}           placeholder={t("Threat, pressure, urgency")} /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.outcomeNextAction}    onChange={v => updateCaseRow(i, { outcomeNextAction: v })}    placeholder={t("Result + next follow-up date / person")} /></td>
                     <td className="py-1 align-top">
                       {!ro && (
                         <button type="button" onClick={() => removeCaseRow(i)}
@@ -401,21 +403,21 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
           <button type="button" onClick={addCaseRow}
             className="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            + Add another case row
+            {t("+ Add another case row")}
           </button>
         )}
       </Section>
 
       {/* Section D — checklist */}
-      <Section title="D. Support category checklist">
+      <Section title={t("D. Support category checklist")}>
         <Grid cols={4}>
           {(Object.entries(CHECKLIST) as [keyof Report["supportChecklist"], string[]][]).map(([key, items]) => (
             <div key={key} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
               <p className="text-xs font-bold text-(--text) mb-2 capitalize">
-                {key === "legalAid" ? "Legal aid / Justice process"
-                : key === "schemeLinkage" ? "Scheme & entitlement linkage"
-                : key === "rehabilitation" ? "Rehabilitation support"
-                : "Counselling & protection"}
+                {key === "legalAid" ? t("Legal aid / Justice process")
+                : key === "schemeLinkage" ? t("Scheme & entitlement linkage")
+                : key === "rehabilitation" ? t("Rehabilitation support")
+                : t("Counselling & protection")}
               </p>
               <ul className="space-y-1.5">
                 {items.map(item => {
@@ -425,7 +427,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
                       <label className="flex items-start gap-2 text-xs cursor-pointer">
                         <input type="checkbox" disabled={ro} checked={checked}
                           onChange={() => toggleChecklist(key, item)} className="mt-0.5" />
-                        <span className="text-(--text) leading-snug">{item}</span>
+                        <span className="text-(--text) leading-snug">{t(item)}</span>
                       </label>
                     </li>
                   );
@@ -437,19 +439,19 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       </Section>
 
       {/* Section E */}
-      <Section title="E. Urgent escalation / supervisor review">
+      <Section title={t("E. Urgent escalation / supervisor review")}>
         <div className="overflow-x-auto">
           <table className="dr-table w-full text-xs border-collapse min-w-[900px]">
             <thead>
               <tr className="text-left">
                 {["Case", "Issue", "Risk level", "Action requested", "Deadline", "Status", ""].map(h => (
-                  <th key={h} className="py-2 pr-2 font-semibold text-(--muted) align-bottom">{h}</th>
+                  <th key={h} className="py-2 pr-2 font-semibold text-(--muted) align-bottom">{h ? t(h) : h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {report.escalations.length === 0 && (
-                <tr><td colSpan={7} className="py-3 text-center text-(--muted) text-xs italic">No escalations.</td></tr>
+                <tr><td colSpan={7} className="py-3 text-center text-(--muted) text-xs italic">{t("No escalations.")}</td></tr>
               )}
               {report.escalations.map((row, i) => {
                 const caseValue: CaseRef | null = row.case && typeof row.case === "object"
@@ -463,27 +465,27 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
                           ? { case: { _id: c._id }, caseNumber: c.caseNumber }
                           : { case: undefined, caseNumber: undefined })} />
                     </td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.issue} onChange={v => updateEscalation(i, { issue: v })} placeholder="What requires escalation" /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.issue} onChange={v => updateEscalation(i, { issue: v })} placeholder={t("What requires escalation")} /></td>
                     <td className="py-1 pr-2 align-top">
                       <select value={row.riskLevel ?? ""} disabled={ro}
                         onChange={e => updateEscalation(i, { riskLevel: (e.target.value || undefined) as EscalationRow["riskLevel"] })}
                         className="px-2 py-1 rounded border text-xs disabled:opacity-100"
                         style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
                         <option value="">—</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="immediate">Immediate</option>
+                        <option value="low">{t("Low")}</option>
+                        <option value="medium">{t("Medium")}</option>
+                        <option value="high">{t("High")}</option>
+                        <option value="immediate">{t("Immediate")}</option>
                       </select>
                     </td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.actionRequested} onChange={v => updateEscalation(i, { actionRequested: v })} placeholder="From supervisor / lawyer" /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} multi value={row.actionRequested} onChange={v => updateEscalation(i, { actionRequested: v })} placeholder={t("From supervisor / lawyer")} /></td>
                     <td className="py-1 pr-2 align-top">
                       <input type="date" value={row.deadline ? new Date(row.deadline).toISOString().slice(0, 10) : ""}
                         disabled={ro} onChange={e => updateEscalation(i, { deadline: e.target.value || undefined })}
                         className="w-full px-2 py-1 rounded border text-xs disabled:opacity-100"
                         style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                     </td>
-                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.status} onChange={v => updateEscalation(i, { status: v })} placeholder="Open / in progress / closed" /></td>
+                    <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.status} onChange={v => updateEscalation(i, { status: v })} placeholder={t("Open / in progress / closed")} /></td>
                     <td className="py-1 align-top">
                       {!ro && <button type="button" onClick={() => removeEscalation(i)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>✕</button>}
                     </td>
@@ -497,48 +499,48 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
           <button type="button" onClick={addEscalation}
             className="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium"
             style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-            + Add escalation
+            {t("+ Add escalation")}
           </button>
         )}
       </Section>
 
       {/* Section F */}
-      <Section title="F. Narrative notes / field observations">
+      <Section title={t("F. Narrative notes / field observations")}>
         <textarea value={report.narrativeNotes ?? ""} disabled={ro} rows={6}
           onChange={e => setField("narrativeNotes", e.target.value)}
-          placeholder="Brief field observations, survivor concerns, family / community dynamics, institutional response, barriers, learnings."
+          placeholder={t("Brief field observations, survivor concerns, family / community dynamics, institutional response, barriers, learnings.")}
           className="w-full px-3 py-2 rounded-lg border text-sm resize-none disabled:opacity-100"
           style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
       </Section>
 
       {/* Section G */}
-      <Section title="G. Declaration & signature">
+      <Section title={t("G. Declaration & signature")}>
         <Grid cols={2}>
-          <Field label="Prepared by">
+          <Field label={t("Prepared by")}>
             <Read>{report.preparedBy?.name ?? "—"}{report.preparedBy?.employeeId ? ` · ${report.preparedBy.employeeId}` : ""}</Read>
           </Field>
-          <Field label="Date & time of submission">
-            <Read>{report.submittedAt ? new Date(report.submittedAt).toLocaleString("en-IN") : "Not submitted"}</Read>
+          <Field label={t("Date & time of submission")}>
+            <Read>{report.submittedAt ? new Date(report.submittedAt).toLocaleString("en-IN") : t("Not submitted")}</Read>
           </Field>
-          <Field label="Reviewed by supervisor">
+          <Field label={t("Reviewed by supervisor")}>
             <Read>{report.supervisor?.name ? `${report.supervisor.name} · ${new Date(report.reviewedAt!).toLocaleDateString("en-IN")}` : "—"}</Read>
           </Field>
-          <Field label="Status">
+          <Field label={t("Status")}>
             <Read className="capitalize">{report.status}</Read>
           </Field>
 
           <div className="sm:col-span-full">
-            <p className="text-xs font-semibold text-(--text) mb-1.5">Supervisor remarks</p>
+            <p className="text-xs font-semibold text-(--text) mb-1.5">{t("Supervisor remarks")}</p>
             {isSupervisor ? (
               <>
                 <textarea value={supervisorRemarks} onChange={e => setSupervisorRemarks(e.target.value)} rows={3}
-                  placeholder="Brief remarks before marking the report reviewed."
+                  placeholder={t("Brief remarks before marking the report reviewed.")}
                   className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
                   style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                 <button type="button" onClick={review} disabled={saving || report.status === "reviewed" || !report._id}
                   className="mt-2 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
                   style={{ background: "var(--success)", color: "#fff" }}>
-                  {report.status === "reviewed" ? "Already reviewed" : (saving ? "Saving…" : "Mark Reviewed")}
+                  {report.status === "reviewed" ? t("Already reviewed") : (saving ? t("Saving…") : t("Mark Reviewed"))}
                 </button>
               </>
             ) : (
@@ -549,7 +551,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       </Section>
 
       <p className="text-[11px] text-(--muted) italic text-center pb-12">
-        Confidentiality reminder: store this report securely. Use Case ID and Client / Survivor Code instead of names where disclosure is not required. Avoid unnecessary detail of trauma history or identity markers.
+        {t("Confidentiality reminder: store this report securely. Use Case ID and Client / Survivor Code instead of names where disclosure is not required. Avoid unnecessary detail of trauma history or identity markers.")}
       </p>
     </div>
   );

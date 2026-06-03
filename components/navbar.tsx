@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const NAV_LINKS = [
   { href: "/",          label: "Home"       },
@@ -63,6 +64,7 @@ function CloseIcon() {
 }
 
 export default function Navbar() {
+  const t = useT();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -74,11 +76,11 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2.5 group">
           <img
             src="/logo.png"
-            alt="Janman Legal Aid"
+            alt={t("Janman Legal Aid")}
             className="h-9 w-auto transition-transform group-hover:scale-105"
           />
           <span className="font-bold text-(--text) text-[15px] tracking-tight">
-            Janman <span className="text-(--muted) font-medium">Legal Aid</span>
+            Janman <span className="text-(--muted) font-medium">{t("Legal Aid")}</span>
           </span>
         </Link>
 
@@ -87,7 +89,7 @@ export default function Navbar() {
           {NAV_LINKS.map((item) => (
             <Link key={item.href} href={item.href}
               className="px-3.5 py-2 rounded-lg text-sm text-(--muted) hover:text-(--text) hover:bg-(--bg-secondary) transition-all">
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </nav>
@@ -97,7 +99,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label="Toggle theme"
+            aria-label={t("Toggle theme")}
             className="w-9 h-9 flex items-center justify-center rounded-lg border border-(--border) bg-(--bg) text-(--muted) hover:text-(--text) hover:border-(--accent) transition-all"
           >
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
@@ -105,13 +107,13 @@ export default function Navbar() {
 
           <Link href="/dev"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-(--border) bg-(--bg) px-3.5 py-2 text-sm font-medium text-(--muted) hover:text-(--text) hover:border-(--accent) transition-all">
-            Dev
+            {t("Dev")}
           </Link>
 
           <Link href="/login"
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-(--accent-contrast) transition-all hover:brightness-110 shadow-sm"
             style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
-            Sign in
+            {t("Sign in")}
           </Link>
 
           {/* Mobile menu button */}
@@ -119,7 +121,7 @@ export default function Navbar() {
             type="button"
             className="sm:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-(--border) text-(--muted)"
             onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Toggle menu"
+            aria-label={t("Toggle menu")}
           >
             {menuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
@@ -133,7 +135,7 @@ export default function Navbar() {
             <Link key={item.href} href={item.href}
               onClick={() => setMenuOpen(false)}
               className="flex px-3 py-2.5 rounded-lg text-sm text-(--text) hover:bg-(--bg-secondary) transition-colors">
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </div>

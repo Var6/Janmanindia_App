@@ -9,8 +9,6 @@ const VALID_CATEGORIES: GrievanceCategory[] = [
   "facilities","interpersonal","policy","other",
 ];
 
-const HR_ROLES = ["hr", "director", "superadmin"];
-
 /** GET /api/grievances
  *  - HR/director/superadmin → all grievances
  *  - everyone else      → their own grievances
@@ -26,8 +24,18 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
 
-    const isHr = HR_ROLES.includes(session.role);
-    if (!isHr) {
+    // Visibility:
+    //  - director / superadmin → every grievance (including those against HR)
+    //  - hr                    → all grievances EXCEPT ones filed against HR
+    //                            (they can't adjudicate complaints about themselves)
+    //  - everyone else         → only their own
+    const isPrivileged = session.role === "director" || session.role === "superadmin";
+    const isHrStaff = session.role === "hr";
+    if (isPrivileged) {
+      // no submitter / againstHr restriction
+    } else if (isHrStaff) {
+      filter.againstHr = { $ne: true };
+    } else {
       if (!mongoose.Types.ObjectId.isValid(session.id)) {
         return NextResponse.json({ grievances: [] });
       }
@@ -65,10 +73,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { category, subject, description, incidentDate, incidentLocation, involvedPersons, anonymous } = body as {
+    const { category, subject, description, incidentDate, incidentLocation, involvedPersons, anonymous, againstHr } = body as {
       category?: GrievanceCategory; subject?: string; description?: string;
       incidentDate?: string; incidentLocation?: string; involvedPersons?: string;
-      anonymous?: boolean;
+      anonymous?: boolean; againstHr?: boolean;
     };
 
     if (!category || !VALID_CATEGORIES.includes(category)) {
@@ -81,6 +89,7 @@ export async function POST(req: NextRequest) {
     const grievance = await Grievance.create({
       submittedBy: new mongoose.Types.ObjectId(session.id),
       anonymous: !!anonymous,
+      againstHr: !!againstHr,
       category,
       subject: subject.trim(),
       description: description.trim(),

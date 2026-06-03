@@ -5,6 +5,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import CarePlan from "@/models/CarePlan";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 const PRIO_STYLE: Record<string, { bg: string; text: string }> = {
   low:      { bg: "var(--bg-secondary)", text: "var(--muted)" },
@@ -24,6 +25,8 @@ export default async function SWCarePlansIndex() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "socialworker" && session.role !== "superadmin")) redirect("/login");
 
+  const t = await getServerT();
+
   const dbOk = await tryConnectDB();
   const plans = dbOk && mongoose.Types.ObjectId.isValid(session.id)
     ? await CarePlan.find({ createdBy: new mongoose.Types.ObjectId(session.id) })
@@ -39,20 +42,20 @@ export default async function SWCarePlansIndex() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Individual Care Plans</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Individual Care Plans")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          {plans.length} plan{plans.length === 1 ? "" : "s"} you've created — counselling, shelter, medical, and rehabilitation tracking.
+          {plans.length} {plans.length === 1 ? t("plan you've created — counselling, shelter, medical, and rehabilitation tracking.") : t("plans you've created — counselling, shelter, medical, and rehabilitation tracking.")}
         </p>
       </div>
 
-      <Section title="Active" plans={active as unknown as PlanLean[]} />
-      {others.length > 0 && <Section title="On hold / completed / cancelled" plans={others as unknown as PlanLean[]} />}
+      <Section title={t("Active")} plans={active as unknown as PlanLean[]} />
+      {others.length > 0 && <Section title={t("On hold / completed / cancelled")} plans={others as unknown as PlanLean[]} />}
 
       {plans.length === 0 && (
         <div className="py-16 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">🩹</p>
           <p className="text-sm text-(--muted)">
-            No care plans yet. Open a case from the Cases tab and click <span className="font-semibold text-(--text)">+ New Care Plan</span> in the case detail to start one.
+            {t("No care plans yet. Open a case from the Cases tab and click")} <span className="font-semibold text-(--text)">{t("+ New Care Plan")}</span> {t("in the case detail to start one.")}
           </p>
         </div>
       )}

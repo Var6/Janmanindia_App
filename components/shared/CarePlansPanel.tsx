@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Goal = { _id: string; description: string; targetDate?: string; completed: boolean; completedAt?: string };
 type Session = { _id: string; date: string; type: string; notes: string; conductedBy?: { _id: string; name: string } };
@@ -59,6 +60,7 @@ export default function CarePlansPanel({ caseId, communityId, canManage }: Props
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const t = useT();
 
   async function load() {
     try {
@@ -90,7 +92,7 @@ export default function CarePlansPanel({ caseId, communityId, canManage }: Props
     try {
       const res = await fetch("/api/care-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to create plan"); return; }
+      if (!res.ok) { setError(data.error ?? t("Failed to create plan")); return; }
       (e.target as HTMLFormElement).reset();
       setShowForm(false);
       load();
@@ -113,14 +115,14 @@ export default function CarePlansPanel({ caseId, communityId, canManage }: Props
     <section className="rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <header className="flex items-center justify-between gap-3 px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
         <div className="min-w-0">
-          <h2 className="text-base font-bold text-(--text)">Individual Care Plans</h2>
-          <p className="text-xs text-(--muted) mt-0.5">Counselling, shelter, medical, and rehabilitation tracking for this person.</p>
+          <h2 className="text-base font-bold text-(--text)">{t("Individual Care Plans")}</h2>
+          <p className="text-xs text-(--muted) mt-0.5">{t("Counselling, shelter, medical, and rehabilitation tracking for this person.")}</p>
         </div>
         {canManage && (
           <button onClick={() => setShowForm(s => !s)}
             className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
             style={{ background: showForm ? "var(--bg-secondary)" : "var(--accent)", color: showForm ? "var(--muted)" : "var(--accent-contrast)" }}>
-            {showForm ? "Cancel" : "+ New Care Plan"}
+            {showForm ? t("Cancel") : t("+ New Care Plan")}
           </button>
         )}
       </header>
@@ -129,25 +131,25 @@ export default function CarePlansPanel({ caseId, communityId, canManage }: Props
         <form onSubmit={createPlan} className="px-5 py-4 border-b space-y-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
           {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input name="title" required maxLength={200} placeholder="Plan title (e.g. POCSO trauma counselling)"
+            <input name="title" required maxLength={200} placeholder={t("Plan title (e.g. POCSO trauma counselling)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
             <select name="category" required defaultValue="counselling"
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{t(c.label)}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select name="priority" defaultValue="medium"
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
-              <option value="low">Low priority</option>
-              <option value="medium">Medium priority</option>
-              <option value="high">High priority</option>
-              <option value="critical">Critical priority</option>
+              <option value="low">{t("Low priority")}</option>
+              <option value="medium">{t("Medium priority")}</option>
+              <option value="high">{t("High priority")}</option>
+              <option value="critical">{t("Critical priority")}</option>
             </select>
-            <input name="referredTo" placeholder="Referred to (e.g. Dr. Rao, Dist. Hospital)"
+            <input name="referredTo" placeholder={t("Referred to (e.g. Dr. Rao, Dist. Hospital)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
-          <textarea name="summary" required rows={2} placeholder="Why this plan exists — context, vulnerabilities, what support is needed."
+          <textarea name="summary" required rows={2} placeholder={t("Why this plan exists — context, vulnerabilities, what support is needed.")}
             className="w-full px-3 py-2 rounded-lg border text-sm resize-none" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
           <textarea name="goals" rows={3} placeholder="Goals — one per line (e.g. Weekly counselling for 8 weeks; Enroll in school by June)"
             className="w-full px-3 py-2 rounded-lg border text-sm resize-none" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />

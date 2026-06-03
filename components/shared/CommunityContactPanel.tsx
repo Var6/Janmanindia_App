@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { NATIONAL_EMERGENCY } from "@/lib/helplines";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface SW { _id: string; name: string; phone: string | null; email: string | null }
 interface Helpline {
@@ -17,6 +18,7 @@ interface Helpline {
  *   3. National emergency — always available below
  */
 export default function CommunityContactPanel() {
+  const t = useT();
   const [sw, setSw] = useState<SW | null>(null);
   const [helpline, setHelpline] = useState<Helpline | null>(null);
   const [district, setDistrict] = useState<string | null>(null);

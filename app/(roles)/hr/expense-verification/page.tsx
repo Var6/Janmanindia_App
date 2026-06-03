@@ -7,10 +7,12 @@ import "@/models/Case";    // register schema for populate (case-scoped expenses
 import "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import ExpenseQueue, { type ExpenseItem } from "@/components/finance/ExpenseQueue";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function HrExpenseVerificationPage() {
   const session = await getSessionFromCookies();
   if (!session || !["hr", "director", "superadmin"].includes(session.role)) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
@@ -38,15 +40,15 @@ export default async function HrExpenseVerificationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Expense Verification</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Expense Verification")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Verify expenses submitted by administrators and staff. Verifying forwards them to the director for approval.
+          {t("Verify expenses submitted by administrators and staff. Verifying forwards them to the director for approval.")}
         </p>
       </div>
 
-      <ExpenseQueue title="Awaiting your verification" items={pending as unknown as ExpenseItem[]}
-        action="hr_verify" allowReject empty="Inbox empty." />
-      <ExpenseQueue title="Recently processed" items={recent as unknown as ExpenseItem[]} />
+      <ExpenseQueue title={t("Awaiting your verification")} items={pending as unknown as ExpenseItem[]}
+        action="hr_verify" allowReject empty={t("Inbox empty.")} />
+      <ExpenseQueue title={t("Recently processed")} items={recent as unknown as ExpenseItem[]} />
     </div>
   );
 }

@@ -21,6 +21,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Activity = {
   _id: string;
@@ -67,6 +68,7 @@ function saveSeen(uid: string, seen: Set<string>) {
 }
 
 export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_000 }: Props) {
+  const t = useT();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [seen, setSeen]             = useState<Set<string>>(() => loadSeen(currentUserId));
   const baseTitleRef = useRef<string>("");
@@ -99,7 +101,7 @@ export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_00
       document.title = baseTitleRef.current;
       return;
     }
-    const flashTitle = `🔔 ${fresh.length} new task${fresh.length === 1 ? "" : "s"}`;
+    const flashTitle = `🔔 ${fresh.length} ${fresh.length === 1 ? t("new task") : t("new tasks")}`;
     let toggle = false;
     flashRef.current = setInterval(() => {
       document.title = toggle ? baseTitleRef.current : flashTitle;
@@ -144,11 +146,11 @@ export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_00
         <span className="text-xs font-semibold flex items-center gap-1.5"
           style={{ color: "var(--accent)" }}>
           <span className="text-base">🔔</span>
-          {fresh.length} new task{fresh.length === 1 ? "" : "s"} assigned to you
+          {fresh.length} {fresh.length === 1 ? t("new task assigned to you") : t("new tasks assigned to you")}
         </span>
         <button type="button" onClick={dismissAll}
           className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-          Mark all seen
+          {t("Mark all seen")}
         </button>
       </div>
       <ul className="divide-y" style={{ borderColor: "color-mix(in srgb, var(--accent) 18%, transparent)" }}>
@@ -161,12 +163,12 @@ export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_00
                 {a.title}
                 {a.priority === "high" && (
                   <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>HIGH</span>
+                    style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("HIGH")}</span>
                 )}
               </p>
               <p className="text-[11px] text-(--muted) mt-0.5">
-                {a.createdBy?.name ? `by ${a.createdBy.name}` : "Unknown"}
-                {a.dueDate && ` · due ${new Date(a.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                {a.createdBy?.name ? `${t("by")} ${a.createdBy.name}` : t("Unknown")}
+                {a.dueDate && ` · ${t("due")} ${new Date(a.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
               </p>
             </Link>
             <button type="button" onClick={() => dismissOne(a._id)}
@@ -175,7 +177,7 @@ export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_00
         ))}
         {overflow > 0 && (
           <li className="px-4 py-2 text-[11px] text-(--muted) text-center">
-            and {overflow} more — open the planner to see all.
+            {t("and")} {overflow} {t("more — open the planner to see all.")}
           </li>
         )}
       </ul>

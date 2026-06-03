@@ -9,6 +9,7 @@ import TrainingSession from "@/models/TrainingSession";
 import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 const ROLE_LABELS: Record<string, string> = {
   socialworker: "Social Worker", litigation: "Litigation", hr: "HR",
@@ -109,6 +110,8 @@ function formatTime(d: Date): string {
 export default async function DirectorCalendarPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "director" && session.role !== "superadmin")) redirect("/login");
+
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -237,16 +240,16 @@ export default async function DirectorCalendarPage() {
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Team Calendar</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Team Calendar")}</h1>
           <p className="text-sm text-(--muted) mt-1">
-            All staff activities, appointments, trainings and case hearings from {formatDate(start)} to {formatDate(end)} — {totalActivities} task{totalActivities === 1 ? "" : "s"} · {totalAppts} appointment{totalAppts === 1 ? "" : "s"} · {totalTrainings} training{totalTrainings === 1 ? "" : "s"} · {totalHearings} hearing{totalHearings === 1 ? "" : "s"}.
+            {t("All staff activities, appointments, trainings and case hearings from")} {formatDate(start)} {t("to")} {formatDate(end)} — {totalActivities} {totalActivities === 1 ? t("task") : t("tasks")} · {totalAppts} {totalAppts === 1 ? t("appointment") : t("appointments")} · {totalTrainings} {totalTrainings === 1 ? t("training") : t("trainings")} · {totalHearings} {totalHearings === 1 ? t("hearing") : t("hearings")}.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Link href="/director/assign"
             className="px-3.5 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            Assign new task
+            {t("Assign new task")}
           </Link>
         </div>
       </div>
@@ -257,12 +260,12 @@ export default async function DirectorCalendarPage() {
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <div className="px-5 py-3 border-b flex items-center justify-between"
             style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-semibold text-(--text) text-sm">Agenda</h2>
-            <span className="text-xs text-(--muted)">{days.length} days</span>
+            <h2 className="font-semibold text-(--text) text-sm">{t("Agenda")}</h2>
+            <span className="text-xs text-(--muted)">{days.length} {t("days")}</span>
           </div>
 
           {days.length === 0 ? (
-            <p className="px-5 py-12 text-center text-sm text-(--muted)">Nothing scheduled.</p>
+            <p className="px-5 py-12 text-center text-sm text-(--muted)">{t("Nothing scheduled.")}</p>
           ) : (
             <div className="divide-y" style={{ borderColor: "var(--border)" }}>
               {days.map(({ date, key, items }) => {
@@ -274,14 +277,14 @@ export default async function DirectorCalendarPage() {
                     <div className="text-xs">
                       <p className="font-bold uppercase tracking-wide"
                         style={{ color: isToday ? "var(--accent)" : isPast ? "var(--muted)" : "var(--text)" }}>
-                        {isToday ? "Today" : formatDate(date)}
+                        {isToday ? t("Today") : formatDate(date)}
                       </p>
                       {!isToday && <p className="text-(--muted) mt-0.5">{date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>}
-                      <p className="text-(--muted) mt-1">{items.length === 0 ? "—" : `${items.length} item${items.length === 1 ? "" : "s"}`}</p>
+                      <p className="text-(--muted) mt-1">{items.length === 0 ? "—" : `${items.length} ${items.length === 1 ? t("item") : t("items")}`}</p>
                     </div>
                     <div className="space-y-1.5 min-w-0">
                       {items.length === 0 ? (
-                        <p className="text-xs text-(--muted) italic py-1">Nothing scheduled.</p>
+                        <p className="text-xs text-(--muted) italic py-1">{t("Nothing scheduled.")}</p>
                       ) : (
                         items.map((it, i) => {
                           if (it.kind === "appointment") {
@@ -294,7 +297,7 @@ export default async function DirectorCalendarPage() {
                                 <div className="flex items-center gap-2 mb-0.5">
                                   <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
-                                    Appointment
+                                    {t("Appointment")}
                                   </span>
                                   <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
                                   <span className="text-[10px] uppercase font-semibold"
@@ -306,35 +309,35 @@ export default async function DirectorCalendarPage() {
                                 <p className="text-(--muted) mt-0.5">
                                   {a} ↔ {b}
                                   {ap.coAttendees && ap.coAttendees.length > 0
-                                    ? ` + ${ap.coAttendees.length} more`
+                                    ? ` + ${ap.coAttendees.length} ${t("more")}`
                                     : ""}
                                 </p>
                               </div>
                             );
                           }
                           if (it.kind === "training") {
-                            const t = it.training;
-                            const ts = TRAINING_STATUS_STYLE[t.status];
-                            const enrolled = t.enrollments?.length ?? 0;
+                            const tr = it.training;
+                            const ts = TRAINING_STATUS_STYLE[tr.status];
+                            const enrolled = tr.enrollments?.length ?? 0;
                             return (
-                              <div key={`tr-${i}-${String(t._id)}`} className="rounded-lg border px-3 py-2 text-xs"
+                              <div key={`tr-${i}-${String(tr._id)}`} className="rounded-lg border px-3 py-2 text-xs"
                                 style={{ borderColor: "color-mix(in srgb, var(--accent) 35%, var(--border))", background: "var(--bg)" }}>
                                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
                                   <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>
-                                    Training
+                                    {t("Training")}
                                   </span>
                                   <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
                                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase"
                                     style={{ background: ts.bg, color: ts.text }}>
-                                    {t.status}
+                                    {tr.status}
                                   </span>
-                                  <span className="text-[10px] text-(--muted)">{enrolled}/{t.capacity} enrolled</span>
+                                  <span className="text-[10px] text-(--muted)">{enrolled}/{tr.capacity} {t("enrolled")}</span>
                                 </div>
-                                <p className="font-medium text-(--text) truncate">{t.title}</p>
+                                <p className="font-medium text-(--text) truncate">{tr.title}</p>
                                 <p className="text-(--muted) mt-0.5 truncate">
-                                  {t.venue}{t.district ? ` · ${t.district}` : ""}
-                                  {t.conductedBy?.name ? ` · led by ${t.conductedBy.name}` : ""}
+                                  {tr.venue}{tr.district ? ` · ${tr.district}` : ""}
+                                  {tr.conductedBy?.name ? ` · ${t("led by")} ${tr.conductedBy.name}` : ""}
                                 </p>
                               </div>
                             );
@@ -348,7 +351,7 @@ export default async function DirectorCalendarPage() {
                                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
                                   <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                                    Court Hearing
+                                    {t("Court Hearing")}
                                   </span>
                                   <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
                                   <span className="text-[10px] font-semibold uppercase"
@@ -357,7 +360,7 @@ export default async function DirectorCalendarPage() {
                                 <p className="font-medium text-(--text) truncate">{c.caseTitle}</p>
                                 <p className="text-(--muted) mt-0.5 truncate">
                                   {c.caseNumber ? `${c.caseNumber} · ` : ""}
-                                  {c.courtName ?? "Court not specified"}
+                                  {c.courtName ?? t("Court not specified")}
                                   {c.litigationMember?.name ? ` · ${c.litigationMember.name}` : ""}
                                 </p>
                               </Link>
@@ -385,12 +388,12 @@ export default async function DirectorCalendarPage() {
                                 </span>
                                 {overdue && (
                                   <span className="text-[10px] uppercase font-bold"
-                                    style={{ color: "var(--error-text)" }}>Overdue</span>
+                                    style={{ color: "var(--error-text)" }}>{t("Overdue")}</span>
                                 )}
                               </div>
                               <p className="font-medium text-(--text) truncate">{a.title}</p>
                               <p className="text-(--muted) mt-0.5 truncate">
-                                {allNames.length > 0 ? allNames.join(", ") : "Unassigned"}
+                                {allNames.length > 0 ? allNames.join(", ") : t("Unassigned")}
                               </p>
                             </div>
                           );
@@ -409,11 +412,11 @@ export default async function DirectorCalendarPage() {
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <div className="px-5 py-3 border-b flex items-center justify-between"
             style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-semibold text-(--text) text-sm">Team load</h2>
-            <span className="text-xs text-(--muted)">{staffSorted.length} active</span>
+            <h2 className="font-semibold text-(--text) text-sm">{t("Team load")}</h2>
+            <span className="text-xs text-(--muted)">{staffSorted.length} {t("active")}</span>
           </div>
           {staffSorted.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-(--muted)">No active staff.</p>
+            <p className="px-5 py-8 text-center text-sm text-(--muted)">{t("No active staff.")}</p>
           ) : (
             <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
               {staffSorted.map((u) => {
@@ -437,29 +440,29 @@ export default async function DirectorCalendarPage() {
                       {load.in_progress > 0 && (
                         <span className="px-1.5 py-0.5 rounded font-semibold"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
-                          ▶ {load.in_progress} in progress
+                          ▶ {load.in_progress} {t("in progress")}
                         </span>
                       )}
                       {load.planned > 0 && (
                         <span className="px-1.5 py-0.5 rounded font-semibold"
                           style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
-                          📋 {load.planned} planned
+                          📋 {load.planned} {t("planned")}
                         </span>
                       )}
                       {load.overdue > 0 && (
                         <span className="px-1.5 py-0.5 rounded font-semibold"
                           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                          ⚠ {load.overdue} overdue
+                          ⚠ {load.overdue} {t("overdue")}
                         </span>
                       )}
                       {load.done > 0 && (
                         <span className="px-1.5 py-0.5 rounded"
                           style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
-                          ✓ {load.done} done
+                          ✓ {load.done} {t("done")}
                         </span>
                       )}
                       {active === 0 && load.done === 0 && load.overdue === 0 && (
-                        <span className="text-(--muted) italic">No tasks in window</span>
+                        <span className="text-(--muted) italic">{t("No tasks in window")}</span>
                       )}
                     </div>
                   </li>

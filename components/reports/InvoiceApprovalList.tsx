@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Pending = {
   _id: string;
@@ -30,6 +31,7 @@ interface Props {
 
 export default function InvoiceApprovalList({ pending, recent }: Props) {
   const router = useRouter();
+  const t = useT();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -55,11 +57,11 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
   return (
     <>
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Awaiting your approval ({pending.length})</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Awaiting your approval")} ({pending.length})</h2>
         {pending.length === 0 ? (
           <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-3xl mb-2">📥</p>
-            <p className="text-sm text-(--muted)">No invoices in your queue.</p>
+            <p className="text-sm text-(--muted)">{t("No invoices in your queue.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -78,7 +80,7 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-(--text)">₹{total.toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}h worked · {r.expenses.length} expense line{r.expenses.length === 1 ? "" : "s"}</p>
+                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}{t("h worked")} · {r.expenses.length} {r.expenses.length === 1 ? t("expense line") : t("expense lines")}</p>
                     </div>
                   </div>
 
@@ -86,7 +88,7 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
 
                   {r.hrNotes && (
                     <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
-                      <span className="font-semibold">HR note: </span>{r.hrNotes}
+                      <span className="font-semibold">{t("HR note:")} </span>{r.hrNotes}
                     </p>
                   )}
 
@@ -98,7 +100,7 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                             <span className="text-(--text) truncate">{ex.description}</span>
                             {ex.receiptUrl && (
                               <a href={ex.receiptUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-(--accent) hover:underline">receipt</a>
+                                className="text-(--accent) hover:underline">{t("receipt")}</a>
                             )}
                           </div>
                           <span className="font-medium text-(--text)">₹{ex.amount.toLocaleString("en-IN")}</span>
@@ -111,21 +113,21 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                     <form onSubmit={(e) => { e.preventDefault(); decide(r._id, "reject", reason); }}
                       className="rounded-xl border p-3 space-y-2"
                       style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                      <p className="text-xs font-semibold text-(--text)">Reason for rejection</p>
+                      <p className="text-xs font-semibold text-(--text)">{t("Reason for rejection")}</p>
                       <textarea value={reason} onChange={e => setReason(e.target.value)} required minLength={5} rows={2}
-                        placeholder="Brief reason — they'll see this and can resubmit."
+                        placeholder={t("Brief reason — they'll see this and can resubmit.")}
                         className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
                         style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
                       <div className="flex items-center gap-2">
                         <button type="submit" disabled={busyId === r._id || !reason.trim()}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                          Reject
+                          {t("Reject")}
                         </button>
                         <button type="button" onClick={() => { setRejectingId(null); setReason(""); }}
                           className="px-3 py-1.5 rounded-lg text-xs"
                           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                          Cancel
+                          {t("Cancel")}
                         </button>
                       </div>
                     </form>
@@ -134,12 +136,12 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                       <button onClick={() => decide(r._id, "approve")} disabled={busyId === r._id}
                         className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                         style={{ background: "var(--success)", color: "#fff" }}>
-                        ✓ Approve
+                        ✓ {t("Approve")}
                       </button>
                       <button onClick={() => setRejectingId(r._id)} disabled={busyId === r._id}
                         className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
                         style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
-                        Reject
+                        {t("Reject")}
                       </button>
                     </div>
                   )}
@@ -152,14 +154,14 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
 
       {recent.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(--text) mb-3">Recent decisions</h2>
+          <h2 className="font-semibold text-(--text) mb-3">{t("Recent decisions")}</h2>
           <div className="rounded-2xl border divide-y" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             {recent.map(r => (
               <div key={r._id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm text-(--text) truncate">{r.summary}</p>
                   <p className="text-xs text-(--muted)">{r.submitter} · ₹{r.amount.toLocaleString("en-IN")} · {new Date(r.updatedAt).toLocaleDateString("en-IN")}</p>
-                  {r.rejectionReason && <p className="text-[11px] text-(--error-text) mt-0.5">Reason: {r.rejectionReason}</p>}
+                  {r.rejectionReason && <p className="text-[11px] text-(--error-text) mt-0.5">{t("Reason:")} {r.rejectionReason}</p>}
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{
                   background: r.status === "approved" ? "var(--success-bg)" : "var(--error-bg)",

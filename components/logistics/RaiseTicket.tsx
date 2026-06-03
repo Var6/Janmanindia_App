@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const CATEGORIES = [
   { v: "equipment",   l: "Equipment (chair, table, laptop, …)" },
@@ -13,6 +14,7 @@ const CATEGORIES = [
 ];
 
 export default function RaiseTicket() {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,22 +40,22 @@ export default function RaiseTicket() {
         body: JSON.stringify(payload),
       });
       const d = await res.json();
-      if (!res.ok) setError(d.error ?? "Failed");
+      if (!res.ok) setError(d.error ?? t("Failed"));
       else {
         setSuccess(true);
         (e.target as HTMLFormElement).reset();
         router.refresh();
       }
-    } catch { setError("Network error"); }
+    } catch { setError(t("Network error")); }
     finally { setBusy(false); }
   }
 
   return (
     <section className="bg-(--surface) rounded-2xl border border-(--border) p-5">
       <div className="mb-3">
-        <h2 className="font-semibold text-(--text)">Raise a Logistics Request</h2>
+        <h2 className="font-semibold text-(--text)">{t("Raise a Logistics Request")}</h2>
         <p className="text-xs text-(--muted) mt-1">
-          Need office equipment, transport for a community member, supplies, or repairs? Send it to the Administrator.
+          {t("Need office equipment, transport for a community member, supplies, or repairs? Send it to the Administrator.")}
         </p>
       </div>
 
@@ -61,40 +63,40 @@ export default function RaiseTicket() {
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2">
           <select name="category" required defaultValue=""
             className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
-            <option value="" disabled>Category…</option>
-            {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+            <option value="" disabled>{t("Category…")}</option>
+            {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{t(c.l)}</option>)}
           </select>
           <select name="urgency" defaultValue="normal"
             className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)">
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
+            <option value="normal">{t("Normal")}</option>
+            <option value="high">{t("High")}</option>
+            <option value="critical">{t("Critical")}</option>
           </select>
         </div>
 
-        <input name="title" required maxLength={200} placeholder="Short title (e.g. New chair for desk in Patna office)"
+        <input name="title" required maxLength={200} placeholder={t("Short title (e.g. New chair for desk in Patna office)")}
           className="w-full px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
 
         <textarea name="description" required rows={3}
-          placeholder="What is needed? Quantity, specifications, when needed by, why…"
+          placeholder={t("What is needed? Quantity, specifications, when needed by, why…")}
           className="w-full px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) resize-none focus:outline-none focus:border-(--accent)" />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <input name="beneficiary" placeholder="Who is it for? (optional)"
+          <input name="beneficiary" placeholder={t("Who is it for? (optional)")}
             className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-          <input name="district" placeholder="District"
+          <input name="district" placeholder={t("District")}
             className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-          <input name="location" placeholder="Location detail (office / address)"
+          <input name="location" placeholder={t("Location detail (office / address)")}
             className="px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
         </div>
 
         {error && <div className="px-3 py-2 text-xs rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{error}</div>}
-        {success && <div className="px-3 py-2 text-xs rounded-lg" style={{ background: "var(--success-bg, #dcfce7)", color: "var(--success-text, #15803d)" }}>Sent to Administrator.</div>}
+        {success && <div className="px-3 py-2 text-xs rounded-lg" style={{ background: "var(--success-bg, #dcfce7)", color: "var(--success-text, #15803d)" }}>{t("Sent to Administrator.")}</div>}
 
         <button type="submit" disabled={busy}
           className="px-4 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast) disabled:opacity-60"
           style={{ background: "var(--accent)" }}>
-          {busy ? "Sending…" : "Submit request"}
+          {busy ? t("Sending…") : t("Submit request")}
         </button>
       </form>
     </section>

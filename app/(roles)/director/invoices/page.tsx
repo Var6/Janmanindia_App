@@ -6,10 +6,12 @@ import HeadLawyer from "@/models/HeadLawyer";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import InvoiceApprovalList from "@/components/reports/InvoiceApprovalList";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function DirectorInvoicesPage() {
   const session = await getSessionFromCookies();
   if (!session || !["director", "superadmin"].includes(session.role)) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
@@ -47,10 +49,10 @@ export default async function DirectorInvoicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Litigation Invoices — Director Approval</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Litigation Invoices — Director Approval")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Litigation invoices for districts with no assigned head lawyer come here. Assign more head lawyers from
-          the <span className="font-semibold">Head Lawyer Assignments</span> page to delegate.
+          {t("Litigation invoices for districts with no assigned head lawyer come here. Assign more head lawyers from the")}{" "}
+          <span className="font-semibold">{t("Head Lawyer Assignments")}</span> {t("page to delegate.")}
         </p>
       </div>
 

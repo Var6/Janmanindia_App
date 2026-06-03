@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 import type { FieldDef, ReportTemplate } from "@/lib/report-templates";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
  *  it and POST. */
 export default function ReportForm({ template }: Props) {
   const router = useRouter();
+  const t = useT();
   const [values, setValues]   = useState<Record<string, unknown>>({});
   const [error, setError]     = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -42,12 +44,12 @@ export default function ReportForm({ template }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Submission failed.");
+        setError(data.error ?? t("Submission failed."));
         return;
       }
       router.push(`/reports/${data.report._id}`);
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setSubmitting(false);
     }
@@ -74,12 +76,12 @@ export default function ReportForm({ template }: Props) {
         <button type="button" onClick={() => router.back()}
           className="px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-(--bg-secondary)"
           style={{ color: "var(--muted)" }}>
-          Cancel
+          {t("Cancel")}
         </button>
         <button type="submit" disabled={submitting}
           className="px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:brightness-110 disabled:opacity-60"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {submitting ? "Submitting…" : "Submit report"}
+          {submitting ? t("Submitting…") : t("Submit report")}
         </button>
       </div>
     </form>
@@ -92,6 +94,7 @@ function Field({ field: f, value, setValue, toggleCheckbox }: {
   setValue: (id: string, v: unknown) => void;
   toggleCheckbox: (id: string, opt: string) => void;
 }) {
+  const t = useT();
   const labelEl = (
     <span className="block text-sm font-semibold text-(--text) mb-1.5">
       {f.label}
@@ -164,7 +167,7 @@ function Field({ field: f, value, setValue, toggleCheckbox }: {
             value={typeof value === "string" ? value : ""}
             onChange={(e) => setValue(f.id, e.target.value)}
             className={`${inputBase} max-w-sm`} style={inputStyle}>
-            <option value="" disabled>Choose…</option>
+            <option value="" disabled>{t("Choose…")}</option>
             {f.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </select>
           {hintEl}

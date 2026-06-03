@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import DailyReportForm from "@/components/reports/DailyReportForm";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type ReportLite = {
   _id: string;
@@ -20,6 +21,7 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
 };
 
 export default function DailyReportsIndex() {
+  const t = useT();
   const [reports, setReports] = useState<ReportLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayReport, setTodayReport] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -46,7 +48,7 @@ export default function DailyReportsIndex() {
     return (
       <div className="space-y-4">
         <button onClick={() => { setShowFormForDate(null); loadAll(); }}
-          className="text-xs text-(--muted) hover:text-(--text)">← Back to all reports</button>
+          className="text-xs text-(--muted) hover:text-(--text)">{t("← Back to all reports")}</button>
         <DailyReportForm
           canEdit
           initialReport={existing as any} // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -60,16 +62,15 @@ export default function DailyReportsIndex() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Daily Reports</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Daily Reports")}</h1>
           <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-            One daily report per working day — covers cases handled, scheme linkages, counselling, legal-aid follow-ups,
-            urgent escalations and supervisor review. Auto-derived counters keep filling minimal.
+            {t("One daily report per working day — covers cases handled, scheme linkages, counselling, legal-aid follow-ups, urgent escalations and supervisor review. Auto-derived counters keep filling minimal.")}
           </p>
         </div>
         <button onClick={() => setShowFormForDate(new Date().toISOString().slice(0, 10))}
           className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent)" }}>
-          {todayReport ? "📝 Continue Today's Report" : "+ Today's Report"}
+          {todayReport ? t("📝 Continue Today's Report") : t("+ Today's Report")}
         </button>
       </div>
 
@@ -85,7 +86,7 @@ export default function DailyReportsIndex() {
       ) : reports.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📒</p>
-          <p className="text-sm text-(--muted)">No daily reports yet. Click + Today's Report to start.</p>
+          <p className="text-sm text-(--muted)">{t("No daily reports yet. Click + Today's Report to start.")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -102,8 +103,8 @@ export default function DailyReportsIndex() {
                       {new Date(r.reportDate).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                     </p>
                     <p className="text-xs text-(--muted) mt-0.5">
-                      {(r.summary?.totalCases ?? 0)} cases handled
-                      {(r.summary?.urgentFlagged ?? 0) > 0 && ` · ${r.summary?.urgentFlagged} urgent`}
+                      {(r.summary?.totalCases ?? 0)} {t("cases handled")}
+                      {(r.summary?.urgentFlagged ?? 0) > 0 && ` · ${r.summary?.urgentFlagged} ${t("urgent")}`}
                     </p>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
@@ -116,7 +117,7 @@ export default function DailyReportsIndex() {
       )}
 
       <p className="text-xs text-(--muted)">
-        Supervisors (HR / Director) can review submitted reports from <Link className="underline hover:text-(--text)" href="/hr/daily-reports">HR &gt; Daily Reports</Link>.
+        {t("Supervisors (HR / Director) can review submitted reports from")} <Link className="underline hover:text-(--text)" href="/hr/daily-reports">{t("HR > Daily Reports")}</Link>.
       </p>
     </div>
   );

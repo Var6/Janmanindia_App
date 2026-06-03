@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/i18n/LanguageProvider";
+
 interface Props {
   counts: {
     planned: number;
@@ -18,14 +20,15 @@ const SEGMENTS: { key: keyof Props["counts"]; label: string; color: string }[] =
 
 /** Stacked-bar chart showing distribution + per-segment count grid. */
 export default function StatusChart({ counts }: Props) {
+  const t = useT();
   const total = SEGMENTS.reduce((s, seg) => s + counts[seg.key], 0);
   if (total === 0) return null;
 
   return (
     <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-(--text)">Status Distribution</h3>
-        <span className="text-xs text-(--muted)">{total} total</span>
+        <h3 className="text-sm font-semibold text-(--text)">{t("Status Distribution")}</h3>
+        <span className="text-xs text-(--muted)">{total} {t("total")}</span>
       </div>
 
       {/* Stacked horizontal bar */}
@@ -34,7 +37,7 @@ export default function StatusChart({ counts }: Props) {
           const pct = (counts[seg.key] / total) * 100;
           if (pct === 0) return null;
           return (
-            <div key={seg.key} title={`${seg.label}: ${counts[seg.key]} (${pct.toFixed(0)}%)`}
+            <div key={seg.key} title={`${t(seg.label)}: ${counts[seg.key]} (${pct.toFixed(0)}%)`}
               style={{ width: `${pct}%`, background: seg.color }} />
           );
         })}
@@ -48,7 +51,7 @@ export default function StatusChart({ counts }: Props) {
             <div key={seg.key}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: seg.color }} />
-                <p className="text-xs text-(--muted)">{seg.label}</p>
+                <p className="text-xs text-(--muted)">{t(seg.label)}</p>
               </div>
               <p className="text-xl font-bold text-(--text)">{counts[seg.key]}</p>
               <div className="mt-1 h-1.5 rounded-full bg-(--bg) border border-(--border) overflow-hidden">

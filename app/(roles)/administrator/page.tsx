@@ -7,10 +7,12 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function AdministratorDashboard() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "administrator" && session.role !== "superadmin")) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -45,8 +47,8 @@ export default async function AdministratorDashboard() {
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Administrator — Operations</h1>
-        <p className="text-sm text-(--muted) mt-1">Office logistics, supplies, transport, and district operations.</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Administrator — Operations")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Office logistics, supplies, transport, and district operations.")}</p>
       </div>
 
       {/* KPI cards */}
@@ -59,7 +61,7 @@ export default async function AdministratorDashboard() {
         ].map((kpi) => (
           <Link key={kpi.label} href={kpi.href}
             className="glass rounded-2xl p-5 hover:border-(--accent) transition-colors">
-            <p className="text-xs text-(--muted)">{kpi.label}</p>
+            <p className="text-xs text-(--muted)">{t(kpi.label)}</p>
             <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-(--accent)" : "text-(--text)"}`}>{kpi.value}</p>
           </Link>
         ))}
@@ -69,11 +71,11 @@ export default async function AdministratorDashboard() {
         {/* By category */}
         <section className="glass rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-(--text) text-sm">Active tickets by category</h2>
-            <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">All →</Link>
+            <h2 className="font-semibold text-(--text) text-sm">{t("Active tickets by category")}</h2>
+            <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">{t("All →")}</Link>
           </div>
           {byCategory.length === 0 ? (
-            <p className="text-xs text-(--muted) text-center py-4">No active tickets.</p>
+            <p className="text-xs text-(--muted) text-center py-4">{t("No active tickets.")}</p>
           ) : (
             <ul className="space-y-2">
               {byCategory.map((c) => {
@@ -97,9 +99,9 @@ export default async function AdministratorDashboard() {
 
         {/* By district */}
         <section className="glass rounded-2xl p-5">
-          <h2 className="font-semibold text-(--text) text-sm mb-3">Active tickets by district</h2>
+          <h2 className="font-semibold text-(--text) text-sm mb-3">{t("Active tickets by district")}</h2>
           {byDistrict.length === 0 ? (
-            <p className="text-xs text-(--muted) text-center py-4">No district data yet.</p>
+            <p className="text-xs text-(--muted) text-center py-4">{t("No district data yet.")}</p>
           ) : (
             <ul className="space-y-2">
               {byDistrict.map((d) => {
@@ -125,11 +127,11 @@ export default async function AdministratorDashboard() {
       {/* Recent open queue */}
       <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
-          <h2 className="font-semibold text-(--text)">Most urgent open tickets</h2>
-          <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">Inbox →</Link>
+          <h2 className="font-semibold text-(--text)">{t("Most urgent open tickets")}</h2>
+          <Link href="/administrator/tickets" className="text-xs text-(--accent) hover:underline">{t("Inbox →")}</Link>
         </div>
         {recent.length === 0 ? (
-          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? "Inbox clear — no open tickets." : "Connect DB to view."}</p>
+          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? t("Inbox clear — no open tickets.") : t("Connect DB to view.")}</p>
         ) : (
           <div className="divide-y divide-(--border)">
             {recent.map((t) => {

@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { claudeCall, lsGet, lsSet } from "@/lib/ai-client";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 // Event Planning AI Pipeline · Jan Nyaya Abhiyan / Janman People's Foundation.
 // 7-step pipeline: setup → brief & design → comms → logistics → scheduling → reporting → post-event.
@@ -49,6 +50,7 @@ function Sel(props){return <div style={{marginBottom:10}}>{props.label&&<label s
 function Btn(props){var bgs={accent:C.accent,red:C.red,green:C.green,blue:C.blue,purple:C.purple,teal:C.teal,ghost:"transparent"};var bg=bgs[props.color||"accent"]||C.accent;var tc=(props.color==="accent"||props.color==="green"||props.color==="teal")?"#000":C.text;var pd=props.size==="sm"?"5px 11px":props.size==="lg"?"13px 28px":"8px 18px";return <button onClick={props.onClick} disabled={props.disabled} style={Object.assign({background:props.disabled?C.muted:bg,color:props.disabled?C.dim:tc,border:props.color==="ghost"?"1px solid "+C.border:"none",borderRadius:7,padding:pd,fontSize:props.size==="sm"?11:13,fontWeight:700,cursor:props.disabled?"not-allowed":"pointer"},props.style||{})}>{props.children}</button>;}
 
 export default function EventPipeline(){
+  const t=useT();
   var [step,setStep]=useState(0);
   var [events,setEvents]=useState([]);
   var [recipTab,setRecipTab]=useState("social");
@@ -255,11 +257,11 @@ export default function EventPipeline(){
         <Sec style={{marginBottom:0}}>{props.title}</Sec>
         <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
           {props.extra}
-          {props.content&&<Btn size="sm" color="ghost" onClick={function(){if(typeof navigator!=="undefined"&&navigator.clipboard)navigator.clipboard.writeText(props.content);}}>Copy</Btn>}
-          <Btn size="sm" color="accent" onClick={props.onGen} disabled={isLoading(props.loadKey)}>{isLoading(props.loadKey)?"Generating...":"Generate with AI"}</Btn>
+          {props.content&&<Btn size="sm" color="ghost" onClick={function(){if(typeof navigator!=="undefined"&&navigator.clipboard)navigator.clipboard.writeText(props.content);}}>{t("Copy")}</Btn>}
+          <Btn size="sm" color="accent" onClick={props.onGen} disabled={isLoading(props.loadKey)}>{isLoading(props.loadKey)?t("Generating..."):t("Generate with AI")}</Btn>
         </div>
       </div>
-      {props.content?<pre style={{fontFamily:"Georgia,serif",fontSize:12.5,color:C.text,whiteSpace:"pre-wrap",lineHeight:1.9,margin:0,maxHeight:420,overflowY:"auto"}}>{props.content}</pre>:<div style={{fontSize:12,color:C.dim,padding:"12px 0"}}>Click "Generate with AI" to create this document from your event brief.</div>}
+      {props.content?<pre style={{fontFamily:"Georgia,serif",fontSize:12.5,color:C.text,whiteSpace:"pre-wrap",lineHeight:1.9,margin:0,maxHeight:420,overflowY:"auto"}}>{props.content}</pre>:<div style={{fontSize:12,color:C.dim,padding:"12px 0"}}>{t('Click "Generate with AI" to create this document from your event brief.')}</div>}
     </Card>;
   }
 
@@ -273,35 +275,35 @@ export default function EventPipeline(){
       <div style={{borderBottom:"1px solid "+C.border,padding:"0 22px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,borderRadius:7,background:C.purple,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🎯</div>
-          <span style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:700,color:C.text}}>Event Planning AI Pipeline</span>
+          <span style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:700,color:C.text}}>{t("Event Planning AI Pipeline")}</span>
           <span style={{fontSize:10,color:C.muted}}>Jan Sahayak Pro · Janman People's Foundation</span>
         </div>
         <div style={{display:"flex",gap:7,alignItems:"center"}}>
-          <Badge label={events.length+" events saved"} color="purple"/>
-          <Btn size="sm" color="ghost" onClick={function(){setStep(0);setConceptNote("");setAgendaText("");setSpeakers("");setSocialMedia("");setFormalInvite("");setChecklist([]);setLogistics({});setReportFmt("");setPostEventSocial("");setActionPoints("");setSetup({role:"Program Manager",project:"p1",eventType:"Legal Aid Camp",eventTitle:"",location:"",district:"Purnia",date:td(),endDate:"",coordinator:"Shashwat",budget:"",objectives:"",themes:[],orgsToLearnFrom:[],issues:"",acts:"",constitutional:"",targetAudience:"",expectedParticipants:"",specialGuests:""});}}>+ New Event</Btn>
+          <Badge label={events.length+" "+t("events saved")} color="purple"/>
+          <Btn size="sm" color="ghost" onClick={function(){setStep(0);setConceptNote("");setAgendaText("");setSpeakers("");setSocialMedia("");setFormalInvite("");setChecklist([]);setLogistics({});setReportFmt("");setPostEventSocial("");setActionPoints("");setSetup({role:"Program Manager",project:"p1",eventType:"Legal Aid Camp",eventTitle:"",location:"",district:"Purnia",date:td(),endDate:"",coordinator:"Shashwat",budget:"",objectives:"",themes:[],orgsToLearnFrom:[],issues:"",acts:"",constitutional:"",targetAudience:"",expectedParticipants:"",specialGuests:""});}}>{t("+ New Event")}</Btn>
         </div>
       </div>
 
       <div style={{display:"flex",gap:0}}>
         <div style={{width:190,borderRight:"1px solid "+C.border,minHeight:"calc(100vh - 52px)",padding:"16px 14px",flexShrink:0}}>
-          <div style={{fontSize:10,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Pipeline Steps</div>
+          <div style={{fontSize:10,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>{t("Pipeline Steps")}</div>
           {STEPS.map(function(s,i){return(
             <button key={i} onClick={function(){setStep(i);}} style={{width:"100%",textAlign:"left",padding:"7px 9px",borderRadius:7,border:"none",background:step===i?C.accentSoft:"transparent",color:step===i?C.accent:C.dim,fontSize:11,fontWeight:step===i?700:400,cursor:"pointer",marginBottom:3,display:"flex",alignItems:"center",gap:7}}>
               <span style={{width:19,height:19,borderRadius:"50%",background:step===i?C.accent:i<step?C.green+"22":C.muted+"22",color:step===i?"#000":i<step?C.green:C.dim,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,flexShrink:0}}>{i<step?"✓":i+1}</span>
-              {s}
+              {t(s)}
             </button>
           );})}
           {setup.eventTitle&&<div style={{marginTop:16,padding:"11px 12px",background:C.surface,borderRadius:9,border:"1px solid "+C.border}}>
-            <div style={{fontSize:10,color:C.dim,marginBottom:5}}>Current Event</div>
+            <div style={{fontSize:10,color:C.dim,marginBottom:5}}>{t("Current Event")}</div>
             <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.4,marginBottom:4}}>{setup.eventTitle}</div>
             <div style={{fontSize:10,color:C.dim}}>{setup.eventType}</div>
             <div style={{fontSize:10,color:C.dim}}>📅 {fmt(setup.date)}</div>
             <div style={{fontSize:10,color:C.dim}}>📍 {setup.district}</div>
             <div style={{height:4,background:C.border,borderRadius:2,overflow:"hidden",marginTop:8}}><div style={{height:"100%",width:(step/6*100)+"%",background:C.accent,borderRadius:2}}/></div>
-            <div style={{fontSize:9,color:C.dim,marginTop:2}}>{Math.round(step/6*100)}% complete</div>
+            <div style={{fontSize:9,color:C.dim,marginTop:2}}>{Math.round(step/6*100)}% {t("complete")}</div>
           </div>}
           {events.length>0&&<div style={{marginTop:14}}>
-            <div style={{fontSize:10,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Saved Events</div>
+            <div style={{fontSize:10,color:C.dim,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{t("Saved Events")}</div>
             {events.slice().reverse().map(function(e){return(
               <div key={e.id} style={{padding:"7px 0",borderBottom:"1px solid "+C.border+"20"}}>
                 <div style={{fontSize:11,fontWeight:600,color:C.text,lineHeight:1.3}}>{e.setup.eventTitle}</div>
@@ -314,50 +316,50 @@ export default function EventPipeline(){
         <div style={{flex:1,padding:"20px 26px",maxWidth:1100,overflowY:"auto"}}>
 
           {step===0&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Event Setup</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:16}}>Define the event, assign a role, select a project, and set the foundation for AI-assisted planning.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Event Setup")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:16}}>{t("Define the event, assign a role, select a project, and set the foundation for AI-assisted planning.")}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
               <Card>
-                <Sec>Role, Project & Event</Sec>
-                <Sel label="Your Role" value={setup.role} onChange={function(e){updSetup("role",e.target.value);}} options={ROLES}/>
-                <Sel label="Project" value={setup.project} onChange={function(e){updSetup("project",e.target.value);}} options={PROJECTS.map(function(p){return {value:p.id,label:p.name};})}/>
+                <Sec>{t("Role, Project & Event")}</Sec>
+                <Sel label={t("Your Role")} value={setup.role} onChange={function(e){updSetup("role",e.target.value);}} options={ROLES}/>
+                <Sel label={t("Project")} value={setup.project} onChange={function(e){updSetup("project",e.target.value);}} options={PROJECTS.map(function(p){return {value:p.id,label:p.name};})}/>
                 <div style={{background:C.surface,borderRadius:8,padding:"9px 11px",marginBottom:10,fontSize:11}}>
                   <div style={{fontWeight:600,color:C.text,marginBottom:2}}>{selProject.name}</div>
-                  <div style={{color:C.dim}}>Grant: {selProject.grant}</div>
-                  <div style={{color:C.dim}}>Budget: Rs {(selProject.budget/1e5).toFixed(0)}L · {selProject.start} to {selProject.end}</div>
+                  <div style={{color:C.dim}}>{t("Grant")}: {selProject.grant}</div>
+                  <div style={{color:C.dim}}>{t("Budget")}: Rs {(selProject.budget/1e5).toFixed(0)}L · {selProject.start} to {selProject.end}</div>
                 </div>
-                <Sel label="Event Type" value={setup.eventType} onChange={function(e){updSetup("eventType",e.target.value);}} options={EVENT_TYPES}/>
-                <Inp label="Event Title" value={setup.eventTitle} onChange={function(e){updSetup("eventTitle",e.target.value);}} placeholder="e.g. State-level Consultation on GBV and Access to Justice in Bihar"/>
+                <Sel label={t("Event Type")} value={setup.eventType} onChange={function(e){updSetup("eventType",e.target.value);}} options={EVENT_TYPES}/>
+                <Inp label={t("Event Title")} value={setup.eventTitle} onChange={function(e){updSetup("eventTitle",e.target.value);}} placeholder={t("e.g. State-level Consultation on GBV and Access to Justice in Bihar")}/>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                  <Inp label="Event Date" type="date" value={setup.date} onChange={function(e){updSetup("date",e.target.value);}}/>
-                  <Inp label="End Date (multi-day)" type="date" value={setup.endDate} onChange={function(e){updSetup("endDate",e.target.value);}}/>
+                  <Inp label={t("Event Date")} type="date" value={setup.date} onChange={function(e){updSetup("date",e.target.value);}}/>
+                  <Inp label={t("End Date (multi-day)")} type="date" value={setup.endDate} onChange={function(e){updSetup("endDate",e.target.value);}}/>
                 </div>
-                <Inp label="Location / Venue" value={setup.location} onChange={function(e){updSetup("location",e.target.value);}} placeholder="e.g. Hotel Chanakya, Patna"/>
+                <Inp label={t("Location / Venue")} value={setup.location} onChange={function(e){updSetup("location",e.target.value);}} placeholder={t("e.g. Hotel Chanakya, Patna")}/>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                  <Inp label="District" value={setup.district} onChange={function(e){updSetup("district",e.target.value);}}/>
-                  <Inp label="Event Budget (Rs)" value={setup.budget} onChange={function(e){updSetup("budget",e.target.value);}} placeholder="e.g. 70000"/>
+                  <Inp label={t("District")} value={setup.district} onChange={function(e){updSetup("district",e.target.value);}}/>
+                  <Inp label={t("Event Budget (Rs)")} value={setup.budget} onChange={function(e){updSetup("budget",e.target.value);}} placeholder={t("e.g. 70000")}/>
                 </div>
-                <Sel label="Event Coordinator" value={setup.coordinator} onChange={function(e){updSetup("coordinator",e.target.value);}} options={TEAM}/>
+                <Sel label={t("Event Coordinator")} value={setup.coordinator} onChange={function(e){updSetup("coordinator",e.target.value);}} options={TEAM}/>
               </Card>
               <Card>
-                <Sec>Brief & Context</Sec>
-                <Inp label="Event Objectives" value={setup.objectives} onChange={function(e){updSetup("objectives",e.target.value);}} rows={2} placeholder="What do you want to achieve? What change will this catalyse?"/>
-                <Inp label="Key Issues to Address" value={setup.issues} onChange={function(e){updSetup("issues",e.target.value);}} rows={2} placeholder="e.g. Police inaction in GBV cases, denial of MGNREGS wages, SC/ST atrocities in Seemanchal..."/>
-                <Inp label="Relevant Acts and Laws" value={setup.acts} onChange={function(e){updSetup("acts",e.target.value);}} placeholder="e.g. PWDVA 2005, POCSO 2012, SC/ST Atrocities Act, NFSA, BNSS..."/>
-                <Inp label="Constitutional Provisions" value={setup.constitutional} onChange={function(e){updSetup("constitutional",e.target.value);}} placeholder="e.g. Articles 14, 15, 17, 21, 21A, 32, 39A, 300A..."/>
+                <Sec>{t("Brief & Context")}</Sec>
+                <Inp label={t("Event Objectives")} value={setup.objectives} onChange={function(e){updSetup("objectives",e.target.value);}} rows={2} placeholder={t("What do you want to achieve? What change will this catalyse?")}/>
+                <Inp label={t("Key Issues to Address")} value={setup.issues} onChange={function(e){updSetup("issues",e.target.value);}} rows={2} placeholder={t("e.g. Police inaction in GBV cases, denial of MGNREGS wages, SC/ST atrocities in Seemanchal...")}/>
+                <Inp label={t("Relevant Acts and Laws")} value={setup.acts} onChange={function(e){updSetup("acts",e.target.value);}} placeholder={t("e.g. PWDVA 2005, POCSO 2012, SC/ST Atrocities Act, NFSA, BNSS...")}/>
+                <Inp label={t("Constitutional Provisions")} value={setup.constitutional} onChange={function(e){updSetup("constitutional",e.target.value);}} placeholder={t("e.g. Articles 14, 15, 17, 21, 21A, 32, 39A, 300A...")}/>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                  <Inp label="Target Audience" value={setup.targetAudience} onChange={function(e){updSetup("targetAudience",e.target.value);}} placeholder="e.g. Survivors, PLVs, lawyers, officials..."/>
-                  <Inp label="Expected Participants" value={setup.expectedParticipants} onChange={function(e){updSetup("expectedParticipants",e.target.value);}} placeholder="e.g. 60-80"/>
+                  <Inp label={t("Target Audience")} value={setup.targetAudience} onChange={function(e){updSetup("targetAudience",e.target.value);}} placeholder={t("e.g. Survivors, PLVs, lawyers, officials...")}/>
+                  <Inp label={t("Expected Participants")} value={setup.expectedParticipants} onChange={function(e){updSetup("expectedParticipants",e.target.value);}} placeholder={t("e.g. 60-80")}/>
                 </div>
-                <Inp label="Special Guests / Chief Guest" value={setup.specialGuests} onChange={function(e){updSetup("specialGuests",e.target.value);}} placeholder="e.g. District Judge, SP, DLSA Secretary..."/>
+                <Inp label={t("Special Guests / Chief Guest")} value={setup.specialGuests} onChange={function(e){updSetup("specialGuests",e.target.value);}} placeholder={t("e.g. District Judge, SP, DLSA Secretary...")}/>
                 <div style={{marginBottom:10}}>
-                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>Themes</label>
+                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{t("Themes")}</label>
                   <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                     {THEMES.map(function(t){var sel=setup.themes.includes(t);return <button key={t} onClick={function(){toggleTheme(t);}} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(sel?C.accent+"55":C.border),background:sel?C.accentSoft:"transparent",color:sel?C.accent:C.dim,fontSize:10,cursor:"pointer",fontWeight:sel?700:400}}>{t}</button>;})}
                   </div>
                 </div>
                 <div style={{marginBottom:10}}>
-                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>Learn From These Organisations</label>
+                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{t("Learn From These Organisations")}</label>
                   <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                     {ORGS.map(function(o){var sel=setup.orgsToLearnFrom.includes(o);return <button key={o} onClick={function(){toggleOrg(o);}} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(sel?C.purple+"55":C.border),background:sel?"rgba(155,114,207,0.1)":"transparent",color:sel?C.purple:C.dim,fontSize:10,cursor:"pointer",fontWeight:sel?700:400}}>{o}</button>;})}
                   </div>
@@ -365,63 +367,63 @@ export default function EventPipeline(){
               </Card>
             </div>
             <div style={{display:"flex",justifyContent:"flex-end",marginTop:13}}>
-              <Btn color="accent" size="lg" onClick={function(){setStep(1);}} disabled={!setup.eventTitle.trim()}>{setup.eventTitle.trim()?"Next: Brief and Design →":"Enter Event Title to Continue"}</Btn>
+              <Btn color="accent" size="lg" onClick={function(){setStep(1);}} disabled={!setup.eventTitle.trim()}>{setup.eventTitle.trim()?t("Next: Brief and Design →"):t("Enter Event Title to Continue")}</Btn>
             </div>
           </div>}
 
           {step===1&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Event Brief and AI Design</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>Generate concept note, agenda and speaker suggestions — informed by your brief and inspired by leading access-to-justice organisations.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Event Brief and AI Design")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("Generate concept note, agenda and speaker suggestions — informed by your brief and inspired by leading access-to-justice organisations.")}</div>
             <div style={{background:C.surface,borderRadius:9,padding:"11px 14px",marginBottom:14,border:"1px solid "+C.border+"55"}}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-                {[["Title",setup.eventTitle],["Type",setup.eventType],["Date",fmt(setup.date)],["Location",setup.location+", "+setup.district],["Coordinator",setup.coordinator],["Budget","Rs "+setup.budget],["Participants",setup.expectedParticipants],["Themes",setup.themes.slice(0,2).join(", ")+(setup.themes.length>2?"...":"")]].map(function(item){return <div key={item[0]} style={{background:C.card,borderRadius:7,padding:"7px 9px"}}><div style={{fontSize:9,color:C.dim,marginBottom:2,textTransform:"uppercase",letterSpacing:.6}}>{item[0]}</div><div style={{fontSize:11,color:C.text,fontWeight:600,lineHeight:1.4}}>{item[1]||"—"}</div></div>;})}
+                {[[t("Title"),setup.eventTitle],[t("Type"),setup.eventType],[t("Date"),fmt(setup.date)],[t("Location"),setup.location+", "+setup.district],[t("Coordinator"),setup.coordinator],[t("Budget"),"Rs "+setup.budget],[t("Participants"),setup.expectedParticipants],[t("Themes"),setup.themes.slice(0,2).join(", ")+(setup.themes.length>2?"...":"")]].map(function(item){return <div key={item[0]} style={{background:C.card,borderRadius:7,padding:"7px 9px"}}><div style={{fontSize:9,color:C.dim,marginBottom:2,textTransform:"uppercase",letterSpacing:.6}}>{item[0]}</div><div style={{fontSize:11,color:C.text,fontWeight:600,lineHeight:1.4}}>{item[1]||"—"}</div></div>;})}
               </div>
             </div>
-            <Output title="Concept Note" content={conceptNote} loadKey="cn" onGen={genConceptNote}/>
-            <Output title="Detailed Agenda (Time-by-Time)" content={agendaText} loadKey="agenda" onGen={genAgenda}/>
-            <Output title="Speaker and Resource Person Suggestions" content={speakers} loadKey="speakers" onGen={genSpeakers}/>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(0);}}>Back</Btn><Btn color="accent" onClick={function(){setStep(2);}}>Next: Communications</Btn></div>
+            <Output title={t("Concept Note")} content={conceptNote} loadKey="cn" onGen={genConceptNote}/>
+            <Output title={t("Detailed Agenda (Time-by-Time)")} content={agendaText} loadKey="agenda" onGen={genAgenda}/>
+            <Output title={t("Speaker and Resource Person Suggestions")} content={speakers} loadKey="speakers" onGen={genSpeakers}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(0);}}>{t("Back")}</Btn><Btn color="accent" onClick={function(){setStep(2);}}>{t("Next: Communications")}</Btn></div>
           </div>}
 
           {step===2&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Communications and Invitations</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>Generate social media kits and formal invitations for the event.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Communications and Invitations")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("Generate social media kits and formal invitations for the event.")}</div>
             <div style={{display:"flex",gap:5,marginBottom:13}}>
-              {["social","invite"].map(function(t){return <button key={t} onClick={function(){setRecipTab(t);}} style={{padding:"6px 14px",borderRadius:7,border:"none",background:recipTab===t?C.accentSoft:"transparent",color:recipTab===t?C.accent:C.dim,fontSize:12,fontWeight:recipTab===t?700:400,cursor:"pointer"}}>{t==="social"?"Social Media Campaign Kit":"Formal Invite Generator"}</button>;})}
+              {["social","invite"].map(function(tab){return <button key={tab} onClick={function(){setRecipTab(tab);}} style={{padding:"6px 14px",borderRadius:7,border:"none",background:recipTab===tab?C.accentSoft:"transparent",color:recipTab===tab?C.accent:C.dim,fontSize:12,fontWeight:recipTab===tab?700:400,cursor:"pointer"}}>{tab==="social"?t("Social Media Campaign Kit"):t("Formal Invite Generator")}</button>;})}
             </div>
-            {recipTab==="social"&&<Output title="Social Media Campaign Kit (Pre-Event, Event Day, Post)" content={socialMedia} loadKey="social" onGen={genSocial}/>}
+            {recipTab==="social"&&<Output title={t("Social Media Campaign Kit (Pre-Event, Event Day, Post)")} content={socialMedia} loadKey="social" onGen={genSocial}/>}
             {recipTab==="invite"&&<div>
               <Card style={{marginBottom:13}}>
-                <Sec>Recipient Details</Sec>
+                <Sec>{t("Recipient Details")}</Sec>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                  <Inp label="Recipient Name" value={inviteName} onChange={function(e){setInviteName(e.target.value);}} placeholder="e.g. Justice Abhay S. Oka"/>
-                  <Inp label="Designation" value={inviteDesig} onChange={function(e){setInviteDesig(e.target.value);}} placeholder="e.g. Judge, Supreme Court of India"/>
-                  <Inp label="Organisation" value={inviteOrg} onChange={function(e){setInviteOrg(e.target.value);}} placeholder="e.g. Supreme Court of India"/>
-                  <Inp label="Email Address" value={inviteEmail} onChange={function(e){setInviteEmail(e.target.value);}} placeholder="recipient@email.com"/>
+                  <Inp label={t("Recipient Name")} value={inviteName} onChange={function(e){setInviteName(e.target.value);}} placeholder={t("e.g. Justice Abhay S. Oka")}/>
+                  <Inp label={t("Designation")} value={inviteDesig} onChange={function(e){setInviteDesig(e.target.value);}} placeholder={t("e.g. Judge, Supreme Court of India")}/>
+                  <Inp label={t("Organisation")} value={inviteOrg} onChange={function(e){setInviteOrg(e.target.value);}} placeholder={t("e.g. Supreme Court of India")}/>
+                  <Inp label={t("Email Address")} value={inviteEmail} onChange={function(e){setInviteEmail(e.target.value);}} placeholder="recipient@email.com"/>
                 </div>
               </Card>
-              <Output title="Formal Invitation Letter" content={formalInvite} loadKey="invite" onGen={genInvite}
-                extra={formalInvite&&inviteEmail?<Btn size="sm" color="blue" onClick={sendInviteEmail}>Send via Gmail</Btn>:null}/>
+              <Output title={t("Formal Invitation Letter")} content={formalInvite} loadKey="invite" onGen={genInvite}
+                extra={formalInvite&&inviteEmail?<Btn size="sm" color="blue" onClick={sendInviteEmail}>{t("Send via Gmail")}</Btn>:null}/>
               {emailMsg&&<div style={{fontSize:12,color:C.accent,padding:"7px 11px",background:C.accentSoft,borderRadius:7,marginBottom:10}}>{emailMsg}</div>}
             </div>}
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(1);}}>Back</Btn><Btn color="accent" onClick={function(){setStep(3);}}>Next: Logistics</Btn></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(1);}}>{t("Back")}</Btn><Btn color="accent" onClick={function(){setStep(3);}}>{t("Next: Logistics")}</Btn></div>
           </div>}
 
           {step===3&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Logistics and Checklist</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>AI-generated to-do checklist with timeline and assignees, plus full logistics breakdown.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Logistics and Checklist")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("AI-generated to-do checklist with timeline and assignees, plus full logistics breakdown.")}</div>
             <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:14}}>
               <Card>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
-                  <Sec style={{marginBottom:0}}>To-Do Checklist ({doneCount}/{checklist.length})</Sec>
+                  <Sec style={{marginBottom:0}}>{t("To-Do Checklist")} ({doneCount}/{checklist.length})</Sec>
                   <div style={{display:"flex",gap:7,alignItems:"center"}}>
                     {emailMsg&&<div style={{fontSize:10,color:C.accent,padding:"3px 8px",background:C.accentSoft,borderRadius:5}}>{emailMsg}</div>}
-                    {checklist.length>0&&<Btn size="sm" color="blue" onClick={sendReminders}>Send Reminders</Btn>}
-                    <Btn size="sm" color="accent" onClick={genChecklist} disabled={isLoading("cl")}>{isLoading("cl")?"Generating...":"Generate with AI"}</Btn>
+                    {checklist.length>0&&<Btn size="sm" color="blue" onClick={sendReminders}>{t("Send Reminders")}</Btn>}
+                    <Btn size="sm" color="accent" onClick={genChecklist} disabled={isLoading("cl")}>{isLoading("cl")?t("Generating..."):t("Generate with AI")}</Btn>
                   </div>
                 </div>
                 {checklist.length>0&&<div style={{height:4,background:C.border,borderRadius:2,overflow:"hidden",marginBottom:10}}><div style={{height:"100%",width:pctDone+"%",background:C.green,borderRadius:2}}/></div>}
-                {checklist.length===0&&<div style={{color:C.dim,fontSize:12,textAlign:"center",padding:16}}>Click "Generate with AI" to create a comprehensive checklist from your event brief.</div>}
+                {checklist.length===0&&<div style={{color:C.dim,fontSize:12,textAlign:"center",padding:16}}>{t('Click "Generate with AI" to create a comprehensive checklist from your event brief.')}</div>}
                 {checklist.map(function(item,i){return(
                   <div key={i} style={{display:"flex",gap:9,padding:"7px 0",borderBottom:"1px solid "+C.border+"20",alignItems:"flex-start"}}>
                     <input type="checkbox" checked={item.done||false} onChange={function(){toggleCheckDone(i);}} style={{marginTop:3,accentColor:C.accent,flexShrink:0}}/>
@@ -430,7 +432,7 @@ export default function EventPipeline(){
                       <div style={{display:"flex",gap:4,marginTop:3,flexWrap:"wrap"}}>
                         <Badge label={item.category} color="gray"/>
                         <Badge label={item.assignee} color="amber"/>
-                        {item.priority==="high"&&<Badge label="HIGH" color="red"/>}
+                        {item.priority==="high"&&<Badge label={t("HIGH")} color="red"/>}
                       </div>
                       {item.notes&&<div style={{fontSize:11,color:C.dim,marginTop:2}}>{item.notes}</div>}
                     </div>
@@ -440,10 +442,10 @@ export default function EventPipeline(){
               </Card>
               <Card>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
-                  <Sec style={{marginBottom:0}}>Logistics Breakdown</Sec>
-                  <Btn size="sm" color="accent" onClick={genLogistics} disabled={isLoading("log")}>{isLoading("log")?"Generating...":"Generate"}</Btn>
+                  <Sec style={{marginBottom:0}}>{t("Logistics Breakdown")}</Sec>
+                  <Btn size="sm" color="accent" onClick={genLogistics} disabled={isLoading("log")}>{isLoading("log")?t("Generating..."):t("Generate")}</Btn>
                 </div>
-                {Object.keys(logistics).length===0&&<div style={{color:C.dim,fontSize:12,textAlign:"center",padding:16}}>Click "Generate" to create a logistics breakdown.</div>}
+                {Object.keys(logistics).length===0&&<div style={{color:C.dim,fontSize:12,textAlign:"center",padding:16}}>{t('Click "Generate" to create a logistics breakdown.')}</div>}
                 {Object.keys(logistics).map(function(cat){return(
                   <div key={cat} style={{marginBottom:12}}>
                     <div style={{fontSize:10,fontWeight:700,color:C.accent,marginBottom:5,textTransform:"uppercase",letterSpacing:.7}}>{cat}</div>
@@ -458,35 +460,35 @@ export default function EventPipeline(){
                 );})}
               </Card>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(2);}}>Back</Btn><Btn color="accent" onClick={function(){setStep(4);}}>Next: Scheduling</Btn></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(2);}}>{t("Back")}</Btn><Btn color="accent" onClick={function(){setStep(4);}}>{t("Next: Scheduling")}</Btn></div>
           </div>}
 
           {step===4&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Meeting Scheduling and Gantt Chart</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>Schedule a planning meeting via Google Calendar and view the project Gantt timeline.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Meeting Scheduling and Gantt Chart")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("Schedule a planning meeting via Google Calendar and view the project Gantt timeline.")}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
               <Card>
-                <Sec>Schedule Planning Meeting</Sec>
+                <Sec>{t("Schedule Planning Meeting")}</Sec>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                  <Inp label="Meeting Date" type="date" value={meetingDate} onChange={function(e){setMeetingDate(e.target.value);}}/>
-                  <Inp label="Time" type="time" value={meetingTime} onChange={function(e){setMeetingTime(e.target.value);}}/>
+                  <Inp label={t("Meeting Date")} type="date" value={meetingDate} onChange={function(e){setMeetingDate(e.target.value);}}/>
+                  <Inp label={t("Time")} type="time" value={meetingTime} onChange={function(e){setMeetingTime(e.target.value);}}/>
                 </div>
                 <div style={{marginBottom:10}}>
-                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>Attendees</label>
+                  <label style={{fontSize:9,color:C.dim,display:"block",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{t("Attendees")}</label>
                   <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                     {TEAM.map(function(name){var sel=meetingAttendees.includes(name);return <button key={name} onClick={function(){toggleAttendee(name);}} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(sel?C.accent+"55":C.border),background:sel?C.accentSoft:"transparent",color:sel?C.accent:C.dim,fontSize:10,cursor:"pointer",fontWeight:sel?700:400}}>{name}</button>;})}
                   </div>
                 </div>
-                <Inp label="Meeting Agenda" value={meetingAgenda} onChange={function(e){setMeetingAgenda(e.target.value);}} rows={3} placeholder="e.g. Event planning discussion, task assignment, timeline review, budget approval..."/>
+                <Inp label={t("Meeting Agenda")} value={meetingAgenda} onChange={function(e){setMeetingAgenda(e.target.value);}} rows={3} placeholder={t("e.g. Event planning discussion, task assignment, timeline review, budget approval...")}/>
                 {calMsg&&<div style={{fontSize:11,color:C.accent,padding:"7px 10px",background:C.accentSoft,borderRadius:7,marginBottom:9}}>{calMsg}</div>}
-                <Btn onClick={scheduleMeeting} color="green" disabled={!meetingDate||meetingAttendees.length===0}>Schedule via Google Calendar</Btn>
+                <Btn onClick={scheduleMeeting} color="green" disabled={!meetingDate||meetingAttendees.length===0}>{t("Schedule via Google Calendar")}</Btn>
               </Card>
               <Card>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
-                  <Sec style={{marginBottom:0}}>Project Gantt Chart — {selProject.code}</Sec>
-                  <Btn size="sm" color="purple" onClick={function(){setGanttVisible(!ganttVisible);}}>{ganttVisible?"Hide Gantt":"Show Gantt"}</Btn>
+                  <Sec style={{marginBottom:0}}>{t("Project Gantt Chart")} — {selProject.code}</Sec>
+                  <Btn size="sm" color="purple" onClick={function(){setGanttVisible(!ganttVisible);}}>{ganttVisible?t("Hide Gantt"):t("Show Gantt")}</Btn>
                 </div>
-                {!ganttVisible&&<div style={{color:C.dim,fontSize:12,padding:8}}>Click "Show Gantt" to view the full project timeline for {selProject.name}.</div>}
+                {!ganttVisible&&<div style={{color:C.dim,fontSize:12,padding:8}}>{t('Click "Show Gantt" to view the full project timeline for')} {selProject.name}.</div>}
                 {ganttVisible&&<div>
                   {Array.from(new Set(GANTT_ITEMS.map(function(g){return g.cat;}))).map(function(cat){
                     var projStart=new Date(selProject.start);
@@ -515,32 +517,32 @@ export default function EventPipeline(){
                 </div>}
               </Card>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between"}}><Btn color="ghost" onClick={function(){setStep(3);}}>Back</Btn><Btn color="accent" onClick={function(){setStep(5);}}>Next: Reporting</Btn></div>
+            <div style={{display:"flex",justifyContent:"space-between"}}><Btn color="ghost" onClick={function(){setStep(3);}}>{t("Back")}</Btn><Btn color="accent" onClick={function(){setStep(5);}}>{t("Next: Reporting")}</Btn></div>
           </div>}
 
           {step===5&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Reporting and Documentation Formats</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>Generate ready-to-fill event report template and transcription format for post-event documentation.</div>
-            <Output title="Event Report Template and Transcription Format" content={reportFmt} loadKey="report" onGen={genReportFmt}/>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(4);}}>Back</Btn><Btn color="accent" onClick={function(){setStep(6);}}>Next: Post-Event Analysis</Btn></div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Reporting and Documentation Formats")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("Generate ready-to-fill event report template and transcription format for post-event documentation.")}</div>
+            <Output title={t("Event Report Template and Transcription Format")} content={reportFmt} loadKey="report" onGen={genReportFmt}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}><Btn color="ghost" onClick={function(){setStep(4);}}>{t("Back")}</Btn><Btn color="accent" onClick={function(){setStep(6);}}>{t("Next: Post-Event Analysis")}</Btn></div>
           </div>}
 
           {step===6&&<div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>Post-Event Analysis and Communications</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>Enter event outcomes, then generate post-event social media, action points, and way forward.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.text,marginBottom:3}}>{t("Post-Event Analysis and Communications")}</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14}}>{t("Enter event outcomes, then generate post-event social media, action points, and way forward.")}</div>
             <Card style={{marginBottom:13}}>
-              <Sec>Event Outcomes (Fill After Event)</Sec>
+              <Sec>{t("Event Outcomes (Fill After Event)")}</Sec>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-                <Inp label="Actual Attendance" value={attendance} onChange={function(e){setAttendance(e.target.value);}} placeholder="e.g. 78 participants — 34 women, 12 PLVs, 8 lawyers, 6 officials"/>
-                <Inp label="Key Highlights" value={keyHighlights} onChange={function(e){setKeyHighlights(e.target.value);}} placeholder="e.g. Survivors testified, 12 cases identified, resolution passed, DM committed to action"/>
+                <Inp label={t("Actual Attendance")} value={attendance} onChange={function(e){setAttendance(e.target.value);}} placeholder={t("e.g. 78 participants — 34 women, 12 PLVs, 8 lawyers, 6 officials")}/>
+                <Inp label={t("Key Highlights")} value={keyHighlights} onChange={function(e){setKeyHighlights(e.target.value);}} placeholder={t("e.g. Survivors testified, 12 cases identified, resolution passed, DM committed to action")}/>
               </div>
-              <Inp label="Post-Event Notes" value={postNotes} onChange={function(e){setPostNotes(e.target.value);}} rows={4} placeholder="What happened, key discussions, decisions made, outcomes achieved, challenges, commitments received."/>
+              <Inp label={t("Post-Event Notes")} value={postNotes} onChange={function(e){setPostNotes(e.target.value);}} rows={4} placeholder={t("What happened, key discussions, decisions made, outcomes achieved, challenges, commitments received.")}/>
             </Card>
-            <Output title="Post-Event Social Media Communications" content={postEventSocial} loadKey="pSocial" onGen={genPostEventSocial}/>
-            <Output title="Action Points, Way Forward and Funder Reporting" content={actionPoints} loadKey="actions" onGen={genActionPoints}/>
+            <Output title={t("Post-Event Social Media Communications")} content={postEventSocial} loadKey="pSocial" onGen={genPostEventSocial}/>
+            <Output title={t("Action Points, Way Forward and Funder Reporting")} content={actionPoints} loadKey="actions" onGen={genActionPoints}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
-              <Btn color="ghost" onClick={function(){setStep(5);}}>Back</Btn>
-              <Btn color="green" size="lg" onClick={saveEvent}>Save and Archive This Event</Btn>
+              <Btn color="ghost" onClick={function(){setStep(5);}}>{t("Back")}</Btn>
+              <Btn color="green" size="lg" onClick={saveEvent}>{t("Save and Archive This Event")}</Btn>
             </div>
           </div>}
 

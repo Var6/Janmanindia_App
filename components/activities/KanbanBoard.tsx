@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/components/i18n/LanguageProvider";
+
 interface Activity {
   _id: string;
   title: string;
@@ -32,6 +34,7 @@ const PRIORITY_DOT: Record<string, string> = {
 };
 
 export default function KanbanBoard({ items, onStatus, busyId }: Props) {
+  const t = useT();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {COLUMNS.map((col) => {
@@ -43,14 +46,14 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
               style={{ borderTop: `3px solid ${col.color}` }}>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full" style={{ background: col.color }} />
-                <p className="text-sm font-semibold text-(--text)">{col.label}</p>
+                <p className="text-sm font-semibold text-(--text)">{t(col.label)}</p>
               </div>
               <span className="text-xs font-mono text-(--muted)">{cards.length}</span>
             </header>
 
             <div className="p-2 space-y-2 flex-1 overflow-y-auto max-h-[60vh]">
               {cards.length === 0 ? (
-                <p className="text-xs text-(--muted) text-center py-6">Empty</p>
+                <p className="text-xs text-(--muted) text-center py-6">{t("Empty")}</p>
               ) : cards.map((c) => {
                 const overdue = c.dueDate && c.status !== "done" && c.status !== "cancelled" && new Date(c.dueDate) < new Date(new Date().toDateString());
                 return (
@@ -60,14 +63,14 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                       <p className="text-sm font-medium text-(--text) leading-snug">{c.title}</p>
                     </div>
                     <p className="text-[11px] text-(--muted) ml-4">
-                      {c.assignee?.name ?? "Unassigned"}
+                      {c.assignee?.name ?? t("Unassigned")}
                       {c.coAssignees && c.coAssignees.length > 0 ? ` +${c.coAssignees.length}` : ""}
                       {" · "}<span className="capitalize">{c.category}</span>
                       {c.dueDate ? ` · ${formatKanbanWhen(c.dueDate, c.endsAt)}` : ""}
                     </p>
                     {overdue && (
                       <p className="text-[10px] uppercase font-bold mt-1 ml-4" style={{ color: "var(--error, #dc2626)" }}>
-                        Overdue
+                        {t("Overdue")}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-1 mt-2 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -75,9 +78,9 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                         <button key={other.key}
                           onClick={() => onStatus(c._id, other.key)}
                           disabled={busyId === c._id}
-                          title={`Move to ${other.label}`}
+                          title={`${t("Move to")} ${t(other.label)}`}
                           className="text-[10px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text) hover:border-(--accent) disabled:opacity-50">
-                          → {other.label}
+                          → {t(other.label)}
                         </button>
                       ))}
                     </div>

@@ -7,10 +7,12 @@ import "@/models/Case";    // register schema for populate (case-scoped expenses
 import "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import ExpenseQueue, { type ExpenseItem } from "@/components/finance/ExpenseQueue";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function DirectorExpenseApprovalsPage() {
   const session = await getSessionFromCookies();
   if (!session || !["director", "superadmin"].includes(session.role)) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
@@ -39,15 +41,15 @@ export default async function DirectorExpenseApprovalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Expense Approvals</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Expense Approvals")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          HR-verified expenses await your sign-off. Approving sends them to finance for payment; rejecting closes them with a reason.
+          {t("HR-verified expenses await your sign-off. Approving sends them to finance for payment; rejecting closes them with a reason.")}
         </p>
       </div>
 
-      <ExpenseQueue title="Awaiting your approval" items={pending as unknown as ExpenseItem[]}
-        action="director_approve" allowReject empty="Inbox empty." />
-      <ExpenseQueue title="Recently processed" items={recent as unknown as ExpenseItem[]} />
+      <ExpenseQueue title={t("Awaiting your approval")} items={pending as unknown as ExpenseItem[]}
+        action="director_approve" allowReject empty={t("Inbox empty.")} />
+      <ExpenseQueue title={t("Recently processed")} items={recent as unknown as ExpenseItem[]} />
     </div>
   );
 }

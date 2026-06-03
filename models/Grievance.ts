@@ -8,6 +8,10 @@ export type GrievanceCategory =
 export interface IGrievance extends Document {
   submittedBy: mongoose.Types.ObjectId;
   anonymous: boolean;
+  /** True when the grievance is ABOUT the HR team itself. Such grievances are
+   *  routed away from HR (who would otherwise be handling a complaint against
+   *  themselves) and made visible only to directors / superadmin. */
+  againstHr: boolean;
   category: GrievanceCategory;
   subject: string;
   description: string;
@@ -27,6 +31,7 @@ const grievanceSchema = new Schema<IGrievance>(
   {
     submittedBy:      { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     anonymous:        { type: Boolean, default: false },
+    againstHr:        { type: Boolean, default: false, index: true },
     category: {
       type: String,
       enum: ["harassment", "discrimination", "workload", "compensation", "facilities", "interpersonal", "policy", "other"],

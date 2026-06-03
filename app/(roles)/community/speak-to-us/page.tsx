@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import { SkeletonRow } from "@/components/ui/Skeleton";
 import { CommunityHelpTabs } from "@/components/community/SectionTabs";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Msg = {
   _id: string;
@@ -22,6 +23,7 @@ function fmt(sec?: number) {
 }
 
 export default function SpeakToUsPage() {
+  const t = useT();
   const [audioUrl, setAudioUrl]     = useState("");
   const [duration, setDuration]     = useState(0);
   const [text, setText]             = useState("");
@@ -41,7 +43,7 @@ export default function SpeakToUsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!audioUrl) { setError("Please record a voice message first."); return; }
+    if (!audioUrl) { setError(t("Please record a voice message first.")); return; }
     setSubmitting(true); setError("");
     try {
       const res = await fetch("/api/community/voice-message", {
@@ -50,22 +52,22 @@ export default function SpeakToUsPage() {
         body: JSON.stringify({ audioUrl, durationSec: duration || undefined, message: text.trim() || undefined }),
       });
       const d = await res.json();
-      if (!res.ok) { setError(d.error ?? "Failed to send."); return; }
+      if (!res.ok) { setError(d.error ?? t("Failed to send.")); return; }
       setHistory(prev => [d.voiceMessage, ...prev]);
       setAudioUrl(""); setDuration(0); setText("");
-      setSuccess("Your message has been sent! Our team will listen and reach out to you.");
+      setSuccess(t("Your message has been sent! Our team will listen and reach out to you."));
       setTimeout(() => setSuccess(""), 6000);
     } catch {
-      setError("Network error — please try again.");
+      setError(t("Network error — please try again."));
     } finally {
       setSubmitting(false);
     }
   }
 
   const STATUS_LABEL: Record<string, { label: string; bg: string; color: string }> = {
-    new:       { label: "Sent — awaiting review", bg: "var(--warning-bg)",  color: "var(--warning-text)"  },
-    heard:     { label: "Heard by team",           bg: "var(--info-bg)",     color: "var(--info-text)"     },
-    responded: { label: "Team responded",          bg: "var(--success-bg)", color: "var(--success-text)"  },
+    new:       { label: t("Sent — awaiting review"), bg: "var(--warning-bg)",  color: "var(--warning-text)"  },
+    heard:     { label: t("Heard by team"),           bg: "var(--info-bg)",     color: "var(--info-text)"     },
+    responded: { label: t("Team responded"),          bg: "var(--success-bg)", color: "var(--success-text)"  },
   };
 
   return (
@@ -73,10 +75,9 @@ export default function SpeakToUsPage() {
       <CommunityHelpTabs />
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Speak to Us</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Speak to Us")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Can&apos;t type? No problem — record your voice and we&apos;ll listen. Our team will reach out to you.
-          You don&apos;t need a verified account to send a message.
+          {t("Can't type? No problem — record your voice and we'll listen. Our team will reach out to you. You don't need a verified account to send a message.")}
         </p>
       </div>
 
@@ -84,7 +85,7 @@ export default function SpeakToUsPage() {
       <form onSubmit={handleSubmit}
         className="rounded-2xl border p-6 space-y-5"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h2 className="font-semibold text-(--text)">Send a Voice Message</h2>
+        <h2 className="font-semibold text-(--text)">{t("Send a Voice Message")}</h2>
 
         {success && (
           <div className="p-3 rounded-xl text-sm font-medium"
@@ -104,17 +105,17 @@ export default function SpeakToUsPage() {
           <div className="rounded-xl border p-4 space-y-2"
             style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
             <p className="text-sm font-medium text-(--text)">
-              Recording ready {duration ? `· ${fmt(duration)}` : ""}
+              {t("Recording ready")} {duration ? `· ${fmt(duration)}` : ""}
             </p>
             <audio controls src={audioUrl} className="w-full h-9" />
             <button type="button" onClick={() => { setAudioUrl(""); setDuration(0); }}
               className="text-xs hover:underline" style={{ color: "var(--error-text)" }}>
-              Remove — record again
+              {t("Remove — record again")}
             </button>
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-(--text)">Step 1 — Record your message</p>
+            <p className="text-sm font-medium text-(--text)">{t("Step 1 — Record your message")}</p>
             <VoiceRecorder
               onUploaded={(url, sec) => { setAudioUrl(url); setDuration(sec); setError(""); }}
               disabled={submitting}
@@ -125,10 +126,10 @@ export default function SpeakToUsPage() {
         {/* Optional text */}
         <div>
           <label className="block text-sm font-medium text-(--text) mb-1.5">
-            Add a note <span className="text-(--muted) font-normal">(optional — type in Hindi or English)</span>
+            {t("Add a note")} <span className="text-(--muted) font-normal">{t("(optional — type in Hindi or English)")}</span>
           </label>
           <textarea value={text} onChange={e => setText(e.target.value)} rows={3}
-            placeholder="जो बात आप बताना चाहते हैं वो यहाँ लिखें… / Write what you want us to know…"
+            placeholder={t("जो बात आप बताना चाहते हैं वो यहाँ लिखें… / Write what you want us to know…")}
             className="w-full px-3.5 py-2.5 rounded-xl border text-sm resize-none focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         </div>
@@ -136,13 +137,13 @@ export default function SpeakToUsPage() {
         <button type="submit" disabled={submitting || !audioUrl}
           className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-          {submitting ? "Sending…" : "Send to Janman Team"}
+          {submitting ? t("Sending…") : t("Send to Janman Team")}
         </button>
       </form>
 
       {/* History */}
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Your sent messages</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Your sent messages")}</h2>
         {loadingHistory ? (
           <div className="rounded-2xl border divide-y divide-(--border)"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -154,7 +155,7 @@ export default function SpeakToUsPage() {
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-2xl mb-2">🎤</p>
-            <p className="text-sm text-(--muted)">No messages sent yet.</p>
+            <p className="text-sm text-(--muted)">{t("No messages sent yet.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -183,7 +184,7 @@ export default function SpeakToUsPage() {
                   {m.responseNote && (
                     <div className="px-3 py-2 rounded-lg text-sm"
                       style={{ background: "var(--info-bg)", color: "var(--info-text)", border: "1px solid color-mix(in srgb,var(--info) 20%,transparent)" }}>
-                      <span className="font-semibold">Team note: </span>{m.responseNote}
+                      <span className="font-semibold">{t("Team note:")} </span>{m.responseNote}
                     </div>
                   )}
                 </div>

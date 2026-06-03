@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Manager = { _id: string; name: string; email?: string } | null;
 type Allocation = { _id: string; source: string; amount: number; receivedAt?: string; notes?: string };
@@ -27,6 +28,7 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
 };
 
 export default function ProjectsPage() {
+  const t = useT();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -65,7 +67,7 @@ export default function ProjectsPage() {
     try {
       const res = await fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed"); return; }
+      if (!res.ok) { setError(data.error ?? t("Failed")); return; }
       (e.target as HTMLFormElement).reset();
       setOpen(false);
       load();
@@ -99,16 +101,15 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Projects & Funds</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Projects & Funds")}</h1>
           <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-            Create projects, allocate donor funds, and watch spend in real time. Each project's 3-letter code matches its
-            employee-ID prefix (e.g. JNA → JPF/JNA/26/01). Expense approval drains the budget; rejections don't.
+            {t("Create projects, allocate donor funds, and watch spend in real time. Each project's 3-letter code matches its employee-ID prefix (e.g. JNA → JPF/JNA/26/01). Expense approval drains the budget; rejections don't.")}
           </p>
         </div>
         <button onClick={() => setOpen(s => !s)}
           className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
           style={{ background: open ? "var(--bg-secondary)" : "var(--accent)", color: open ? "var(--muted)" : "var(--accent-contrast)" }}>
-          {open ? "Cancel" : "+ New Project"}
+          {open ? t("Cancel") : t("+ New Project")}
         </button>
       </div>
 
@@ -117,43 +118,43 @@ export default function ProjectsPage() {
           style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
           {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input name="code" required maxLength={3} pattern="[A-Za-z]{3}" placeholder="Code (3 letters, e.g. JNA)"
+            <input name="code" required maxLength={3} pattern="[A-Za-z]{3}" placeholder={t("Code (3 letters, e.g. JNA)")}
               onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toUpperCase().replace(/[^A-Z]/g, ""); }}
               className="px-3 py-2 rounded-lg border text-sm uppercase font-mono tracking-widest"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input name="name" required placeholder="Project name (e.g. Janman Bihar)"
+            <input name="name" required placeholder={t("Project name (e.g. Janman Bihar)")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
-          <textarea name="description" rows={2} placeholder="What is this project about?"
+          <textarea name="description" rows={2} placeholder={t("What is this project about?")}
             className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input name="totalBudget" type="number" min={0} placeholder="Total budget (₹)"
+            <input name="totalBudget" type="number" min={0} placeholder={t("Total budget (₹)")}
               className="px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input name="startDate" type="date" placeholder="Start"
+            <input name="startDate" type="date" placeholder={t("Start")}
               className="px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input name="endDate" type="date" placeholder="End"
+            <input name="endDate" type="date" placeholder={t("End")}
               className="px-3 py-2 rounded-lg border text-sm"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
           <fieldset className="rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
-            <legend className="text-xs font-semibold text-(--text) px-1">First fund allocation (optional)</legend>
+            <legend className="text-xs font-semibold text-(--text) px-1">{t("First fund allocation (optional)")}</legend>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input name="source" placeholder="Donor / Grant"
+              <input name="source" placeholder={t("Donor / Grant")}
                 className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-              <input name="amount" type="number" min={0} placeholder="Amount (₹)"
+              <input name="amount" type="number" min={0} placeholder={t("Amount (₹)")}
                 className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-              <input name="allocationNotes" placeholder="Notes (optional)"
+              <input name="allocationNotes" placeholder={t("Notes (optional)")}
                 className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             </div>
           </fieldset>
           <button type="submit" disabled={busy}
             className="px-5 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {busy ? "Creating…" : "Create Project"}
+            {busy ? t("Creating…") : t("Create Project")}
           </button>
         </form>
       )}
@@ -168,7 +169,7 @@ export default function ProjectsPage() {
       ) : projects.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📊</p>
-          <p className="text-sm text-(--muted)">No projects yet. Create one above to start tracking funds.</p>
+          <p className="text-sm text-(--muted)">{t("No projects yet. Create one above to start tracking funds.")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -192,22 +193,22 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <Stat label="Total" value={`₹${p.totalBudget.toLocaleString("en-IN")}`} />
-                  <Stat label="Spent" value={`₹${p.spent.toLocaleString("en-IN")}`} color={overrun ? "var(--error-text)" : "var(--text)"} />
-                  <Stat label="Remaining" value={`₹${p.remaining.toLocaleString("en-IN")}`} color="var(--success-text)" />
+                  <Stat label={t("Total")} value={`₹${p.totalBudget.toLocaleString("en-IN")}`} />
+                  <Stat label={t("Spent")} value={`₹${p.spent.toLocaleString("en-IN")}`} color={overrun ? "var(--error-text)" : "var(--text)"} />
+                  <Stat label={t("Remaining")} value={`₹${p.remaining.toLocaleString("en-IN")}`} color="var(--success-text)" />
                 </div>
 
                 <div className="rounded-full h-2 overflow-hidden" style={{ background: "var(--bg-secondary)" }}>
                   <div className="h-full transition-all" style={{ width: `${pct}%`, background: overrun ? "var(--error)" : "var(--accent)" }} />
                 </div>
                 <p className="text-[11px] text-(--muted)">
-                  {pct}% utilised{overrun && " — overrunning budget"}
+                  {pct}{t("% utilised")}{overrun && t(" — overrunning budget")}
                 </p>
 
                 {p.allocations.length > 0 && (
                   <details className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
                     <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-(--muted) uppercase tracking-wide">
-                      Allocations ({p.allocations.length})
+                      {t("Allocations")} ({p.allocations.length})
                     </summary>
                     <ul className="px-3 pb-3 space-y-1">
                       {p.allocations.map(a => (
@@ -223,24 +224,24 @@ export default function ProjectsPage() {
                 {allocateOpen === p._id ? (
                   <form onSubmit={(e) => addAllocation(p._id, e)} className="rounded-xl border p-3 space-y-2"
                     style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                    <p className="text-xs font-semibold text-(--text)">Add a fund allocation</p>
+                    <p className="text-xs font-semibold text-(--text)">{t("Add a fund allocation")}</p>
                     <div className="grid grid-cols-2 gap-2">
-                      <input name="source" required placeholder="Donor"
+                      <input name="source" required placeholder={t("Donor")}
                         className="px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
-                      <input name="amount" required type="number" min={1} placeholder="Amount (₹)"
+                      <input name="amount" required type="number" min={1} placeholder={t("Amount (₹)")}
                         className="px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
                     </div>
-                    <input name="notes" placeholder="Notes"
+                    <input name="notes" placeholder={t("Notes")}
                       className="w-full px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
                     <div className="flex items-center gap-2">
-                      <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>Save</button>
-                      <button type="button" onClick={() => setAllocateOpen(null)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+                      <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Save")}</button>
+                      <button type="button" onClick={() => setAllocateOpen(null)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
                     </div>
                   </form>
                 ) : (
                   <button onClick={() => setAllocateOpen(p._id)}
                     className="w-full text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
-                    + Add allocation (donor receipt)
+                    {t("+ Add allocation (donor receipt)")}
                   </button>
                 )}
               </article>

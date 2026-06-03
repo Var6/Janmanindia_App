@@ -4,10 +4,12 @@ import { tryConnectDB } from "@/lib/mongoose";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import PlvRequestsList from "@/components/shared/PlvRequestsList";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function PlvRequestsInbox() {
   const session = await getSessionFromCookies();
   if (!session || !["socialworker", "director", "superadmin"].includes(session.role)) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   const requests = dbOk
@@ -30,9 +32,9 @@ export default async function PlvRequestsInbox() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">PLV Requests</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("PLV Requests")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Community members applying to join the Para Legal Volunteer programme. Review motivation, then approve or reject with a reason.
+          {t("Community members applying to join the Para Legal Volunteer programme. Review motivation, then approve or reject with a reason.")}
         </p>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Pending = { _id: string; name: string; email: string; phone?: string; motivation?: string; requestedAt?: string; district?: string };
 type Approved = { _id: string; name: string; email: string; decidedAt?: string; district?: string };

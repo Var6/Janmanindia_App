@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import CaseDetailPage from "@/components/shared/CaseDetailPage";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function UserCaseDetailPage({
   params,
@@ -10,6 +11,7 @@ export default async function UserCaseDetailPage({
   const session = await getSessionFromCookies();
   if (!session || session.role !== "community") redirect("/login");
 
+  const t = await getServerT();
   const { caseId } = await params;
 
   return (
@@ -17,7 +19,7 @@ export default async function UserCaseDetailPage({
       caseId={caseId}
       canEdit={false}
       backHref="/community/case-tracker"
-      backLabel="Case Tracker"
+      backLabel={t("Case Tracker")}
     />
   );
 }

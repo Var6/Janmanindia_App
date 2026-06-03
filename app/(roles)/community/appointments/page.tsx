@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SkeletonRow } from "@/components/ui/Skeleton";
 import { CommunityCasesTabs } from "@/components/community/SectionTabs";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type UserRef = { _id: string; name: string; email?: string; phone?: string; role?: string };
 type Appointment = {
@@ -43,6 +44,7 @@ function defaultDateTime(): string {
 }
 
 export default function AppointmentsPage() {
+  const t = useT();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -94,13 +96,13 @@ export default function AppointmentsPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    if (!pickedSw) { setError("Pick a social worker first."); return; }
-    if (reason.trim().length < 5) { setError("Add a brief reason (5+ characters)."); return; }
-    if (!proposedDate) { setError("Pick a date and time."); return; }
+    if (!pickedSw) { setError(t("Pick a social worker first.")); return; }
+    if (reason.trim().length < 5) { setError(t("Add a brief reason (5+ characters).")); return; }
+    if (!proposedDate) { setError(t("Pick a date and time.")); return; }
 
     const start = new Date(proposedDate);
     if (isNaN(start.getTime()) || start.getTime() < Date.now()) {
-      setError("Pick a future time.");
+      setError(t("Pick a future time."));
       return;
     }
     const end = new Date(start.getTime() + duration * 60_000);
@@ -119,7 +121,7 @@ export default function AppointmentsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to request appointment.");
+        setError(data.error ?? t("Failed to request appointment."));
         return;
       }
       setAppointments((prev) => [data.appointment, ...prev]);
@@ -130,7 +132,7 @@ export default function AppointmentsPage() {
       setDuration(30);
       setTimeout(() => setSuccess(""), 4000);
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setSubmitting(false);
     }
@@ -142,16 +144,16 @@ export default function AppointmentsPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-(text)">Appointments</h1>
+          <h1 className="text-2xl font-bold text-(text)">{t("Appointments")}</h1>
           <p className="text-sm text-(muted) mt-1">
-            Request a meeting with your social worker. They&apos;ll confirm the time and route you to a lawyer if needed.
+            {t("Request a meeting with your social worker. They'll confirm the time and route you to a lawyer if needed.")}
           </p>
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setError(""); }}
           className="px-4 py-2 rounded-xl bg-(accent) text-(accent-contrast) text-sm font-semibold hover:opacity-90 transition-opacity"
         >
-          {showForm ? "Cancel" : "+ Request"}
+          {showForm ? t("Cancel") : t("+ Request")}
         </button>
       </div>
 
@@ -161,7 +163,7 @@ export default function AppointmentsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-(surface) rounded-2xl border border-(border) p-5 space-y-4">
-          <h2 className="font-semibold text-(text)">New Appointment Request</h2>
+          <h2 className="font-semibold text-(text)">{t("New Appointment Request")}</h2>
           {error && (
             <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>
           )}
@@ -169,7 +171,7 @@ export default function AppointmentsPage() {
           {/* Social worker — assigned by default, switchable when none */}
           <div>
             <label className="block text-sm font-medium text-(text) mb-1.5">
-              Social worker <span className="text-red-500">*</span>
+              {t("Social worker")} <span className="text-red-500">*</span>
             </label>
             {assignedSw ? (
               <div className="rounded-xl border border-(border) bg-(bg) px-3.5 py-2.5 text-sm">
@@ -184,14 +186,14 @@ export default function AppointmentsPage() {
                 </div>
                 <button type="button" onClick={() => { setPickedSw(null); setSwQuery(""); }}
                   className="text-xs px-2.5 py-1 rounded-lg bg-(--bg-secondary, #f3f4f6) text-(muted) shrink-0">
-                  Change
+                  {t("Change")}
                 </button>
               </div>
             ) : (
               <>
                 <input
                   type="text"
-                  placeholder="Type at least 2 letters of a social worker's name"
+                  placeholder={t("Type at least 2 letters of a social worker's name")}
                   value={swQuery}
                   onChange={(e) => setSwQuery(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-(border) bg-(bg) text-(text) text-sm focus:outline-none focus:ring-2 focus:ring-(accent)/40"
@@ -211,7 +213,7 @@ export default function AppointmentsPage() {
                   </ul>
                 )}
                 <p className="text-xs text-(muted) mt-1">
-                  No social worker assigned yet — search for one and we&apos;ll route the request to them.
+                  {t("No social worker assigned yet — search for one and we'll route the request to them.")}
                 </p>
               </>
             )}
@@ -219,14 +221,14 @@ export default function AppointmentsPage() {
 
           <div>
             <label className="block text-sm font-medium text-(text) mb-1.5">
-              Reason <span className="text-red-500">*</span>
+              {t("Reason")} <span className="text-red-500">*</span>
             </label>
             <textarea
               required
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="What do you need to discuss?"
+              placeholder={t("What do you need to discuss?")}
               className="w-full px-3.5 py-2.5 rounded-xl border border-(border) bg-(bg) text-(text) text-sm focus:outline-none focus:ring-2 focus:ring-(accent)/40 resize-none placeholder:text-(muted)"
             />
           </div>
@@ -234,7 +236,7 @@ export default function AppointmentsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-(text) mb-1.5">
-                Date &amp; time <span className="text-red-500">*</span>
+                {t("Date & time")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -246,16 +248,16 @@ export default function AppointmentsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-(text) mb-1.5">Duration</label>
+              <label className="block text-sm font-medium text-(text) mb-1.5">{t("Duration")}</label>
               <select
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(border) bg-(bg) text-(text) text-sm focus:outline-none focus:ring-2 focus:ring-(accent)/40"
               >
-                <option value={15}>15 min</option>
-                <option value={30}>30 min</option>
-                <option value={45}>45 min</option>
-                <option value={60}>1 hour</option>
+                <option value={15}>{t("15 min")}</option>
+                <option value={30}>{t("30 min")}</option>
+                <option value={45}>{t("45 min")}</option>
+                <option value={60}>{t("1 hour")}</option>
               </select>
             </div>
           </div>
@@ -265,7 +267,7 @@ export default function AppointmentsPage() {
             disabled={submitting}
             className="w-full py-2.5 rounded-xl bg-(accent) text-(accent-contrast) text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
           >
-            {submitting ? "Sending…" : "Send Request"}
+            {submitting ? t("Sending…") : t("Send Request")}
           </button>
         </form>
       )}
@@ -279,7 +281,7 @@ export default function AppointmentsPage() {
         </div>
       ) : appointments.length === 0 ? (
         <div className="py-16 text-center bg-(surface) rounded-2xl border border-(border)">
-          <p className="text-(muted) text-sm">No appointments yet.</p>
+          <p className="text-(muted) text-sm">{t("No appointments yet.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -289,16 +291,16 @@ export default function AppointmentsPage() {
               <div key={apt._id} className="bg-(surface) rounded-2xl border border-(border) p-5">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <p className="text-sm font-medium text-(text)">{apt.reason}</p>
-                  <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${TONE_STYLE[s.tone]}`}>{s.label}</span>
+                  <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${TONE_STYLE[s.tone]}`}>{t(s.label)}</span>
                 </div>
                 <p className="text-xs text-(muted)">
-                  Proposed: {new Date(apt.proposedDate).toLocaleString("en-IN", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  {t("Proposed:")} {new Date(apt.proposedDate).toLocaleString("en-IN", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
                 {apt.swNotes && (
-                  <p className="text-xs text-(muted) mt-1">Social Worker note: {apt.swNotes}</p>
+                  <p className="text-xs text-(muted) mt-1">{t("Social Worker note:")} {apt.swNotes}</p>
                 )}
                 {apt.litigationNotes && (
-                  <p className="text-xs text-(muted) mt-1">Lawyer note: {apt.litigationNotes}</p>
+                  <p className="text-xs text-(muted) mt-1">{t("Lawyer note:")} {apt.litigationNotes}</p>
                 )}
               </div>
             );

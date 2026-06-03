@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import DailyReportForm from "@/components/reports/DailyReportForm";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export default function HrDailyReportDetail() {
+  const t = useT();
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const [report, setReport] = useState(null); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -21,11 +23,11 @@ export default function HrDailyReportDetail() {
   }, [id]);
 
   if (loading) return <SkeletonCard lines={6} />;
-  if (!report) return <p className="text-sm text-(--error-text)">Report not found.</p>;
+  if (!report) return <p className="text-sm text-(--error-text)">{t("Report not found.")}</p>;
 
   return (
     <div className="space-y-4">
-      <Link href="/hr/daily-reports" className="text-xs text-(--muted) hover:text-(--text)">← Back to all daily reports</Link>
+      <Link href="/hr/daily-reports" className="text-xs text-(--muted) hover:text-(--text)">← {t("Back to all daily reports")}</Link>
       <DailyReportForm canEdit={false} isSupervisor initialReport={report} />
     </div>
   );

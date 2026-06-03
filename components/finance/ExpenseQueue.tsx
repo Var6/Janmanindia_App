@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type UserRef = { _id: string; name: string; email?: string; role?: string } | null;
 type Decision = { by: UserRef; at: string; notes?: string } | null;
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export default function ExpenseQueue({ items, action, allowReject, empty, title }: Props) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
       {items.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📭</p>
-          <p className="text-sm text-(--muted)">{empty ?? "Nothing here yet."}</p>
+          <p className="text-sm text-(--muted)">{empty ?? t("Nothing here yet.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -100,10 +102,10 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                       <span className="font-mono font-bold">{x.project?.code ?? x.case?.caseNumber ?? "—"}</span>
                       {" · "}{x.project?.name ?? x.case?.caseTitle ?? "—"}
                       {x.case && (
-                        <>{" · "}<span className="capitalize">{x.paidByOrg ? "requisition" : "reimbursement"}</span></>
+                        <>{" · "}<span className="capitalize">{x.paidByOrg ? t("requisition") : t("reimbursement")}</span></>
                       )}
                       {" · "}<span className="capitalize">{x.category}</span>
-                      {" · "}filed by {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
+                      {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
                       {" · "}{new Date(x.submittedAt).toLocaleDateString("en-IN")}
                     </p>
                   </div>
@@ -111,7 +113,7 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                     <p className="text-base font-bold text-(--text)">₹{x.amount.toLocaleString("en-IN")}</p>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
                       style={{ background: stat.bg, color: stat.text }}>
-                      {stat.label}
+                      {t(stat.label)}
                     </span>
                   </div>
                 </div>
@@ -119,12 +121,12 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                 {x.description && <p className="text-sm text-(--text)">{x.description}</p>}
 
                 <div className="flex items-center gap-3 flex-wrap text-xs text-(--muted)">
-                  {x.vendor && <span>Vendor: <span className="text-(--text) font-medium">{x.vendor}</span></span>}
-                  {x.incurredAt && <span>Incurred: {new Date(x.incurredAt).toLocaleDateString("en-IN")}</span>}
+                  {x.vendor && <span>{t("Vendor:")} <span className="text-(--text) font-medium">{x.vendor}</span></span>}
+                  {x.incurredAt && <span>{t("Incurred:")} {new Date(x.incurredAt).toLocaleDateString("en-IN")}</span>}
                   {x.receiptUrl && (
                     <a href={x.receiptUrl} target="_blank" rel="noopener noreferrer"
                       className="hover:underline" style={{ color: "var(--accent)" }}>
-                      📎 receipt
+                      📎 {t("receipt")}
                     </a>
                   )}
                 </div>
@@ -132,9 +134,9 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                 {(x.hrVerification || x.directorApproval || x.payment) && (
                   <div className="rounded-xl border p-3 space-y-1 text-xs"
                     style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                    {x.hrVerification && <Step label="HR verified" decision={x.hrVerification} />}
-                    {x.directorApproval && <Step label="Director approved" decision={x.directorApproval} />}
-                    {x.payment && <Step label="Paid" decision={x.payment} />}
+                    {x.hrVerification && <Step label={t("HR verified")} decision={x.hrVerification} />}
+                    {x.directorApproval && <Step label={t("Director approved")} decision={x.directorApproval} />}
+                    {x.payment && <Step label={t("Paid")} decision={x.payment} />}
                   </div>
                 )}
 
@@ -142,10 +144,10 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                   <div className="rounded-xl p-3 text-xs"
                     style={{ background: "var(--error-bg)", border: "1px solid color-mix(in srgb, var(--error) 25%, transparent)" }}>
                     <p className="font-semibold text-(--error-text)">
-                      Rejected at {x.rejection.stage === "hr" ? "HR" : "Director"} stage
-                      {x.rejection.by?.name ? ` by ${x.rejection.by.name}` : ""}
+                      {t("Rejected at")} {x.rejection.stage === "hr" ? t("HR") : t("Director")} {t("stage")}
+                      {x.rejection.by?.name ? ` ${t("by")} ${x.rejection.by.name}` : ""}
                     </p>
-                    {x.rejection.notes && <p className="text-(--text) mt-0.5">Reason: {x.rejection.notes}</p>}
+                    {x.rejection.notes && <p className="text-(--text) mt-0.5">{t("Reason:")} {x.rejection.notes}</p>}
                   </div>
                 )}
 
@@ -154,36 +156,36 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                     <form onSubmit={(e) => { e.preventDefault(); patch(x._id, { action: "reject", notes: reason }); }}
                       className="rounded-xl border p-3 space-y-2"
                       style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                      <p className="text-xs font-semibold text-(--text)">Reason</p>
+                      <p className="text-xs font-semibold text-(--text)">{t("Reason")}</p>
                       <textarea value={reason} onChange={e => setReason(e.target.value)} required minLength={5} rows={2}
                         className="w-full px-3 py-1.5 rounded-lg border text-sm resize-none"
                         style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
                       <div className="flex items-center gap-2">
                         <button type="submit" disabled={busy === x._id || !reason.trim()}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
-                          style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>Reject</button>
+                          style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Reject")}</button>
                         <button type="button" onClick={() => { setRejectingId(null); setReason(""); }}
                           className="px-3 py-1.5 rounded-lg text-xs"
-                          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>Cancel</button>
+                          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
                       </div>
                     </form>
                   ) : (
                     <div className="space-y-2">
                       <input value={actionNotes[x._id] ?? ""} onChange={e => setActionNotes(s => ({ ...s, [x._id]: e.target.value }))}
-                        placeholder="Optional notes for this approval" maxLength={300}
+                        placeholder={t("Optional notes for this approval")} maxLength={300}
                         className="w-full px-3 py-1.5 rounded-lg border text-xs"
                         style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                       <div className="flex items-center gap-2 flex-wrap">
                         <button onClick={() => patch(x._id, { action, notes: actionNotes[x._id] })} disabled={busy === x._id}
                           className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                           style={{ background: "var(--success)", color: "#fff" }}>
-                          {action === "hr_verify" ? "✓ HR Verify" : action === "director_approve" ? "✓ Director Approve" : "✓ Mark Paid"}
+                          {action === "hr_verify" ? t("✓ HR Verify") : action === "director_approve" ? t("✓ Director Approve") : t("✓ Mark Paid")}
                         </button>
                         {allowReject && (
                           <button onClick={() => setRejectingId(x._id)} disabled={busy === x._id}
                             className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
                             style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
-                            Reject
+                            {t("Reject")}
                           </button>
                         )}
                       </div>

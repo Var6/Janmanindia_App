@@ -4,10 +4,12 @@ import { tryConnectDB } from "@/lib/mongoose";
 import LogisticsTicket from "@/models/LogisticsTicket";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function OfficesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "administrator" && session.role !== "superadmin")) redirect("/login");
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -37,16 +39,16 @@ export default async function OfficesPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">District Offices</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("District Offices")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Activity per district based on logistics tickets and active staff stationed there.
+          {t("Activity per district based on logistics tickets and active staff stationed there.")}
         </p>
       </div>
 
       {districts.length === 0 ? (
         <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
           <p className="text-2xl mb-2">🗺️</p>
-          <p className="text-sm text-(--muted)">No district data yet — district appears here once tickets are raised.</p>
+          <p className="text-sm text-(--muted)">{t("No district data yet — district appears here once tickets are raised.")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -54,19 +56,19 @@ export default async function OfficesPage() {
             <article key={d._id} className="rounded-2xl border border-(--border) bg-(--surface) p-5">
               <h2 className="font-semibold text-(--text)">{d._id}</h2>
               <p className="text-xs text-(--muted) mt-1 mb-4">
-                {headcountMap[d._id] ?? 0} active staff stationed
+                {headcountMap[d._id] ?? 0} {t("active staff stationed")}
               </p>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-xs text-(--muted)">Open</p>
+                  <p className="text-xs text-(--muted)">{t("Open")}</p>
                   <p className="text-lg font-bold text-(--accent)">{d.open}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-(--muted)">Fulfilled</p>
+                  <p className="text-xs text-(--muted)">{t("Fulfilled")}</p>
                   <p className="text-lg font-bold text-(--text)" style={{ color: "var(--success, #16a34a)" }}>{d.fulfilled}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-(--muted)">Total</p>
+                  <p className="text-xs text-(--muted)">{t("Total")}</p>
                   <p className="text-lg font-bold text-(--text)">{d.total}</p>
                 </div>
               </div>

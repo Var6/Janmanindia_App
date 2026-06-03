@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n-server";
 import { tryConnectDB } from "@/lib/mongoose";
 import Expense from "@/models/Expense";
 import Project from "@/models/Project";
@@ -30,6 +31,7 @@ export default async function FinanceExpensesPage() {
     redirect("/login");
   }
 
+  const t = await getServerT();
   const dbOk = await tryConnectDB();
 
   const [expenses, projects] = dbOk
@@ -91,37 +93,37 @@ export default async function FinanceExpensesPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Expenses</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Expenses")}</h1>
         <p className="text-sm text-(--muted) mt-1">
-          Approved and pending expenses per project. Approved amounts deduct from each project&apos;s allocated fund.
+          {t("Approved and pending expenses per project. Approved amounts deduct from each project's allocated fund.")}
         </p>
       </div>
 
       {/* Org-wide totals */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Stat label="Pending review" value={grandPending} tone="warn" />
-        <Stat label="Awaiting payment" value={grandApproved} tone="info" />
-        <Stat label="Paid this period" value={grandPaid} tone="ok" />
+        <Stat label={t("Pending review")} value={grandPending} tone="warn" />
+        <Stat label={t("Awaiting payment")} value={grandApproved} tone="info" />
+        <Stat label={t("Paid this period")} value={grandPaid} tone="ok" />
       </div>
 
       {/* Per-project budget vs spend */}
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Spend by project</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Spend by project")}</h2>
         {projectRows.length === 0 ? (
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="text-sm text-(--muted)">{dbOk ? "No projects with expense activity yet." : "Connect database."}</p>
+            <p className="text-sm text-(--muted)">{dbOk ? t("No projects with expense activity yet.") : t("Connect database.")}</p>
           </div>
         ) : (
           <div className="rounded-2xl border overflow-hidden"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b text-[11px] font-semibold text-(--muted) uppercase tracking-wide"
               style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
-              <span>Project</span>
-              <span className="px-3 text-right">Budget</span>
-              <span className="px-3 text-right">Approved + Paid</span>
-              <span className="px-3 text-right">Remaining</span>
-              <span className="px-3 text-right">Used</span>
+              <span>{t("Project")}</span>
+              <span className="px-3 text-right">{t("Budget")}</span>
+              <span className="px-3 text-right">{t("Approved + Paid")}</span>
+              <span className="px-3 text-right">{t("Remaining")}</span>
+              <span className="px-3 text-right">{t("Used")}</span>
             </div>
             <div className="divide-y" style={{ borderColor: "var(--border)" }}>
               {projectRows.map((r) => {
@@ -170,10 +172,10 @@ export default async function FinanceExpensesPage() {
       {/* Payment queue — director-approved items waiting on Finance */}
       <section>
         <h2 className="font-semibold text-(--text) mb-3">
-          Awaiting payment {queue.length > 0 && <span className="text-xs font-medium text-(--muted)">· {queue.length} item{queue.length === 1 ? "" : "s"}</span>}
+          {t("Awaiting payment")} {queue.length > 0 && <span className="text-xs font-medium text-(--muted)">· {queue.length} {queue.length === 1 ? t("item") : t("items")}</span>}
         </h2>
         {queue.length === 0 ? (
-          <p className="text-sm text-(--muted) px-1">Nothing waiting on Finance right now.</p>
+          <p className="text-sm text-(--muted) px-1">{t("Nothing waiting on Finance right now.")}</p>
         ) : (
           <div className="space-y-2">
             {queue.map((e) => {
@@ -190,14 +192,14 @@ export default async function FinanceExpensesPage() {
                         {e.title}
                       </p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        {proj?.code ?? "—"} · {proj?.name ?? "—"} · by {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
+                        {proj?.code ?? "—"} · {proj?.name ?? "—"} · {t("by")} {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-(--text)">₹{e.amount.toLocaleString("en-IN")}</p>
                       <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full"
                         style={{ background: STATUS_LABEL[e.status].bg, color: STATUS_LABEL[e.status].color }}>
-                        {STATUS_LABEL[e.status].label}
+                        {t(STATUS_LABEL[e.status].label)}
                       </span>
                     </div>
                   </div>
@@ -210,9 +212,9 @@ export default async function FinanceExpensesPage() {
 
       {/* Recent activity */}
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Recent expenses</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Recent expenses")}</h2>
         {expenses.length === 0 ? (
-          <p className="text-sm text-(--muted) px-1">No expenses logged yet.</p>
+          <p className="text-sm text-(--muted) px-1">{t("No expenses logged yet.")}</p>
         ) : (
           <div className="rounded-2xl border overflow-hidden"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -233,7 +235,7 @@ export default async function FinanceExpensesPage() {
                     <p className="text-sm font-semibold text-(--text) whitespace-nowrap">₹{e.amount.toLocaleString("en-IN")}</p>
                     <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
                       style={{ background: st.bg, color: st.color }}>
-                      {st.label}
+                      {t(st.label)}
                     </span>
                   </div>
                 );

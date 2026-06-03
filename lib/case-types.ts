@@ -36,6 +36,7 @@ export const CASE_TYPES: CaseTypeGroup[] = [
     description: "FIR, sessions trial, magistrate complaints, bail",
     types: [
       { code: "FIR",     name: "First Information Report (FIR)",       hi: "प्राथमिकी",                path: "criminal" },
+      { code: "GR",      name: "GR Case (Police / General Register Case)", hi: "जीआर केस (पुलिस केस)",  path: "criminal" },
       { code: "ST",      name: "Sessions Trial",                       hi: "सत्र परीक्षण",              path: "criminal" },
       { code: "SC",      name: "Sessions Case",                        hi: "सत्र मुकदमा",               path: "criminal" },
       { code: "CC",      name: "Calendar Case (Magistrate Trial)",     hi: "कैलेंडर केस",               path: "criminal" },
@@ -95,6 +96,7 @@ export const CASE_TYPES: CaseTypeGroup[] = [
     groupHi: "पारिवारिक न्यायालय",
     description: "Divorce, custody, guardianship, maintenance, restitution",
     types: [
+      { code: "MAT.CASE", name: "Matrimonial Case",                    hi: "वैवाहिक मामला",            path: "highcourt" },
       { code: "HMA",      name: "Divorce — Hindu Marriage Act",        hi: "तलाक — हिंदू विवाह अधिनियम", path: "highcourt" },
       { code: "MA",       name: "Marriage Act Petition",               hi: "विवाह अधिनियम याचिका",     path: "highcourt" },
       { code: "RFCR",     name: "Restitution of Conjugal Rights",      hi: "दाम्पत्य अधिकार पुनर्स्थापन", path: "highcourt" },

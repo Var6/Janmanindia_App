@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export type OnboardingDocs = {
   panUrl?: string;
@@ -45,6 +46,7 @@ export default function OnboardingDocsFields({
   title = "Documentation",
   intro = "ID proofs, bank details, prior experience, academic & CV — all optional, but the more you provide upfront the smoother payroll and provisioning are.",
 }: Props) {
+  const t = useT();
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   async function handleSingleUpload(key: "panUrl" | "aadharUrl" | "cvUrl", file: File) {
@@ -80,36 +82,36 @@ export default function OnboardingDocsFields({
       <div className="px-5 pb-5 space-y-5 border-t" style={{ borderColor: "var(--border)" }}>
         {/* IDs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-          <SingleDoc label="PAN card (PDF / image)" value={value.panUrl} busy={busyKey === "panUrl"}
+          <SingleDoc label={t("PAN card (PDF / image)")} value={value.panUrl} busy={busyKey === "panUrl"}
             onUpload={(f) => handleSingleUpload("panUrl", f)} onClear={() => onChange({ ...value, panUrl: undefined })} />
-          <SingleDoc label="Aadhaar card (PDF / image)" value={value.aadharUrl} busy={busyKey === "aadharUrl"}
+          <SingleDoc label={t("Aadhaar card (PDF / image)")} value={value.aadharUrl} busy={busyKey === "aadharUrl"}
             onUpload={(f) => handleSingleUpload("aadharUrl", f)} onClear={() => onChange({ ...value, aadharUrl: undefined })} />
         </div>
 
         {/* Bank details */}
         <fieldset className="rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
-          <legend className="text-xs font-semibold text-(--text) px-1">Bank Account (for salary)</legend>
+          <legend className="text-xs font-semibold text-(--text) px-1">{t("Bank Account (for salary)")}</legend>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input placeholder="Account holder name" value={value.bankAccount.holder ?? ""}
+            <input placeholder={t("Account holder name")} value={value.bankAccount.holder ?? ""}
               onChange={e => onChange({ ...value, bankAccount: { ...value.bankAccount, holder: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input placeholder="Bank name" value={value.bankAccount.bankName ?? ""}
+            <input placeholder={t("Bank name")} value={value.bankAccount.bankName ?? ""}
               onChange={e => onChange({ ...value, bankAccount: { ...value.bankAccount, bankName: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input placeholder="Account number" value={value.bankAccount.accountNumber ?? ""}
+            <input placeholder={t("Account number")} value={value.bankAccount.accountNumber ?? ""}
               onChange={e => onChange({ ...value, bankAccount: { ...value.bankAccount, accountNumber: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm font-mono" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input placeholder="IFSC code" value={value.bankAccount.ifsc ?? ""}
+            <input placeholder={t("IFSC code")} value={value.bankAccount.ifsc ?? ""}
               onChange={e => onChange({ ...value, bankAccount: { ...value.bankAccount, ifsc: e.target.value.toUpperCase() } })}
               className="px-3 py-2 rounded-lg border text-sm font-mono uppercase" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
         </fieldset>
 
         {/* CV + experience */}
-        <SingleDoc label="CV / Resume (PDF / Word)" value={value.cvUrl} busy={busyKey === "cvUrl"}
+        <SingleDoc label={t("CV / Resume (PDF / Word)")} value={value.cvUrl} busy={busyKey === "cvUrl"}
           onUpload={(f) => handleSingleUpload("cvUrl", f)} onClear={() => onChange({ ...value, cvUrl: undefined })} />
 
-        <textarea rows={3} placeholder="Prior experience — companies, roles, years"
+        <textarea rows={3} placeholder={t("Prior experience — companies, roles, years")}
           value={value.priorExperience ?? ""}
           onChange={e => onChange({ ...value, priorExperience: e.target.value })}
           className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
@@ -117,7 +119,7 @@ export default function OnboardingDocsFields({
 
         {/* Academic docs */}
         <MultiDocList
-          label="Academic documents (degrees, certificates)"
+          label={t("Academic documents (degrees, certificates)")}
           docs={value.academicDocs}
           busy={busyKey === "academicDocs-add"}
           onAdd={(file, label) => handleMultiUpload("academicDocs", file, label)}
@@ -126,15 +128,15 @@ export default function OnboardingDocsFields({
 
         {/* Emergency contact */}
         <fieldset className="rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
-          <legend className="text-xs font-semibold text-(--text) px-1">Emergency contact</legend>
+          <legend className="text-xs font-semibold text-(--text) px-1">{t("Emergency contact")}</legend>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input placeholder="Name" value={value.emergencyContact.name ?? ""}
+            <input placeholder={t("Name")} value={value.emergencyContact.name ?? ""}
               onChange={e => onChange({ ...value, emergencyContact: { ...value.emergencyContact, name: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input placeholder="Phone" value={value.emergencyContact.phone ?? ""}
+            <input placeholder={t("Phone")} value={value.emergencyContact.phone ?? ""}
               onChange={e => onChange({ ...value, emergencyContact: { ...value.emergencyContact, phone: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-            <input placeholder="Relation (e.g. Spouse, Father)" value={value.emergencyContact.relation ?? ""}
+            <input placeholder={t("Relation (e.g. Spouse, Father)")} value={value.emergencyContact.relation ?? ""}
               onChange={e => onChange({ ...value, emergencyContact: { ...value.emergencyContact, relation: e.target.value } })}
               className="px-3 py-2 rounded-lg border text-sm" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
@@ -142,7 +144,7 @@ export default function OnboardingDocsFields({
 
         {/* Other docs */}
         <MultiDocList
-          label="Other documents (offer letter, references, etc.)"
+          label={t("Other documents (offer letter, references, etc.)")}
           docs={value.otherDocs}
           busy={busyKey === "otherDocs-add"}
           onAdd={(file, label) => handleMultiUpload("otherDocs", file, label)}
@@ -157,6 +159,7 @@ function SingleDoc({ label, value, busy, onUpload, onClear }: {
   label: string; value?: string; busy: boolean;
   onUpload: (f: File) => void; onClear: () => void;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="text-xs font-semibold text-(--text) mb-1.5">{label}</p>
@@ -165,11 +168,11 @@ function SingleDoc({ label, value, busy, onUpload, onClear }: {
           style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
           <a href={value} target="_blank" rel="noopener noreferrer"
             className="text-xs font-medium hover:underline truncate" style={{ color: "var(--accent)" }}>
-            ✓ Uploaded — view
+            ✓ {t("Uploaded — view")}
           </a>
           <button type="button" onClick={onClear}
             className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-            Remove
+            {t("Remove")}
           </button>
         </div>
       ) : (
@@ -188,6 +191,7 @@ function MultiDocList({ label, docs, busy, onAdd, onRemove }: {
   onAdd: (file: File, label: string) => void;
   onRemove: (i: number) => void;
 }) {
+  const t = useT();
   const [pending, setPending] = useState("");
 
   return (
@@ -203,7 +207,7 @@ function MultiDocList({ label, docs, busy, onAdd, onRemove }: {
               </a>
               <button type="button" onClick={() => onRemove(i)}
                 className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                Remove
+                {t("Remove")}
               </button>
             </li>
           ))}
@@ -211,7 +215,7 @@ function MultiDocList({ label, docs, busy, onAdd, onRemove }: {
       )}
       <div className="flex items-center gap-2">
         <input value={pending} onChange={e => setPending(e.target.value)}
-          placeholder="Label (e.g. B.A. degree, 2020)"
+          placeholder={t("Label (e.g. B.A. degree, 2020)")}
           className="flex-1 px-3 py-1.5 rounded-lg border text-xs"
           style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         <input type="file" accept=".pdf,.doc,.docx,image/*" disabled={busy}

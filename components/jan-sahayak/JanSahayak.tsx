@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { claudeCall, lsGet, lsSet } from "@/lib/ai-client";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 /** Jan Sahayak — citizen-facing legal aid app (richer version).
  *  Home + AI intake triage + AI campaign designer + government schemes
@@ -87,6 +88,7 @@ const ART_FORMATS = [
 const PSTAKE = [{ k: "mukhiya", en: "Mukhiya / Sarpanch", hi: "मुखिया / सरपंच" }, { k: "ward", en: "Ward Member", hi: "वार्ड सदस्य" }, { k: "secretary", en: "Panchayat Secretary", hi: "पंचायत सचिव" }, { k: "asha", en: "ASHA Worker", hi: "आशा कार्यकर्ता" }, { k: "anganwadi", en: "Anganwadi Worker", hi: "आंगनवाड़ी कार्यकर्ता" }, { k: "principal", en: "School Principal", hi: "प्रधानाध्यापक" }, { k: "bdo", en: "Block Development Officer", hi: "BDO प्रखंड विकास पदाधिकारी" }];
 
 export default function JanSahayakCitizen() {
+  const t = useT();
   const [lang, setLang] = useState("hi");
   const [screen, setScreen] = useState("home");
   const [step, setStep] = useState(1);
@@ -181,7 +183,7 @@ export default function JanSahayakCitizen() {
             <span style={{ marginLeft: "auto", fontSize: 16, opacity: .7 }}>→</span>
           </button>
         ))}
-        <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.68)" }}>🚨 Emergency: 112 · Women: 181 · Children: 1098 · Legal Aid: 15100</div>
+        <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.68)" }}>🚨 {t("Emergency")}: 112 · {t("Women")}: 181 · {t("Children")}: 1098 · {t("Legal Aid")}: 15100</div>
       </div>
     </div>
   );
@@ -200,7 +202,7 @@ export default function JanSahayakCitizen() {
           <Fi label={tx("What issue do you want to campaign on?", "आप किस मुद्दे पर अभियान चलाना चाहते हैं?")} value={campForm.issue} onChange={(e) => setCampForm((p) => ({ ...p, issue: e.target.value }))} rows={3} placeholder={tx("e.g. Women denied MGNREGA wages / Police not filing FIR in GBV cases / Musahar community being evicted...", "e.g. महिलाओं को मनरेगा मजदूरी नहीं मिल रही / GBV में FIR नहीं होती...")} />
           <Fs label={tx("Theme", "विषय")} value={campForm.theme} onChange={(e) => setCampForm((p) => ({ ...p, theme: e.target.value }))} options={["", "Gender Justice / महिला न्याय", "Caste Justice / जाति न्याय", "Land & Forest Rights / भूमि और वन अधिकार", "Child Rights / बाल अधिकार", "Food & Livelihood / भोजन और आजीविका", "Disability Rights / दिव्यांग अधिकार", "Right to Information / सूचना का अधिकार", "Environment / पर्यावरण", "Anti-Corruption / भ्रष्टाचार विरोध"]} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <Fi label={tx("Village / Location", "गाँव / स्थान")} value={campForm.location} onChange={(e) => setCampForm((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. Ramchak Bariya" />
+            <Fi label={tx("Village / Location", "गाँव / स्थान")} value={campForm.location} onChange={(e) => setCampForm((p) => ({ ...p, location: e.target.value }))} placeholder={t("e.g. Ramchak Bariya")} />
             <Fs label={tx("District", "जिला")} value={campForm.district} onChange={(e) => setCampForm((p) => ({ ...p, district: e.target.value }))} options={BD} />
           </div>
           <Fi label={tx("Target date", "लक्षित तिथि")} type="date" value={campForm.targetDate} onChange={(e) => setCampForm((p) => ({ ...p, targetDate: e.target.value }))} />
@@ -264,7 +266,7 @@ export default function JanSahayakCitizen() {
         {step === 1 && <div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: W.text, marginBottom: 3 }}>{tx("Your Information", "आपकी जानकारी")}</h2>
           <p style={{ fontSize: 12, color: W.dim, marginBottom: 16 }}>{tx("All information is confidential.", "आपकी जानकारी सुरक्षित और गुप्त है।")}</p>
-          <Fi label={tx("Your Name", "आपका नाम")} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Sunita Devi" />
+          <Fi label={tx("Your Name", "आपका नाम")} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder={t("e.g. Sunita Devi")} />
           <Fi label={tx("Phone Number", "मोबाइल नंबर")} type="tel" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} placeholder="9876543210" />
           <Fi label={tx("Village / Area", "गाँव / मोहल्ला")} value={form.location} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))} />
           <Fs label={tx("District", "जिला")} value={form.district} onChange={(e) => setForm((p) => ({ ...p, district: e.target.value }))} options={BD} />
@@ -276,7 +278,7 @@ export default function JanSahayakCitizen() {
           <p style={{ fontSize: 12, color: W.dim, marginBottom: 14 }}>{tx("Tell us in your own words. No right or wrong way.", "अपने शब्दों में बताएं। कोई सही या गलत नहीं।")}</p>
           <Fi label={tx("Describe your situation", "अपनी स्थिति बताएं")} value={form.issue} onChange={(e) => setForm((p) => ({ ...p, issue: e.target.value }))} rows={5} placeholder={tx("e.g. My husband beats me and threw me out of the house...", "e.g. मेरे पति मुझे मारते हैं और घर से निकाल दिया है...")} />
           <Fs label={tx("Type of help needed", "किस प्रकार की मदद चाहिए")} value={form.issueType} onChange={(e) => setForm((p) => ({ ...p, issueType: e.target.value }))} options={[{ value: "legal", label: tx("Legal — FIR, court, rights", "कानूनी — FIR, अदालत, अधिकार") }, { value: "welfare", label: tx("Government scheme / service", "सरकारी योजना / सेवा") }, { value: "both", label: tx("Both", "दोनों") }]} />
-          <div style={{ padding: "10px 12px", background: W.accentSoft, borderRadius: 9, marginBottom: 9, fontSize: 12 }}><div style={{ fontWeight: 700, color: W.accent, marginBottom: 2 }}>🚨 {tx("Emergency:", "आपातकाल:")}</div><div style={{ color: W.dim }}>Police: 112 · Women: 181 · Children: 1098</div></div>
+          <div style={{ padding: "10px 12px", background: W.accentSoft, borderRadius: 9, marginBottom: 9, fontSize: 12 }}><div style={{ fontWeight: 700, color: W.accent, marginBottom: 2 }}>🚨 {tx("Emergency:", "आपातकाल:")}</div><div style={{ color: W.dim }}>{t("Police")}: 112 · {t("Women")}: 181 · {t("Children")}: 1098</div></div>
           <Btn onClick={doSubmit} disabled={loading || !form.issue.trim()}>{loading ? tx("Connecting...", "जोड़ रहे हैं...") : tx("Submit for Help", "मदद के लिए भेजें")}</Btn>
         </div>}
         {step === 3 && triage && <div>
@@ -288,7 +290,7 @@ export default function JanSahayakCitizen() {
           </div>
           {fellow && <div style={{ background: "#fff", borderRadius: 12, padding: "12px 15px", marginBottom: 10, border: "1px solid " + W.border }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: W.dim, marginBottom: 5 }}>{tx("ASSIGNED LAWYER:", "आपके वकील:")}</div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 36, height: 36, borderRadius: 9, background: W.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: W.accent }}>{fellow.name[0]}</div><div><div style={{ fontWeight: 700, fontSize: 13, color: W.text }}>{fellow.name}</div><div style={{ fontSize: 11, color: W.dim }}>District Legal Fellow — {fellow.dist}</div></div></div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 36, height: 36, borderRadius: 9, background: W.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: W.accent }}>{fellow.name[0]}</div><div><div style={{ fontWeight: 700, fontSize: 13, color: W.text }}>{fellow.name}</div><div style={{ fontSize: 11, color: W.dim }}>{t("District Legal Fellow")} — {fellow.dist}</div></div></div>
           </div>}
           <div style={{ background: "#fff", borderRadius: 12, padding: "12px 15px", marginBottom: 12, border: "1px solid " + W.border }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: W.dim, marginBottom: 6 }}>{tx("NEXT STEPS:", "अगले कदम:")}</div>
@@ -309,7 +311,7 @@ export default function JanSahayakCitizen() {
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {["central", "bihar"].map((tab) => <button key={tab} onClick={() => { setSchTab(tab); setSchQ(""); }} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "none", background: schTab === tab ? W.accent : "#fff", color: schTab === tab ? "#fff" : W.dim, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{tab === "central" ? tx("Central Govt", "केंद्र सरकार") : tx("Bihar Govt", "बिहार सरकार")}</button>)}
         </div>
-        {schemes.length === 0 && <div style={{ textAlign: "center", color: W.dim, padding: 20 }}>No schemes found.</div>}
+        {schemes.length === 0 && <div style={{ textAlign: "center", color: W.dim, padding: 20 }}>{t("No schemes found.")}</div>}
         {schemes.map((s) => (
           <details key={s.id} style={{ background: "#fff", borderRadius: 12, marginBottom: 9, border: "1px solid " + W.border, overflow: "hidden" }}>
             <summary style={{ padding: "13px 15px", cursor: "pointer", listStyle: "none" }}>

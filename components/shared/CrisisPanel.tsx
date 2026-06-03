@@ -1,5 +1,6 @@
+"use client";
 import { NATIONAL_EMERGENCY, BIHAR_HELPLINES, type Helpline } from "@/lib/helplines";
-
+import { useT } from "@/components/i18n/LanguageProvider";
 interface Props {
   /** Show the urgent banner header (use when distress is detected). */
   urgent?: boolean;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function CrisisPanel({ urgent = false, nationalOnly = false }: Props) {
+  const t = useT();
   const lists: { title: string; titleHi: string; items: Helpline[] }[] = [
     { title: "Emergency", titleHi: "आपातकाल", items: NATIONAL_EMERGENCY },
   ];
@@ -30,7 +32,7 @@ export default function CrisisPanel({ urgent = false, nationalOnly = false }: Pr
           <span className="text-xl shrink-0">⚠</span>
           <div>
             <p className="font-bold text-sm" style={{ color: "var(--error-text, #b91c1c)" }}>
-              You are not alone — help is one call away.
+              {t("You are not alone — help is one call away.")}
             </p>
             <p className="text-xs mt-0.5 lang-hi" style={{ color: "var(--error-text, #b91c1c)" }}>
               आप अकेले नहीं हैं — मदद एक कॉल दूर है।
@@ -43,7 +45,7 @@ export default function CrisisPanel({ urgent = false, nationalOnly = false }: Pr
         {lists.map((list) => (
           <div key={list.title}>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-(--muted) mb-2">
-              {list.title} <span className="lang-hi">· {list.titleHi}</span>
+              {t(list.title)} <span className="lang-hi">· {list.titleHi}</span>
             </h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {list.items.map((h) => (

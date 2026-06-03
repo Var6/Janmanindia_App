@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { DEMO_LEGAL_SOURCES } from "@/lib/jna-sourced/demo-data";
 import { LEGAL_OUTPUT_MODES } from "@/lib/jna-sourced/constants";
 import { claudeCall } from "@/lib/ai-client";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const MODE_LABELS: Record<string, string> = {
   statutory_explainer: "Statutory Explainer",
@@ -19,6 +20,7 @@ function tokenize(s: string): string[] {
 }
 
 export default function LegalKnowledge() {
+  const t = useT();
   const [request, setRequest] = useState("");
   const [audience, setAudience] = useState("district fellows");
   const [mode, setMode] = useState<typeof LEGAL_OUTPUT_MODES[number]>("statutory_explainer");
@@ -42,7 +44,7 @@ export default function LegalKnowledge() {
   }, [request]);
 
   async function generate() {
-    if (!request.trim()) { setMsg("Enter a research request first."); return; }
+    if (!request.trim()) { setMsg(t("Enter a research request first.")); return; }
     setLoading(true);
     setMsg("");
     setOutput("");
@@ -62,30 +64,30 @@ Be plain-spoken, India-specific, and practical.`;
     const text = await claudeCall(system, [{ role: "user", content: userMsg }], 1800);
     setOutput(text);
     setLoading(false);
-    setMsg("Done.");
+    setMsg(t("Done."));
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5 space-y-4">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold">Legal Knowledge</div>
-        <h2 className="text-lg font-bold text-(--text)">Grounded research</h2>
-        <p className="text-xs text-(--muted)">Query a vetted source library and generate audience-targeted output.</p>
+        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold">{t("Legal Knowledge")}</div>
+        <h2 className="text-lg font-bold text-(--text)">{t("Grounded research")}</h2>
+        <p className="text-xs text-(--muted)">{t("Query a vetted source library and generate audience-targeted output.")}</p>
 
         <div>
-          <label className="text-[11px] text-(--muted) block mb-1">Research request</label>
+          <label className="text-[11px] text-(--muted) block mb-1">{t("Research request")}</label>
           <textarea
             value={request}
             onChange={(e) => setRequest(e.target.value)}
             rows={4}
-            placeholder="e.g. Domestic violence — protection order and residence rights for a woman dispossessed by in-laws."
+            placeholder={t("e.g. Domestic violence — protection order and residence rights for a woman dispossessed by in-laws.")}
             className="w-full bg-(--bg) border border-(--border) rounded-lg px-3 py-2 text-sm text-(--text) placeholder:text-(--muted) focus:border-(--accent) outline-none"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] text-(--muted) block mb-1">Audience</label>
+            <label className="text-[11px] text-(--muted) block mb-1">{t("Audience")}</label>
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
@@ -99,7 +101,7 @@ Be plain-spoken, India-specific, and practical.`;
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-(--muted) block mb-1">Output mode</label>
+            <label className="text-[11px] text-(--muted) block mb-1">{t("Output mode")}</label>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as typeof mode)}
@@ -115,13 +117,13 @@ Be plain-spoken, India-specific, and practical.`;
           disabled={loading}
           className="w-full bg-(--accent) text-black rounded-lg px-4 py-2 text-sm font-bold hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Generating…" : "Generate grounded output"}
+          {loading ? t("Generating…") : t("Generate grounded output")}
         </button>
         {msg && <p className="text-xs text-(--accent)">{msg}</p>}
 
         {matchedSources.length > 0 && (
           <div className="border-t border-(--border) pt-4">
-            <div className="text-[11px] text-(--muted) uppercase tracking-wider mb-2">Matched sources</div>
+            <div className="text-[11px] text-(--muted) uppercase tracking-wider mb-2">{t("Matched sources")}</div>
             <ol className="space-y-2">
               {matchedSources.map((s, i) => (
                 <li key={s.id} className="text-xs">
@@ -136,11 +138,11 @@ Be plain-spoken, India-specific, and practical.`;
       </section>
 
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold mb-2">Output</div>
+        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold mb-2">{t("Output")}</div>
         {output ? (
           <pre className="whitespace-pre-wrap text-xs text-(--text) font-sans leading-relaxed">{output}</pre>
         ) : (
-          <p className="text-xs text-(--muted)">Enter a research request and generate to see grounded output here.</p>
+          <p className="text-xs text-(--muted)">{t("Enter a research request and generate to see grounded output here.")}</p>
         )}
       </section>
     </div>

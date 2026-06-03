@@ -5,6 +5,7 @@ import {
   Home, Users, ClipboardList, Activity, Plus, Search, MapPin, Calendar,
   AlertTriangle, CheckCircle2, X, TrendingUp, UserCircle2,
 } from "lucide-react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 /** Aangan-style child protection field reporting tool — Bihar.
  *  In-memory state only for v1 (seed + add); persistence will plug into a
@@ -85,6 +86,7 @@ const Stat = ({ label, value, sub, icon }) => (
 );
 
 export default function AanganApp() {
+  const t = useT();
   const [tab, setTab] = useState("dashboard");
   const [children, setChildren] = useState(SEED_CHILDREN);
   const [visits, setVisits] = useState(SEED_VISITS);
@@ -123,7 +125,7 @@ export default function AanganApp() {
             <div className="w-10 h-10 rounded-xl bg-[#C84B31] flex items-center justify-center text-white font-bold">आ</div>
             <div>
               <div className="text-xl font-bold text-stone-900">Aangan</div>
-              <div className="text-xs text-stone-500">child protection field reporting</div>
+              <div className="text-xs text-stone-500">{t("child protection field reporting")}</div>
             </div>
           </div>
           <nav className="flex gap-1">
@@ -132,15 +134,15 @@ export default function AanganApp() {
               { k: "children",  l: "Children",      i: <Users size={16} /> },
               { k: "visits",    l: "Visits",        i: <ClipboardList size={16} /> },
               { k: "actions",   l: "Interventions", i: <Activity size={16} /> },
-            ].map((t) => (
+            ].map((nav) => (
               <button
-                key={t.k}
-                onClick={() => setTab(t.k)}
+                key={nav.k}
+                onClick={() => setTab(nav.k)}
                 className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition ${
-                  tab === t.k ? "bg-[#C84B31] text-white" : "text-stone-700 hover:bg-stone-100"
+                  tab === nav.k ? "bg-[#C84B31] text-white" : "text-stone-700 hover:bg-stone-100"
                 }`}
               >
-                {t.i} {t.l}
+                {nav.i} {t(nav.l)}
               </button>
             ))}
           </nav>
@@ -151,21 +153,21 @@ export default function AanganApp() {
         {tab === "dashboard" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-stone-900">Field Overview</h1>
-              <p className="text-stone-600 mt-1">Across 4 districts in Seemanchal · As of 9 May 2026</p>
+              <h1 className="text-3xl font-bold text-stone-900">{t("Field Overview")}</h1>
+              <p className="text-stone-600 mt-1">{t("Across 4 districts in Seemanchal · As of 9 May 2026")}</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Stat label="Children Tracked" value={stats.total}    sub="Across 4 districts" icon={<Users size={22} />} />
-              <Stat label="Critical Concern" value={stats.critical} sub="Need urgent action" icon={<AlertTriangle size={22} />} />
-              <Stat label="High Concern"     value={stats.high}     icon={<TrendingUp size={22} />} />
-              <Stat label="Visits This Week" value={stats.visitsThisWeek} icon={<ClipboardList size={22} />} />
-              <Stat label="Ongoing Actions"  value={stats.ongoing}  icon={<Activity size={22} />} />
-              <Stat label="Resolved"         value={stats.resolved} icon={<CheckCircle2 size={22} />} />
+              <Stat label={t("Children Tracked")} value={stats.total}    sub={t("Across 4 districts")} icon={<Users size={22} />} />
+              <Stat label={t("Critical Concern")} value={stats.critical} sub={t("Need urgent action")} icon={<AlertTriangle size={22} />} />
+              <Stat label={t("High Concern")}     value={stats.high}     icon={<TrendingUp size={22} />} />
+              <Stat label={t("Visits This Week")} value={stats.visitsThisWeek} icon={<ClipboardList size={22} />} />
+              <Stat label={t("Ongoing Actions")}  value={stats.ongoing}  icon={<Activity size={22} />} />
+              <Stat label={t("Resolved")}         value={stats.resolved} icon={<CheckCircle2 size={22} />} />
             </div>
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Priority Alerts</h2>
-                <Pill tone="bg-rose-50 text-rose-900 ring-rose-200">{stats.critical} critical</Pill>
+                <h2 className="text-xl font-semibold">{t("Priority Alerts")}</h2>
+                <Pill tone="bg-rose-50 text-rose-900 ring-rose-200">{stats.critical} {t("critical")}</Pill>
               </div>
               <div className="space-y-3">
                 {children.filter((c) => c.concern === "critical").map((c) => (
@@ -177,7 +179,7 @@ export default function AanganApp() {
                       </div>
                     </div>
                     <div className="flex gap-1.5 flex-wrap justify-end">
-                      {c.risks.map((r) => <Pill key={r} tone={RISK[r].tone}>{RISK[r].label}</Pill>)}
+                      {c.risks.map((r) => <Pill key={r} tone={RISK[r].tone}>{t(RISK[r].label)}</Pill>)}
                     </div>
                   </div>
                 ))}
@@ -189,19 +191,19 @@ export default function AanganApp() {
         {tab === "children" && (
           <div className="space-y-5">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h1 className="text-3xl font-bold">Children Registry</h1>
+              <h1 className="text-3xl font-bold">{t("Children Registry")}</h1>
               <button onClick={() => setShowAdd("child")} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] text-white text-sm font-medium flex items-center gap-2">
-                <Plus size={16} /> Register Case
+                <Plus size={16} /> {t("Register Case")}
               </button>
             </div>
             <div className="flex gap-3 flex-wrap">
               <div className="flex-1 min-w-[240px] relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or village..." className="w-full pl-10 pr-4 py-2 rounded-lg bg-white ring-1 ring-stone-200 text-sm focus:ring-2 focus:ring-[#C84B31] outline-none" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("Search by name or village...")} className="w-full pl-10 pr-4 py-2 rounded-lg bg-white ring-1 ring-stone-200 text-sm focus:ring-2 focus:ring-[#C84B31] outline-none" />
               </div>
               <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} className="px-4 py-2 rounded-lg bg-white ring-1 ring-stone-200 text-sm">
-                <option value="">All risks</option>
-                {Object.entries(RISK).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                <option value="">{t("All risks")}</option>
+                {Object.entries(RISK).map(([k, v]) => <option key={k} value={k}>{t(v.label)}</option>)}
               </select>
             </div>
             <Card>
@@ -213,7 +215,7 @@ export default function AanganApp() {
                         <div className="w-10 h-10 rounded-full bg-[#EBDDC9] flex items-center justify-center text-[#8B4F2B] font-bold">{c.name.charAt(0)}</div>
                         <div className="flex-1">
                           <div className="font-semibold text-stone-900">
-                            {c.name} <span className="text-stone-500 font-normal">· {c.age}y · {c.gender === "F" ? "Female" : "Male"}</span>
+                            {c.name} <span className="text-stone-500 font-normal">· {c.age}y · {c.gender === "F" ? t("Female") : t("Male")}</span>
                           </div>
                           <div className="text-sm text-stone-600 mt-0.5 flex items-center gap-3 flex-wrap">
                             <span className="flex items-center gap-1"><MapPin size={12} /> {c.village}, {c.district}</span>
@@ -221,15 +223,15 @@ export default function AanganApp() {
                             <span className="flex items-center gap-1"><Calendar size={12} /> {c.lastVisit}</span>
                           </div>
                           <div className="flex gap-1.5 flex-wrap mt-2">
-                            {c.risks.map((r) => <Pill key={r} tone={RISK[r].tone}>{RISK[r].label}</Pill>)}
+                            {c.risks.map((r) => <Pill key={r} tone={RISK[r].tone}>{t(RISK[r].label)}</Pill>)}
                           </div>
                         </div>
                       </div>
-                      <Pill tone={CONCERN[c.concern].tone}>{CONCERN[c.concern].label}</Pill>
+                      <Pill tone={CONCERN[c.concern].tone}>{t(CONCERN[c.concern].label)}</Pill>
                     </div>
                   </div>
                 ))}
-                {filteredChildren.length === 0 && <div className="p-12 text-center text-stone-400 text-sm">No children match the filter.</div>}
+                {filteredChildren.length === 0 && <div className="p-12 text-center text-stone-400 text-sm">{t("No children match the filter.")}</div>}
               </div>
             </Card>
           </div>
@@ -238,9 +240,9 @@ export default function AanganApp() {
         {tab === "visits" && (
           <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <h1 className="text-3xl font-bold">Home Visits Log</h1>
+              <h1 className="text-3xl font-bold">{t("Home Visits Log")}</h1>
               <button onClick={() => setShowAdd("visit")} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] text-white text-sm font-medium flex items-center gap-2">
-                <Plus size={16} /> Log Visit
+                <Plus size={16} /> {t("Log Visit")}
               </button>
             </div>
             <Card>
@@ -261,7 +263,7 @@ export default function AanganApp() {
                           </div>
                           <p className="text-sm text-stone-700 mt-2 leading-relaxed">{v.note}</p>
                         </div>
-                        <Pill tone={CONCERN[v.concern].tone}>{CONCERN[v.concern].label}</Pill>
+                        <Pill tone={CONCERN[v.concern].tone}>{t(CONCERN[v.concern].label)}</Pill>
                       </div>
                     </div>
                   );
@@ -273,7 +275,7 @@ export default function AanganApp() {
 
         {tab === "actions" && (
           <div className="space-y-5">
-            <h1 className="text-3xl font-bold">Interventions Board</h1>
+            <h1 className="text-3xl font-bold">{t("Interventions Board")}</h1>
             <div className="grid md:grid-cols-3 gap-4">
               {[
                 { k: "planned",  l: "Planned",  tone: "bg-amber-50 ring-amber-200",     textTone: "text-amber-900" },
@@ -281,7 +283,7 @@ export default function AanganApp() {
                 { k: "resolved", l: "Resolved", tone: "bg-emerald-50 ring-emerald-200", textTone: "text-emerald-900" },
               ].map((col) => (
                 <div key={col.k} className={`rounded-2xl ring-1 p-4 ${col.tone}`}>
-                  <div className={`font-bold mb-3 ${col.textTone}`}>{col.l} ({interventions.filter((i) => i.stage === col.k).length})</div>
+                  <div className={`font-bold mb-3 ${col.textTone}`}>{t(col.l)} ({interventions.filter((i) => i.stage === col.k).length})</div>
                   <div className="space-y-2">
                     {interventions.filter((i) => i.stage === col.k).map((i) => {
                       const c = children.find((x) => x.id === i.childId);
@@ -317,6 +319,7 @@ export default function AanganApp() {
 }
 
 function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
+  const t = useT();
   const [form, setForm] = useState({
     name: "", age: "", gender: "F", village: "", district: "Purnia",
     risks: [], concern: "medium", fw: "Sachina",
@@ -347,23 +350,23 @@ function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-5 border-b flex items-center justify-between">
-          <h3 className="text-xl font-bold">{kind === "child" ? "Register New Case" : "Log Home Visit"}</h3>
+          <h3 className="text-xl font-bold">{kind === "child" ? t("Register New Case") : t("Log Home Visit")}</h3>
           <button onClick={onClose} className="p-1 hover:bg-stone-100 rounded"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-3">
           {kind === "child" ? (
             <>
-              <Inp label="Child Name" value={form.name} onChange={(v) => upd("name", v)} />
+              <Inp label={t("Child Name")} value={form.name} onChange={(v) => upd("name", v)} />
               <div className="grid grid-cols-2 gap-3">
-                <Inp label="Age" value={form.age} onChange={(v) => upd("age", v)} type="number" />
-                <Sel label="Gender" value={form.gender} onChange={(v) => upd("gender", v)} opts={[["F","Female"],["M","Male"]]} />
+                <Inp label={t("Age")} value={form.age} onChange={(v) => upd("age", v)} type="number" />
+                <Sel label={t("Gender")} value={form.gender} onChange={(v) => upd("gender", v)} opts={[["F",t("Female")],["M",t("Male")]]} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Inp label="Village" value={form.village} onChange={(v) => upd("village", v)} />
-                <Sel label="District" value={form.district} onChange={(v) => upd("district", v)} opts={["Purnia","Araria","Kishanganj","Katihar","Supaul","Madhepura"].map((d) => [d, d])} />
+                <Inp label={t("Village")} value={form.village} onChange={(v) => upd("village", v)} />
+                <Sel label={t("District")} value={form.district} onChange={(v) => upd("district", v)} opts={["Purnia","Araria","Kishanganj","Katihar","Supaul","Madhepura"].map((d) => [d, d])} />
               </div>
               <div>
-                <div className="text-xs font-semibold text-stone-600 mb-1.5 uppercase">Risk Markers</div>
+                <div className="text-xs font-semibold text-stone-600 mb-1.5 uppercase">{t("Risk Markers")}</div>
                 <div className="flex gap-1.5 flex-wrap">
                   {Object.entries(RISK).map(([k, v]) => (
                     <button
@@ -371,32 +374,32 @@ function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
                       onClick={() => upd("risks", form.risks.includes(k) ? form.risks.filter((x) => x !== k) : [...form.risks, k])}
                       className={`px-2.5 py-1 rounded-full text-xs ring-1 ${form.risks.includes(k) ? v.tone + " font-semibold" : "bg-white ring-stone-200 text-stone-600"}`}
                     >
-                      {v.label}
+                      {t(v.label)}
                     </button>
                   ))}
                 </div>
               </div>
-              <Sel label="Concern Level" value={form.concern} onChange={(v) => upd("concern", v)} opts={Object.entries(CONCERN).map(([k, v]) => [k, v.label])} />
-              <Sel label="Fieldworker" value={form.fw} onChange={(v) => upd("fw", v)} opts={FW.map((f) => [f, f])} />
+              <Sel label={t("Concern Level")} value={form.concern} onChange={(v) => upd("concern", v)} opts={Object.entries(CONCERN).map(([k, v]) => [k, t(v.label)])} />
+              <Sel label={t("Fieldworker")} value={form.fw} onChange={(v) => upd("fw", v)} opts={FW.map((f) => [f, f])} />
             </>
           ) : (
             <>
-              <Sel label="Child" value={form.childId} onChange={(v) => upd("childId", v)} opts={allChildren.map((c) => [c.id, c.name + " · " + c.village])} />
+              <Sel label={t("Child")} value={form.childId} onChange={(v) => upd("childId", v)} opts={allChildren.map((c) => [c.id, c.name + " · " + c.village])} />
               <div className="grid grid-cols-2 gap-3">
-                <Inp label="Visit Date" value={form.date} onChange={(v) => upd("date", v)} type="date" />
-                <Sel label="Fieldworker" value={form.fw} onChange={(v) => upd("fw", v)} opts={FW.map((f) => [f, f])} />
+                <Inp label={t("Visit Date")} value={form.date} onChange={(v) => upd("date", v)} type="date" />
+                <Sel label={t("Fieldworker")} value={form.fw} onChange={(v) => upd("fw", v)} opts={FW.map((f) => [f, f])} />
               </div>
-              <Sel label="Concern Level" value={form.concern} onChange={(v) => upd("concern", v)} opts={Object.entries(CONCERN).map(([k, v]) => [k, v.label])} />
+              <Sel label={t("Concern Level")} value={form.concern} onChange={(v) => upd("concern", v)} opts={Object.entries(CONCERN).map(([k, v]) => [k, t(v.label)])} />
               <div>
-                <div className="text-xs font-semibold text-stone-600 mb-1.5 uppercase">Field Notes</div>
+                <div className="text-xs font-semibold text-stone-600 mb-1.5 uppercase">{t("Field Notes")}</div>
                 <textarea value={form.note} onChange={(e) => upd("note", e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg ring-1 ring-stone-200 text-sm focus:ring-2 focus:ring-[#C84B31] outline-none" />
               </div>
             </>
           )}
         </div>
         <div className="p-5 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-100 text-sm">Cancel</button>
-          <button onClick={submit} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] text-white text-sm font-semibold">Save</button>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-100 text-sm">{t("Cancel")}</button>
+          <button onClick={submit} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] text-white text-sm font-semibold">{t("Save")}</button>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const ID_TYPES = [
   { value: "Aadhar",         label: "Aadhaar",         hi: "आधार" },
@@ -27,6 +28,7 @@ export default function VerificationGate({ status, rejectionReason, govtIdType }
 }
 
 function PendingScreen() {
+  const t = useT();
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="max-w-lg w-full rounded-2xl border p-8 text-center"
@@ -35,16 +37,16 @@ function PendingScreen() {
           style={{ background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning-text)" }}>
           ⏳
         </div>
-        <h1 className="text-xl font-bold text-(--text)">Awaiting verification</h1>
+        <h1 className="text-xl font-bold text-(--text)">{t("Awaiting verification")}</h1>
         <p className="text-sm font-medium text-(--muted) mt-1">पहचान सत्यापन प्रतीक्षा में</p>
         <p className="text-sm text-(--text) mt-4 leading-relaxed" style={{ opacity: 0.85 }}>
-          Thanks for registering. A Janman social worker is reviewing your ID document and will reach out within 48 hours. You&apos;ll get full access once verified.
+          {t("Thanks for registering. A Janman social worker is reviewing your ID document and will reach out within 48 hours. You'll get full access once verified.")}
         </p>
         <p className="text-sm text-(--muted) mt-3 leading-relaxed">
           आपका ID दस्तावेज़ हमारी टीम जाँच रही है। 48 घंटों के भीतर एक सामाजिक कार्यकर्ता आपसे संपर्क करेगा।
         </p>
         <p className="text-xs text-(--muted) mt-6 italic">
-          Until then, the rest of the app is locked. Need urgent help? Call your nearest Janman office.
+          {t("Until then, the rest of the app is locked. Need urgent help? Call your nearest Janman office.")}
         </p>
       </div>
     </div>
@@ -52,6 +54,7 @@ function PendingScreen() {
 }
 
 function RejectedScreen({ reason, initialType }: { reason?: string; initialType?: string }) {
+  const t = useT();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [idType, setIdType]       = useState(initialType ?? "");
@@ -69,7 +72,7 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Upload failed.");
+        setError(data.error ?? t("Upload failed."));
         return;
       }
       setNewUrl(data.url);
@@ -79,8 +82,8 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
   }
 
   async function submit() {
-    if (!newUrl) { setError("Pick a new ID document first."); return; }
-    if (!idType) { setError("Select the ID type."); return; }
+    if (!newUrl) { setError(t("Pick a new ID document first.")); return; }
+    if (!idType) { setError(t("Select the ID type.")); return; }
     setSubmitting(true);
     setError("");
     try {
@@ -91,7 +94,7 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Submission failed.");
+        setError(data.error ?? t("Submission failed."));
         return;
       }
       // The server has reset status to "pending" — full reload so the
@@ -110,30 +113,30 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
           ⚠
         </div>
-        <h1 className="text-xl font-bold text-(--text) text-center">Your ID couldn&apos;t be verified</h1>
+        <h1 className="text-xl font-bold text-(--text) text-center">{t("Your ID couldn't be verified")}</h1>
         <p className="text-sm font-medium text-(--muted) text-center mt-1">पहचान सत्यापन अस्वीकृत</p>
 
         {reason && (
           <div className="mt-5 rounded-xl px-4 py-3 text-sm"
             style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 25%, transparent)" }}>
-            <p className="font-semibold mb-1">Reason</p>
+            <p className="font-semibold mb-1">{t("Reason")}</p>
             <p>{reason}</p>
           </div>
         )}
 
         <p className="text-sm text-(--text) mt-5 leading-relaxed" style={{ opacity: 0.85 }}>
-          Please upload a fresh, clear photo of your <strong>original</strong> government ID. We&apos;ll delete the old one when you upload the new file.
+          {t("Please upload a fresh, clear photo of your")} <strong>{t("original")}</strong> {t("government ID. We'll delete the old one when you upload the new file.")}
         </p>
         <p className="text-sm text-(--muted) mt-2 leading-relaxed">
           अपने सरकारी ID की एक स्पष्ट तस्वीर फिर से अपलोड करें। पुरानी तस्वीर हटा दी जाएगी।
         </p>
 
         <div className="mt-6 space-y-3">
-          <label className="block text-xs font-semibold text-(--muted) uppercase tracking-wide">ID type</label>
+          <label className="block text-xs font-semibold text-(--muted) uppercase tracking-wide">{t("ID type")}</label>
           <select value={idType} onChange={(e) => setIdType(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-            <option value="">Choose…</option>
+            <option value="">{t("Choose…")}</option>
             {ID_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label} · {t.hi}</option>
             ))}
@@ -145,17 +148,17 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
           {newUrl ? (
             <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-xs"
               style={{ background: "var(--success-bg)", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)", color: "var(--success-text)" }}>
-              <span>✓ New ID attached</span>
+              <span>✓ {t("New ID attached")}</span>
               <button type="button" onClick={() => setNewUrl("")}
                 className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                Replace
+                {t("Replace")}
               </button>
             </div>
           ) : (
             <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}
               className="w-full px-3 py-2.5 rounded-lg border text-sm font-medium disabled:opacity-50"
               style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }}>
-              {uploading ? "Uploading…" : "📎 Upload new ID (PDF / image)"}
+              {uploading ? t("Uploading…") : `📎 ${t("Upload new ID (PDF / image)")}`}
             </button>
           )}
 
@@ -169,7 +172,7 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
           <button type="button" onClick={submit} disabled={submitting || uploading || !newUrl || !idType}
             className="w-full py-2.5 rounded-xl text-sm font-bold transition-opacity hover:brightness-110 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {submitting ? "Submitting…" : "Submit for re-verification"}
+            {submitting ? t("Submitting…") : t("Submit for re-verification")}
           </button>
         </div>
       </div>

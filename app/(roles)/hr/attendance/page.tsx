@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 import { SkeletonRow } from "@/components/ui/Skeleton";
 
 type AttendanceStatus = "present" | "absent" | "late" | "half-day";
@@ -67,6 +68,7 @@ function Avatar({ user, size = 36 }: { user: Pick<StaffRecord, "name" | "avatarU
 }
 
 export default function HrAttendancePage() {
+  const t = useT();
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate]     = useState(today);
   const [staff, setStaff]   = useState<StaffRecord[]>([]);
@@ -125,7 +127,7 @@ export default function HrAttendancePage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">Attendance</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Attendance")}</h1>
           <p className="text-sm text-(--muted) mt-1">{dateLabel}</p>
         </div>
         <input
@@ -142,7 +144,7 @@ export default function HrAttendancePage() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {(["present", "late", "half-day", "absent", "unmarked"] as const).map((key) => {
           const cfg = key === "unmarked"
-            ? { label: "Unmarked", bg: "bg-gray-50", text: "text-gray-600", border: "border-gray-200" }
+            ? { label: t("Unmarked"), bg: "bg-gray-50", text: "text-gray-600", border: "border-gray-200" }
             : STATUS_CONFIG[key];
           return (
             <div key={key} className={`p-3 rounded-xl border ${cfg.bg} ${cfg.border}`}>
@@ -166,7 +168,7 @@ export default function HrAttendancePage() {
               borderColor: roleFilter === r ? "var(--accent)" : "var(--border)",
             }}
           >
-            {r === "all" ? "All staff" : (ROLE_LABELS[r] ?? r)}
+            {r === "all" ? t("All staff") : (ROLE_LABELS[r] ?? r)}
           </button>
         ))}
       </div>
@@ -181,7 +183,7 @@ export default function HrAttendancePage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <p className="py-10 text-center text-sm text-(--muted)">No staff found.</p>
+          <p className="py-10 text-center text-sm text-(--muted)">{t("No staff found.")}</p>
         ) : (
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {filtered.map((s) => {
@@ -244,7 +246,7 @@ export default function HrAttendancePage() {
       </div>
 
       <p className="text-xs text-(--muted)">
-        Records are saved immediately on click. Reload the page to refresh from the database.
+        {t("Records are saved immediately on click. Reload the page to refresh from the database.")}
       </p>
     </div>
   );

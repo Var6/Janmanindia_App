@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Priority = "low" | "medium" | "high";
 type Status   = "planned" | "in_progress" | "done" | "cancelled";
@@ -61,6 +62,7 @@ function Avatar({ user, size = 32 }: { user: Pick<StaffUser, "name" | "avatarUrl
 }
 
 export default function AdminAssignPage() {
+  const t = useT();
   const [staff, setStaff]           = useState<StaffUser[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [history, setHistory]       = useState<AssignmentRecord[]>([]);
@@ -112,7 +114,7 @@ export default function AdminAssignPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!assigneeId) { setFormMsg({ ok: false, text: "Select a primary assignee." }); return; }
+    if (!assigneeId) { setFormMsg({ ok: false, text: t("Select a primary assignee.") }); return; }
     setSubmitting(true); setFormMsg(null);
     try {
       const res = await fetch("/api/activities", {
@@ -127,7 +129,7 @@ export default function AdminAssignPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setFormMsg({ ok: false, text: data.error ?? "Failed." }); return; }
+      if (!res.ok) { setFormMsg({ ok: false, text: data.error ?? t("Failed.") }); return; }
       const totalAssigned = 1 + coAssigneeIds.filter((id) => id !== assigneeId).length;
       setFormMsg({ ok: true, text: `Task assigned to ${totalAssigned} ${totalAssigned === 1 ? "person" : "people"}.` });
       setTitle(""); setDesc(""); setAssigneeId(""); setCoAssigneeIds([]); setDueDate(""); setNote(""); setCategory("other"); setPriority("medium");
@@ -166,20 +168,20 @@ export default function AdminAssignPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Task Assignment</h1>
-        <p className="text-sm text-(--muted) mt-1">Create and assign tasks to any staff member. Full history is recorded.</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Task Assignment")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Create and assign tasks to any staff member. Full history is recorded.")}</p>
       </div>
 
       {/* Tab switcher */}
       <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)" }}>
-        {(["assign", "history"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
+        {(["assign", "history"] as const).map((tabKey) => (
+          <button key={tabKey} onClick={() => setTab(tabKey)}
             className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
             style={{
-              background: tab === t ? "var(--accent)" : "transparent",
-              color: tab === t ? "var(--accent-contrast)" : "var(--muted)",
+              background: tab === tabKey ? "var(--accent)" : "transparent",
+              color: tab === tabKey ? "var(--accent-contrast)" : "var(--muted)",
             }}>
-            {t === "assign" ? "Assign Tasks" : "Assignment History"}
+            {tabKey === "assign" ? t("Assign Tasks") : t("Assignment History")}
           </button>
         ))}
       </div>
@@ -189,7 +191,7 @@ export default function AdminAssignPage() {
           {/* Create form */}
           <form onSubmit={handleCreate} className="xl:col-span-2 rounded-2xl border p-5 space-y-4 h-fit"
             style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-            <h2 className="font-semibold text-(--text)">New Task</h2>
+            <h2 className="font-semibold text-(--text)">{t("New Task")}</h2>
 
             {formMsg && (
               <div className="p-3 rounded-lg text-sm" style={{
@@ -199,46 +201,46 @@ export default function AdminAssignPage() {
             )}
 
             <div className="space-y-4">
-              <Field label="Task title" required htmlFor="atk-title"
-                hint="Short, action-oriented — what should the assignee do?"
-                example="Visit Sangam Vihar shelter for follow-up">
+              <Field label={t("Task title")} required htmlFor="atk-title"
+                hint={t("Short, action-oriented — what should the assignee do?")}
+                example={t("Visit Sangam Vihar shelter for follow-up")}>
                 <Input id="atk-title" required value={title} onChange={(e) => setTitle(e.target.value)}
-                  placeholder="What needs doing?" maxLength={200} />
+                  placeholder={t("What needs doing?")} maxLength={200} />
               </Field>
 
-              <Field label="Details" htmlFor="atk-desc"
-                hint="Background context, names, prior steps. Optional."
-                example="Met family on 4 Apr; need to verify Aadhaar and submit FIR copy.">
+              <Field label={t("Details")} htmlFor="atk-desc"
+                hint={t("Background context, names, prior steps. Optional.")}
+                example={t("Met family on 4 Apr; need to verify Aadhaar and submit FIR copy.")}>
                 <Textarea id="atk-desc" value={desc} onChange={(e) => setDesc(e.target.value)}
-                  placeholder="Anything the assignee should know before starting" rows={3} />
+                  placeholder={t("Anything the assignee should know before starting")} rows={3} />
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Category" htmlFor="atk-category">
+                <Field label={t("Category")} htmlFor="atk-category">
                   <Select id="atk-category" value={category}
                     onChange={(e) => setCategory(e.target.value as Category)}>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                   </Select>
                 </Field>
-                <Field label="Priority" htmlFor="atk-priority">
+                <Field label={t("Priority")} htmlFor="atk-priority">
                   <Select id="atk-priority" value={priority}
                     onChange={(e) => setPriority(e.target.value as Priority)}>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
+                    <option value="low">{t("Low")}</option>
+                    <option value="medium">{t("Medium")}</option>
+                    <option value="high">{t("High")}</option>
                   </Select>
                 </Field>
               </div>
 
-              <Field label="Primary assignee" required htmlFor="atk-assignee"
-                hint="Whoever owns the task. They'll see it on their dashboard and Google Calendar.">
+              <Field label={t("Primary assignee")} required htmlFor="atk-assignee"
+                hint={t("Whoever owns the task. They'll see it on their dashboard and Google Calendar.")}>
                 <Select id="atk-assignee" required value={assigneeId} onChange={(e) => {
                   const newPrimary = e.target.value;
                   setAssigneeId(newPrimary);
                   // Drop the new primary from the co-assignee list if it's there.
                   if (newPrimary) setCoAssigneeIds((prev) => prev.filter((id) => id !== newPrimary));
                 }}>
-                  <option value="">— Select staff member —</option>
+                  <option value="">{t("— Select staff member —")}</option>
                   {staff.map((u) => (
                     <option key={u._id} value={u._id}>
                       {u.name} ({ROLE_LABELS[u.role] ?? u.role}{u.employeeId ? ` · ${u.employeeId}` : ""})
@@ -247,12 +249,12 @@ export default function AdminAssignPage() {
                 </Select>
               </Field>
 
-              <Field label="Also assign to"
-                hint="Optional. Co-assignees get the task on their dashboard and Google Calendar — useful for joint visits or paired training.">
+              <Field label={t("Also assign to")}
+                hint={t("Optional. Co-assignees get the task on their dashboard and Google Calendar — useful for joint visits or paired training.")}>
                 <div className="rounded-xl border max-h-44 overflow-y-auto"
                   style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
                   {staff.filter((u) => u._id !== assigneeId).length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-(--muted) italic">No other staff to add.</p>
+                    <p className="px-3 py-2 text-xs text-(--muted) italic">{t("No other staff to add.")}</p>
                   ) : (
                     <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
                       {staff.filter((u) => u._id !== assigneeId).map((u) => {
@@ -280,19 +282,19 @@ export default function AdminAssignPage() {
                 )}
               </Field>
 
-              <Field label="Due date" htmlFor="atk-due"
-                hint="When the task should be done by. Leave blank if there's no hard deadline."
-                example="Friday this week">
+              <Field label={t("Due date")} htmlFor="atk-due"
+                hint={t("When the task should be done by. Leave blank if there's no hard deadline.")}
+                example={t("Friday this week")}>
                 <Input id="atk-due" type="date" value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)} />
               </Field>
 
-              <Field label="Assignment note" htmlFor="atk-note"
-                hint="A short message attached to the assignment record. The assignee will see it on their task feed."
-                example="Please coordinate with Anita before visiting the shelter.">
+              <Field label={t("Assignment note")} htmlFor="atk-note"
+                hint={t("A short message attached to the assignment record. The assignee will see it on their task feed.")}
+                example={t("Please coordinate with Anita before visiting the shelter.")}>
                 <Input id="atk-note" value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="One-line context or instruction" />
+                  placeholder={t("One-line context or instruction")} />
               </Field>
             </div>
 
@@ -300,7 +302,7 @@ export default function AdminAssignPage() {
               <button type="submit" disabled={submitting}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:brightness-110 disabled:opacity-60"
                 style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 14px -4px color-mix(in srgb, var(--accent) 50%, transparent)" }}>
-                {submitting ? "Assigning…" : "Assign task"}
+                {submitting ? t("Assigning…") : t("Assign task")}
               </button>
             </div>
           </form>
@@ -308,7 +310,7 @@ export default function AdminAssignPage() {
           {/* Activities list */}
           <div className="xl:col-span-3 space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-(--text)">Filter:</span>
+              <span className="text-sm font-medium text-(--text)">{t("Filter:")}</span>
               {(["all","planned","in_progress","done","cancelled"] as const).map((s) => (
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className="px-3 py-1 rounded-lg text-xs font-medium border transition-all"
@@ -317,7 +319,7 @@ export default function AdminAssignPage() {
                     color: statusFilter === s ? "var(--accent-contrast)" : "var(--muted)",
                     borderColor: statusFilter === s ? "var(--accent)" : "var(--border)",
                   }}>
-                  {s === "all" ? "All" : s.replace("_", " ")}
+                  {s === "all" ? t("All") : s.replace("_", " ")}
                 </button>
               ))}
             </div>
@@ -333,7 +335,7 @@ export default function AdminAssignPage() {
                   ))}
                 </div>
               ) : filteredActivities.length === 0 ? (
-                <p className="py-10 text-center text-sm text-(--muted)">No tasks found.</p>
+                <p className="py-10 text-center text-sm text-(--muted)">{t("No tasks found.")}</p>
               ) : (
                 <div className="divide-y" style={{ borderColor: "var(--border)" }}>
                   {filteredActivities.map((act) => (
@@ -353,7 +355,7 @@ export default function AdminAssignPage() {
                           </div>
                           <p className="text-sm font-medium text-(--text)">{act.title}</p>
                           <p className="text-xs text-(--muted) mt-0.5">
-                            {act.assignee ? `${act.assignee.name} · ${ROLE_LABELS[act.assignee.role] ?? act.assignee.role}` : "Unassigned"}
+                            {act.assignee ? `${act.assignee.name} · ${ROLE_LABELS[act.assignee.role] ?? act.assignee.role}` : t("Unassigned")}
                             {act.coAssignees && act.coAssignees.length > 0
                               ? ` + ${act.coAssignees.map((c) => c.name).join(", ")}`
                               : ""}
@@ -369,7 +371,7 @@ export default function AdminAssignPage() {
                           }}
                             className="text-xs px-3 py-1.5 rounded-lg border transition-colors shrink-0"
                             style={{ borderColor: "var(--border)", color: "var(--accent)", background: "var(--bg)" }}>
-                            Reassign
+                            {t("Reassign")}
                           </button>
                         )}
                       </div>
@@ -384,7 +386,7 @@ export default function AdminAssignPage() {
                             }}
                               className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
                               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-                              <option value="">— Primary assignee —</option>
+                              <option value="">{t("— Primary assignee —")}</option>
                               {staff.map((u) => (
                                 <option key={u._id} value={u._id}>
                                   {u.name} ({ROLE_LABELS[u.role] ?? u.role})
@@ -392,13 +394,13 @@ export default function AdminAssignPage() {
                               ))}
                             </select>
                             <input value={reassignNote} onChange={(e) => setReassignNote(e.target.value)}
-                              placeholder="Reason (optional)"
+                              placeholder={t("Reason (optional)")}
                               className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border text-xs"
                               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                           </div>
                           <details className="rounded-lg border" style={{ borderColor: "var(--border)" }}>
                             <summary className="px-3 py-1.5 text-xs cursor-pointer text-(--muted)">
-                              Also assigned to: {newCoAssignees.length === 0 ? "—" : `${newCoAssignees.length} co-assignee${newCoAssignees.length === 1 ? "" : "s"}`}
+                              {t("Also assigned to:")} {newCoAssignees.length === 0 ? "—" : `${newCoAssignees.length} co-assignee${newCoAssignees.length === 1 ? "" : "s"}`}
                             </summary>
                             <div className="max-h-36 overflow-y-auto">
                               <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -424,12 +426,12 @@ export default function AdminAssignPage() {
                             <button onClick={() => handleReassign(act._id)} disabled={!newAssignee || reassignBusy}
                               className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                              {reassignBusy ? <Spinner /> : "Save"}
+                              {reassignBusy ? <Spinner /> : t("Save")}
                             </button>
                             <button onClick={() => setReassigning(null)}
                               className="px-3 py-1.5 rounded-lg text-xs border"
                               style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-                              Cancel
+                              {t("Cancel")}
                             </button>
                           </div>
                         </div>
@@ -448,7 +450,7 @@ export default function AdminAssignPage() {
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <div className="px-5 py-4 border-b text-sm font-semibold text-(--text)"
             style={{ borderColor: "var(--border)" }}>
-            Assignment History ({history.length} records)
+            {t("Assignment History")} ({history.length} {t("records")})
           </div>
           {loadingHist ? (
             <div className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -459,7 +461,7 @@ export default function AdminAssignPage() {
               ))}
             </div>
           ) : history.length === 0 ? (
-            <p className="py-10 text-center text-sm text-(--muted)">No assignments recorded yet.</p>
+            <p className="py-10 text-center text-sm text-(--muted)">{t("No assignments recorded yet.")}</p>
           ) : (
             <div className="divide-y" style={{ borderColor: "var(--border)" }}>
               {history.map((r) => (
@@ -470,12 +472,12 @@ export default function AdminAssignPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-(--text) truncate">
-                      {r.activity?.title ?? "Deleted task"}
+                      {r.activity?.title ?? t("Deleted task")}
                     </p>
                     <p className="text-xs text-(--muted) mt-0.5">
-                      Assigned to <span className="font-medium text-(--text)">{r.assignedTo?.name ?? "?"}</span>
-                      {r.previousAssignee ? ` (was: ${r.previousAssignee.name})` : ""}
-                      {" "}&middot; by <span className="font-medium text-(--text)">{r.assignedBy?.name ?? "?"}</span>
+                      {t("Assigned to")} <span className="font-medium text-(--text)">{r.assignedTo?.name ?? "?"}</span>
+                      {r.previousAssignee ? ` (${t("was")}: ${r.previousAssignee.name})` : ""}
+                      {" "}&middot; {t("by")} <span className="font-medium text-(--text)">{r.assignedBy?.name ?? "?"}</span>
                     </p>
                     {r.note && (
                       <p className="text-xs mt-1 italic" style={{ color: "var(--muted)" }}>"{r.note}"</p>

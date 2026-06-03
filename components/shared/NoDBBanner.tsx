@@ -1,4 +1,7 @@
+"use client";
+import { useT } from "@/components/i18n/LanguageProvider";
 export default function NoDBBanner() {
+  const t = useT();
   return (
     <div className="flex items-start gap-3 rounded-xl px-4 py-3.5 text-sm"
       style={{
@@ -12,12 +15,12 @@ export default function NoDBBanner() {
         <circle cx="10" cy="14" r=".5" fill="currentColor"/>
       </svg>
       <div>
-        <p className="font-semibold">Database not connected — showing empty state</p>
+        <p className="font-semibold">{t("Database not connected — showing empty state")}</p>
         <p className="mt-0.5 text-xs opacity-80">
-          Add <code className="rounded px-1 py-0.5 font-mono" style={{ background: "rgba(0,0,0,0.08)" }}>MONGODB_URI</code> to{" "}
+          {t("Add")} <code className="rounded px-1 py-0.5 font-mono" style={{ background: "rgba(0,0,0,0.08)" }}>MONGODB_URI</code> {t("to")}{" "}
           <code className="rounded px-1 py-0.5 font-mono" style={{ background: "rgba(0,0,0,0.08)" }}>.env.local</code>{" "}
-          and restart the dev server. Then visit{" "}
-          <a href="/dev" className="underline underline-offset-2 hover:opacity-80">/dev</a> to seed test data.
+          {t("and restart the dev server. Then visit")}{" "}
+          <a href="/dev" className="underline underline-offset-2 hover:opacity-80">/dev</a> {t("to seed test data.")}
         </p>
       </div>
     </div>

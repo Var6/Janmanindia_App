@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getServerT } from "@/lib/i18n-server";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Project from "@/models/Project";
@@ -22,6 +23,7 @@ export default async function FinanceDashboard() {
   if (!session || (session.role !== "finance" && session.role !== "superadmin" && session.role !== "director")) {
     redirect("/login");
   }
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
@@ -92,25 +94,25 @@ export default async function FinanceDashboard() {
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Finance Dashboard</h1>
-        <p className="text-sm text-(--muted) mt-1">Project budgets, allocation tracking, and the expense ledger.</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Finance Dashboard")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Project budgets, allocation tracking, and the expense ledger.")}</p>
       </div>
 
       {/* Org-wide KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Active Projects" value={String(projects.filter(p => p.status === "active").length)} />
-        <Kpi label="Total Budget Allocated" value={`₹${totalBudget.toLocaleString("en-IN")}`} />
-        <Kpi label="Total Spent" value={`₹${totalSpent.toLocaleString("en-IN")}`} accent="var(--warning-text)" />
-        <Kpi label="Total Remaining" value={`₹${totalRemaining.toLocaleString("en-IN")}`} accent="var(--success-text)" />
+        <Kpi label={t("Active Projects")} value={String(projects.filter(p => p.status === "active").length)} />
+        <Kpi label={t("Total Budget Allocated")} value={`₹${totalBudget.toLocaleString("en-IN")}`} />
+        <Kpi label={t("Total Spent")} value={`₹${totalSpent.toLocaleString("en-IN")}`} accent="var(--warning-text)" />
+        <Kpi label={t("Total Remaining")} value={`₹${totalRemaining.toLocaleString("en-IN")}`} accent="var(--success-text)" />
       </div>
 
       {/* Per-project budget cards */}
       <section className="space-y-3">
-        <h2 className="font-semibold text-(--text)">Per-project budgets</h2>
+        <h2 className="font-semibold text-(--text)">{t("Per-project budgets")}</h2>
         {projects.length === 0 ? (
           <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-3xl mb-2">📊</p>
-            <p className="text-sm text-(--muted)">No projects yet — superadmin can create them.</p>
+            <p className="text-sm text-(--muted)">{t("No projects yet — superadmin can create them.")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -139,9 +141,9 @@ export default async function FinanceDashboard() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
-                    <Stat label="Total"     value={`₹${(p.totalBudget ?? 0).toLocaleString("en-IN")}`} />
-                    <Stat label="Spent"     value={`₹${spent.toLocaleString("en-IN")}`}     color={overrun ? "var(--error-text)" : "var(--text)"} />
-                    <Stat label="Remaining" value={`₹${remaining.toLocaleString("en-IN")}`} color="var(--success-text)" />
+                    <Stat label={t("Total")}     value={`₹${(p.totalBudget ?? 0).toLocaleString("en-IN")}`} />
+                    <Stat label={t("Spent")}     value={`₹${spent.toLocaleString("en-IN")}`}     color={overrun ? "var(--error-text)" : "var(--text)"} />
+                    <Stat label={t("Remaining")} value={`₹${remaining.toLocaleString("en-IN")}`} color="var(--success-text)" />
                   </div>
 
                   <div className="rounded-full h-2 overflow-hidden" style={{ background: "var(--bg-secondary)" }}>
@@ -150,7 +152,7 @@ export default async function FinanceDashboard() {
 
                   {Object.keys(cats).length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-semibold tracking-wide text-(--muted)">By category</p>
+                      <p className="text-[10px] uppercase font-semibold tracking-wide text-(--muted)">{t("By category")}</p>
                       <ul className="space-y-1">
                         {Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => (
                           <li key={cat} className="flex items-center justify-between text-xs text-(--text)">
@@ -171,7 +173,7 @@ export default async function FinanceDashboard() {
       {/* Org-wide category mix */}
       {Object.keys(orgCategory).length > 0 && (
         <section className="rounded-2xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <h2 className="font-semibold text-(--text) mb-3">Org-wide spend by category</h2>
+          <h2 className="font-semibold text-(--text) mb-3">{t("Org-wide spend by category")}</h2>
           <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Object.entries(orgCategory).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
               const pct = totalSpent > 0 ? Math.round((amt / totalSpent) * 100) : 0;
@@ -179,7 +181,7 @@ export default async function FinanceDashboard() {
                 <li key={cat} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
                   <p className="text-[11px] text-(--muted) uppercase tracking-wide">{CATEGORY_LABEL[cat] ?? cat}</p>
                   <p className="text-base font-bold text-(--text)">₹{amt.toLocaleString("en-IN")}</p>
-                  <p className="text-[11px] text-(--muted)">{pct}% of total</p>
+                  <p className="text-[11px] text-(--muted)">{pct}% {t("of total")}</p>
                 </li>
               );
             })}
@@ -193,10 +195,10 @@ export default async function FinanceDashboard() {
       {/* Recent paid expenses ledger */}
       <section className="rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         <header className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-          <h2 className="font-semibold text-(--text)">Recent paid expenses (ledger)</h2>
+          <h2 className="font-semibold text-(--text)">{t("Recent paid expenses (ledger)")}</h2>
         </header>
         {paidExpenses.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-(--muted) text-center">No expenses paid yet.</p>
+          <p className="px-5 py-6 text-sm text-(--muted) text-center">{t("No expenses paid yet.")}</p>
         ) : (
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {paidExpenses.map(x => {
@@ -225,8 +227,8 @@ export default async function FinanceDashboard() {
       {eodApproved.length > 0 && (
         <section className="rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <header className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-semibold text-(--text)">Recent approved daily report invoices</h2>
-            <p className="text-xs text-(--muted) mt-0.5">From litigation members. These run on the separate invoice flow.</p>
+            <h2 className="font-semibold text-(--text)">{t("Recent approved daily report invoices")}</h2>
+            <p className="text-xs text-(--muted) mt-0.5">{t("From litigation members. These run on the separate invoice flow.")}</p>
           </header>
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {eodApproved.map(r => {

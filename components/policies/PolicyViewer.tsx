@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { Policy } from "@/lib/policies";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface Props {
   policies: Policy[];
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function PolicyViewer({ policies, downloads }: Props) {
+  const t = useT();
   const [activeSlug, setActiveSlug] = useState<string>(policies[0]?.slug ?? "");
   const [query, setQuery] = useState("");
 
@@ -50,7 +52,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--accent)" }}>
-              Janman People&apos;s Foundation
+              {t("Janman People's Foundation")}
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold text-(--text) tracking-tight">{active.title}</h2>
             <p className="text-xs text-(--muted) mt-1.5 font-mono">{active.refNo} · {active.date}</p>
@@ -61,7 +63,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                 <path d="M8 2v8m0 0l-3-3m3 3l3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/>
               </svg>
-              Download PDF
+              {t("Download PDF")}
             </a>
           )}
         </div>
@@ -85,7 +87,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
         {/* Section index */}
         <nav className="glass rounded-2xl p-2 h-fit lg:sticky lg:top-20">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-(--muted) px-3 py-2">On this page</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-(--muted) px-3 py-2">{t("On this page")}</p>
           <ul className="space-y-0.5">
             {active.sections.map((s, i) => {
               const id = `sec-${i}`;
@@ -105,7 +107,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
         <article className="space-y-4">
           {sections.length === 0 ? (
             <div className="glass rounded-2xl px-6 py-10 text-center text-sm text-(--muted)">
-              Nothing matches “{query}”.
+              {t("Nothing matches")} “{query}”.
             </div>
           ) : sections.map((s, i) => {
             const id = `sec-${active.sections.indexOf(s)}`;

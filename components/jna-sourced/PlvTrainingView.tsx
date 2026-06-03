@@ -2,22 +2,24 @@
 
 import { useState } from "react";
 import { QUICK_PLV_MODULES } from "@/lib/jna-sourced/plv-training";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export default function PlvTrainingView() {
+  const t = useT();
   const [activeId, setActiveId] = useState(QUICK_PLV_MODULES[0]?.id ?? "");
   const [showHi, setShowHi] = useState(false);
   const [quizPick, setQuizPick] = useState<Record<string, number>>({});
 
   const active = QUICK_PLV_MODULES.find((m) => m.id === activeId) ?? QUICK_PLV_MODULES[0];
   if (!active) {
-    return <p className="text-sm text-(--muted)">No PLV modules available.</p>;
+    return <p className="text-sm text-(--muted)">{t("No PLV modules available.")}</p>;
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
       <aside className="space-y-1">
         <div className="text-[10px] uppercase tracking-wider text-(--muted) font-bold mb-2 px-2">
-          Quick PLV modules · {QUICK_PLV_MODULES.length}
+          {t("Quick PLV modules")} · {QUICK_PLV_MODULES.length}
         </div>
         {QUICK_PLV_MODULES.map((m) => {
           const isActive = m.id === active.id;
@@ -60,7 +62,7 @@ export default function PlvTrainingView() {
 
         {active.quiz.length > 0 && (
           <div className="border-t border-(--border) pt-4 space-y-4">
-            <h3 className="text-sm font-semibold text-(--text)">Quick check</h3>
+            <h3 className="text-sm font-semibold text-(--text)">{t("Quick check")}</h3>
             {active.quiz.map((q, qi) => {
               const key = `${active.id}:${qi}`;
               const picked = quizPick[key];

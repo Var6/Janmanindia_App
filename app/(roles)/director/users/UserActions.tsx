@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 interface Props {
   userId: string;
@@ -24,6 +25,7 @@ interface Props {
 export default function UserActions({
   userId, userName, currentRole, isActive, roles, roleLabels,
 }: Props) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export default function UserActions({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed to change role.");
+        setError(typeof data.error === "string" ? data.error : t("Failed to change role."));
         return;
       }
       setRole(newRole);
@@ -71,7 +73,7 @@ export default function UserActions({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed.");
+        setError(typeof data.error === "string" ? data.error : t("Failed."));
         return;
       }
       router.refresh();
@@ -97,7 +99,7 @@ export default function UserActions({
         className={`text-xs font-semibold hover:underline disabled:opacity-50 ${
           isActive ? "text-red-500" : "text-green-600"
         }`}>
-        {isActive ? "NPA" : "Reinstate"}
+        {isActive ? t("NPA") : t("Reinstate")}
       </button>
       {error && <span className="text-[11px] text-(--error-text) basis-full">{error}</span>}
     </div>

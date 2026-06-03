@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import SubmitExpenseForm from "@/components/finance/SubmitExpenseForm";
 import ExpenseQueue, { type ExpenseItem } from "@/components/finance/ExpenseQueue";
 import { SkeletonRow } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export default function AdministratorExpensesPage() {
+  const t = useT();
   const [items, setItems] = useState<ExpenseItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,10 +29,9 @@ export default function AdministratorExpensesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">My Expenses</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("My Expenses")}</h1>
           <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-            Submit logistics and admin spending — pens, stationery, AC repair, table & chair, electricals, equipment.
-            HR verifies, the director approves, finance pays.
+            {t("Submit logistics and admin spending — pens, stationery, AC repair, table & chair, electricals, equipment. HR verifies, the director approves, finance pays.")}
           </p>
         </div>
         <SubmitExpenseForm onCreated={load} />
@@ -45,8 +46,8 @@ export default function AdministratorExpensesPage() {
         </div>
       ) : (
         <>
-          <ExpenseQueue title="In progress" items={open} empty="Nothing pending — submit a new expense above." />
-          {past.length > 0 && <ExpenseQueue title="Past expenses" items={past} />}
+          <ExpenseQueue title={t("In progress")} items={open} empty={t("Nothing pending — submit a new expense above.")} />
+          {past.length > 0 && <ExpenseQueue title={t("Past expenses")} items={past} />}
         </>
       )}
     </div>

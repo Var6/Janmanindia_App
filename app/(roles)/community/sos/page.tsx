@@ -7,8 +7,10 @@ import { detectsDistress } from "@/lib/crisis";
 import Field, { Input, Textarea } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import { CommunityHelpTabs } from "@/components/community/SectionTabs";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 export default function SosPage() {
+  const t = useT();
   const [step, setStep] = useState<"idle" | "form" | "sent">("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,12 +32,12 @@ export default function SosPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Failed to send SOS. Please try again.");
+        setError(data.error ?? t("Failed to send SOS. Please try again."));
       } else {
         setStep("sent");
       }
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(t("Network error. Please check your connection."));
     } finally {
       setLoading(false);
     }
@@ -47,10 +49,10 @@ export default function SosPage() {
       <header className="relative overflow-hidden rounded-2xl glass px-6 py-6">
         <Spotlight color="#dc2626" />
         <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#dc2626" }}>Emergency</p>
-          <h1 className="text-2xl font-bold text-(--text)">Send an SOS</h1>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#dc2626" }}>{t("Emergency")}</p>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Send an SOS")}</h1>
           <p className="text-sm text-(--muted) mt-1.5 leading-relaxed">
-            Use this only when something is happening right now — danger, ongoing crime, abuse, or police misconduct. Your social worker is paged immediately.
+            {t("Use this only when something is happening right now — danger, ongoing crime, abuse, or police misconduct. Your social worker is paged immediately.")}
           </p>
         </div>
       </header>
@@ -62,11 +64,11 @@ export default function SosPage() {
           style={{ borderColor: "color-mix(in srgb, var(--success, #16a34a) 35%, transparent)" }}>
           <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl"
             style={{ background: "color-mix(in srgb, var(--success, #16a34a) 18%, transparent)" }}>✓</div>
-          <p className="font-bold text-lg" style={{ color: "var(--success-text, #15803d)" }}>SOS Alert Sent</p>
-          <p className="text-sm text-(--muted)">Your social worker has been notified. Stay where you are if it's safe — help is on the way.</p>
+          <p className="font-bold text-lg" style={{ color: "var(--success-text, #15803d)" }}>{t("SOS Alert Sent")}</p>
+          <p className="text-sm text-(--muted)">{t("Your social worker has been notified. Stay where you are if it's safe — help is on the way.")}</p>
           <button onClick={() => { setStep("idle"); setDistress(false); }}
             className="text-sm font-semibold underline" style={{ color: "var(--success-text, #15803d)" }}>
-            Send another alert
+            {t("Send another alert")}
           </button>
         </div>
       ) : step === "form" ? (
@@ -77,7 +79,7 @@ export default function SosPage() {
             <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
               style={{ background: "#dc2626" }}>!</div>
             <p className="text-sm font-semibold" style={{ color: "#991b1b" }}>
-              This alert is sent immediately. Don't use it for non-urgent things.
+              {t("This alert is sent immediately. Don't use it for non-urgent things.")}
             </p>
           </div>
 
@@ -88,32 +90,32 @@ export default function SosPage() {
           )}
 
           <Field
-            label="Where are you right now?"
+            label={t("Where are you right now?")}
             required
-            hint="Be specific so help can find you. Include landmark or building name if possible."
-            example="Khajanchi Hat market, Purnia — outside Sharma Provision Store">
-            <Input name="location" required placeholder="District, town, and a landmark" />
+            hint={t("Be specific so help can find you. Include landmark or building name if possible.")}
+            example={t("Khajanchi Hat market, Purnia — outside Sharma Provision Store")}>
+            <Input name="location" required placeholder={t("District, town, and a landmark")} />
           </Field>
 
           <Field
-            label="What is happening?"
+            label={t("What is happening?")}
             required
-            hint="Tell us what's wrong, who's involved, and what you need. Keep it short — every second matters."
-            example="Two men are threatening my brother outside our shop. They have weapons. We need police help.">
+            hint={t("Tell us what's wrong, who's involved, and what you need. Keep it short — every second matters.")}
+            example={t("Two men are threatening my brother outside our shop. They have weapons. We need police help.")}>
             <Textarea name="description" required rows={4}
               onChange={(e) => setDistress(detectsDistress(e.currentTarget.value))}
-              placeholder="What is happening? Who is there?" />
+              placeholder={t("What is happening? Who is there?")} />
           </Field>
 
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep("idle")}
               className="flex-1 py-2.5 rounded-xl border border-(--border) text-(--text) text-sm font-semibold hover:bg-(--bg) transition-colors">
-              Cancel
+              {t("Cancel")}
             </button>
             <button type="submit" disabled={loading}
               className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition disabled:opacity-60"
               style={{ background: "#dc2626", boxShadow: "0 4px 12px rgba(220, 38, 38, 0.3)" }}>
-              {loading ? "Sending…" : "Send SOS Now"}
+              {loading ? t("Sending…") : t("Send SOS Now")}
             </button>
           </div>
         </form>
@@ -122,29 +124,29 @@ export default function SosPage() {
           <button onClick={() => setStep("form")}
             className="relative w-full py-12 rounded-2xl text-white text-2xl font-black tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99] overflow-hidden"
             style={{ background: "linear-gradient(135deg, #dc2626, #991b1b)", boxShadow: "0 12px 32px rgba(220, 38, 38, 0.35)" }}>
-            <span className="relative">🚨 TAP TO SEND SOS</span>
+            <span className="relative">🚨 {t("TAP TO SEND SOS")}</span>
           </button>
           <p className="text-center text-xs text-(--muted)">
-            Only use in a real emergency. False alerts may suspend your account.
+            {t("Only use in a real emergency. False alerts may suspend your account.")}
           </p>
 
           <div className="glass rounded-2xl p-5">
-            <h2 className="font-bold text-(--text) mb-3 text-sm">What happens after you send SOS?</h2>
+            <h2 className="font-bold text-(--text) mb-3 text-sm">{t("What happens after you send SOS?")}</h2>
             <ol className="space-y-2.5 text-sm text-(--muted)">
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>1</span>
-                <span>Your social worker gets an instant notification on their phone.</span>
+                <span>{t("Your social worker gets an instant notification on their phone.")}</span>
               </li>
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>2</span>
-                <span>They confirm and escalate to higher officials if needed.</span>
+                <span>{t("They confirm and escalate to higher officials if needed.")}</span>
               </li>
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>3</span>
-                <span>The litigation team is informed and may open a case.</span>
+                <span>{t("The litigation team is informed and may open a case.")}</span>
               </li>
             </ol>
           </div>

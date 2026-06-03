@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 /**
  * Visual layout matches the foundation's official "Daily Report Format for

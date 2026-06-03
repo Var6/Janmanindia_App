@@ -4,10 +4,13 @@ import { tryConnectDB } from "@/lib/mongoose";
 import EodReport from "@/models/EodReport";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import HrInvoiceQueue from "@/components/reports/HrInvoiceQueue";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function HrInvoicesPage() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "hr" && session.role !== "superadmin" && session.role !== "director")) redirect("/login");
+
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
   const reports = dbOk
@@ -48,18 +51,17 @@ export default async function HrInvoicesPage() {
       {!dbOk && <NoDBBanner />}
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">Invoice Review</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Invoice Review")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-          Verify expense claims from social workers and litigation members. Verifying a litigation invoice forwards it to the
-          district's head lawyer (or to the director if none is assigned). Social-worker invoices are approved here in one step.
+          {t("Verify expense claims from social workers and litigation members. Verifying a litigation invoice forwards it to the district's head lawyer (or to the director if none is assigned). Social-worker invoices are approved here in one step.")}
         </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="Pending" count={pending.length}    bg="var(--warning-bg)"  color="var(--warning-text)" />
-        <Stat label="Forwarded to Lawyers" count={hrVerified.length} bg="var(--info-bg)" color="var(--info-text)" />
-        <Stat label="Approved" count={finalised.filter(r => r.invoiceStatus === "approved").length} bg="var(--success-bg)" color="var(--success-text)" />
-        <Stat label="Rejected" count={finalised.filter(r => r.invoiceStatus === "rejected").length} bg="var(--error-bg)"   color="var(--error-text)" />
+        <Stat label={t("Pending")} count={pending.length}    bg="var(--warning-bg)"  color="var(--warning-text)" />
+        <Stat label={t("Forwarded to Lawyers")} count={hrVerified.length} bg="var(--info-bg)" color="var(--info-text)" />
+        <Stat label={t("Approved")} count={finalised.filter(r => r.invoiceStatus === "approved").length} bg="var(--success-bg)" color="var(--success-text)" />
+        <Stat label={t("Rejected")} count={finalised.filter(r => r.invoiceStatus === "rejected").length} bg="var(--error-bg)"   color="var(--error-text)" />
       </div>
 
       <HrInvoiceQueue pending={pending.map(toItem)} forwarded={hrVerified.map(toItem)} recent={finalised.map(toItem)} />

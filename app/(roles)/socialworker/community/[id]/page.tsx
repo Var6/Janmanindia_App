@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type CommunityProfile = {
   govtIdUrl?: string;
@@ -81,6 +82,7 @@ function fmtDate(d?: string) {
 }
 
 export default function CommunityMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = useT();
   const { id } = use(params);
   const [user, setUser]           = useState<UserDoc | null>(null);
   const [cases, setCases]         = useState<CaseRow[]>([]);
@@ -102,14 +104,14 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
       const res  = await fetch(`/api/users/${id}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to load community member.");
+        setError(data.error ?? t("Failed to load community member."));
         return;
       }
       setUser(data.user);
       setCases(data.cases ?? []);
       setCarePlans(data.carePlans ?? []);
     } catch {
-      setError("Network error.");
+      setError(t("Network error."));
     } finally {
       setLoading(false);
     }
@@ -127,19 +129,19 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
       });
       if (!res.ok) {
         const d = await res.json();
-        setApprovalError(d.error ?? "Failed to approve.");
+        setApprovalError(d.error ?? t("Failed to approve."));
         return;
       }
       load();
     } catch {
-      setApprovalError("Network error.");
+      setApprovalError(t("Network error."));
     } finally {
       setBusy(false);
     }
   }
 
   async function reject() {
-    if (!rejectReason.trim()) { setApprovalError("Reason is required."); return; }
+    if (!rejectReason.trim()) { setApprovalError(t("Reason is required.")); return; }
     setBusy(true); setApprovalError("");
     try {
       const res = await fetch("/api/users/verify-id", {
@@ -149,7 +151,7 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
       });
       if (!res.ok) {
         const d = await res.json();
-        setApprovalError(d.error ?? "Failed to reject.");
+        setApprovalError(d.error ?? t("Failed to reject."));
         return;
       }
       setShowReject(false);
@@ -173,8 +175,8 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
   if (error || !user) return (
     <div className="py-16 text-center rounded-2xl border"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-      <p className="text-sm" style={{ color: "var(--error-text)" }}>{error || "User not found."}</p>
-      <Link href="/socialworker" className="mt-3 inline-block text-sm hover:underline" style={{ color: "var(--accent)" }}>← Back to dashboard</Link>
+      <p className="text-sm" style={{ color: "var(--error-text)" }}>{error || t("User not found.")}</p>
+      <Link href="/socialworker" className="mt-3 inline-block text-sm hover:underline" style={{ color: "var(--accent)" }}>{t("← Back to dashboard")}</Link>
     </div>
   );
 
@@ -185,7 +187,7 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
     <div className="space-y-6 pb-16">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-(--muted)">
-        <Link href="/socialworker" className="hover:text-(--text) transition-colors">Dashboard</Link>
+        <Link href="/socialworker" className="hover:text-(--text) transition-colors">{t("Dashboard")}</Link>
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5"><path d="M6 4l4 4-4 4"/></svg>
         <span className="font-semibold text-(--text)">{user.name}</span>
       </nav>
@@ -209,11 +211,11 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                   style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{user.role}</span>
                 {verif && (
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: verif.bg, color: verif.text }}>{verif.label}</span>
+                    style={{ background: verif.bg, color: verif.text }}>{t(verif.label)}</span>
                 )}
                 {!user.isActive && (
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>Inactive</span>
+                    style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Inactive")}</span>
                 )}
               </div>
             </div>
@@ -228,24 +230,24 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                 <button type="button" onClick={approve} disabled={busy}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: "var(--success)", color: "white" }}>
-                  {busy ? "…" : "Approve"}
+                  {busy ? "…" : t("Approve")}
                 </button>
                 <button type="button" onClick={() => setShowReject(s => !s)} disabled={busy}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors hover:bg-(--bg-secondary)"
                   style={{ borderColor: "var(--border)", color: "var(--text)" }}>
-                  Reject
+                  {t("Reject")}
                 </button>
               </div>
               {showReject && (
                 <div className="flex flex-col gap-2 w-72">
                   <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                    rows={2} placeholder="Reason for rejection (required)"
+                    rows={2} placeholder={t("Reason for rejection (required)")}
                     className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none resize-none"
                     style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                   <button type="button" onClick={reject} disabled={busy || !rejectReason.trim()}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-opacity hover:opacity-90 disabled:opacity-60"
                     style={{ background: "var(--error)", color: "white" }}>
-                    Confirm rejection
+                    {t("Confirm rejection")}
                   </button>
                 </div>
               )}
@@ -260,16 +262,16 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
         {cp && (
           <div className="mt-5 pt-5 border-t grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm"
             style={{ borderColor: "var(--border)" }}>
-            <Fact label="District" value={cp.district} />
-            <Fact label="Village" value={cp.village} />
-            <Fact label="Preferred language" value={cp.preferredLanguage} />
-            <Fact label="ID type" value={cp.govtIdType} />
-            <Fact label="Joined" value={fmtDate(user.createdAt)} />
-            <Fact label="Last login" value={fmtDate(user.lastLoginAt)} />
-            <Fact label="Assigned SW" value={cp.assignedSocialWorker?.name} />
-            <Fact label="PLV status" value={cp.plvStatus && cp.plvStatus !== "none" ? cp.plvStatus : undefined} />
+            <Fact label={t("District")} value={cp.district} />
+            <Fact label={t("Village")} value={cp.village} />
+            <Fact label={t("Preferred language")} value={cp.preferredLanguage} />
+            <Fact label={t("ID type")} value={cp.govtIdType} />
+            <Fact label={t("Joined")} value={fmtDate(user.createdAt)} />
+            <Fact label={t("Last login")} value={fmtDate(user.lastLoginAt)} />
+            <Fact label={t("Assigned SW")} value={cp.assignedSocialWorker?.name} />
+            <Fact label={t("PLV status")} value={cp.plvStatus && cp.plvStatus !== "none" ? cp.plvStatus : undefined} />
             {cp.verifiedAt && (
-              <Fact label={`Verified${cp.verifiedBy ? ` by ${cp.verifiedBy.name}` : ""}`} value={fmtDate(cp.verifiedAt)} />
+              <Fact label={`${t("Verified")}${cp.verifiedBy ? ` ${t("by")} ${cp.verifiedBy.name}` : ""}`} value={fmtDate(cp.verifiedAt)} />
             )}
           </div>
         )}
@@ -281,13 +283,13 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
               <a href={cp.govtIdUrl} target="_blank" rel="noopener noreferrer"
                 className="text-xs px-3 py-1.5 rounded-lg border hover:border-(--accent) transition-colors"
                 style={{ borderColor: "var(--border)", color: "var(--text)" }}>
-                View ID document
+                {t("View ID document")}
               </a>
             )}
             {cp.voiceIntroUrl && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border"
                 style={{ borderColor: "var(--border)" }}>
-                <span className="text-xs text-(--muted)">Voice intro{cp.voiceIntroDurationSec ? ` (${cp.voiceIntroDurationSec}s)` : ""}</span>
+                <span className="text-xs text-(--muted)">{t("Voice intro")}{cp.voiceIntroDurationSec ? ` (${cp.voiceIntroDurationSec}s)` : ""}</span>
                 <audio controls preload="metadata" src={cp.voiceIntroUrl} className="h-7" />
               </div>
             )}
@@ -297,7 +299,7 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
         {cp?.rejectionReason && (
           <div className="mt-4 p-3 rounded-lg text-xs"
             style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-            <span className="font-semibold">Previously rejected: </span>{cp.rejectionReason}
+            <span className="font-semibold">{t("Previously rejected:")} </span>{cp.rejectionReason}
           </div>
         )}
       </div>
@@ -305,13 +307,13 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
       {/* Cases */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-bold text-(--text)">Cases</h2>
+          <h2 className="text-lg font-bold text-(--text)">{t("Cases")}</h2>
           <p className="text-xs text-(--muted)">{cases.length}</p>
         </div>
         {cases.length === 0 ? (
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="text-sm text-(--muted)">No cases on record.</p>
+            <p className="text-sm text-(--muted)">{t("No cases on record.")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -324,12 +326,12 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                     <p className="text-sm font-mono font-semibold text-(--accent)">{c.caseNumber}</p>
                     <p className="text-sm font-medium text-(--text) mt-0.5">{c.caseTitle}</p>
                     <p className="text-xs text-(--muted) mt-1">
-                      {c.path === "criminal" ? "⚖ Criminal" : "🏛 High Court"}
+                      {c.path === "criminal" ? t("⚖ Criminal") : t("🏛 High Court")}
                       {c.district ? ` · ${c.district}` : ""}
-                      {c.litigationMember?.name ? ` · Lawyer: ${c.litigationMember.name}` : " · Unassigned"}
+                      {c.litigationMember?.name ? ` · ${t("Lawyer:")} ${c.litigationMember.name}` : ` · ${t("Unassigned")}`}
                     </p>
                     {c.nextHearingDate && (
-                      <p className="text-xs text-(--muted) mt-0.5">Next hearing: {fmtDate(c.nextHearingDate)}</p>
+                      <p className="text-xs text-(--muted) mt-0.5">{t("Next hearing:")} {fmtDate(c.nextHearingDate)}</p>
                     )}
                   </div>
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
@@ -344,13 +346,13 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
       {/* Care plans */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-bold text-(--text)">Care Plans</h2>
+          <h2 className="text-lg font-bold text-(--text)">{t("Care Plans")}</h2>
           <p className="text-xs text-(--muted)">{carePlans.length}</p>
         </div>
         {carePlans.length === 0 ? (
           <div className="py-10 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <p className="text-sm text-(--muted)">No care plans yet. Open a case and click + New Care Plan inside the case detail to create one.</p>
+            <p className="text-sm text-(--muted)">{t("No care plans yet. Open a case and click + New Care Plan inside the case detail to create one.")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -367,8 +369,8 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                       <p className="text-xs text-(--muted) mt-0.5">
                         <span className="capitalize">{p.category.replace(/_/g, " ")}</span>
                         {p.createdBy?.name ? ` · ${p.createdBy.name}` : ""}
-                        {` · ${(p.sessions?.length ?? 0)} session${(p.sessions?.length ?? 0) === 1 ? "" : "s"}`}
-                        {` · updated ${fmtDate(p.updatedAt)}`}
+                        {` · ${(p.sessions?.length ?? 0)} ${(p.sessions?.length ?? 0) === 1 ? t("session") : t("sessions")}`}
+                        {` · ${t("updated")} ${fmtDate(p.updatedAt)}`}
                       </p>
                       {p.summary && (
                         <p className="text-xs text-(--muted) mt-1 line-clamp-2">{p.summary}</p>

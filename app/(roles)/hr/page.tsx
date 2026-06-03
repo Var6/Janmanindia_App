@@ -8,10 +8,13 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import { getServerT } from "@/lib/i18n-server";
 
 export default async function HrDashboard() {
   const session = await getSessionFromCookies();
   if (!session || (session.role !== "hr" && session.role !== "superadmin")) redirect("/login");
+
+  const t = await getServerT();
 
   const dbOk = await tryConnectDB();
 
@@ -39,8 +42,8 @@ export default async function HrDashboard() {
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">HR Dashboard</h1>
-        <p className="text-sm text-(--muted) mt-1">Manage social workers, invoices and attendance</p>
+        <h1 className="text-2xl font-bold text-(--text)">{t("HR Dashboard")}</h1>
+        <p className="text-sm text-(--muted) mt-1">{t("Manage social workers, invoices and attendance")}</p>
       </div>
 
       {/* KPI Cards */}
@@ -51,7 +54,7 @@ export default async function HrDashboard() {
           { label: "SLA Breaches",           value: slaBreached.length,     highlight: slaBreached.length > 0 },
         ].map((kpi) => (
           <div key={kpi.label} className="glass rounded-2xl p-5">
-            <p className="text-xs text-(--muted)">{kpi.label}</p>
+            <p className="text-xs text-(--muted)">{t(kpi.label)}</p>
             <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-red-500" : "text-(--text)"}`}>{kpi.value}</p>
           </div>
         ))}
@@ -61,15 +64,15 @@ export default async function HrDashboard() {
       <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
           <h2 className="font-semibold text-(--text)">
-            Pending Invoices
+            {t("Pending Invoices")}
             {pendingInvoices.length > 0 && (
               <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">{pendingInvoices.length}</span>
             )}
           </h2>
-          <Link href="/hr/invoices" className="text-xs text-(--accent) hover:underline">View all</Link>
+          <Link href="/hr/invoices" className="text-xs text-(--accent) hover:underline">{t("View all")}</Link>
         </div>
         {pendingInvoices.length === 0 ? (
-          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? "No pending invoices." : "Connect database to see invoices."}</p>
+          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? t("No pending invoices.") : t("Connect database to see invoices.")}</p>
         ) : (
           <div className="divide-y divide-(--border)">
             {pendingInvoices.map((report) => {
@@ -85,10 +88,10 @@ export default async function HrDashboard() {
                   </div>
                   <div className="flex gap-2">
                     <form action={`/api/hr/invoice/${report._id}/approve`} method="POST">
-                      <button type="submit" className="text-xs px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">Approve</button>
+                      <button type="submit" className="text-xs px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">{t("Approve")}</button>
                     </form>
                     <form action={`/api/hr/invoice/${report._id}/reject`} method="POST">
-                      <button type="submit" className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">Reject</button>
+                      <button type="submit" className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">{t("Reject")}</button>
                     </form>
                   </div>
                 </div>
@@ -102,7 +105,7 @@ export default async function HrDashboard() {
       {slaBreached.length > 0 && (
         <section className="bg-(--surface) rounded-2xl border border-red-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-red-200 bg-red-50">
-            <h2 className="font-semibold text-red-700">SLA Breach Monitor</h2>
+            <h2 className="font-semibold text-red-700">{t("SLA Breach Monitor")}</h2>
           </div>
           <div className="divide-y divide-(--border)">
             {slaBreached.map((sw) => (
@@ -111,7 +114,7 @@ export default async function HrDashboard() {
                   <p className="text-sm font-medium text-(--text)">{sw.name}</p>
                   <p className="text-xs text-(--muted)">{sw.email}</p>
                 </div>
-                <span className="text-sm font-bold text-red-500">{sw.socialWorkerProfile?.slaBreaches ?? 0} breaches</span>
+                <span className="text-sm font-bold text-red-500">{sw.socialWorkerProfile?.slaBreaches ?? 0} {t("breaches")}</span>
               </div>
             ))}
           </div>
@@ -121,11 +124,11 @@ export default async function HrDashboard() {
       {/* Attendance Overview */}
       <section className="glass rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-(--border) flex items-center justify-between">
-          <h2 className="font-semibold text-(--text)">Social Workers</h2>
-          <Link href="/hr/attendance" className="text-xs text-(--accent) hover:underline">Attendance</Link>
+          <h2 className="font-semibold text-(--text)">{t("Social Workers")}</h2>
+          <Link href="/hr/attendance" className="text-xs text-(--accent) hover:underline">{t("Attendance")}</Link>
         </div>
         {socialWorkers.length === 0 ? (
-          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? "No social workers found." : "Connect database to see workers."}</p>
+          <p className="px-6 py-6 text-sm text-(--muted) text-center">{dbOk ? t("No social workers found.") : t("Connect database to see workers.")}</p>
         ) : (
           <div className="divide-y divide-(--border)">
             {socialWorkers.map((sw) => {
@@ -138,7 +141,7 @@ export default async function HrDashboard() {
                     <p className="text-xs text-(--muted)">{sw.email}</p>
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${isActiveToday ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                    {isActiveToday ? "Active today" : "Absent"}
+                    {isActiveToday ? t("Active today") : t("Absent")}
                   </span>
                 </div>
               );
@@ -156,7 +159,7 @@ export default async function HrDashboard() {
         ].map((link) => (
           <Link key={link.href} href={link.href}
             className="p-4 rounded-xl bg-(--surface) border border-(--border) hover:border-(--accent) transition-colors text-sm font-medium text-center text-(--text)">
-            {link.label}
+            {t(link.label)}
           </Link>
         ))}
       </div>

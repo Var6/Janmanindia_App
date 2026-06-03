@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DEMO_CASES } from "@/lib/jna-sourced/demo-data";
 import { CASE_STATUSES, PRIORITIES } from "@/lib/jna-sourced/constants";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const STATUS_TONE: Record<string, string> = {
   active:  "bg-blue-500/15  text-blue-300  border-blue-500/40",
@@ -19,6 +20,7 @@ const PRIORITY_TONE: Record<string, string> = {
 };
 
 export default function CasesList() {
+  const t = useT();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("");
   const [priority, setPriority] = useState<string>("");
@@ -40,7 +42,7 @@ export default function CasesList() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by title, client, court, advocate…"
+          placeholder={t("Search by title, client, court, advocate…")}
           className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm text-(--text) placeholder:text-(--muted) focus:border-(--accent) outline-none"
         />
         <select
@@ -48,7 +50,7 @@ export default function CasesList() {
           onChange={(e) => setStatus(e.target.value)}
           className="bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm text-(--text)"
         >
-          <option value="">All statuses</option>
+          <option value="">{t("All statuses")}</option>
           {CASE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <select
@@ -56,7 +58,7 @@ export default function CasesList() {
           onChange={(e) => setPriority(e.target.value)}
           className="bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm text-(--text)"
         >
-          <option value="">All priorities</option>
+          <option value="">{t("All priorities")}</option>
           {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
@@ -79,17 +81,17 @@ export default function CasesList() {
             </div>
             <p className="text-xs text-(--muted) mb-2">{c.client} v. {c.respondent}</p>
             <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
-              <dt className="text-(--muted)">Court</dt>      <dd className="text-(--text)">{c.court}</dd>
-              <dt className="text-(--muted)">Case No.</dt>   <dd className="text-(--text)">{c.caseNo || "—"}</dd>
-              <dt className="text-(--muted)">Advocate</dt>   <dd className="text-(--text)">{c.advocate}</dd>
-              <dt className="text-(--muted)">District</dt>   <dd className="text-(--text)">{c.district}</dd>
+              <dt className="text-(--muted)">{t("Court")}</dt>      <dd className="text-(--text)">{c.court}</dd>
+              <dt className="text-(--muted)">{t("Case No.")}</dt>   <dd className="text-(--text)">{c.caseNo || "—"}</dd>
+              <dt className="text-(--muted)">{t("Advocate")}</dt>   <dd className="text-(--text)">{c.advocate}</dd>
+              <dt className="text-(--muted)">{t("District")}</dt>   <dd className="text-(--text)">{c.district}</dd>
             </dl>
           </Link>
         ))}
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-sm text-(--muted) text-center py-12">No cases match these filters.</p>
+        <p className="text-sm text-(--muted) text-center py-12">{t("No cases match these filters.")}</p>
       )}
     </div>
   );

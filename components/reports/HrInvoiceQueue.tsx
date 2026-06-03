@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 type Item = {
   _id: string;
@@ -28,6 +29,7 @@ interface Props {
 
 export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
   const router = useRouter();
+  const t = useT();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -52,11 +54,11 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
   return (
     <>
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">Pending verification ({pending.length})</h2>
+        <h2 className="font-semibold text-(--text) mb-3">{t("Pending verification")} ({pending.length})</h2>
         {pending.length === 0 ? (
           <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             <p className="text-3xl mb-2">📥</p>
-            <p className="text-sm text-(--muted)">Inbox empty.</p>
+            <p className="text-sm text-(--muted)">{t("Inbox empty.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -83,7 +85,7 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-(--text)">₹{r.amount.toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}h · {r.expenses.length} line{r.expenses.length === 1 ? "" : "s"}</p>
+                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}h · {r.expenses.length} {r.expenses.length === 1 ? t("line") : t("lines")}</p>
                     </div>
                   </div>
 
@@ -97,7 +99,7 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                             <span className="text-(--text) truncate">{ex.description}</span>
                             {ex.receiptUrl && (
                               <a href={ex.receiptUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-(--accent) hover:underline">receipt</a>
+                                className="text-(--accent) hover:underline">{t("receipt")}</a>
                             )}
                           </div>
                           <span className="font-medium text-(--text)">₹{ex.amount.toLocaleString("en-IN")}</span>
@@ -110,21 +112,21 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                     <form onSubmit={(e) => { e.preventDefault(); act(r._id, "reject", reason); }}
                       className="rounded-xl border p-3 space-y-2"
                       style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                      <p className="text-xs font-semibold text-(--text)">Reason for rejection</p>
+                      <p className="text-xs font-semibold text-(--text)">{t("Reason for rejection")}</p>
                       <textarea value={reason} onChange={e => setReason(e.target.value)} required minLength={5} rows={2}
-                        placeholder="They'll see this and can resubmit."
+                        placeholder={t("They'll see this and can resubmit.")}
                         className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
                         style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
                       <div className="flex items-center gap-2">
                         <button type="submit" disabled={busyId === r._id || !reason.trim()}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                          Reject
+                          {t("Reject")}
                         </button>
                         <button type="button" onClick={() => { setRejectingId(null); setReason(""); }}
                           className="px-3 py-1.5 rounded-lg text-xs"
                           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                          Cancel
+                          {t("Cancel")}
                         </button>
                       </div>
                     </form>
@@ -133,12 +135,12 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                       <button onClick={() => act(r._id, "hr_verify")} disabled={busyId === r._id}
                         className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                         style={{ background: "var(--success)", color: "#fff" }}>
-                        {isLitigation ? "Verify & Forward to Lawyer" : "Verify & Approve"}
+                        {isLitigation ? t("Verify & Forward to Lawyer") : t("Verify & Approve")}
                       </button>
                       <button onClick={() => setRejectingId(r._id)} disabled={busyId === r._id}
                         className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
                         style={{ background: "var(--error-bg)", color: "var(--error-text)", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)" }}>
-                        Reject
+                        {t("Reject")}
                       </button>
                     </div>
                   )}
@@ -151,18 +153,18 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
 
       {forwarded.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(--text) mb-3">Forwarded — awaiting head lawyer / director ({forwarded.length})</h2>
+          <h2 className="font-semibold text-(--text) mb-3">{t("Forwarded — awaiting head lawyer / director")} ({forwarded.length})</h2>
           <div className="rounded-2xl border divide-y" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             {forwarded.map(r => (
               <div key={r._id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-(--text)">{r.submitterName} <span className="text-[10px] text-(--muted)">· {r.submitterRole}</span></p>
                   <p className="text-xs text-(--muted)">
-                    {r.submitterDistrict ?? "no district"} · {new Date(r.date).toLocaleDateString("en-IN")} · ₹{r.amount.toLocaleString("en-IN")}
+                    {r.submitterDistrict ?? t("no district")} · {new Date(r.date).toLocaleDateString("en-IN")} · ₹{r.amount.toLocaleString("en-IN")}
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                  style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>HR Verified</span>
+                  style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>{t("HR Verified")}</span>
               </div>
             ))}
           </div>
@@ -171,7 +173,7 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
 
       {recent.length > 0 && (
         <section>
-          <h2 className="font-semibold text-(--text) mb-3">Recent decisions</h2>
+          <h2 className="font-semibold text-(--text) mb-3">{t("Recent decisions")}</h2>
           <div className="rounded-2xl border divide-y" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
             {recent.map(r => (
               <div key={r._id} className="px-4 py-3 flex items-center justify-between gap-3">

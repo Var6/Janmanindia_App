@@ -1,3 +1,5 @@
+"use client";
+import { useT } from "@/components/i18n/LanguageProvider";
 interface Grievance {
   _id: string;
   category: string;
@@ -23,11 +25,12 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
 };
 
 export default function MyGrievances({ grievances }: Props) {
+  const t = useT();
   if (grievances.length === 0) {
     return (
       <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-10 text-center">
         <p className="text-2xl mb-2">📬</p>
-        <p className="text-sm text-(--muted)">No grievances submitted yet.</p>
+        <p className="text-sm text-(--muted)">{t("No grievances submitted yet.")}</p>
       </div>
     );
   }
@@ -47,18 +50,18 @@ export default function MyGrievances({ grievances }: Props) {
                   </span>
                   {g.anonymous && (
                     <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded border border-(--border) text-(--muted)">
-                      Anonymous
+                      {t("Anonymous")}
                     </span>
                   )}
                 </div>
                 <p className="font-semibold text-sm text-(--text)">{g.subject}</p>
                 <p className="text-[11px] text-(--muted) mt-0.5">
-                  Submitted {new Date(g.createdAt).toLocaleDateString("en-IN")}
+                  {t("Submitted")} {new Date(g.createdAt).toLocaleDateString("en-IN")}
                 </p>
               </div>
               <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
                 style={{ background: st.bg, color: st.color }}>
-                {st.label}
+                {t(st.label)}
               </span>
             </header>
 
@@ -68,7 +71,7 @@ export default function MyGrievances({ grievances }: Props) {
               <div className="mt-3 rounded-lg border-l-4 px-3 py-2"
                 style={{ borderColor: "var(--accent)", background: "var(--accent-subtle)" }}>
                 <p className="text-[11px] font-bold uppercase tracking-wide text-(--accent) mb-1">
-                  HR Response · {g.respondedBy?.name ?? "HR"}{g.respondedAt ? ` · ${new Date(g.respondedAt).toLocaleDateString("en-IN")}` : ""}
+                  {t("HR Response")} · {g.respondedBy?.name ?? "HR"}{g.respondedAt ? ` · ${new Date(g.respondedAt).toLocaleDateString("en-IN")}` : ""}
                 </p>
                 <p className="text-sm text-(--text) whitespace-pre-wrap">{g.hrResponse}</p>
               </div>
