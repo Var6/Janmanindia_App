@@ -25,12 +25,16 @@ export async function POST(req: NextRequest) {
 
     let id: string | null = null;
     let role: string | null = null;
+    // Optional: the full set of EXTRA roles a user may act as (multi-position).
+    // When present, sets the `roles` array; `role` (primary) may be omitted.
+    let rolesInput: string[] | null = null;
 
     const contentType = req.headers.get("content-type") ?? "";
     if (contentType.includes("application/json")) {
       const body = await req.json();
       id = typeof body.id === "string" ? body.id : null;
       role = typeof body.role === "string" ? body.role : null;
+      rolesInput = Array.isArray(body.roles) ? body.roles.map(String) : null;
     } else {
       // form-encoded fallback (used by the no-JS form submit on the users page)
       const fd = await req.formData();
@@ -39,17 +43,32 @@ export async function POST(req: NextRequest) {
     }
 
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
-    if (!role || !ASSIGNABLE_ROLES.includes(role as Role)) {
+    if (!role && !rolesInput) {
+      return NextResponse.json({ error: "role or roles is required" }, { status: 400 });
+    }
+    if (role && !ASSIGNABLE_ROLES.includes(role as Role)) {
       return NextResponse.json(
         { error: `role must be one of: ${ASSIGNABLE_ROLES.join(", ")}` },
         { status: 400 }
       );
     }
+    if (rolesInput && rolesInput.some((r) => !ASSIGNABLE_ROLES.includes(r as Role))) {
+      return NextResponse.json(
+        { error: `roles may only contain: ${ASSIGNABLE_ROLES.join(", ")}` },
+        { status: 400 }
+      );
+    }
 
-    // Default community-profile shape so verification queue picks them up.
-    const update: Record<string, unknown> = { role };
-    if (role === "community") {
-      update["communityProfile.verificationStatus"] = "pending";
+    const update: Record<string, unknown> = {};
+    if (role) {
+      update.role = role;
+      // Default community-profile shape so the verification queue picks them up.
+      if (role === "community") update["communityProfile.verificationStatus"] = "pending";
+    }
+    if (rolesInput) {
+      // De-duplicated extra-role set. The active/primary role is always
+      // implicitly included by the switcher, so we don't force it in here.
+      update.roles = Array.from(new Set(rolesInput));
     }
 
     const user = await User.findByIdAndUpdate(id, { $set: update }, { new: true });

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { useT } from "@/components/i18n/LanguageProvider";
 
 const ROLE_PALETTE: Record<string, { bg: string; fg: string }> = {
   community:     { bg: "color-mix(in srgb, #3b82f6 14%, transparent)", fg: "#1e40af" },
@@ -14,9 +16,9 @@ const ROLE_PALETTE: Record<string, { bg: string; fg: string }> = {
   superadmin:    { bg: "color-mix(in srgb, #6b7280 14%, transparent)", fg: "#374151" },
 };
 
-interface Props { userName: string; role: string }
+interface Props { userName: string; role: string; roles?: string[] }
 
-export default function TopBar({ userName, role }: Props) {
+export default function TopBar({ userName, role, roles }: Props) {
   const pathname = usePathname();
   const crumbs = breadcrumb(pathname);
   const palette = ROLE_PALETTE[role] ?? ROLE_PALETTE.superadmin;
@@ -59,13 +61,88 @@ export default function TopBar({ userName, role }: Props) {
 
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="hidden sm:inline text-[12px] text-(--text) font-medium truncate max-w-45">{userName}</span>
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap"
-          style={{ background: palette.bg, color: palette.fg }}>
-          {role}
-        </span>
+        <RoleSwitcher role={role} roles={roles} />
         <ThemeToggle />
       </div>
     </header>
+  );
+}
+
+/** Role badge that becomes a dropdown switcher for multi-role users. Switching
+ *  re-issues the session token with the chosen role as active, then does a full
+ *  navigation so the server renders that role's workspace. */
+function RoleSwitcher({ role, roles }: { role: string; roles?: string[] }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const palette = ROLE_PALETTE[role] ?? ROLE_PALETTE.superadmin;
+  const options = (roles ?? []).filter((r) => r !== "pending");
+  const multi = options.length > 1;
+
+  async function switchTo(next: string) {
+    if (next === role) { setOpen(false); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/switch-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: next }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.redirectTo) {
+        // Full navigation so every server component re-reads the new active role.
+        window.location.href = d.redirectTo;
+      } else {
+        setBusy(false);
+        alert(d.error ?? t("Could not switch role."));
+      }
+    } catch {
+      setBusy(false);
+    }
+  }
+
+  if (!multi) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap"
+        style={{ background: palette.bg, color: palette.fg }}>
+        {role}
+      </span>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)} disabled={busy} title={t("Switch role")}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
+        style={{ background: palette.bg, color: palette.fg }}>
+        {busy ? "…" : role}
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3"><path d="M4 6l4 4 4-4" /></svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-1.5 z-30 min-w-44 rounded-xl border overflow-hidden"
+            style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
+            <p className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold border-b"
+              style={{ color: "var(--muted)", borderColor: "var(--border)" }}>{t("Switch role")}</p>
+            {options.map((r) => {
+              const p = ROLE_PALETTE[r] ?? ROLE_PALETTE.superadmin;
+              const active = r === role;
+              return (
+                <button key={r} type="button" onClick={() => switchTo(r)}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm text-left transition-colors hover:bg-(--bg-secondary)">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.fg }} />
+                    <span className="capitalize text-(--text)">{r}</span>
+                  </span>
+                  {active && <span className="text-[10px]" style={{ color: "var(--accent)" }}>✓ {t("Active")}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

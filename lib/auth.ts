@@ -14,8 +14,13 @@ function getSecret(): Uint8Array {
 
 export type JWTPayload = {
   id: string;
+  /** The currently ACTIVE role (what every access check uses). For a
+   *  multi-role user this changes when they switch roles in the top bar. */
   role: string;
   name: string;
+  /** All roles this user may switch into (includes the active one). Present
+   *  only for multi-role users; single-role sessions may omit it. */
+  roles?: string[];
 };
 
 export async function signToken(payload: JWTPayload): Promise<string> {

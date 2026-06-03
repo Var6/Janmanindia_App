@@ -31,7 +31,13 @@ export interface IUser extends Document {
   passwordHash?: string;
   /** Stable Google account ID (`sub` claim) for users who signed in via Google. */
   googleSub?: string;
+  /** The user's primary / default role (used at login and as the fallback). */
   role: Role;
+  /** All roles this user is allowed to act as. A superadmin can grant several
+   *  (e.g. hr + director) so one person can cover multiple functions at a
+   *  small org. When it has more than one entry, the top bar shows a role
+   *  switcher. Always includes `role`. Empty/absent = just `role`. */
+  roles?: Role[];
   phone?: string;
   linkedinUrl?: string;
   avatarUrl?: string;
@@ -175,6 +181,13 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin", "pending"],
+    },
+    // Extra roles this user may switch into (superadmin-assigned). The primary
+    // `role` is always implicitly included even if not repeated here.
+    roles: {
+      type: [String],
+      enum: ["community", "socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin", "pending"],
+      default: [],
     },
     phone: String,
     linkedinUrl: { type: String, trim: true },

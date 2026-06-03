@@ -38,10 +38,15 @@ export async function POST(request: NextRequest) {
     // Update lastLoginAt
     await User.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
 
+    // Active role = primary role at login. `roles` carries every role the user
+    // may switch into (primary always included) so the top bar can offer a
+    // role switcher to multi-role users.
+    const allRoles = Array.from(new Set([user.role, ...(user.roles ?? [])]));
     const token = await signToken({
       id: String(user._id),
       role: user.role,
       name: user.name,
+      ...(allRoles.length > 1 ? { roles: allRoles } : {}),
     });
 
     const ROLE_HOME: Record<string, string> = {

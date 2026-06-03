@@ -54,7 +54,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
   const dbOk = await tryConnectDB();
   const allUsers = dbOk
     ? await User.find({})
-        .select("name email role isActive createdAt joinedAt exitedAt employeeId communityProfile.verificationStatus")
+        .select("name email role roles isActive createdAt joinedAt exitedAt employeeId communityProfile.verificationStatus")
         .sort({ exitedAt: -1, createdAt: -1 })
         .lean()
     : [];
@@ -236,6 +236,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                           userId={String(u._id)}
                           userName={u.name}
                           currentRole={u.role}
+                          currentRoles={(u as { roles?: string[] }).roles ?? []}
                           isActive={u.isActive}
                           roles={ASSIGNABLE_ROLES}
                           roleLabels={ROLE_LABEL}

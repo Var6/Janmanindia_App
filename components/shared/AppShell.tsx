@@ -37,6 +37,10 @@ export default async function AppShell({ allow, children }: Props) {
   let verifyStatus:    "verified" | "pending" | "rejected" | undefined;
   let rejectionReason: string | undefined;
   let govtIdType:      string | undefined;
+  // All roles this user may switch into (read fresh from the DB so a role a
+  // superadmin just granted shows up without forcing a re-login). Always
+  // includes the active role.
+  let assignedRoles:   string[] = [session.role];
   if (await tryConnectDB()) {
     if (session.role === "community") {
       const user = await User.findById(session.id)
@@ -47,8 +51,9 @@ export default async function AppShell({ allow, children }: Props) {
       rejectionReason = user?.communityProfile?.rejectionReason;
       govtIdType      = user?.communityProfile?.govtIdType;
     } else {
-      const user = await User.findById(session.id).select("avatarUrl").lean();
+      const user = await User.findById(session.id).select("avatarUrl role roles").lean();
       avatarUrl = user?.avatarUrl ?? undefined;
+      if (user) assignedRoles = Array.from(new Set([session.role, user.role, ...(user.roles ?? [])]));
     }
   }
 
@@ -62,7 +67,7 @@ export default async function AppShell({ allow, children }: Props) {
       <SidebarNav navItems={navItems} roleLabel={roleLabel} userName={session.name} roleSlug={session.role} initialAvatarUrl={avatarUrl} />
 
       <main className="flex-1 overflow-y-auto flex flex-col">
-        <TopBar userName={session.name} role={session.role} />
+        <TopBar userName={session.name} role={session.role} roles={assignedRoles} />
         <div className="flex-1">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 py-6">
             {gated ? (
