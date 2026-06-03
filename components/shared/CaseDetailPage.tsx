@@ -12,6 +12,8 @@ import CaseFinanceTab from "@/components/case/CaseFinanceTab";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
+import { useT } from "@/components/i18n/LanguageProvider";
+import Translatable from "@/components/i18n/Translatable";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -307,6 +309,7 @@ function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChan
   caseId: string; enquiry?: Enquiry; district?: string; causeTitle?: string;
   canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   // Skip the whole block if there's truly nothing to show — keeps cases that
   // were filed before the structured intake form was rolled out from showing
@@ -335,22 +338,22 @@ function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChan
       <div className="px-4 py-2 border-b flex items-center gap-2"
         style={{ background: "color-mix(in srgb, var(--info) 8%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--info)" }} />
-        <span className="text-xs font-semibold flex-1" style={{ color: "var(--info-text)" }}>Case Enquiry — Intake Facts</span>
+        <span className="text-xs font-semibold flex-1" style={{ color: "var(--info-text)" }}>{t("Case Enquiry — Intake Facts")}</span>
         {canEdit && (
           <button type="button" onClick={() => setEditing(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-            {anything ? "Edit" : "+ Add intake facts"}
+            {anything ? t("Edit") : `+ ${t("Add intake facts")}`}
           </button>
         )}
       </div>
       {!anything ? (
         <div className="px-5 py-4">
-          <p className="text-xs text-(--muted) italic">No intake facts recorded yet.</p>
+          <p className="text-xs text-(--muted) italic">{t("No intake facts recorded yet.")}</p>
         </div>
       ) : (
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
         {has(enquiry?.victimName) && (
-          <Line label="Victim">
+          <Line label={t("Victim")}>
             {enquiry!.victimName}
             {has(enquiry?.victimContact) && (
               <span className="text-xs text-(--muted)"> · {enquiry!.victimContact}</span>
@@ -361,34 +364,34 @@ function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChan
           </Line>
         )}
         {has(enquiry?.filerName) && (
-          <Line label="Filer">
+          <Line label={t("Filer")}>
             {enquiry!.filerName}
             {has(enquiry?.filerPhone) && (
               <span className="text-xs text-(--muted)"> · {enquiry!.filerPhone}</span>
             )}
             {has(enquiry?.relationshipWithVictim) && (
-              <span className="block text-xs text-(--muted) mt-0.5">Relation to victim: {enquiry!.relationshipWithVictim}</span>
+              <span className="block text-xs text-(--muted) mt-0.5">{t("Relationship with Victim")}: {enquiry!.relationshipWithVictim}</span>
             )}
           </Line>
         )}
-        {has(district) && <Line label="District">{district}</Line>}
-        {has(causeTitle) && <Line label="Cause Title">{causeTitle}</Line>}
-        {has(enquiry?.policeStation) && <Line label="Police Station">{enquiry!.policeStation}</Line>}
-        {has(enquiry?.firNumber) && <Line label="FIR No.">{enquiry!.firNumber}</Line>}
-        {has(enquiry?.placeOfOccurrence) && <Line label="Place of Occurrence">{enquiry!.placeOfOccurrence}</Line>}
+        {has(district) && <Line label={t("District")}>{district}</Line>}
+        {has(causeTitle) && <Line label={t("Cause Title")}>{causeTitle}</Line>}
+        {has(enquiry?.policeStation) && <Line label={t("Police Station")}>{enquiry!.policeStation}</Line>}
+        {has(enquiry?.firNumber) && <Line label={t("FIR No.")}>{enquiry!.firNumber}</Line>}
+        {has(enquiry?.placeOfOccurrence) && <Line label={t("Place of Occurrence")}>{enquiry!.placeOfOccurrence}</Line>}
         {has(enquiry?.incidentDateTime) && (
-          <Line label="Date / time of incident">{fmtDateTime(enquiry!.incidentDateTime!)}</Line>
+          <Line label={t("Date / time of incident")}>{fmtDateTime(enquiry!.incidentDateTime!)}</Line>
         )}
         {has(enquiry?.accusedNames) && (
-          <Line label="Accused" wide>
+          <Line label={t("Accused")} wide>
             {enquiry!.accusedNames}
             {has(enquiry?.accusedCount) && (
-              <span className="text-xs text-(--muted)"> · {enquiry!.accusedCount} total</span>
+              <span className="text-xs text-(--muted)"> · {enquiry!.accusedCount} {t("total")}</span>
             )}
           </Line>
         )}
         {has(enquiry?.issues) && (
-          <Line label="Issues" wide>
+          <Line label={t("Issues")} wide>
             <span className="flex flex-wrap gap-1.5">
               {enquiry!.issues!.map(i => (
                 <span key={i} className="text-[11px] px-2 py-0.5 rounded-full"
@@ -398,8 +401,8 @@ function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChan
           </Line>
         )}
         {has(enquiry?.factsOfTheCase) && (
-          <Line label="Facts of the case" wide>
-            <span className="block whitespace-pre-line text-(--text)">{enquiry!.factsOfTheCase}</span>
+          <Line label={t("Facts of the case")} wide>
+            <Translatable text={enquiry!.factsOfTheCase} className="block text-(--text)" />
           </Line>
         )}
       </div>
@@ -574,6 +577,7 @@ function CaseManagementSection({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => ({
     courtCaseNumber: caseData.courtCaseNumber ?? "",
@@ -645,53 +649,53 @@ function CaseManagementSection({
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
-          Case Management — Court Details
+          {t("Case Management — Court Details")}
         </span>
         {canEdit && !editing && (
           <button type="button" onClick={() => setEditing(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-            {anything ? "Edit" : "+ Add details"}
+            {anything ? t("Edit") : `+ ${t("Add details")}`}
           </button>
         )}
       </div>
 
       {!editing ? (
         <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          {has(caseData.courtName) && <Line label="Court Name">{caseData.courtName}</Line>}
-          {has(caseData.courtCaseNumber) && <Line label="Court Case / Registration No.">{caseData.courtCaseNumber}</Line>}
-          {has(caseData.relevantSections) && <Line label="Relevant Sections" wide>{caseData.relevantSections}</Line>}
-          {has(caseData.stage) && <Line label="Stage of the Case">{caseData.stage}</Line>}
-          {has(caseData.bailAndAppearanceStatus) && <Line label="Bail / Accused Appearance">{caseData.bailAndAppearanceStatus}</Line>}
-          {has(caseData.compensationStatus) && <Line label="Compensation" wide>{caseData.compensationStatus}</Line>}
+          {has(caseData.courtName) && <Line label={t("Court Name")}>{caseData.courtName}</Line>}
+          {has(caseData.courtCaseNumber) && <Line label={t("Court Case / Registration No.")}>{caseData.courtCaseNumber}</Line>}
+          {has(caseData.relevantSections) && <Line label={t("Relevant Sections")} wide>{caseData.relevantSections}</Line>}
+          {has(caseData.stage) && <Line label={t("Stage of the Case")}>{caseData.stage}</Line>}
+          {has(caseData.bailAndAppearanceStatus) && <Line label={t("Bail / Accused Appearance")}>{caseData.bailAndAppearanceStatus}</Line>}
+          {has(caseData.compensationStatus) && <Line label={t("Compensation")} wide>{caseData.compensationStatus}</Line>}
           {!anything && (
-            <p className="text-xs text-(--muted) italic sm:col-span-2">No court details recorded yet.</p>
+            <p className="text-xs text-(--muted) italic sm:col-span-2">{t("No court details recorded yet.")}</p>
           )}
         </div>
       ) : (
         <div className="px-5 py-4 space-y-3">
           {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <CmInput label="Court Name" value={draft.courtName}
+            <CmInput label={t("Court Name")} value={draft.courtName}
               onChange={v => setDraft(s => ({ ...s, courtName: v }))}
               placeholder="CJM Court, Patna" />
-            <CmInput label="Court Case / Registration No." value={draft.courtCaseNumber}
+            <CmInput label={t("Court Case / Registration No.")} value={draft.courtCaseNumber}
               onChange={v => setDraft(s => ({ ...s, courtCaseNumber: v }))}
               placeholder="GR 123/2026"
               disabled={!!caseData.courtCaseNumber}
               hint="The court case number is an official identifier — it can be recorded once but can't be changed afterwards." />
             <div className="sm:col-span-2">
-              <CmInput label="Relevant Sections" value={draft.relevantSections}
+              <CmInput label={t("Relevant Sections")} value={draft.relevantSections}
                 onChange={v => setDraft(s => ({ ...s, relevantSections: v }))}
                 placeholder="BNS 64, 351 r/w POCSO §6" />
             </div>
-            <CmInput label="Stage of the Case" value={draft.stage}
+            <CmInput label={t("Stage of the Case")} value={draft.stage}
               onChange={v => setDraft(s => ({ ...s, stage: v }))}
               placeholder="Evidence / Arguments / Judgment" />
-            <CmInput label="Bail / Accused Appearance" value={draft.bailAndAppearanceStatus}
+            <CmInput label={t("Bail / Accused Appearance")} value={draft.bailAndAppearanceStatus}
               onChange={v => setDraft(s => ({ ...s, bailAndAppearanceStatus: v }))}
               placeholder="Bail granted; accused appearing" />
             <div className="sm:col-span-2">
-              <CmInput label="Compensation status" value={draft.compensationStatus}
+              <CmInput label={t("Compensation status")} value={draft.compensationStatus}
                 onChange={v => setDraft(s => ({ ...s, compensationStatus: v }))}
                 placeholder="₹3,00,000 awarded; disbursement pending" />
             </div>
@@ -700,12 +704,12 @@ function CaseManagementSection({
             <button type="button" onClick={save} disabled={saving}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("Saving…") : t("Save")}
             </button>
             <button type="button" onClick={() => setEditing(false)}
               className="px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-              Cancel
+              {t("Cancel")}
             </button>
           </div>
         </div>
@@ -744,6 +748,7 @@ function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
 function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
   caseId: string; ap: CourtAppearance; canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     date: ap.date ? new Date(ap.date).toISOString().slice(0, 10) : "",
@@ -818,14 +823,14 @@ function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
           </div>
         </div>
         <div className="px-4 py-3 space-y-2">
-          <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{ap.dailyOrderBrief}</p>
+          <p className="text-sm text-(--text) leading-relaxed"><Translatable text={ap.dailyOrderBrief} /></p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-(--muted)">
-            {ap.lastHearingDate && <span>Last hearing: {fmtDate(ap.lastHearingDate)}</span>}
-            {ap.nextHearingDate && <span className="font-semibold" style={{ color: "var(--accent)" }}>Next hearing: {fmtDate(ap.nextHearingDate)}</span>}
+            {ap.lastHearingDate && <span>{t("Last Date of Hearing")}: {fmtDate(ap.lastHearingDate)}</span>}
+            {ap.nextHearingDate && <span className="font-semibold" style={{ color: "var(--accent)" }}>{t("Next Date of Hearing")}: {fmtDate(ap.nextHearingDate)}</span>}
           </div>
           {ap.remarks && (
             <p className="text-xs text-(--muted) italic border-t pt-2" style={{ borderColor: "var(--border)" }}>
-              Remarks: {ap.remarks}
+              {t("Remarks")}: <Translatable text={ap.remarks} preLine={false} />
             </p>
           )}
         </div>
@@ -1057,6 +1062,7 @@ function CourtPartiesSubjectCard({
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const has = (v?: string | string[]) => v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : String(v).trim() !== "");
   const p = caseData.parties;
   const s = caseData.subject;
@@ -1068,14 +1074,14 @@ function CourtPartiesSubjectCard({
   const showECourt   = has(caseData.eCourtLink);
   if (!showCourt && !showParties && !showSubject && !showFiling && !showECourt && !canEdit) return null;
 
-  const courtTypeLabel = caseData.courtType === "supreme"   ? "Supreme Court"
-                       : caseData.courtType === "highcourt" ? "High Court"
-                       : caseData.courtType === "district"  ? "Civil / District Court"
-                       : caseData.courtType === "other"     ? "Tribunal / Forum"
+  const courtTypeLabel = caseData.courtType === "supreme"   ? t("Supreme Court")
+                       : caseData.courtType === "highcourt" ? t("High Court")
+                       : caseData.courtType === "district"  ? t("Civil / District Court")
+                       : caseData.courtType === "other"     ? t("Tribunal / Forum")
                        : null;
-  const filingLabel = caseData.filingStatus === "drafting" ? "Drafting"
-                    : caseData.filingStatus === "filing"   ? "Filing"
-                    : caseData.filingStatus === "filed"    ? "Filed"
+  const filingLabel = caseData.filingStatus === "drafting" ? t("Drafting")
+                    : caseData.filingStatus === "filing"   ? t("Filing")
+                    : caseData.filingStatus === "filed"    ? t("Filed")
                     : null;
 
   return (
@@ -1084,17 +1090,17 @@ function CourtPartiesSubjectCard({
       <div className="px-4 py-2 border-b flex items-center gap-2"
         style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
-        <span className="text-xs font-semibold flex-1" style={{ color: "var(--accent)" }}>Court &amp; Parties</span>
+        <span className="text-xs font-semibold flex-1" style={{ color: "var(--accent)" }}>{t("Court & Parties")}</span>
       </div>
       <div className="px-5 py-4 space-y-4">
         {/* Court row */}
         {showCourt && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-            {courtTypeLabel && <Line label="Court Type">{courtTypeLabel}</Line>}
-            {has(caseData.state) && <Line label="State">{caseData.state}</Line>}
+            {courtTypeLabel && <Line label={t("Court Type")}>{courtTypeLabel}</Line>}
+            {has(caseData.state) && <Line label={t("State")}>{caseData.state}</Line>}
             {has(caseData.courtName) && (
               <div className="sm:col-span-3">
-                <Line label="Court / Forum" wide>{caseData.courtName}</Line>
+                <Line label={t("Court / Forum")} wide>{caseData.courtName}</Line>
               </div>
             )}
           </div>
@@ -1115,13 +1121,13 @@ function CourtPartiesSubjectCard({
         {/* Filing + e-Court row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 pt-3 border-t text-sm"
           style={{ borderColor: "var(--border)" }}>
-          {showFiling && filingLabel && <Line label="Filing Status">{filingLabel}</Line>}
+          {showFiling && filingLabel && <Line label={t("Filing Status")}>{filingLabel}</Line>}
           {r?.status && (
-            <Line label="Reporting">
-              {r.status === "conflict" ? "Defect" : r.status === "success" ? "Cleared" : "Pending"}
+            <Line label={t("Reporting")}>
+              {r.status === "conflict" ? t("Defect") : r.status === "success" ? t("Cleared") : t("Pending")}
               {r.defectDeadline && (
                 <span className="block text-[11px] text-(--muted) mt-0.5">
-                  Cure by {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
+                  {t("Cure by")} {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
                 </span>
               )}
             </Line>
@@ -1639,6 +1645,7 @@ function CaseDangerZone({ caseId, caseNumber, createdBy, backHref }: {
 function TitleEditor({ caseId, value, canEdit, onChanged }: {
   caseId: string; value: string; canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -1665,9 +1672,9 @@ function TitleEditor({ caseId, value, canEdit, onChanged }: {
   if (!editing) {
     return (
       <h1 className="text-xl sm:text-2xl font-bold text-(--text) leading-tight flex items-start gap-2">
-        <span className="min-w-0">{value}</span>
+        <Translatable text={value} preLine={false} className="min-w-0" />
         {canEdit && (
-          <button type="button" onClick={() => setEditing(true)} title="Edit title"
+          <button type="button" onClick={() => setEditing(true)} title={t("Edit title")}
             className="shrink-0 mt-1 text-(--muted) hover:text-(--accent) transition-colors">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10l7.5-7.5z"/>
@@ -1751,6 +1758,7 @@ function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
   canEdit: boolean;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     courtThey: subject?.courtThey ?? "",
@@ -1794,24 +1802,24 @@ function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
     return (
       <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Subject</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Subject")}</p>
           {canEdit && (
             <button type="button" onClick={() => setEditing(true)}
               className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-              {anything ? "Edit" : "+ Add subject"}
+              {anything ? t("Edit") : `+ ${t("Add subject")}`}
             </button>
           )}
         </div>
         {has(subject?.courtThey) && (
-          <Line label="Subject of the court" wide><span className="block whitespace-pre-line">{subject!.courtThey}</span></Line>
+          <Line label={t("Subject of the court")} wide><Translatable text={subject!.courtThey} className="block" /></Line>
         )}
         {has(subject?.ourPoints) && (
-          <Line label="Our points" wide><span className="block whitespace-pre-line">{subject!.ourPoints}</span></Line>
+          <Line label={t("Our points")} wide><Translatable text={subject!.ourPoints} className="block" /></Line>
         )}
         {has(subject?.reason) && (
-          <Line label="Why we believe we have a case" wide><span className="block whitespace-pre-line">{subject!.reason}</span></Line>
+          <Line label={t("Why we believe we have a case")} wide><Translatable text={subject!.reason} className="block" /></Line>
         )}
-        {!anything && <p className="text-xs text-(--muted) italic">No subject notes yet.</p>}
+        {!anything && <p className="text-xs text-(--muted) italic">{t("No subject notes yet.")}</p>}
       </div>
     );
   }
@@ -1855,6 +1863,7 @@ function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
 function VerdictEditor({ caseId, verdict, verdictDate, canEdit, onChanged }: {
   caseId: string; verdict?: string; verdictDate?: string; canEdit: boolean; onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(verdict ?? "");
   const [saving, setSaving] = useState(false);
@@ -1885,20 +1894,20 @@ function VerdictEditor({ caseId, verdict, verdictDate, canEdit, onChanged }: {
       <div className="px-4 py-2 border-b flex items-center justify-between"
         style={{ background: "color-mix(in srgb, var(--success) 8%, var(--surface))", borderColor: "var(--border)" }}>
         <span className="text-xs font-semibold" style={{ color: "var(--success-text)" }}>
-          Verdict{verdictDate ? ` · ${fmtDate(verdictDate)}` : ""}
+          {t("Verdict")}{verdictDate ? ` · ${fmtDate(verdictDate)}` : ""}
         </span>
         {canEdit && !editing && (
           <button type="button" onClick={() => setEditing(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-            {has ? "Edit" : "+ Record verdict"}
+            {has ? t("Edit") : `+ ${t("Record verdict")}`}
           </button>
         )}
       </div>
       {!editing ? (
         <div className="px-5 py-4">
           {has
-            ? <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{verdict}</p>
-            : <p className="text-xs text-(--muted) italic">No verdict recorded yet.</p>}
+            ? <p className="text-sm text-(--text) leading-relaxed"><Translatable text={verdict} /></p>
+            : <p className="text-xs text-(--muted) italic">{t("No verdict recorded yet.")}</p>}
         </div>
       ) : (
         <div className="px-5 py-4 space-y-3">
@@ -1937,6 +1946,7 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
   href?: string;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<{ _id: string; name: string; email: string }>>([]);
@@ -1986,16 +1996,16 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
     return (
       <div className="rounded-xl p-3 border" style={wrapperStyle}>
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
           <button type="button" onClick={() => { setEditing(false); setQuery(""); setResults([]); setErr(""); }}
-            className="text-[10px] text-(--muted) hover:text-(--text)">Cancel</button>
+            className="text-[10px] text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
         </div>
         {err && <p className="text-[11px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
         <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
-          placeholder={`Search ${label.toLowerCase()} by name or email…`}
+          placeholder={`${t("Search")} ${t(label)}…`}
           className="w-full px-2.5 py-1.5 rounded-lg border text-sm focus:outline-none"
           style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
-        {searching && <p className="text-[10px] text-(--muted) mt-1">Searching…</p>}
+        {searching && <p className="text-[10px] text-(--muted) mt-1">{t("Searching…")}</p>}
         {results.length > 0 && (
           <div className="mt-1 rounded-lg border overflow-hidden" style={{ borderColor: "var(--border)" }}>
             {results.map(u => (
@@ -2009,7 +2019,7 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
           </div>
         )}
         {query.trim().length >= 2 && !searching && results.length === 0 && (
-          <p className="text-[10px] text-(--muted) mt-1">No active {label.toLowerCase()} matches &quot;{query}&quot;.</p>
+          <p className="text-[10px] text-(--muted) mt-1">{t("No matches")} — &quot;{query}&quot;.</p>
         )}
       </div>
     );
@@ -2020,7 +2030,7 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
         <p className="text-sm font-semibold text-(--text)">{person.name}</p>
         <p className="text-xs text-(--muted)">{person.email}</p>
       </>
-    : <p className="text-xs text-(--muted) italic">Not assigned</p>;
+    : <p className="text-xs text-(--muted) italic">{t("Not assigned")}</p>;
 
   // Read-only view for viewers who can't edit — preserve the clickable link
   // to the community-member page when a href is supplied (social-worker UI).
@@ -2028,14 +2038,14 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
     if (href && person) {
       return (
         <Link href={href} className="rounded-xl p-3 border transition-colors hover:border-(--accent)" style={wrapperStyle}>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{label} →</p>
+          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)} →</p>
           {inner}
         </Link>
       );
     }
     return (
       <div className="rounded-xl p-3 border" style={wrapperStyle}>
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{label}</p>
+        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)}</p>
         {inner}
       </div>
     );
@@ -2045,16 +2055,16 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
   return (
     <div className="rounded-xl p-3 border" style={wrapperStyle}>
       <div className="flex items-center justify-between mb-1 gap-2">
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
         <span className="flex items-center gap-2 shrink-0">
           <button type="button" onClick={() => setEditing(true)}
             className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
-            {person ? "Change" : "Assign"}
+            {person ? t("Change") : t("Assign")}
           </button>
           {person && (
             <button type="button" disabled={busy} onClick={() => assign(null)}
               className="text-[10px] hover:underline disabled:opacity-50" style={{ color: "var(--error)" }}>
-              Remove
+              {t("Remove")}
             </button>
           )}
         </span>
@@ -2084,6 +2094,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
   const [hearingDate, setHearingDate] = useState<string | undefined>();
   const [timelineKey, setTimelineKey] = useState(0);
   const [tab, setTab] = useState<"legal" | "icp" | "finance">("legal");
+  const t = useT();
   // The current user — used to grant the case creator full edit rights on the
   // detail page regardless of their role (the server enforces the same rule).
   const [meId, setMeId] = useState<string | null>(null);
@@ -2193,20 +2204,20 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           <StatusEditor caseId={c._id} value={c.status} canEdit={canEdit} onChanged={fetchCase} />
           <span className="text-xs px-2.5 py-1 rounded-full"
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
-            {c.path === "criminal" ? "⚖ Criminal" : "🏛 High Court"}
+            {c.path === "criminal" ? `⚖ ${t("Criminal")}` : `🏛 ${t("High Court")}`}
           </span>
         </div>
 
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0 flex-1">
             <TitleEditor caseId={c._id} value={c.caseTitle} canEdit={canEdit} onChanged={fetchCase} />
-            <p className="text-xs text-(--muted) mt-1">Filed {fmtDate(c.createdAt)} · Last updated {fmtDate(c.updatedAt)}</p>
+            <p className="text-xs text-(--muted) mt-1">{t("Filed")} {fmtDate(c.createdAt)} · {t("Last updated")} {fmtDate(c.updatedAt)}</p>
           </div>
 
           {hearingDate && (
             <div className="shrink-0 text-right rounded-xl p-3 border"
               style={{ background: "color-mix(in srgb,var(--accent) 8%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 25%,transparent)" }}>
-              <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Next Hearing</p>
+              <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
               <p className="text-base font-bold mt-0.5" style={{ color: "var(--accent)" }}>
                 {new Date(hearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </p>
@@ -2230,13 +2241,13 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             href={canManageCarePlan && c.community?._id ? `/socialworker/community/${c.community._id}` : undefined}
             onChanged={fetchCase} />
           <div className="rounded-xl p-3 border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Litigation Member</p>
+            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Litigation Member")}</p>
             {c.litigationMember
               ? <>
                   <p className="text-sm font-semibold text-(--text)">{c.litigationMember.name}</p>
                   <p className="text-xs text-(--muted)">{c.litigationMember.email}</p>
                 </>
-              : <p className="text-xs text-(--muted) italic">Not assigned</p>}
+              : <p className="text-xs text-(--muted) italic">{t("Not assigned")}</p>}
           </div>
           <PersonAssignEditor
             caseId={c._id} label="Social Worker" field="socialWorker" role="socialworker"
@@ -2246,7 +2257,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         {/* Hearing date editor (litigation only) */}
         {canEdit && (
           <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <p className="text-xs font-semibold text-(--muted) uppercase tracking-wide mb-2">Update Next Hearing Date</p>
+            <p className="text-xs font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Update Next Hearing Date")}</p>
             <UpdateHearingForm
               caseId={c._id}
               current={hearingDate}
@@ -2302,7 +2313,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                 background: sel ? "var(--accent)" : "transparent",
                 color: sel ? "var(--accent-contrast)" : "var(--muted)",
               }}>
-              {label}
+              {t(label)}
             </button>
           );
         })}
@@ -2403,7 +2414,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
 
         {/* Documents — visible to everyone; editors get upload + rename/delete. */}
         <CollapsibleSection
-          title="Documents"
+          title={t("Documents")}
           badge={docCount > 0 ? <CountPill n={docCount} /> : null}
           defaultOpen={docCount > 0}>
           <div className="space-y-4">
@@ -2421,7 +2432,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
 
         {/* Court appearances — per-hearing structured log. */}
         <CollapsibleSection
-          title="Court appearances"
+          title={t("Court appearances")}
           badge={appearanceCount > 0 ? <CountPill n={appearanceCount} /> : null}
           defaultOpen={true}>
           <CourtAppearancesSection
@@ -2436,7 +2447,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             working a case. Editors get the inline AddDiaryForm; everyone
             else sees the entries read-only. */}
         <CollapsibleSection
-          title="Case diary"
+          title={t("Case diary")}
           badge={diaryCount > 0 ? <CountPill n={diaryCount} /> : null}
           defaultOpen={true}>
           <DiaryList entries={c.caseDiary ?? []} />
@@ -2447,7 +2458,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             people working on the case see each other's progress without
             cross-checking the change history manually. */}
         <CollapsibleSection
-          title="Activity log"
+          title={t("Activity log")}
           badge={auditCount > 0 ? <CountPill n={auditCount} /> : null}
           defaultOpen={false}
           description="Every change to this case — stage flips, document uploads, status updates — is recorded here with the user who did it.">
@@ -2620,7 +2631,7 @@ function DiaryList({ entries }: { entries: Array<{ _id: string; date: string; fi
           <p className="text-xs font-semibold text-(--muted) uppercase tracking-wide">
             {new Date(e.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
           </p>
-          <p className="text-sm text-(--text) mt-1 whitespace-pre-line leading-relaxed">{e.findings}</p>
+          <p className="text-sm text-(--text) mt-1 leading-relaxed"><Translatable text={e.findings} /></p>
         </li>
       ))}
     </ul>
