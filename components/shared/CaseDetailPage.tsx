@@ -2028,7 +2028,7 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
 
   const inner = person
     ? <>
-        <p className="text-sm font-semibold text-(--text)">{person.name}</p>
+        <p className="text-sm font-semibold text-(--text)"><Translatable text={person.name} preLine={false} /></p>
         <p className="text-xs text-(--muted)">{person.email}</p>
       </>
     : <p className="text-xs text-(--muted) italic">{t("Not assigned")}</p>;
@@ -2245,7 +2245,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Litigation Member")}</p>
             {c.litigationMember
               ? <>
-                  <p className="text-sm font-semibold text-(--text)">{c.litigationMember.name}</p>
+                  <p className="text-sm font-semibold text-(--text)"><Translatable text={c.litigationMember.name} preLine={false} /></p>
                   <p className="text-xs text-(--muted)">{c.litigationMember.email}</p>
                 </>
               : <p className="text-xs text-(--muted) italic">{t("Not assigned")}</p>}

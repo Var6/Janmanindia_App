@@ -57,7 +57,10 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      // Degrade gracefully — the caller falls back to the original text.
+      // Degrade gracefully — the caller falls back to the original text. Log
+      // loudly so a misconfigured deployment (or an empty local .env.local) is
+      // obvious rather than silently showing English.
+      console.warn("[/api/translate] ANTHROPIC_API_KEY is not set — returning source text untranslated.");
       return NextResponse.json({ text: source, error: "missing_key" }, { status: 503 });
     }
 
@@ -73,7 +76,9 @@ export async function POST(req: NextRequest) {
       `- Output ONLY the translation. No preamble, quotes, notes, or explanations.`;
 
     const res = await client.messages.create({
-      model: "claude-sonnet-4-5",
+      // Haiku is fast + cheap and more than capable for translation, which
+      // keeps per-field latency and cost low when a page localises many values.
+      model: "claude-haiku-4-5-20251001",
       max_tokens: Math.min(4096, Math.ceil(source.length * 2) + 256),
       system,
       messages: [{ role: "user", content: source }],
