@@ -360,6 +360,7 @@ const hi: Record<string, string> = {
   "Closed / Dismissed": "बंद / खारिज",
   "All places": "सभी स्थान",
   "Place filed": "दाखिल स्थान",
+  "Court case number": "न्यायालय मामला संख्या",
   "Sort by": "इसके अनुसार क्रमबद्ध करें",
   "Recent": "हाल के",
   "Case number": "मामला संख्या",

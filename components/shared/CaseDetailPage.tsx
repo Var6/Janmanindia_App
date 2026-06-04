@@ -683,9 +683,7 @@ function CaseManagementSection({
               placeholder={t("CJM Court, Patna")} />
             <CmInput label={t("Court Case / Registration No.")} value={draft.courtCaseNumber}
               onChange={v => setDraft(s => ({ ...s, courtCaseNumber: v }))}
-              placeholder={t("GR 123/2026")}
-              disabled={!!caseData.courtCaseNumber}
-              hint={t("The court case number is an official identifier — it can be recorded once but can't be changed afterwards.")} />
+              placeholder={t("GR 123/2026")} />
             <div className="sm:col-span-2">
               <CmInput label={t("Relevant Sections")} value={draft.relevantSections}
                 onChange={v => setDraft(s => ({ ...s, relevantSections: v }))}
@@ -2213,6 +2211,13 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
               {c.caseNumber}
             </span>
           </div>
+          {c.courtCaseNumber && (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-mono font-semibold"
+              title={t("Court case number")}
+              style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+              ⚖ {c.courtCaseNumber}
+            </span>
+          )}
           <StatusEditor caseId={c._id} value={c.status} canEdit={canEdit} onChanged={fetchCase} />
           <span className="text-xs px-2.5 py-1 rounded-full"
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>

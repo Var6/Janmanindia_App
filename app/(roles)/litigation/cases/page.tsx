@@ -65,6 +65,7 @@ export default async function LitigationCasesPage() {
   const activeRows: LitCaseRow[] = open.map((c) => ({
     id: String(c._id),
     caseNumber: c.caseNumber ?? "",
+    courtNumber: c.courtCaseNumber ?? "",
     title: tt(c.caseTitle),
     status: c.status,
     courtLabel: courtLabel(c),

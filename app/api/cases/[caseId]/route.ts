@@ -87,15 +87,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // The internal case number (JMI-…) is the unique identifier for the case.
     // It is NEVER editable — silently drop any attempt to change it so a stray
     // payload can't rename a case onto another's number and resurface the
-    // duplicate-key conflict. `courtCaseNumber` is handled set-once below.
+    // duplicate-key conflict. The COURT-assigned number (`courtCaseNumber`) is
+    // a free-text label and IS freely editable (handled via allowedFields).
     if (body && typeof body === "object") delete (body as Record<string, unknown>).caseNumber;
 
     const allowedFields = [
       "status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath",
       "district", "causeTitle",
       // District Legal Fellow Case Management form — lawyer-managed metadata.
-      // `courtCaseNumber` is intentionally NOT here — it's set-once (below).
-      "courtName", "relevantSections",
+      "courtCaseNumber", "courtName", "relevantSections",
       "bailAndAppearanceStatus", "stage", "compensationStatus",
       // Court-type-aware create-form fields, editable from case detail too.
       "courtType", "state", "parties", "subject", "eCourtLink",
@@ -133,25 +133,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("metadata_updated", "Updated intake / enquiry details");
     }
 
-    // Court-assigned case number is SET-ONCE. It's recordable while the case
-    // doesn't have one yet (often assigned after filing), but an official
-    // number, once set, can never be changed — matching the same immutability
-    // we give the internal case number.
-    if (body.courtCaseNumber !== undefined) {
-      const existing = String(caseDoc.courtCaseNumber ?? "").trim();
-      const incoming = String(body.courtCaseNumber ?? "").trim();
-      if (existing && incoming !== existing) {
-        return NextResponse.json(
-          { error: "The court case number can't be changed once it's been set." },
-          { status: 400 }
-        );
-      }
-      if (!existing && incoming) {
-        update.courtCaseNumber = incoming;
-        logAudit("metadata_updated", `Recorded court case number ${incoming}`);
-      }
-    }
-
     // Verdict text (criminal path). Set the verdict string and stamp the
     // verdict date the first time a verdict is recorded so the workflow
     // stepper can surface "verdict reached". Ignored for non-criminal matters
@@ -177,7 +158,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // Generic metadata field changes — log each one with field name. Skip
     // criminalPath / highCourtPath here because they're handled by the
     // stage-transition + doc-upload branches below with richer summaries.
-    const META_FIELDS = ["caseTitle", "district", "causeTitle", "courtName", "relevantSections", "bailAndAppearanceStatus", "stage", "compensationStatus"];
+    const META_FIELDS = ["caseTitle", "district", "causeTitle", "courtCaseNumber", "courtName", "relevantSections", "bailAndAppearanceStatus", "stage", "compensationStatus"];
     for (const f of META_FIELDS) {
       if (body[f] !== undefined && body[f] !== (caseDoc as unknown as Record<string, unknown>)[f]) {
         logAudit("metadata_updated", `Updated ${f}`);

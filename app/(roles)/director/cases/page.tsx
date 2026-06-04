@@ -48,6 +48,7 @@ export default async function AdminCasesPage() {
   const rows: CaseRow[] = cases.map((c) => ({
     id: String(c._id),
     caseNumber: c.caseNumber ?? "",
+    courtNumber: c.courtCaseNumber ?? "",
     title: tt(c.caseTitle),
     currentStep: c.currentStep ? tt(c.currentStep) : undefined,
     path: c.path,

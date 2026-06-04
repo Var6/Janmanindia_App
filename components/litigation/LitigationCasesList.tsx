@@ -7,6 +7,8 @@ import { useT } from "@/components/i18n/LanguageProvider";
 export interface LitCaseRow {
   id: string;
   caseNumber: string;
+  /** Court-assigned case / registration number (the number the COURT gives). */
+  courtNumber: string;
   title: string;
   status: string;
   courtLabel: string;
@@ -45,7 +47,7 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
     const out = rows.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
       if (place !== "all" && r.place !== place) return false;
-      if (needle && !`${r.caseNumber} ${r.title} ${r.community} ${r.sw} ${r.place} ${r.courtLabel}`.toLowerCase().includes(needle)) return false;
+      if (needle && !`${r.caseNumber} ${r.courtNumber} ${r.title} ${r.community} ${r.sw} ${r.place} ${r.courtLabel}`.toLowerCase().includes(needle)) return false;
       return true;
     });
     return [...out].sort((a, b) => {
@@ -103,9 +105,17 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
                   <div className="min-w-0">
                     <p className="font-semibold text-(--text) truncate">{c.title}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {c.caseNumber && (
+                      {/* Court-assigned number is primary; JMI tracker shown muted. */}
+                      {(c.courtNumber || c.caseNumber) && (
                         <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
+                          title={c.courtNumber ? t("Court case number") : undefined}
                           style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
+                          {c.courtNumber || c.caseNumber}
+                        </span>
+                      )}
+                      {c.courtNumber && c.caseNumber && (
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" title="Janman tracker no."
+                          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                           {c.caseNumber}
                         </span>
                       )}

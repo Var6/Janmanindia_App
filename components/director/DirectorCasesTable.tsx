@@ -7,6 +7,9 @@ import { useT } from "@/components/i18n/LanguageProvider";
 export interface CaseRow {
   id: string;
   caseNumber: string;
+  /** Court-assigned case / registration number (e.g. "GR 967/26"). The number
+   *  the COURT gives — distinct from our internal JMI tracker number. */
+  courtNumber: string;
   title: string;
   currentStep?: string;
   path: "criminal" | "highcourt";
@@ -53,7 +56,7 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
       if (status !== "all" && c.status !== status) return false;
       if (place !== "all" && c.district !== place) return false;
       if (needle) {
-        const hay = `${c.caseNumber} ${c.title} ${c.community} ${c.lawyer} ${c.court} ${c.district}`.toLowerCase();
+        const hay = `${c.caseNumber} ${c.courtNumber} ${c.title} ${c.community} ${c.lawyer} ${c.court} ${c.district}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
@@ -69,12 +72,12 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
 
   // ── Exports ─────────────────────────────────────────────────────────
   function exportCsv() {
-    const headers = ["Case Number", "Title", "Type", "Status", "Place (District)", "Court", "Lawyer", "Community"];
+    const headers = ["JMI Number", "Court Case No.", "Title", "Type", "Status", "Place (District)", "Court", "Lawyer", "Community"];
     const esc = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = [
       headers.map(esc).join(","),
       ...filtered.map((c) =>
-        [c.caseNumber, c.title, c.path === "criminal" ? "Criminal" : "High Court", c.status, c.district, c.court, c.lawyer, c.community]
+        [c.caseNumber, c.courtNumber, c.title, c.path === "criminal" ? "Criminal" : "High Court", c.status, c.district, c.court, c.lawyer, c.community]
           .map((v) => esc(String(v ?? ""))).join(",")
       ),
     ];
@@ -97,6 +100,7 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
     const rows = filtered.map((c) => `
       <tr>
         <td style="font-family:monospace">${esc(c.caseNumber)}</td>
+        <td style="font-family:monospace">${esc(c.courtNumber || "—")}</td>
         <td>${esc(c.title)}</td>
         <td>${c.path === "criminal" ? "Criminal" : "High Court"}</td>
         <td>${esc(c.status)}</td>
@@ -114,7 +118,7 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
       </style></head><body>
       <h1>Janman Legal Aid — Cases</h1>
       <p class="sub">${filtered.length} case(s) &nbsp;·&nbsp; ${summary} &nbsp;·&nbsp; Generated ${new Date().toLocaleString("en-IN")}</p>
-      <table><thead><tr><th>Case No.</th><th>Title</th><th>Type</th><th>Status</th><th>Place</th><th>Lawyer</th></tr></thead>
+      <table><thead><tr><th>JMI No.</th><th>Court Case No.</th><th>Title</th><th>Type</th><th>Status</th><th>Place</th><th>Lawyer</th></tr></thead>
       <tbody>${rows}</tbody></table>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`);
@@ -189,11 +193,21 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
                     <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
                       {c.title}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {/* Court-assigned number is the primary identifier; the
+                          internal JMI tracker number is shown muted alongside. */}
                       <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
+                        title={c.courtNumber ? t("Court case number") : undefined}
                         style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
-                        {c.caseNumber || "—"}
+                        {(c.courtNumber || c.caseNumber || "—")}
                       </span>
+                      {c.courtNumber && c.caseNumber && (
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded"
+                          title="Janman tracker no."
+                          style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                          {c.caseNumber}
+                        </span>
+                      )}
                       {c.isExisting && (
                         <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
