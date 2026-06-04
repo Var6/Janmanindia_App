@@ -1,15 +1,16 @@
 // @ts-nocheck
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Home, Users, ClipboardList, Activity, Plus, Search, MapPin, Calendar,
   AlertTriangle, CheckCircle2, X, TrendingUp, UserCircle2,
 } from "lucide-react";
 import { useT } from "@/components/i18n/LanguageProvider";
 
-/** Aangan-style child protection field reporting tool — Bihar.
- *  In-memory state only for v1 (seed + add); persistence will plug into a
- *  `children` / `home_visits` / `child_interventions` collection in a follow-up. */
+/** Aangan child-protection field reporting tool — Bihar.
+ *  DB-backed: reads from /api/aangan and writes via /api/aangan/{children,
+ *  visits,interventions}. Backed by the AanganChild / AanganVisit /
+ *  AanganIntervention collections. */
 
 const RISK = {
   school_dropout:   { label: "Out of School",         tone: "bg-amber-50 text-amber-900 ring-amber-200" },
@@ -27,42 +28,6 @@ const CONCERN = {
   high:     { label: "High",     tone: "bg-rose-50 text-rose-900 ring-rose-200" },
   critical: { label: "Critical", tone: "bg-red-100 text-red-900 ring-red-300" },
 };
-
-const SEED_CHILDREN = [
-  { id: "c1", name: "Pooja Kumari",   age: 13, gender: "F", village: "Bishunpur",    district: "Purnia",     risks: ["school_dropout","early_marriage"], concern: "high",     fw: "Sachina", lastVisit: "2026-05-02" },
-  { id: "c2", name: "Mohit Mandal",   age: 11, gender: "M", village: "Sirsa Kalan",  district: "Araria",     risks: ["child_labour"],                    concern: "medium",   fw: "Nawaz",   lastVisit: "2026-05-06" },
-  { id: "c3", name: "Asha Devi",      age: 15, gender: "F", village: "Kasba",        district: "Purnia",     risks: ["early_marriage","home_violence"],  concern: "critical", fw: "Sachina", lastVisit: "2026-05-09" },
-  { id: "c4", name: "Rakesh Sah",     age: 14, gender: "M", village: "Banmankhi",    district: "Purnia",     risks: ["unsafe_migration"],                concern: "high",     fw: "Tausif",  lastVisit: "2026-04-29" },
-  { id: "c5", name: "Sunita Khatun",  age: 12, gender: "F", village: "Forbesganj",   district: "Araria",     risks: ["school_dropout","substance"],      concern: "medium",   fw: "Nawaz",   lastVisit: "2026-05-04" },
-  { id: "c6", name: "Imran Ansari",   age: 10, gender: "M", village: "Bahadurganj",  district: "Kishanganj", risks: ["child_labour","orphan"],           concern: "high",     fw: "Pintu",   lastVisit: "2026-05-01" },
-  { id: "c7", name: "Khushboo Rani",  age: 16, gender: "F", village: "Manihari",     district: "Katihar",    risks: ["early_marriage"],                  concern: "medium",   fw: "Tausif",  lastVisit: "2026-05-07" },
-  { id: "c8", name: "Vikas Yadav",    age: 13, gender: "M", village: "Triveniganj",  district: "Supaul",     risks: ["school_dropout"],                  concern: "low",      fw: "Pintu",   lastVisit: "2026-05-03" },
-  { id: "c9", name: "Reshma Khatun",  age: 14, gender: "F", village: "Singheshwar",  district: "Madhepura",  risks: ["home_violence","school_dropout"],  concern: "high",     fw: "Nawaz",   lastVisit: "2026-05-08" },
-  { id: "c10",name: "Sahil Kumar",    age: 12, gender: "M", village: "Kasba",        district: "Purnia",     risks: ["unsafe_migration","child_labour"], concern: "critical", fw: "Sachina", lastVisit: "2026-05-09" },
-];
-
-const SEED_VISITS = [
-  { id: "v1", childId: "c3", date: "2026-05-09", fw: "Sachina", concern: "critical", note: "Father pressuring marriage with 32-yo. CWC referral initiated; DLSA legal aid pending." },
-  { id: "v2", childId: "c1", date: "2026-05-02", fw: "Sachina", concern: "high",     note: "Out of school 7 months. Mother open to bridge-school re-enrollment." },
-  { id: "v3", childId: "c10",date: "2026-05-09", fw: "Sachina", concern: "critical", note: "Uncle planning to take child to Punjab for brick-kiln work. Police coordination required." },
-  { id: "v4", childId: "c2", date: "2026-05-06", fw: "Nawaz",   concern: "medium",   note: "Works in roadside dhaba 4 hours/day. School registered but irregular." },
-  { id: "v5", childId: "c5", date: "2026-05-04", fw: "Nawaz",   concern: "medium",   note: "Father consumes alcohol regularly. Mother reports verbal abuse only." },
-  { id: "v6", childId: "c9", date: "2026-05-08", fw: "Nawaz",   concern: "high",     note: "Witnessed mother beaten twice. PWDVA counselling offered." },
-  { id: "v7", childId: "c6", date: "2026-05-01", fw: "Pintu",   concern: "high",     note: "Lives with aunt; works at cycle-repair shop. Need to assess guardianship." },
-  { id: "v8", childId: "c4", date: "2026-04-29", fw: "Tausif",  concern: "high",     note: "Father took advance from labour contractor. Migration scheduled in 10 days." },
-];
-
-const SEED_INTERVENTIONS = [
-  { id: "i1", childId: "c3", type: "CWC Referral",                stage: "ongoing",  date: "2026-05-09", lead: "Sachina" },
-  { id: "i2", childId: "c3", type: "DLSA Legal Aid",              stage: "planned",  date: "2026-05-11", lead: "Sachina" },
-  { id: "i3", childId: "c1", type: "Bridge School Enrollment",    stage: "ongoing",  date: "2026-05-02", lead: "Sachina" },
-  { id: "i4", childId: "c2", type: "Re-enrollment in Govt School",stage: "ongoing",  date: "2026-05-06", lead: "Nawaz" },
-  { id: "i5", childId: "c4", type: "Family Counselling",          stage: "planned",  date: "2026-05-12", lead: "Tausif" },
-  { id: "i6", childId: "c4", type: "Police Coordination",         stage: "planned",  date: "2026-05-13", lead: "Tausif" },
-  { id: "i7", childId: "c6", type: "CPC Coordination",            stage: "ongoing",  date: "2026-05-01", lead: "Pintu" },
-  { id: "i8", childId: "c9", type: "Family Counselling",          stage: "resolved", date: "2026-04-22", lead: "Nawaz" },
-  { id: "i9", childId: "c10",type: "Police Coordination",         stage: "planned",  date: "2026-05-10", lead: "Sachina" },
-];
 
 const FW = ["Sachina", "Nawaz", "Tausif", "Pintu"];
 
@@ -88,12 +53,31 @@ const Stat = ({ label, value, sub, icon }) => (
 export default function AanganApp() {
   const t = useT();
   const [tab, setTab] = useState("dashboard");
-  const [children, setChildren] = useState(SEED_CHILDREN);
-  const [visits, setVisits] = useState(SEED_VISITS);
-  const [interventions] = useState(SEED_INTERVENTIONS);
+  const [children, setChildren] = useState<any[]>([]);
+  const [visits, setVisits] = useState<any[]>([]);
+  const [interventions, setInterventions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState("");
+  // "now" captured once so week-window stats are stable across re-renders.
+  const [nowMs] = useState(() => Date.now());
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/aangan");
+      const d = await res.json();
+      setChildren(d.children ?? []);
+      setVisits(d.visits ?? []);
+      setInterventions(d.interventions ?? []);
+    } catch {
+      /* leave whatever we had */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filteredChildren = useMemo(
     () =>
@@ -110,7 +94,8 @@ export default function AanganApp() {
       total: children.length,
       critical: children.filter((c) => c.concern === "critical").length,
       high: children.filter((c) => c.concern === "high").length,
-      visitsThisWeek: visits.filter((v) => (new Date("2026-05-09").getTime() - new Date(v.date).getTime()) / (1000 * 60 * 60 * 24) <= 7).length,
+      visitsThisWeek: visits.filter((v) => v.date && (nowMs - new Date(v.date).getTime()) / (1000 * 60 * 60 * 24) <= 7).length,
+      districts: new Set(children.map((c) => c.district).filter(Boolean)).size,
       ongoing: interventions.filter((i) => i.stage === "ongoing").length,
       resolved: interventions.filter((i) => i.stage === "resolved").length,
     }),
@@ -154,10 +139,12 @@ export default function AanganApp() {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-stone-900">{t("Field Overview")}</h1>
-              <p className="text-stone-600 mt-1">{t("Across 4 districts in Seemanchal · As of 9 May 2026")}</p>
+              <p className="text-stone-600 mt-1">
+                {stats.districts} {t("districts")} · {t("As of")} {new Date(nowMs).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+              </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Stat label={t("Children Tracked")} value={stats.total}    sub={t("Across 4 districts")} icon={<Users size={22} />} />
+              <Stat label={t("Children Tracked")} value={stats.total}    sub={`${stats.districts} ${t("districts")}`} icon={<Users size={22} />} />
               <Stat label={t("Critical Concern")} value={stats.critical} sub={t("Need urgent action")} icon={<AlertTriangle size={22} />} />
               <Stat label={t("High Concern")}     value={stats.high}     icon={<TrendingUp size={22} />} />
               <Stat label={t("Visits This Week")} value={stats.visitsThisWeek} icon={<ClipboardList size={22} />} />
@@ -275,7 +262,13 @@ export default function AanganApp() {
 
         {tab === "actions" && (
           <div className="space-y-5">
-            <h1 className="text-3xl font-bold">{t("Interventions Board")}</h1>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h1 className="text-3xl font-bold">{t("Interventions Board")}</h1>
+              <button onClick={() => setShowAdd("action")} disabled={children.length === 0}
+                className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] disabled:opacity-50 text-white text-sm font-medium flex items-center gap-2">
+                <Plus size={16} /> {t("Add Intervention")}
+              </button>
+            </div>
             <div className="grid md:grid-cols-3 gap-4">
               {[
                 { k: "planned",  l: "Planned",  tone: "bg-amber-50 ring-amber-200",     textTone: "text-amber-900" },
@@ -310,47 +303,66 @@ export default function AanganApp() {
           kind={showAdd}
           allChildren={children}
           onClose={() => setShowAdd(null)}
-          onAddChild={(c) => setChildren((p) => [c, ...p])}
-          onAddVisit={(v) => setVisits((p) => [v, ...p])}
+          onSaved={load}
         />
       )}
     </div>
   );
 }
 
-function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
+function AddModal({ kind, allChildren, onClose, onSaved }) {
   const t = useT();
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState({
     name: "", age: "", gender: "F", village: "", district: "Purnia",
     risks: [], concern: "medium", fw: "Sachina",
-    childId: allChildren[0]?.id, date: "2026-05-09", note: "",
+    childId: allChildren[0]?.id ?? "", date: today, note: "",
+    type: "", stage: "planned", lead: "Sachina",
   });
   const upd = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
 
-  const submit = () => {
+  const submit = async () => {
+    setErr("");
+    let url = "", body: Record<string, unknown> = {};
     if (kind === "child") {
-      onAddChild({
-        id: "c" + Date.now(),
-        name: form.name, age: Number(form.age) || 10, gender: form.gender,
-        village: form.village, district: form.district,
-        risks: form.risks, concern: form.concern, fw: form.fw,
-        lastVisit: form.date,
-      });
+      if (!form.name.trim()) { setErr(t("Child Name") + " *"); return; }
+      url = "/api/aangan/children";
+      body = { name: form.name, age: Number(form.age) || 10, gender: form.gender,
+        village: form.village, district: form.district, risks: form.risks,
+        concern: form.concern, fw: form.fw, date: form.date };
+    } else if (kind === "visit") {
+      if (!form.childId) { setErr(t("Child") + " *"); return; }
+      url = "/api/aangan/visits";
+      body = { childId: form.childId, date: form.date, fw: form.fw, concern: form.concern, note: form.note };
     } else {
-      onAddVisit({
-        id: "v" + Date.now(),
-        childId: form.childId, date: form.date, fw: form.fw,
-        concern: form.concern, note: form.note,
-      });
+      if (!form.childId) { setErr(t("Child") + " *"); return; }
+      if (!form.type.trim()) { setErr(t("Intervention type") + " *"); return; }
+      url = "/api/aangan/interventions";
+      body = { childId: form.childId, type: form.type, stage: form.stage, lead: form.lead, date: form.date };
     }
-    onClose();
+    setSaving(true);
+    try {
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(d.error ?? t("Failed.")); return; }
+      await onSaved();
+      onClose();
+    } catch {
+      setErr(t("Network error."));
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const title = kind === "child" ? t("Register New Case") : kind === "visit" ? t("Log Home Visit") : t("Add Intervention");
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-5 border-b flex items-center justify-between">
-          <h3 className="text-xl font-bold">{kind === "child" ? t("Register New Case") : t("Log Home Visit")}</h3>
+          <h3 className="text-xl font-bold">{title}</h3>
           <button onClick={onClose} className="p-1 hover:bg-stone-100 rounded"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-3">
@@ -382,7 +394,7 @@ function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
               <Sel label={t("Concern Level")} value={form.concern} onChange={(v) => upd("concern", v)} opts={Object.entries(CONCERN).map(([k, v]) => [k, t(v.label)])} />
               <Sel label={t("Fieldworker")} value={form.fw} onChange={(v) => upd("fw", v)} opts={FW.map((f) => [f, f])} />
             </>
-          ) : (
+          ) : kind === "visit" ? (
             <>
               <Sel label={t("Child")} value={form.childId} onChange={(v) => upd("childId", v)} opts={allChildren.map((c) => [c.id, c.name + " · " + c.village])} />
               <div className="grid grid-cols-2 gap-3">
@@ -395,11 +407,22 @@ function AddModal({ kind, allChildren, onClose, onAddChild, onAddVisit }) {
                 <textarea value={form.note} onChange={(e) => upd("note", e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg ring-1 ring-stone-200 text-sm focus:ring-2 focus:ring-[#C84B31] outline-none" />
               </div>
             </>
+          ) : (
+            <>
+              <Sel label={t("Child")} value={form.childId} onChange={(v) => upd("childId", v)} opts={allChildren.map((c) => [c.id, c.name + " · " + c.village])} />
+              <Inp label={t("Intervention type")} value={form.type} onChange={(v) => upd("type", v)} />
+              <div className="grid grid-cols-2 gap-3">
+                <Sel label={t("Stage")} value={form.stage} onChange={(v) => upd("stage", v)} opts={[["planned", t("Planned")], ["ongoing", t("Ongoing")], ["resolved", t("Resolved")]]} />
+                <Inp label={t("Date")} value={form.date} onChange={(v) => upd("date", v)} type="date" />
+              </div>
+              <Sel label={t("Lead")} value={form.lead} onChange={(v) => upd("lead", v)} opts={FW.map((f) => [f, f])} />
+            </>
           )}
+          {err && <p className="text-sm text-rose-700 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="p-5 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-100 text-sm">{t("Cancel")}</button>
-          <button onClick={submit} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] text-white text-sm font-semibold">{t("Save")}</button>
+          <button onClick={submit} disabled={saving} className="px-4 py-2 rounded-lg bg-[#C84B31] hover:bg-[#9B3722] disabled:opacity-60 text-white text-sm font-semibold">{saving ? t("Saving…") : t("Save")}</button>
         </div>
       </div>
     </div>
