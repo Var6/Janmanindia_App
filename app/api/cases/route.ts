@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
             filingStatus, reportingStatus,
             litigationMemberIds,
             enquiry: enquiryRaw,
+            pointOfContact: pocRaw,
             voiceAttachment } = body as {
       caseTitle: string;
       path?: "criminal" | "highcourt";
@@ -146,6 +147,7 @@ export async function POST(request: NextRequest) {
       parties?: { petitioners?: string[]; respondents?: string[] };
       /** Strategic subject — three angles the team agrees on early. */
       subject?: { courtThey?: string; ourPoints?: string; reason?: string };
+      pointOfContact?: { name?: string; phone?: string; address?: string };
       /** External e-Courts / SC services link. */
       eCourtLink?: string;
       /** Used when the petition is being prepared / filed but doesn't yet
@@ -294,6 +296,13 @@ export async function POST(request: NextRequest) {
           reason:    subject.reason?.trim()    || undefined,
         }
       : undefined;
+    const cleanPoc = pocRaw && (pocRaw.name?.trim() || pocRaw.phone?.trim() || pocRaw.address?.trim())
+      ? {
+          name:    pocRaw.name?.trim()    || undefined,
+          phone:   pocRaw.phone?.trim()   || undefined,
+          address: pocRaw.address?.trim() || undefined,
+        }
+      : undefined;
     let cleanReporting: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: Date } | undefined;
     if (reportingStatus?.status && ["pending", "success", "conflict"].includes(reportingStatus.status)) {
       const dl = reportingStatus.defectDeadline ? new Date(reportingStatus.defectDeadline) : undefined;
@@ -343,6 +352,7 @@ export async function POST(request: NextRequest) {
       ...(state?.trim() ? { state: state.trim() } : {}),
       ...(cleanParties ? { parties: cleanParties } : {}),
       ...(cleanSubject ? { subject: cleanSubject } : {}),
+      ...(cleanPoc ? { pointOfContact: cleanPoc } : {}),
       ...(eCourtLink?.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
       ...(filingStatus && ["drafting", "filing", "filed"].includes(filingStatus) ? { filingStatus } : {}),
       ...(cleanReporting ? { reportingStatus: cleanReporting } : {}),

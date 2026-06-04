@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       "bailAndAppearanceStatus", "stage", "compensationStatus",
       // Court-type-aware create-form fields, editable from case detail too.
       "courtType", "state", "parties", "subject", "eCourtLink",
-      "filingStatus", "reportingStatus",
+      "filingStatus", "reportingStatus", "pointOfContact",
       // Intake facts — the creator (and editors) can correct the full
       // Case Enquiry record from the detail page.
       "enquiry",
@@ -131,6 +131,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (body.enquiry !== undefined) {
       logAudit("metadata_updated", "Updated intake / enquiry details");
+    }
+    if (body.pointOfContact !== undefined) {
+      logAudit("metadata_updated", "Updated point of contact");
     }
 
     // Verdict text (criminal path). Set the verdict string and stamp the

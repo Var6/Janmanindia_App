@@ -19,6 +19,9 @@ export interface CaseRow {
   community: string;
   lawyer: string;
   isExisting: boolean;
+  /** Most recent past hearing (ISO) and the upcoming hearing (ISO). */
+  lastHearingISO?: string;
+  nextHearingISO?: string;
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
@@ -31,14 +34,18 @@ const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   Dismissed: { bg: "var(--error-bg)",     text: "var(--error-text)"   },
 };
 
-type SortKey = "recent" | "number" | "title" | "place";
+const fmtDate = (iso?: string) =>
+  iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+type SortKey = "recent" | "number" | "title" | "place" | "lawyer" | "hearing";
 
 export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [place, setPlace] = useState("all");
-  const [sort, setSort] = useState<SortKey>("recent");
+  const [lawyer, setLawyer] = useState("all");
+  const [sort, setSort] = useState<SortKey>("lawyer");
 
   // Distinct values present in the data (for the dropdowns).
   const statuses = useMemo(
@@ -49,12 +56,17 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
     () => Array.from(new Set(cases.map((c) => c.district).filter((d) => d && d !== "—"))).sort(),
     [cases]
   );
+  const lawyers = useMemo(
+    () => Array.from(new Set(cases.map((c) => c.lawyer).filter(Boolean))).sort(),
+    [cases]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let rows = cases.filter((c) => {
       if (status !== "all" && c.status !== status) return false;
       if (place !== "all" && c.district !== place) return false;
+      if (lawyer !== "all" && c.lawyer !== lawyer) return false;
       if (needle) {
         const hay = `${c.caseNumber} ${c.courtNumber} ${c.title} ${c.community} ${c.lawyer} ${c.court} ${c.district}`.toLowerCase();
         if (!hay.includes(needle)) return false;
@@ -65,19 +77,25 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
       if (sort === "number") return a.caseNumber.localeCompare(b.caseNumber);
       if (sort === "title") return a.title.localeCompare(b.title);
       if (sort === "place") return (a.district || "").localeCompare(b.district || "");
+      if (sort === "lawyer") return (a.lawyer || "~").localeCompare(b.lawyer || "~"); // unassigned last
+      if (sort === "hearing") {
+        const av = a.nextHearingISO ? new Date(a.nextHearingISO).getTime() : Infinity;
+        const bv = b.nextHearingISO ? new Date(b.nextHearingISO).getTime() : Infinity;
+        return av - bv;
+      }
       return 0; // "recent" — keep the server's updatedAt order
     });
     return rows;
-  }, [cases, q, status, place, sort]);
+  }, [cases, q, status, place, lawyer, sort]);
 
   // ── Exports ─────────────────────────────────────────────────────────
   function exportCsv() {
-    const headers = ["JMI Number", "Court Case No.", "Title", "Type", "Status", "Place (District)", "Court", "Lawyer", "Community"];
+    const headers = ["JMI Number", "Court Case No.", "Title", "Type", "Status", "Place (District)", "Court", "Lawyer", "Community", "Last Hearing", "Next Hearing"];
     const esc = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lines = [
       headers.map(esc).join(","),
       ...filtered.map((c) =>
-        [c.caseNumber, c.courtNumber, c.title, c.path === "criminal" ? "Criminal" : "High Court", c.status, c.district, c.court, c.lawyer, c.community]
+        [c.caseNumber, c.courtNumber, c.title, c.path === "criminal" ? "Criminal" : "High Court", c.status, c.district, c.court, c.lawyer, c.community, fmtDate(c.lastHearingISO), fmtDate(c.nextHearingISO)]
           .map((v) => esc(String(v ?? ""))).join(",")
       ),
     ];
@@ -141,13 +159,20 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
           {statuses.map((s) => <option key={s} value={s}>{t(s)}</option>)}
         </select>
 
+        <select value={lawyer} onChange={(e) => setLawyer(e.target.value)} className={selectCls} style={selectStyle} title={t("Litigation Member")}>
+          <option value="all">{t("All lawyers")}</option>
+          {lawyers.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+
         <select value={place} onChange={(e) => setPlace(e.target.value)} className={selectCls} style={selectStyle} title={t("Place filed")}>
           <option value="all">{t("All places")}</option>
           {places.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
 
         <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls} style={selectStyle} title={t("Sort by")}>
+          <option value="lawyer">{t("Litigation Member")}</option>
           <option value="recent">{t("Recent")}</option>
+          <option value="hearing">{t("Next hearing")}</option>
           <option value="number">{t("Case number")}</option>
           <option value="title">{t("Title")}</option>
           <option value="place">{t("Place filed")}</option>
@@ -218,6 +243,13 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
                         <span className="text-[11px] text-(--muted)">📍 {c.district}</span>
                       )}
                     </div>
+                    {/* Hearing dates — just below the location. */}
+                    {(c.lastHearingISO || c.nextHearingISO) && (
+                      <p className="text-[11px] text-(--muted) mt-0.5 flex flex-wrap gap-x-3">
+                        {c.lastHearingISO && <span>{t("Last hearing")}: {fmtDate(c.lastHearingISO)}</span>}
+                        {c.nextHearingISO && <span className="font-medium" style={{ color: "var(--accent)" }}>{t("Next hearing")}: {fmtDate(c.nextHearingISO)}</span>}
+                      </p>
+                    )}
                     {c.currentStep && <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{c.currentStep}</p>}
                     <p className="text-xs text-(--muted) mt-0.5">{c.community || "—"}</p>
                   </Link>

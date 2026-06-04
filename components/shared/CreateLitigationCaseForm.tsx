@@ -80,6 +80,14 @@ export default function CreateLitigationCaseForm() {
   const [subjectOurPoints, setSubjectOurPoints] = useState("");
   const [eCourtLink,       setECourtLink]       = useState("");
 
+  /* ── Janman district (where the case is filed) ───────────────────── */
+  const [district, setDistrict] = useState("");
+
+  /* ── Point of contact for this case ──────────────────────────────── */
+  const [pocName,    setPocName]    = useState("");
+  const [pocPhone,   setPocPhone]   = useState("");
+  const [pocAddress, setPocAddress] = useState("");
+
   /* ── Case-type (workflow path) ───────────────────────────────────── */
   const [caseType, setCaseType] = useState("");
 
@@ -158,6 +166,7 @@ export default function CreateLitigationCaseForm() {
     setHighCourt(""); setState(""); setDistrictCourt(""); setDistrictOther(""); setOtherCourtName("");
     setPetitioners([]); setRespondents([]); setPetitionerDraft(""); setRespondentDraft(""); setTitleOverride("");
     setSubjectCourtThey(""); setSubjectOurPoints(""); setECourtLink("");
+    setDistrict(""); setPocName(""); setPocPhone(""); setPocAddress("");
     setCaseType("");
     setHasNumber(true);
     setCourtCaseNumber(""); setFirNumber(""); setPoliceStation(""); setRelevantSections("");
@@ -234,6 +243,12 @@ export default function CreateLitigationCaseForm() {
           ourPoints: subjectOurPoints.trim() || undefined,
         },
         ...(eCourtLink.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
+        // Janman district (where filed)
+        ...(district.trim() ? { district: district.trim() } : {}),
+        // Point of contact
+        ...((pocName.trim() || pocPhone.trim() || pocAddress.trim())
+          ? { pointOfContact: { name: pocName.trim() || undefined, phone: pocPhone.trim() || undefined, address: pocAddress.trim() || undefined } }
+          : {}),
         // Sharing
         ...(shareWith.length ? { litigationMemberIds: shareWith.map(l => l._id) } : {}),
       };
@@ -419,10 +434,32 @@ export default function CreateLitigationCaseForm() {
             <Textarea rows={2} value={subjectOurPoints} onChange={e => setSubjectOurPoints(e.target.value)}
               placeholder="Locus is established by Art. 32; HC ruling didn't address compensation question…" />
           </Field>
+          <Field label="District (where filed)" hint="The district this case belongs to — used to filter cases by place.">
+            <Input value={district} onChange={e => setDistrict(e.target.value)}
+              placeholder="Katihar / Purnia / Patna / Malda…" />
+          </Field>
           <Field label="e-Courts / SC services link (optional)">
             <Input value={eCourtLink} onChange={e => setECourtLink(e.target.value)}
               placeholder="https://services.ecourts.gov.in/…" type="url" />
           </Field>
+        </div>
+      </Section>
+
+      {/* ─── Point of contact ─────────────────────────────────────── */}
+      <Section title="Point of contact" subtitle="Who we call about this case — the litigant, a relative, or a paralegal.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Contact name">
+            <Input value={pocName} onChange={e => setPocName(e.target.value)} placeholder="Full name" />
+          </Field>
+          <Field label="Contact phone">
+            <Input value={pocPhone} onChange={e => setPocPhone(e.target.value)} placeholder="10-digit mobile" type="tel" />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Contact address">
+              <Textarea rows={2} value={pocAddress} onChange={e => setPocAddress(e.target.value)}
+                placeholder="Village / town, police station, district" />
+            </Field>
+          </div>
         </div>
       </Section>
 

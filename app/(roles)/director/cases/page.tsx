@@ -58,6 +58,13 @@ export default async function AdminCasesPage() {
     community: (c.community as unknown as { name?: string } | null)?.name ?? "",
     lawyer: (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",
     isExisting: !!c.isExistingCase,
+    nextHearingISO: c.nextHearingDate ? new Date(c.nextHearingDate).toISOString() : undefined,
+    lastHearingISO: (() => {
+      const ts = (c.courtAppearances ?? [])
+        .map((a) => (a?.date ? new Date(a.date).getTime() : 0))
+        .filter((n) => n > 0);
+      return ts.length ? new Date(Math.max(...ts)).toISOString() : undefined;
+    })(),
   }));
 
   return (

@@ -95,6 +95,15 @@ export interface ICaseSubject {
   reason?: string;
 }
 
+/** Point of contact for the case — the person the team rings about this matter
+ *  (the litigant, a relative, a paralegal). Captured at creation, editable from
+ *  the case detail page. */
+export interface ICasePointOfContact {
+  name?: string;
+  phone?: string;
+  address?: string;
+}
+
 /** Parties on either side. Stored as arrays so a multi-petitioner / multi-
  *  respondent matter ("Rishabh, Shashwat & Yatharth vs Parle, Britannia &
  *  ITC") is captured exactly. The display title (`caseTitle` / `partyTitle`)
@@ -169,6 +178,8 @@ export interface ICase extends Document {
   parties?: ICaseParties;
   /** Subject of the case — strategic notes the team agrees on early. */
   subject?: ICaseSubject;
+  /** Who to contact about this case (name / phone / address). */
+  pointOfContact?: ICasePointOfContact;
   /** External e-Courts / SC services link, if any. */
   eCourtLink?: string;
   /** Filing status — meaningful when the case has been drafted / submitted
@@ -364,6 +375,15 @@ const subjectSchema = new Schema<ICaseSubject>(
   { _id: false }
 );
 
+const pointOfContactSchema = new Schema<ICasePointOfContact>(
+  {
+    name:    { type: String, trim: true },
+    phone:   { type: String, trim: true },
+    address: { type: String, trim: true },
+  },
+  { _id: false }
+);
+
 const reportingStatusSchema = new Schema<IReportingStatus>(
   {
     status:         { type: String, enum: ["pending", "success", "conflict"], required: true },
@@ -527,6 +547,7 @@ const caseSchema = new Schema<ICase>(
     state: { type: String, trim: true, index: true },
     parties: partiesSchema,
     subject: subjectSchema,
+    pointOfContact: pointOfContactSchema,
     eCourtLink: { type: String, trim: true },
     filingStatus: { type: String, enum: ["drafting", "filing", "filed"] },
     reportingStatus: reportingStatusSchema,

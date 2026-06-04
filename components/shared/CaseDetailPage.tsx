@@ -68,6 +68,7 @@ type PopulatedCase = {
   state?: string;
   parties?: { petitioners?: string[]; respondents?: string[] };
   subject?: { courtThey?: string; ourPoints?: string; reason?: string };
+  pointOfContact?: { name?: string; phone?: string; address?: string };
   eCourtLink?: string;
   filingStatus?: "drafting" | "filing" | "filed";
   reportingStatus?: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: string };
@@ -2087,6 +2088,93 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
   );
 }
 
+/* ── Point of contact card ──────────────────────────────────────────────── */
+function PointOfContactCard({ caseId, poc, canEdit, onChanged }: {
+  caseId: string;
+  poc?: { name?: string; phone?: string; address?: string };
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ name: poc?.name ?? "", phone: poc?.phone ?? "", address: poc?.address ?? "" });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (!editing) setDraft({ name: poc?.name ?? "", phone: poc?.phone ?? "", address: poc?.address ?? "" });
+  }, [poc, editing]);
+
+  const has = (v?: string) => !!(v && v.trim());
+  const anything = has(poc?.name) || has(poc?.phone) || has(poc?.address);
+  if (!anything && !canEdit) return null;
+
+  async function save() {
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pointOfContact: { name: draft.name.trim(), phone: draft.phone.trim(), address: draft.address.trim() } }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  const inCls = "w-full px-3 py-2 rounded-xl border text-sm focus:outline-none";
+  const inStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" };
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center justify-between"
+        style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>{t("Point of Contact")}</span>
+        {canEdit && !editing && (
+          <button type="button" onClick={() => setEditing(true)} className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+            {anything ? t("Edit") : `+ ${t("Add")}`}
+          </button>
+        )}
+      </div>
+      {!editing ? (
+        <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          {has(poc?.name) && <Line label={t("Contact name")}>{poc!.name}</Line>}
+          {has(poc?.phone) && <Line label={t("Contact phone")}><a href={`tel:${poc!.phone}`} className="hover:underline" style={{ color: "var(--accent)" }}>{poc!.phone}</a></Line>}
+          {has(poc?.address) && <Line label={t("Contact address")} wide><span className="block whitespace-pre-line">{poc!.address}</span></Line>}
+          {!anything && <p className="text-xs text-(--muted) italic sm:col-span-2">{t("Who should we contact about this case?")}</p>}
+        </div>
+      ) : (
+        <div className="px-5 py-4 space-y-3">
+          {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Contact name")}</label>
+              <input value={draft.name} onChange={e => setDraft(s => ({ ...s, name: e.target.value }))} className={inCls} style={inStyle} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Contact phone")}</label>
+              <input value={draft.phone} onChange={e => setDraft(s => ({ ...s, phone: e.target.value }))} type="tel" className={inCls} style={inStyle} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Contact address")}</label>
+              <textarea value={draft.address} onChange={e => setDraft(s => ({ ...s, address: e.target.value }))} rows={2} className={`${inCls} resize-y`} style={inStyle} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={save} disabled={saving}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{saving ? t("Saving…") : t("Save")}</button>
+            <button type="button" onClick={() => setEditing(false)}
+              className="px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -2288,6 +2376,9 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           rendered when at least one of these new fields is set so older
           cases (pre court-type-aware flow) don't show empty headers. */}
       <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+
+      {/* Point of contact — who to call about this case. */}
+      <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
 
       {/* Multi-lawyer share panel — lead + shared members + add/remove. */}
       <LitigationTeamPanel
