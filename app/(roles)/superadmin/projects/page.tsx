@@ -16,6 +16,7 @@ type Project = {
   endDate?: string;
   totalBudget: number;
   spent: number;
+  owed: number;
   remaining: number;
   manager?: Manager;
   allocations: Allocation[];
@@ -192,9 +193,10 @@ export default function ProjectsPage() {
                     style={{ background: stat.bg, color: stat.text }}>{p.status.replace("_", " ")}</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <Stat label={t("Total")} value={`₹${p.totalBudget.toLocaleString("en-IN")}`} />
                   <Stat label={t("Spent")} value={`₹${p.spent.toLocaleString("en-IN")}`} color={overrun ? "var(--error-text)" : "var(--text)"} />
+                  <Stat label={t("Owed")} value={`₹${(p.owed ?? 0).toLocaleString("en-IN")}`} color={(p.owed ?? 0) > 0 ? "var(--warning-text)" : "var(--muted)"} />
                   <Stat label={t("Remaining")} value={`₹${p.remaining.toLocaleString("en-IN")}`} color="var(--success-text)" />
                 </div>
 

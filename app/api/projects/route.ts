@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Project from "@/models/Project";
 import Expense from "@/models/Expense";
+import Case from "@/models/Case";
 import mongoose from "mongoose";
 
 const SUPERADMIN_ROLES = ["superadmin", "director"]; // director can also see + create for the org
@@ -16,19 +17,39 @@ export async function GET() {
   try {
     await requireSession();
     await connectDB();
-    const [projects, paid] = await Promise.all([
-      Project.find({}).sort({ createdAt: -1 }).populate("manager", "name email").lean(),
-      Expense.aggregate([
-        { $match: { status: "paid" } },
-        { $group: { _id: "$project", spent: { $sum: "$amount" } } },
-      ]),
-    ]);
-    const spentByProject = new Map(paid.map(p => [String(p._id), p.spent as number]));
 
-    const enriched = projects.map(p => {
-      const spent = spentByProject.get(String(p._id)) ?? 0;
+    const projects = await Project.find({}).sort({ createdAt: -1 }).populate("manager", "name email").lean();
+
+    // Pull every expense that affects fund maths: already-paid (deducted) and
+    // director-approved-but-unpaid (money we still OWE). Each is attributed to a
+    // project either directly (expense.project) or via its case's project, so
+    // case-scoped requisitions/reimbursements draw down the right fund.
+    const expenses = await Expense.find({ status: { $in: ["director_approved", "paid"] } })
+      .select("project case amount status").lean();
+
+    const caseScoped = [...new Set(expenses.filter((e) => !e.project && e.case).map((e) => String(e.case)))];
+    const caseToProject = new Map<string, string>();
+    if (caseScoped.length) {
+      const cases = await Case.find({ _id: { $in: caseScoped } }).select("project").lean();
+      for (const c of cases) if (c.project) caseToProject.set(String(c._id), String(c.project));
+    }
+
+    const paid = new Map<string, number>();
+    const owed = new Map<string, number>();
+    for (const e of expenses) {
+      const pid = e.project ? String(e.project) : (e.case ? caseToProject.get(String(e.case)) : undefined);
+      if (!pid) continue;
+      const amt = e.amount ?? 0;
+      if (e.status === "paid") paid.set(pid, (paid.get(pid) ?? 0) + amt);
+      else owed.set(pid, (owed.get(pid) ?? 0) + amt); // director_approved → still to be paid
+    }
+
+    const enriched = projects.map((p) => {
+      const id = String(p._id);
+      const spent = paid.get(id) ?? 0;
+      const owedAmt = owed.get(id) ?? 0;
       const remaining = Math.max(0, (p.totalBudget ?? 0) - spent);
-      return { ...p, spent, remaining };
+      return { ...p, spent, owed: owedAmt, remaining };
     });
     return NextResponse.json({ projects: enriched });
   } catch (e) {

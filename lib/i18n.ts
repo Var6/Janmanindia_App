@@ -365,6 +365,7 @@ const hi: Record<string, string> = {
   "Last hearing": "पिछली सुनवाई",
   "Add Intervention": "हस्तक्षेप जोड़ें",
   "Intervention type": "हस्तक्षेप प्रकार",
+  "Owed": "देय",
   "Project & Phase": "परियोजना और चरण",
   "Not assigned to a project yet.": "अभी तक किसी परियोजना से नहीं जोड़ा गया।",
   "Phase": "चरण",
