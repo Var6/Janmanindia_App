@@ -263,3 +263,24 @@ input::placeholder, textarea::placeholder {
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
 }
+
+/* ── Content protection ──────────────────────────────────────────────────── */
+/*  Disable text selection app-wide as a second layer behind the JS clipboard
+ *  guard (components/security/SecurityGuard.tsx). Inputs/textareas still accept
+ *  typing — selection is suppressed so there's nothing to drag-copy out, and
+ *  the JS guard blocks copy/cut/paste/contextmenu outright. Images can't be
+ *  dragged out either. This cannot stop OS-level screenshots (no web API can). */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none; /* suppress iOS long-press copy/save menu */
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: auto;
+}

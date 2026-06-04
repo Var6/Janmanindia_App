@@ -6,6 +6,7 @@ import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import SessionProvider from "@/components/ui/SessionProvider";
 import LanguageProvider from "@/components/i18n/LanguageProvider";
+import SecurityGuard from "@/components/security/SecurityGuard";
 import { isLang, DEFAULT_LANG } from "@/lib/i18n";
 
 const sans = Manrope({
@@ -74,6 +75,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <LanguageProvider initialLang={lang}>
             <SessionProvider>
+              <SecurityGuard />
               {children}
             </SessionProvider>
           </LanguageProvider>
