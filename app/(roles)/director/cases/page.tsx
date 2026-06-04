@@ -1,20 +1,12 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import DirectorCasesTable, { type CaseRow } from "@/components/director/DirectorCasesTable";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
-
-const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
-  Open:      { bg: "var(--info-bg)",      text: "var(--info-text)"    },
-  Closed:    { bg: "var(--bg-secondary)", text: "var(--muted)"        },
-  Escalated: { bg: "var(--error-bg)",     text: "var(--error-text)"   },
-  Pending:   { bg: "var(--warning-bg)",   text: "var(--warning-text)" },
-  Dismissed: { bg: "var(--error-bg)",     text: "var(--error-text)"   },
-};
 
 const STAT_COLORS: Record<string, { card: string; num: string; label: string }> = {
   Open:      { card: "var(--info-bg)",      num: "var(--info-text)",    label: "var(--info-text)"    },
@@ -51,6 +43,22 @@ export default async function AdminCasesPage() {
     await getServerLang(),
   );
 
+  // Serialize to plain rows for the interactive client table (filters / sort /
+  // export). "Place filed" = the district (fall back to state / court).
+  const rows: CaseRow[] = cases.map((c) => ({
+    id: String(c._id),
+    caseNumber: c.caseNumber ?? "",
+    title: tt(c.caseTitle),
+    currentStep: c.currentStep ? tt(c.currentStep) : undefined,
+    path: c.path,
+    status: c.status,
+    district: c.district || c.state || c.courtName || "—",
+    court: c.courtName || "",
+    community: (c.community as unknown as { name?: string } | null)?.name ?? "",
+    lawyer: (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",
+    isExisting: !!c.isExistingCase,
+  }));
+
   return (
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
@@ -84,77 +92,7 @@ export default async function AdminCasesPage() {
           <p className="text-sm text-(--muted)">{dbOk ? t("No cases in the system yet.") : t("Connect database.")}</p>
         </div>
       ) : (
-        <div className="rounded-2xl border overflow-hidden"
-          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-
-          {/* Table header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b text-xs font-semibold text-(--muted) uppercase tracking-wide"
-            style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
-            <span>{t("Case")}</span>
-            <span className="px-3 text-center">{t("Type")}</span>
-            <span className="px-3 text-center">{t("Lawyer")}</span>
-            <span className="px-3 text-center">{t("Status")}</span>
-            <span className="px-3 text-center">{t("Actions")}</span>
-          </div>
-
-          <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-            {cases.map((c) => {
-              const community = c.community as unknown as { name: string } | null;
-              const lawyer  = c.litigationMember as unknown as { name: string } | null;
-              const st      = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
-              return (
-                <div key={String(c._id)}
-                  className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-3 transition-colors hover:bg-(--bg)">
-
-                  {/* Case title + number + community */}
-                  <Link href={`/director/cases/${String(c._id)}`} className="min-w-0 group">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
-                        style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
-                        {c.caseNumber ?? "—"}
-                      </span>
-                      {c.isExistingCase && (
-                        <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
-                          style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}
-                          title="Tracked — already in progress when added">
-                          {t("Existing")}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">
-                      {tt(c.caseTitle)}
-                    </p>
-                    {c.currentStep && (
-                      <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{tt(c.currentStep)}</p>
-                    )}
-                    <p className="text-xs text-(--muted)">{community?.name ?? "—"}</p>
-                  </Link>
-
-                  <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("HC")}</span>
-                  <span className="px-3 text-xs text-(--text)">{lawyer?.name ?? <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
-
-                  <span className="mx-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                    style={{ background: st.bg, color: st.text }}>
-                    {c.status}
-                  </span>
-
-                  <div className="flex items-center gap-1 pl-3">
-                    <Link href={`/director/cases/${String(c._id)}`}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                      style={{ color: "var(--accent)", background: "color-mix(in srgb,var(--accent) 8%,transparent)" }}>
-                      {t("View")}
-                    </Link>
-                    <Link href={`/director/assign?caseId=${String(c._id)}`}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                      style={{ color: "var(--muted)", background: "var(--bg-secondary)" }}>
-                      {t("Reassign")}
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <DirectorCasesTable cases={rows} />
       )}
     </div>
   );

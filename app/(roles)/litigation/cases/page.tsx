@@ -6,6 +6,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
+import LitigationCasesList, { type LitCaseRow } from "@/components/litigation/LitigationCasesList";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
 
@@ -52,6 +53,29 @@ export default async function LitigationCasesPage() {
   // in the active language without per-row API calls.
   const tt = await translateTitles(cases.map((c) => c.caseTitle), await getServerLang());
 
+  // Court label shown on each card (mirrors the previous inline logic).
+  const courtLabel = (c: (typeof cases)[number]) =>
+    c.courtType === "district" ? (c.courtName ?? t("Civil / District Court"))
+    : c.courtType === "supreme" ? t("Supreme Court")
+    : c.courtType === "other"   ? (c.courtName ?? t("Tribunal / Forum"))
+    : c.path === "criminal"     ? t("Criminal")
+    : (c.courtName ?? t("High Court"));
+
+  // Serialize active cases for the interactive (filter / sort) client list.
+  const activeRows: LitCaseRow[] = open.map((c) => ({
+    id: String(c._id),
+    caseNumber: c.caseNumber ?? "",
+    title: tt(c.caseTitle),
+    status: c.status,
+    courtLabel: courtLabel(c),
+    community: (c.community as unknown as { name?: string } | null)?.name ?? "",
+    sw: (c.socialWorker as unknown as { name?: string } | null)?.name ?? "",
+    place: c.district || c.courtName || c.state || "—",
+    hearingISO: c.nextHearingDate ? new Date(c.nextHearingDate).toISOString() : undefined,
+    docs: c.documents?.length ?? 0,
+    diary: c.caseDiary?.length ?? 0,
+  }));
+
   return (
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
@@ -73,64 +97,7 @@ export default async function LitigationCasesPage() {
             <p className="text-sm text-(--muted)">{dbOk ? t("No active cases assigned.") : t("Connect database.")}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {open.map((c) => {
-              const community = c.community as unknown as { name: string; phone?: string } | null;
-              const sw = c.socialWorker as unknown as { name: string } | null;
-              const hearingDate = c.nextHearingDate ? new Date(c.nextHearingDate) : null;
-              const daysToHearing = hearingDate
-                ? Math.ceil((hearingDate.getTime() - Date.now()) / 86400000)
-                : null;
-              return (
-                <Link
-                  key={String(c._id)}
-                  href={`/litigation/cases/${String(c._id)}`}
-                  className="block bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(accent) transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        {c.caseNumber && (
-                          <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
-                            style={{ background: "color-mix(in srgb,var(--accent) 10%,transparent)", color: "var(--accent)" }}>
-                            {c.caseNumber}
-                          </span>
-                        )}
-                        <span className="text-xs text-(--muted)">
-                          {c.courtType === "district"  ? (c.courtName ?? t("Civil / District Court"))
-                          : c.courtType === "supreme"  ? t("Supreme Court")
-                          : c.courtType === "other"    ? (c.courtName ?? t("Tribunal / Forum"))
-                          : c.path === "criminal"      ? t("Criminal")
-                          : c.courtName               ?? t("High Court")}
-                        </span>
-                      </div>
-                      <p className="font-semibold text-(--text) truncate">{tt(c.caseTitle)}</p>
-                      <p className="text-xs text-(--muted) mt-0.5">
-                        {t("Community")}: {community?.name ?? "—"} · {t("SW")}: {sw?.name ?? "—"}
-                      </p>
-                    </div>
-                    <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full`}
-                      style={STATUS_STYLE_LIT[c.status] as React.CSSProperties ?? { background: "var(--bg-secondary)", color: "var(--muted)" }}>
-                      {c.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    {hearingDate ? (
-                      <span className="font-medium"
-                        style={{ color: daysToHearing !== null && daysToHearing <= 3 ? "var(--error-text)" : "var(--muted)" }}>
-                        {t("Next hearing")}: {hearingDate.toLocaleDateString("en-IN")}
-                        {daysToHearing !== null && daysToHearing >= 0 && ` (${daysToHearing}d)`}
-                      </span>
-                    ) : (
-                      <span className="text-(--muted)">{t("No hearing date set")}</span>
-                    )}
-                    <span className="text-(--muted)">{c.documents?.length ?? 0} {t("doc(s)")}</span>
-                    <span className="text-(--muted)">{c.caseDiary?.length ?? 0} {t("diary entries")}</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <LitigationCasesList rows={activeRows} />
         )}
       </section>
 
