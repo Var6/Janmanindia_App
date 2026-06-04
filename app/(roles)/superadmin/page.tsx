@@ -139,7 +139,6 @@ export default async function SuperAdminDashboard() {
           { href: "/director",    label: t("Admin Panel") },
           { href: "/hr",       label: t("HR Panel") },
           { href: "/finance",  label: t("Finance Panel") },
-          { href: "/dev",      label: t("Dev Bypass Panel") },
         ].map((link) => (
           <Link key={link.href} href={link.href}
             className="p-4 rounded-xl bg-(--surface) border border-(--border) hover:border-(--accent) transition-colors text-sm font-medium text-center text-(--text)">

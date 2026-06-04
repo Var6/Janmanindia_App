@@ -19,8 +19,7 @@ export default function NoDBBanner() {
         <p className="mt-0.5 text-xs opacity-80">
           {t("Add")} <code className="rounded px-1 py-0.5 font-mono" style={{ background: "rgba(0,0,0,0.08)" }}>MONGODB_URI</code> {t("to")}{" "}
           <code className="rounded px-1 py-0.5 font-mono" style={{ background: "rgba(0,0,0,0.08)" }}>.env.local</code>{" "}
-          {t("and restart the dev server. Then visit")}{" "}
-          <a href="/dev" className="underline underline-offset-2 hover:opacity-80">/dev</a> {t("to seed test data.")}
+          {t("and restart the server.")}
         </p>
       </div>
     </div>

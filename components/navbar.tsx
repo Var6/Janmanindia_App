@@ -105,11 +105,6 @@ export default function Navbar() {
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           </button>
 
-          <Link href="/dev"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-(--border) bg-(--bg) px-3.5 py-2 text-sm font-medium text-(--muted) hover:text-(--text) hover:border-(--accent) transition-all">
-            {t("Dev")}
-          </Link>
-
           <Link href="/login"
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-(--accent-contrast) transition-all hover:brightness-110 shadow-sm"
             style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
