@@ -45,6 +45,25 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       project.totalBudget = project.allocations.reduce((s, a) => s + (a.amount ?? 0), 0);
     }
 
+    // Replace the full phases array (the UI sends the edited list).
+    if (Array.isArray(body.phases)) {
+      project.phases = body.phases.map((p: Record<string, unknown>) => ({
+        name: String(p.name ?? "").trim(),
+        startDate: p.startDate ? new Date(p.startDate as string) : undefined,
+        endDate:   p.endDate   ? new Date(p.endDate as string)   : undefined,
+        budget: p.budget != null ? Math.max(0, Number(p.budget)) : undefined,
+        status: ["upcoming", "active", "completed"].includes(p.status as string) ? (p.status as string) : "upcoming",
+        objectives: Array.isArray(p.objectives)
+          ? (p.objectives as Record<string, unknown>[]).map((o) => ({
+              label: String(o.label ?? "").trim(),
+              target: o.target != null ? Number(o.target) : undefined,
+              current: o.current != null ? Number(o.current) : 0,
+              done: !!o.done,
+            })).filter((o) => o.label)
+          : [],
+      })).filter((p: { name: string }) => p.name) as typeof project.phases;
+    }
+
     await project.save();
     return NextResponse.json({ project });
   } catch (e) {

@@ -69,6 +69,8 @@ type PopulatedCase = {
   parties?: { petitioners?: string[]; respondents?: string[] };
   subject?: { courtThey?: string; ourPoints?: string; reason?: string };
   pointOfContact?: { name?: string; phone?: string; address?: string };
+  project?: { _id: string; name: string; code: string; phases?: { name: string }[] } | null;
+  projectPhase?: string;
   eCourtLink?: string;
   filingStatus?: "drafting" | "filing" | "filed";
   reportingStatus?: { status: "pending" | "success" | "conflict"; defectNote?: string; defectDeadline?: string };
@@ -2175,6 +2177,104 @@ function PointOfContactCard({ caseId, poc, canEdit, onChanged }: {
   );
 }
 
+/* ── Project & phase card ───────────────────────────────────────────────── */
+function ProjectPhaseCard({ caseId, project, phase, canChange, onChanged }: {
+  caseId: string;
+  project?: { _id: string; name: string; code: string; phases?: { name: string }[] } | null;
+  phase?: string;
+  canChange: boolean;
+  onChanged: () => void;
+}) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [projects, setProjects] = useState<Array<{ _id: string; name: string; code: string; phases?: { name: string }[] }>>([]);
+  const [pid, setPid] = useState(project?._id ?? "");
+  const [ph, setPh] = useState(phase ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    if (!editing) return;
+    fetch("/api/projects").then(r => r.json()).then(d => setProjects(d.projects ?? [])).catch(() => {});
+  }, [editing]);
+  useEffect(() => { if (!editing) { setPid(project?._id ?? ""); setPh(phase ?? ""); } }, [project, phase, editing]);
+
+  const selected = projects.find((p) => p._id === pid) ?? (project && project._id === pid ? project : undefined);
+  const phaseOpts = (selected?.phases ?? []).map((x) => x.name);
+
+  async function save() {
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project: pid || null, projectPhase: ph || null }),
+      });
+      if (res.ok) { setEditing(false); onChanged(); }
+      else { const d = await res.json(); setErr(d.error ?? "Failed."); }
+    } catch { setErr("Network error."); }
+    finally { setSaving(false); }
+  }
+
+  if (!project && !canChange) return null;
+  const inStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" };
+  const inCls = "w-full px-3 py-2 rounded-xl border text-sm focus:outline-none";
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-4 py-2 border-b flex items-center justify-between"
+        style={{ background: "color-mix(in srgb, var(--accent) 6%, var(--surface))", borderColor: "var(--border)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>{t("Project & Phase")}</span>
+        {canChange && !editing && (
+          <button type="button" onClick={() => setEditing(true)} className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
+            {project ? t("Change") : `+ ${t("Assign")}`}
+          </button>
+        )}
+      </div>
+      {!editing ? (
+        <div className="px-5 py-4 text-sm">
+          {project ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "color-mix(in srgb,var(--accent) 12%,transparent)", color: "var(--accent)" }}>{project.code}</span>
+              <span className="font-semibold text-(--text)">{project.name}</span>
+              {phase && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{phase}</span>}
+            </div>
+          ) : (
+            <p className="text-xs text-(--muted) italic">{t("Not assigned to a project yet.")}</p>
+          )}
+        </div>
+      ) : (
+        <div className="px-5 py-4 space-y-3">
+          {err && <p className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Project")}</label>
+              <select value={pid} onChange={(e) => { setPid(e.target.value); setPh(""); }} className={inCls} style={inStyle}>
+                <option value="">{t("— None —")}</option>
+                {projects.map((p) => <option key={p._id} value={p._id}>{p.code} — {p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-(--muted) mb-1">{t("Phase")}</label>
+              <select value={ph} onChange={(e) => setPh(e.target.value)} className={inCls} style={inStyle} disabled={!pid || phaseOpts.length === 0}>
+                <option value="">{t("— None —")}</option>
+                {phaseOpts.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={save} disabled={saving}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{saving ? t("Saving…") : t("Save")}</button>
+            <button type="button" onClick={() => setEditing(false)}
+              className="px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 interface Props {
   caseId: string;
@@ -2196,11 +2296,12 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
   // The current user — used to grant the case creator full edit rights on the
   // detail page regardless of their role (the server enforces the same rule).
   const [meId, setMeId] = useState<string | null>(null);
+  const [meRole, setMeRole] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/users/me")
       .then(r => r.json())
-      .then(d => { if (d.user) setMeId(String(d.user._id)); })
+      .then(d => { if (d.user) { setMeId(String(d.user._id)); setMeRole(d.user.role ?? ""); } })
       .catch(() => {});
   }, []);
 
@@ -2379,6 +2480,16 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
 
       {/* Point of contact — who to call about this case. */}
       <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
+
+      {/* Project & funding-phase this case is filed under. Only the creator or
+          a director / administrator may change the trajectory. */}
+      <ProjectPhaseCard
+        caseId={c._id}
+        project={c.project}
+        phase={c.projectPhase}
+        canChange={isCreator || ["director", "superadmin", "administrator"].includes(meRole)}
+        onChanged={fetchCase}
+      />
 
       {/* Multi-lawyer share panel — lead + shared members + add/remove. */}
       <LitigationTeamPanel

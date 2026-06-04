@@ -142,6 +142,11 @@ export interface ICase extends Document {
   caseNumber: string;
   status: CaseStatus;
   path: CasePath;
+  /** The NGO project/grant this case is filed under (e.g. DLF, GBV). Drives
+   *  which fund expenses on the case draw down. */
+  project?: mongoose.Types.ObjectId;
+  /** The funding phase within that project the case belongs to. */
+  projectPhase?: string;
   /** eCourts-style short code (e.g. "WP(C)", "FIR", "MACT", "POCSO"). */
   caseType?: string;
   /** District the matter is registered in (one of the Janman fellowship
@@ -529,6 +534,8 @@ const caseSchema = new Schema<ICase>(
       default: "Pending",
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
+    project: { type: Schema.Types.ObjectId, ref: "Project", index: true },
+    projectPhase: { type: String, trim: true },
     caseType: { type: String, trim: true, index: true },
     district: { type: String, trim: true, index: true },
     causeTitle: { type: String, trim: true },

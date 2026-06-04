@@ -18,6 +18,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .populate("litigationMember", "name email")
       .populate("litigationMembers", "name email")
       .populate("socialWorker", "name email")
+      .populate("project", "name code phases")
       .populate("auditLog.by", "name role")
       .lean();
 
@@ -71,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // superadmin can edit any case. A litigation member can edit a case they're
     // the lead on OR a shared member of. Everyone else is forbidden.
     const isCreator = String(caseDoc.createdBy ?? "") !== "" && String(caseDoc.createdBy) === session.id;
-    const isPrivileged = session.role === "director" || session.role === "superadmin";
+    const isPrivileged = session.role === "director" || session.role === "superadmin" || session.role === "administrator";
     let isAssignedLitigation = false;
     if (session.role === "litigation") {
       const lead = String(caseDoc.litigationMember ?? "");
@@ -234,6 +235,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
       update[field] = userId;
       logAudit("metadata_updated", `Assigned ${label}: ${target.name}`);
+    }
+
+    /* Project / phase trajectory. Only the case CREATOR or a director /
+       administrator / superadmin may change which project + phase a case is
+       filed under — an assigned (non-creator) litigation member cannot. */
+    if (body.project !== undefined || body.projectPhase !== undefined) {
+      if (!isPrivileged && !isCreator) {
+        return NextResponse.json(
+          { error: "Only the case creator, a director, or an administrator can change the project." },
+          { status: 403 }
+        );
+      }
+      if (body.project !== undefined) {
+        const pid = String(body.project ?? "").trim();
+        if (!pid) {
+          update.project = null;
+          logAudit("metadata_updated", "Removed project");
+        } else if (/^[a-f\d]{24}$/i.test(pid)) {
+          update.project = pid;
+          logAudit("metadata_updated", "Changed project");
+        } else {
+          return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
+        }
+      }
+      if (body.projectPhase !== undefined) {
+        update.projectPhase = String(body.projectPhase ?? "").trim() || null;
+        logAudit("metadata_updated", "Changed project phase");
+      }
     }
 
     /* List of Dates entry — append a chronological note to the HC matter's

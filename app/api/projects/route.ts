@@ -47,10 +47,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { code, name, description, status, startDate, endDate, totalBudget, managerId, allocations } = body as {
+    const { code, name, description, status, startDate, endDate, totalBudget, managerId, allocations, phases } = body as {
       code: string; name: string; description?: string; status?: string;
       startDate?: string; endDate?: string; totalBudget?: number; managerId?: string;
       allocations?: { source: string; amount: number; receivedAt?: string; notes?: string }[];
+      phases?: { name: string; startDate?: string; endDate?: string; budget?: number; status?: string; objectives?: { label: string; target?: number; current?: number; done?: boolean }[] }[];
     };
 
     const cleanCode = String(code ?? "").toUpperCase().replace(/[^A-Z]/g, "");
@@ -77,6 +78,14 @@ export async function POST(request: NextRequest) {
         receivedAt: a.receivedAt ? new Date(a.receivedAt) : undefined,
         notes: a.notes,
       })),
+      phases: (phases ?? []).map(p => ({
+        name: String(p.name ?? "").trim(),
+        startDate: p.startDate ? new Date(p.startDate) : undefined,
+        endDate:   p.endDate   ? new Date(p.endDate)   : undefined,
+        budget: p.budget != null ? Math.max(0, Number(p.budget)) : undefined,
+        status: ["upcoming", "active", "completed"].includes(p.status as string) ? p.status : "upcoming",
+        objectives: (p.objectives ?? []).map(o => ({ label: String(o.label ?? "").trim(), target: o.target, current: o.current ?? 0, done: !!o.done })),
+      })).filter(p => p.name),
       createdBy: session.id,
     });
 
