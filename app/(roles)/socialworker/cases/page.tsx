@@ -7,6 +7,7 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import ExportCasesButton from "@/components/shared/ExportCasesButton";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
 
@@ -104,7 +105,24 @@ export default async function SWCasesPage() {
 
       {/* Assigned Cases */}
       <section>
-        <h2 className="font-semibold text-(--text) mb-3">{t("Assigned Cases")} ({cases.length})</h2>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h2 className="font-semibold text-(--text)">{t("Assigned Cases")} ({cases.length})</h2>
+          <ExportCasesButton
+            filename="janman-sw-cases"
+            headers={["Court Case No.", "JMI Number", "Title", "Status", "District", "Court", "Community", "Lawyer", "Next Hearing"]}
+            rows={cases.map((c) => [
+              c.courtCaseNumber ?? "",
+              c.caseNumber ?? "",
+              c.caseTitle ?? "",
+              c.status ?? "",
+              c.district ?? "",
+              c.courtName ?? "",
+              (c.community as unknown as { name?: string } | null)?.name ?? "",
+              (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",
+              c.nextHearingDate ? new Date(c.nextHearingDate).toLocaleDateString("en-IN") : "",
+            ])}
+          />
+        </div>
         {cases.length === 0 ? (
           <div className="py-16 text-center rounded-2xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>

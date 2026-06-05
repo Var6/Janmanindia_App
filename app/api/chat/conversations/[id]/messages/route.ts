@@ -59,7 +59,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const audioUrl = body.audioUrl ? String(body.audioUrl) : undefined;
     const audioDurationSec = typeof body.audioDurationSec === "number" ? Math.max(0, Math.floor(body.audioDurationSec)) : undefined;
 
-    if (!text && !audioUrl) return NextResponse.json({ error: "Empty message" }, { status: 400 });
+    // Optional attached case reference for discussion.
+    let caseRef: { case: string; caseNumber: string; caseTitle: string } | undefined;
+    if (body.caseRef?.caseId && mongoose.Types.ObjectId.isValid(body.caseRef.caseId)) {
+      caseRef = {
+        case: String(body.caseRef.caseId),
+        caseNumber: String(body.caseRef.caseNumber ?? "").slice(0, 60),
+        caseTitle: String(body.caseRef.caseTitle ?? "").slice(0, 200),
+      };
+    }
+
+    if (!text && !audioUrl && !caseRef) return NextResponse.json({ error: "Empty message" }, { status: 400 });
     if (text.length > 4000) return NextResponse.json({ error: "Too long" }, { status: 400 });
 
     await connectDB();
@@ -73,13 +83,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       text,
       audioUrl,
       audioDurationSec,
+      caseRef,
       readBy: [me],
     });
 
     conv.lastMessageAt = new Date();
     conv.lastMessagePreview = audioUrl
       ? `🎤 Voice (${audioDurationSec ?? 0}s)${text ? ` · ${text.slice(0, 120)}` : ""}`
-      : text.slice(0, 200);
+      : caseRef && !text
+        ? `📎 ${caseRef.caseNumber || caseRef.caseTitle || "Case"}`
+        : text.slice(0, 200);
     await conv.save();
 
     const populated = await msg.populate("sender", "name role");

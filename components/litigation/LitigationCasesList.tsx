@@ -63,6 +63,27 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
     });
   }, [rows, q, status, place, sort]);
 
+  function exportCsv() {
+    const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("en-IN") : "");
+    const headers = ["Court Case No.", "JMI Number", "Title", "Status", "Court", "Place", "Community", "Social Worker", "Next Hearing"];
+    const esc = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [
+      headers.map(esc).join(","),
+      ...view.map((c) =>
+        [c.courtNumber, c.caseNumber, c.title, c.status, c.courtLabel, c.place, c.community, c.sw, fmt(c.hearingISO)]
+          .map((v) => esc(String(v ?? ""))).join(",")
+      ),
+    ];
+    // BOM so Excel reads UTF-8 (Hindi/Devanagari) correctly.
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `janman-cases-${view.length}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const selectStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" } as React.CSSProperties;
   const selectCls = "px-2.5 py-2 rounded-lg border text-xs focus:outline-none";
 
@@ -86,6 +107,11 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
           <option value="title">{t("Title")}</option>
           <option value="place">{t("Place filed")}</option>
         </select>
+        <button type="button" onClick={exportCsv} disabled={view.length === 0}
+          className="px-3 py-2 rounded-lg border text-xs font-semibold transition-colors disabled:opacity-50 hover:border-(--accent)"
+          style={selectStyle} title={t("Export to Excel")}>
+          ⬇ {t("Excel")}
+        </button>
       </div>
       <p className="text-xs text-(--muted)">{t("Showing")} {view.length} {t("of")} {rows.length}</p>
 

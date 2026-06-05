@@ -19,10 +19,13 @@ interface Message {
   text: string;
   audioUrl?: string;
   audioDurationSec?: number;
+  caseRef?: { case: string; caseNumber: string; caseTitle: string };
   createdAt: string;
   editedAt?: string;
   sender: { _id: string; name: string; role: string };
 }
+
+interface CaseOption { id: string; caseNumber: string; caseTitle: string }
 
 interface Props {
   currentUserId: string;
@@ -53,6 +56,36 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   const [groupSelected, setGroupSelected] = useState<Set<string>>(new Set());
   const [groupTitle, setGroupTitle] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
+  // Attach-a-case-for-discussion picker.
+  const [attachedCase, setAttachedCase] = useState<CaseOption | null>(null);
+  const [casePickerOpen, setCasePickerOpen] = useState(false);
+  const [caseOptions, setCaseOptions] = useState<CaseOption[] | null>(null);
+  const [caseQuery, setCaseQuery] = useState("");
+
+  function caseHref(id: string): string {
+    switch (currentUserRole) {
+      case "litigation": return `/litigation/cases/${id}`;
+      case "director":
+      case "superadmin":
+      case "administrator": return `/director/cases/${id}`;
+      case "socialworker": return `/socialworker/cases/${id}`;
+      case "community": return `/community/case-tracker/${id}`;
+      default: return "";
+    }
+  }
+
+  async function loadCaseOptions() {
+    if (caseOptions) return;
+    try {
+      const res = await fetch("/api/cases?limit=100");
+      const d = await res.json();
+      setCaseOptions((d.cases ?? []).map((c: { _id: string; caseNumber?: string; courtCaseNumber?: string; caseTitle?: string }) => ({
+        id: String(c._id),
+        caseNumber: c.courtCaseNumber || c.caseNumber || "",
+        caseTitle: c.caseTitle || "",
+      })));
+    } catch { setCaseOptions([]); }
+  }
   const lastTsRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const focusedRef = useRef(true);
@@ -180,13 +213,16 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!activeId || !text.trim() || sending) return;
+    if (!activeId || sending || (!text.trim() && !attachedCase)) return;
     setSending(true);
     try {
       const res = await fetch(`/api/chat/conversations/${activeId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({
+          text,
+          ...(attachedCase ? { caseRef: { caseId: attachedCase.id, caseNumber: attachedCase.caseNumber, caseTitle: attachedCase.caseTitle } } : {}),
+        }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -196,6 +232,8 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
         setMessages((prev) => [...prev, d.message]);
         lastTsRef.current = d.message.createdAt;
         setText("");
+        setAttachedCase(null);
+        setCasePickerOpen(false);
       }
     } finally { setSending(false); }
   }
@@ -525,6 +563,21 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                               <audio controls preload="metadata" src={m.audioUrl}
                                 className="block max-w-full mb-1" style={{ minWidth: "12rem" }} />
                             )}
+                            {m.caseRef?.case && (() => {
+                              const href = caseHref(m.caseRef.case);
+                              const inner = (
+                                <span className="flex items-center gap-2">
+                                  <span className="text-base leading-none">📎</span>
+                                  <span className="min-w-0">
+                                    <span className="block text-xs font-semibold truncate">{m.caseRef!.caseTitle || t("Case")}</span>
+                                    {m.caseRef!.caseNumber && <span className="block text-[10px] font-mono opacity-70">{m.caseRef!.caseNumber}</span>}
+                                  </span>
+                                </span>
+                              );
+                              return href
+                                ? <a href={href} className="block mb-1 px-2.5 py-1.5 rounded-lg border hover:opacity-90" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>{inner}</a>
+                                : <div className="block mb-1 px-2.5 py-1.5 rounded-lg border" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>{inner}</div>;
+                            })()}
                             {m.text && <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>}
                             <p className="text-[10px] opacity-60 mt-0.5 text-right">
                               {m.audioUrl && typeof m.audioDurationSec === "number" && `🎤 ${m.audioDurationSec}s · `}
@@ -540,16 +593,63 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
               })}
             </div>
 
-            <form onSubmit={send} className="p-2 border-t border-(--border) flex gap-2 items-center">
-              <VoiceRecorder compact disabled={sending} onUploaded={sendVoice} />
-              <input value={text} onChange={(e) => setText(e.target.value)}
-                placeholder={t("Type a message or tap 🎤 to record…")} disabled={sending} maxLength={4000}
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
-              <button type="submit" disabled={sending || !text.trim()}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast) disabled:opacity-40"
-                style={{ background: "var(--accent)" }}>
-                ➤
-              </button>
+            <form onSubmit={send} className="p-2 border-t border-(--border) space-y-2">
+              {/* Attached case chip */}
+              {attachedCase && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs" style={{ background: "var(--bg)", borderColor: "var(--accent)" }}>
+                  <span>📎</span>
+                  <span className="flex-1 min-w-0 truncate text-(--text)">
+                    <span className="font-mono font-semibold">{attachedCase.caseNumber}</span>
+                    {attachedCase.caseTitle && <span className="text-(--muted)"> · {attachedCase.caseTitle}</span>}
+                  </span>
+                  <button type="button" onClick={() => setAttachedCase(null)} className="text-(--muted) hover:text-(--text)" title={t("Remove")}>✕</button>
+                </div>
+              )}
+
+              {/* Case picker */}
+              {casePickerOpen && (
+                <div className="rounded-lg border p-2 space-y-2" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+                  <input value={caseQuery} onChange={(e) => setCaseQuery(e.target.value)} autoFocus
+                    placeholder={t("Search a case to attach…")}
+                    className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-(--border) bg-(--surface) text-(--text) focus:outline-none" />
+                  <div className="max-h-44 overflow-y-auto space-y-1">
+                    {caseOptions === null ? (
+                      <p className="text-xs text-(--muted) px-1 py-2">{t("Loading…")}</p>
+                    ) : (
+                      caseOptions
+                        .filter((c) => `${c.caseNumber} ${c.caseTitle}`.toLowerCase().includes(caseQuery.trim().toLowerCase()))
+                        .slice(0, 12)
+                        .map((c) => (
+                          <button key={c.id} type="button"
+                            onClick={() => { setAttachedCase(c); setCasePickerOpen(false); setCaseQuery(""); }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-(--surface)">
+                            <span className="font-mono font-semibold text-(--accent)">{c.caseNumber || "—"}</span>
+                            <span className="text-(--text)"> · {c.caseTitle}</span>
+                          </button>
+                        ))
+                    )}
+                    {caseOptions && caseOptions.length === 0 && <p className="text-xs text-(--muted) px-1 py-2">{t("No cases available.")}</p>}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 items-center">
+                <VoiceRecorder compact disabled={sending} onUploaded={sendVoice} />
+                <button type="button" onClick={() => { setCasePickerOpen((o) => !o); loadCaseOptions(); }} disabled={sending}
+                  title={t("Attach a case")}
+                  className="px-2.5 py-2 rounded-lg border border-(--border) text-(--muted) hover:text-(--text) hover:border-(--accent) disabled:opacity-40"
+                  style={{ background: casePickerOpen ? "var(--bg-secondary)" : "var(--bg)" }}>
+                  📎
+                </button>
+                <input value={text} onChange={(e) => setText(e.target.value)}
+                  placeholder={t("Type a message or tap 🎤 to record…")} disabled={sending} maxLength={4000}
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+                <button type="submit" disabled={sending || (!text.trim() && !attachedCase)}
+                  className="px-3 py-2 rounded-lg text-sm font-semibold text-(--accent-contrast) disabled:opacity-40"
+                  style={{ background: "var(--accent)" }}>
+                  ➤
+                </button>
+              </div>
             </form>
           </>
         )}
