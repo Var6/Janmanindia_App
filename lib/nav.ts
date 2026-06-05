@@ -32,6 +32,9 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     // on a sibling tab.
     { href: "/community/case-tracker",   label: "Cases & Appointments", icon: "briefcase" },
     { href: "/community/rtps",           label: "RTPS",                 icon: "file-text" },
+    { href: "/schemes",                  label: "Schemes",              icon: "scroll"    },
+    { href: "/livelihood",               label: "Livelihood",           icon: "currency"  },
+    { href: "/activities",               label: "Campaigns",            icon: "target"    },
   ],
   socialworker: [
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
@@ -40,6 +43,8 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/socialworker/daily-reports",   label: "Daily Reports",  icon: "document"    },
     { href: "/socialworker/queries",         label: "Queries",        icon: "search"      },
     { href: "/socialworker/plv-requests",    label: "PLV Requests",   icon: "users"       },
+    { href: "/schemes",                       label: "Schemes",        icon: "scroll"      },
+    { href: "/livelihood",                    label: "Livelihood",     icon: "credit-card" },
     { href: "/socialworker/escalate",        label: "Escalate",       icon: "target"      },
     { href: "/socialworker/voice-messages",  label: "Voice Messages", icon: "mic"         },
     { href: "/socialworker/media-scanning",  label: "Media Scanning", icon: "upload"      },
