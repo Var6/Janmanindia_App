@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Case from "@/models/Case";
 import User from "@/models/User";
-import { updateCalendarEvent, deleteCalendarEvent } from "@/lib/gcal";
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/gcal";
 
 type Params = { params: Promise<{ caseId: string }> };
 
@@ -564,10 +564,25 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         const hearingDate = new Date(body.nextHearingDate);
 
         if (updated.googleCalendarEventId) {
+          // Event already exists — move it to the new hearing date.
           await updateCalendarEvent(updated.googleCalendarEventId, {
+            title: `Hearing: ${updated.caseTitle}`,
             startDateTime: hearingDate,
             attendeeEmails: attendees,
           });
+        } else {
+          // No event yet (e.g. hearing date set on a case that wasn't created
+          // through the assign flow) — create one. The litigation member is an
+          // attendee, so it lands in their Google Calendar; it also sits on the
+          // shared org calendar the director monitors.
+          const eventId = await createCalendarEvent({
+            title: `Hearing: ${updated.caseTitle}`,
+            description: `Case #${updated.caseNumber}`,
+            startDateTime: hearingDate,
+            attendeeEmails: attendees,
+            caseId: String(updated._id),
+          });
+          await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
         }
       } catch (calErr) {
         console.error("Calendar sync error:", calErr);
