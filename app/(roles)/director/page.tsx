@@ -8,6 +8,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import FundsOverview from "@/components/finance/FundsOverview";
 import { getServerT } from "@/lib/i18n-server";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -80,6 +81,9 @@ export default async function AdminDashboard() {
 
       {/* Quick line to a social worker — SW is the single contact point. */}
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
+
+      {/* Fund health across all projects — budget / spent / owed / remaining. */}
+      <FundsOverview href="/director/projects" />
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">

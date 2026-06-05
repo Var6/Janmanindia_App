@@ -10,6 +10,7 @@ import "@/models/User"; // register schema for populate
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import FinancePayQueue from "@/components/finance/FinancePayQueue";
+import FundsOverview from "@/components/finance/FundsOverview";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 
@@ -97,6 +98,9 @@ export default async function FinanceDashboard() {
         <h1 className="text-2xl font-bold text-(--text)">{t("Finance Dashboard")}</h1>
         <p className="text-sm text-(--muted) mt-1">{t("Project budgets, allocation tracking, and the expense ledger.")}</p>
       </div>
+
+      {/* Per-project fund health — budget / spent / owed / remaining. */}
+      <FundsOverview />
 
       {/* Org-wide KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

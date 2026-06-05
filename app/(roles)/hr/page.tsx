@@ -8,6 +8,7 @@ import NoDBBanner from "@/components/shared/NoDBBanner";
 import TodoWidget from "@/components/activities/TodoWidget";
 import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
+import FundsOverview from "@/components/finance/FundsOverview";
 import { getServerT } from "@/lib/i18n-server";
 
 export default async function HrDashboard() {
@@ -45,6 +46,10 @@ export default async function HrDashboard() {
         <h1 className="text-2xl font-bold text-(--text)">{t("HR Dashboard")}</h1>
         <p className="text-sm text-(--muted) mt-1">{t("Manage social workers, invoices and attendance")}</p>
       </div>
+
+      {/* Fund health — HR verifies expenses, so the project-fund picture is
+          relevant to what they approve. */}
+      <FundsOverview />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
