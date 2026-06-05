@@ -48,6 +48,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
     { href: "/litigation/cases",        label: "Cases",        icon: "scale"     },
+    { href: "/litigation/sos",          label: "SOS Alerts",   icon: "flame"     },
     { href: "/litigation/tools",        label: "Legal Tools",  icon: "gavel"     },
     { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
     // Invoice / expense approval is finance / director / HR's responsibility,

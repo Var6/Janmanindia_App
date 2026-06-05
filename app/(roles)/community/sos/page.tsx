@@ -7,6 +7,7 @@ import { detectsDistress } from "@/lib/crisis";
 import Field, { Input, Textarea } from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import { CommunityHelpTabs } from "@/components/community/SectionTabs";
+import PlvSosQueue from "@/components/sos/PlvSosQueue";
 import { useT } from "@/components/i18n/LanguageProvider";
 
 export default function SosPage() {
@@ -46,6 +47,10 @@ export default function SosPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <CommunityHelpTabs />
+
+      {/* Approved PLVs are the first SOS responders — they see this triage
+          queue; basic community members don't (it renders nothing for them). */}
+      <PlvSosQueue />
       <header className="relative overflow-hidden rounded-2xl glass px-6 py-6">
         <Spotlight color="#dc2626" />
         <div className="relative">
@@ -136,12 +141,12 @@ export default function SosPage() {
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>1</span>
-                <span>{t("Your social worker gets an instant notification on their phone.")}</span>
+                <span>{t("A nearby Para-Legal Volunteer (PLV) is alerted first and confirms the emergency.")}</span>
               </li>
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>2</span>
-                <span>{t("They confirm and escalate to higher officials if needed.")}</span>
+                <span>{t("They escalate to your social worker, who steps in.")}</span>
               </li>
               <li className="flex gap-3">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
