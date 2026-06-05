@@ -18,6 +18,7 @@ type Project = {
   spent: number;
   owed: number;
   remaining: number;
+  phases?: { _id?: string; name: string; budget?: number; status: string; objectives: { _id?: string; label: string; target?: number; current?: number; done?: boolean }[] }[];
   manager?: Manager;
   allocations: Allocation[];
 };
@@ -36,6 +37,7 @@ export default function ProjectsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [allocateOpen, setAllocateOpen] = useState<string | null>(null);
+  const [phaseOpen, setPhaseOpen] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -96,6 +98,36 @@ export default function ProjectsPage() {
       setAllocateOpen(null);
       load();
     }
+  }
+
+  // Append a funding phase. The API replaces the whole phases array, so we send
+  // the project's existing phases plus the new one. Objectives: one per line.
+  async function addPhase(project: Project, e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const objectives = String(fd.get("objectives") ?? "")
+      .split("\n").map((s) => s.trim()).filter(Boolean)
+      .map((line) => {
+        // "File 40 cases | 40" — optional numeric target after a pipe.
+        const [label, target] = line.split("|").map((x) => x.trim());
+        return { label, target: target ? Number(target) : undefined, current: 0, done: false };
+      });
+    const newPhase = {
+      name: String(fd.get("name") ?? "").trim(),
+      budget: fd.get("budget") ? Number(fd.get("budget")) : undefined,
+      status: String(fd.get("status") ?? "upcoming"),
+      objectives,
+    };
+    if (!newPhase.name) return;
+    const phases = [...(project.phases ?? []).map((ph) => ({
+      name: ph.name, budget: ph.budget, status: ph.status,
+      objectives: ph.objectives ?? [],
+    })), newPhase];
+    const res = await fetch(`/api/projects/${project._id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phases }),
+    });
+    if (res.ok) { (e.target as HTMLFormElement).reset(); setPhaseOpen(null); load(); }
   }
 
   return (
@@ -244,6 +276,66 @@ export default function ProjectsPage() {
                   <button onClick={() => setAllocateOpen(p._id)}
                     className="w-full text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
                     {t("+ Add allocation (donor receipt)")}
+                  </button>
+                )}
+
+                {/* ── Funding phases + objectives ─────────────────────── */}
+                {(p.phases ?? []).length > 0 && (
+                  <div className="space-y-2">
+                    {(p.phases ?? []).map((ph, i) => (
+                      <div key={ph._id ?? i} className="rounded-xl border px-3 py-2" style={{ borderColor: "var(--border)" }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-(--text)">{ph.name}</span>
+                          <span className="flex items-center gap-2">
+                            {ph.budget ? <span className="text-[11px] text-(--muted)">₹{ph.budget.toLocaleString("en-IN")}</span> : null}
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                              style={{ background: ph.status === "active" ? "var(--success-bg)" : ph.status === "completed" ? "var(--bg-secondary)" : "var(--warning-bg)", color: ph.status === "active" ? "var(--success-text)" : ph.status === "completed" ? "var(--muted)" : "var(--warning-text)" }}>
+                              {t(ph.status === "active" ? "Active" : ph.status === "completed" ? "Completed" : "Upcoming")}
+                            </span>
+                          </span>
+                        </div>
+                        {(ph.objectives ?? []).length > 0 && (
+                          <ul className="mt-1 space-y-0.5">
+                            {ph.objectives.map((o, oi) => (
+                              <li key={o._id ?? oi} className="text-[11px] text-(--muted) flex items-center gap-1.5">
+                                <span>{o.done ? "✓" : "•"}</span>
+                                <span>{o.label}{o.target ? ` — ${o.current ?? 0}/${o.target}` : ""}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {phaseOpen === p._id ? (
+                  <form onSubmit={(e) => addPhase(p, e)} className="rounded-xl border p-3 space-y-2"
+                    style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
+                    <p className="text-xs font-semibold text-(--text)">{t("Add a funding phase")}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input name="name" required placeholder={t("Phase name")}
+                        className="px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+                      <input name="budget" type="number" min={0} placeholder={t("Phase budget (₹)")}
+                        className="px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+                    </div>
+                    <select name="status" defaultValue="upcoming"
+                      className="w-full px-3 py-1.5 rounded-lg border text-xs" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
+                      <option value="upcoming">{t("Upcoming")}</option>
+                      <option value="active">{t("Active")}</option>
+                      <option value="completed">{t("Completed")}</option>
+                    </select>
+                    <textarea name="objectives" rows={3} placeholder={t("Objectives — one per line, e.g. \"File 40 cases | 40\"")}
+                      className="w-full px-3 py-1.5 rounded-lg border text-xs resize-y" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+                    <div className="flex items-center gap-2">
+                      <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Save")}</button>
+                      <button type="button" onClick={() => setPhaseOpen(null)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Cancel")}</button>
+                    </div>
+                  </form>
+                ) : (
+                  <button onClick={() => setPhaseOpen(p._id)}
+                    className="w-full text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
+                    {t("+ Add funding phase")}
                   </button>
                 )}
               </article>

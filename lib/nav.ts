@@ -83,6 +83,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
     { href: "/director/projects",           label: "Projects",          icon: "folder"      },
+    { href: "/director/hearings",           label: "Hearings",          icon: "calendar"    },
     { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
     { href: "/director/cases",              label: "Cases",             icon: "scale"       },
     { href: "/director/users",              label: "Users",             icon: "users"       },

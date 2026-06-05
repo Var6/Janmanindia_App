@@ -36,12 +36,25 @@ export async function GET() {
     }
 
     const cases = await Case.find(filter)
-      .select("caseTitle caseNumber nextHearingDate courtName courtType status")
+      .select("caseTitle caseNumber courtCaseNumber nextHearingDate courtName district status path litigationMember")
+      .populate("litigationMember", "name")
       .sort({ nextHearingDate: 1 })
-      .limit(50)
+      .limit(200)
       .lean();
 
-    return NextResponse.json({ hearings: cases });
+    const hearings = cases.map((c) => ({
+      id: String(c._id),
+      caseTitle: c.caseTitle,
+      caseNumber: c.caseNumber,
+      courtCaseNumber: c.courtCaseNumber ?? "",
+      nextHearingDate: c.nextHearingDate,
+      courtName: c.courtName ?? "",
+      district: c.district ?? "",
+      status: c.status,
+      path: c.path,
+      lawyer: (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",
+    }));
+    return NextResponse.json({ hearings });
   } catch (err) {
     if (err instanceof Response) return err;
     console.error("GET /api/cases/hearings error:", err);
