@@ -28,7 +28,6 @@ export default async function AdminCasesPage() {
         .populate("litigationMember", "name")
         .populate("socialWorker", "name")
         .sort({ updatedAt: -1 })
-        .limit(100)
         .lean()
     : [];
 

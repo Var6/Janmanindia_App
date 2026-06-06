@@ -77,7 +77,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   async function loadCaseOptions() {
     if (caseOptions) return;
     try {
-      const res = await fetch("/api/cases?limit=100");
+      const res = await fetch("/api/cases?limit=2000");
       const d = await res.json();
       setCaseOptions((d.cases ?? []).map((c: { _id: string; caseNumber?: string; courtCaseNumber?: string; caseTitle?: string }) => ({
         id: String(c._id),

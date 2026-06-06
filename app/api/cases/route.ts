@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const path = searchParams.get("path");
     const q = searchParams.get("q")?.trim();
-    const limit = Math.min(Number(searchParams.get("limit") ?? "50"), 100);
+    const limit = Math.min(Number(searchParams.get("limit") ?? "50"), 2000);
     const skip = Number(searchParams.get("skip") ?? "0");
 
     // Visibility rules — only director / administrator / superadmin see
