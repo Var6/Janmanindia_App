@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useT } from "@/components/i18n/LanguageProvider";
 
 export interface CaseRow {
@@ -39,13 +40,31 @@ const fmtDate = (iso?: string) =>
 
 type SortKey = "recent" | "number" | "title" | "place" | "lawyer" | "hearing";
 
-export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
+const BATCH = 2000;
+
+export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRow[]; advocates?: { id: string; name: string }[] }) {
   const t = useT();
+  const router = useRouter();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [place, setPlace] = useState("all");
+  const [court, setCourt] = useState("all");
   const [lawyer, setLawyer] = useState("all");
   const [sort, setSort] = useState<SortKey>("lawyer");
+  const [shown, setShown] = useState(BATCH);   // how many rows to render (display batching)
+  const [assigning, setAssigning] = useState<string | null>(null);
+
+  async function assignAdvocate(caseId: string, advocateId: string) {
+    setAssigning(caseId);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ litigationMember: advocateId || null }),
+      });
+      if (res.ok) router.refresh();
+      else { const d = await res.json().catch(() => ({})); alert(d.error ?? t("Failed.")); }
+    } finally { setAssigning(null); }
+  }
 
   // Distinct values present in the data (for the dropdowns).
   const statuses = useMemo(
@@ -60,12 +79,17 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
     () => Array.from(new Set(cases.map((c) => c.lawyer).filter(Boolean))).sort(),
     [cases]
   );
+  const courts = useMemo(
+    () => Array.from(new Set(cases.map((c) => c.court).filter((c) => c && c !== "—"))).sort(),
+    [cases]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let rows = cases.filter((c) => {
       if (status !== "all" && c.status !== status) return false;
       if (place !== "all" && c.district !== place) return false;
+      if (court !== "all" && c.court !== court) return false;
       if (lawyer !== "all" && c.lawyer !== lawyer) return false;
       if (needle) {
         const hay = `${c.caseNumber} ${c.courtNumber} ${c.title} ${c.community} ${c.lawyer} ${c.court} ${c.district}`.toLowerCase();
@@ -86,7 +110,9 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
       return 0; // "recent" — keep the server's updatedAt order
     });
     return rows;
-  }, [cases, q, status, place, lawyer, sort]);
+  }, [cases, q, status, place, court, lawyer, sort]);
+
+  const visible = filtered.slice(0, shown);
 
   // ── Exports ─────────────────────────────────────────────────────────
   function exportCsv() {
@@ -148,37 +174,12 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
 
   return (
     <div className="space-y-3">
-      {/* Controls */}
+      {/* Controls — row 1: search + export */}
       <div className="flex flex-wrap items-center gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search cases…")}
           className="flex-1 min-w-44 px-3 py-2 rounded-lg border text-sm focus:outline-none"
           style={selectStyle} />
-
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectCls} style={selectStyle} title={t("Status")}>
-          <option value="all">{t("All statuses")}</option>
-          {statuses.map((s) => <option key={s} value={s}>{t(s)}</option>)}
-        </select>
-
-        <select value={lawyer} onChange={(e) => setLawyer(e.target.value)} className={selectCls} style={selectStyle} title={t("Litigation Member")}>
-          <option value="all">{t("All lawyers")}</option>
-          {lawyers.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-
-        <select value={place} onChange={(e) => setPlace(e.target.value)} className={selectCls} style={selectStyle} title={t("Place filed")}>
-          <option value="all">{t("All places")}</option>
-          {places.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-
-        <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls} style={selectStyle} title={t("Sort by")}>
-          <option value="lawyer">{t("Litigation Member")}</option>
-          <option value="recent">{t("Recent")}</option>
-          <option value="hearing">{t("Next hearing")}</option>
-          <option value="number">{t("Case number")}</option>
-          <option value="title">{t("Title")}</option>
-          <option value="place">{t("Place filed")}</option>
-        </select>
-
-        <div className="flex items-center gap-1.5 ml-auto">
+        <div className="flex items-center gap-1.5">
           <button type="button" onClick={exportCsv}
             className="px-3 py-2 rounded-lg text-xs font-semibold border transition-colors hover:bg-(--bg-secondary)"
             style={{ borderColor: "var(--border)", color: "var(--text)" }}>
@@ -192,7 +193,35 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
         </div>
       </div>
 
-      <p className="text-xs text-(--muted)">{t("Showing")} {filtered.length} {t("of")} {cases.length}</p>
+      {/* Controls — row 2: filters (advocate · district · court · status) + sort */}
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+        <Filter label={t("Advocate")} value={lawyer} onChange={setLawyer} allLabel={t("All advocates")} options={lawyers} cls={selectCls} style={selectStyle} />
+        <Filter label={t("District")} value={place} onChange={setPlace} allLabel={t("All districts")} options={places} cls={selectCls} style={selectStyle} />
+        <Filter label={t("Court")} value={court} onChange={setCourt} allLabel={t("All courts")} options={courts} cls={selectCls} style={selectStyle} />
+        <Filter label={t("Status")} value={status} onChange={setStatus} allLabel={t("All statuses")} options={statuses} cls={selectCls} style={selectStyle} translateOpts />
+        <div className="flex flex-col gap-1 ml-auto">
+          <span className="text-[10px] uppercase tracking-wide text-(--muted) font-semibold">{t("Sort by")}</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls} style={selectStyle}>
+            <option value="lawyer">{t("Advocate")}</option>
+            <option value="recent">{t("Recent")}</option>
+            <option value="hearing">{t("Next hearing")}</option>
+            <option value="number">{t("Case number")}</option>
+            <option value="title">{t("Title")}</option>
+            <option value="place">{t("District")}</option>
+          </select>
+        </div>
+        {(lawyer !== "all" || place !== "all" || court !== "all" || status !== "all") && (
+          <button type="button" onClick={() => { setLawyer("all"); setPlace("all"); setCourt("all"); setStatus("all"); }}
+            className="text-xs font-medium hover:underline self-end pb-2" style={{ color: "var(--accent)" }}>
+            {t("Clear filters")}
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-(--muted)">
+        {t("Showing")} {Math.min(shown, filtered.length)} {t("of")} {filtered.length}
+        {filtered.length !== cases.length && <> · {t("filtered from")} {cases.length}</>}
+      </p>
 
       {filtered.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -209,7 +238,7 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
             <span className="px-3 text-center">{t("Actions")}</span>
           </div>
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-            {filtered.map((c) => {
+            {visible.map((c) => {
               const st = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
               return (
                 <div key={c.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-3 transition-colors hover:bg-(--bg)">
@@ -255,7 +284,21 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
                   </Link>
 
                   <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("HC")}</span>
-                  <span className="px-3 text-xs text-(--text)">{c.lawyer || <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
+                  {advocates && advocates.length > 0 ? (
+                    <select
+                      value={advocates.find((a) => a.name === c.lawyer)?.id ?? ""}
+                      disabled={assigning === c.id}
+                      onChange={(e) => assignAdvocate(c.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mx-3 px-2 py-1 rounded-lg border text-xs max-w-36 disabled:opacity-50"
+                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: c.lawyer ? "var(--text)" : "var(--muted)" }}
+                      title={t("Assign advocate")}>
+                      <option value="">{assigning === c.id ? t("Saving…") : t("Unassigned")}</option>
+                      {advocates.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  ) : (
+                    <span className="px-3 text-xs text-(--text)">{c.lawyer || <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
+                  )}
                   <span className="mx-3 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: st.bg, color: st.text }}>{c.status}</span>
 
                   <div className="flex items-center gap-1 pl-3">
@@ -270,6 +313,39 @@ export default function DirectorCasesTable({ cases }: { cases: CaseRow[] }) {
           </div>
         </div>
       )}
+
+      {filtered.length > shown && (
+        <div className="text-center">
+          <button type="button" onClick={() => setShown((s) => s + BATCH)}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-(--bg-secondary)"
+            style={{ borderColor: "var(--border)", color: "var(--text)", background: "var(--surface)" }}>
+            {t("Load next")} {Math.min(BATCH, filtered.length - shown)} {t("of")} {filtered.length - shown} {t("remaining")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A labelled filter dropdown (declutters the toolbar). */
+function Filter({ label, value, onChange, allLabel, options, cls, style, translateOpts }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  allLabel: string;
+  options: string[];
+  cls: string;
+  style: React.CSSProperties;
+  translateOpts?: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] uppercase tracking-wide text-(--muted) font-semibold">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={cls} style={style}>
+        <option value="all">{allLabel}</option>
+        {options.map((o) => <option key={o} value={o}>{translateOpts ? t(o) : o}</option>)}
+      </select>
     </div>
   );
 }

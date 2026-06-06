@@ -15,6 +15,8 @@ interface Props {
   roles: readonly string[];
   /** display labels keyed by role. */
   roleLabels: Record<string, string>;
+  /** Superadmin can permanently delete the user. */
+  canDelete?: boolean;
 }
 
 /** Per-row actions on /director/users:
@@ -25,7 +27,7 @@ interface Props {
  *     employee"). Reinstating goes through without a confirm because it's
  *     non-destructive. */
 export default function UserActions({
-  userId, userName, currentRole, currentRoles, isActive, roles, roleLabels,
+  userId, userName, currentRole, currentRoles, isActive, roles, roleLabels, canDelete,
 }: Props) {
   const t = useT();
   const router = useRouter();
@@ -75,6 +77,21 @@ export default function UserActions({
         return;
       }
       setRole(newRole);
+      router.refresh();
+    } finally { setBusy(false); }
+  }
+
+  async function deleteUser() {
+    const ok = window.confirm(
+      `Permanently DELETE ${userName}? This cannot be undone.\n\nConsider "NPA" (deactivate) instead if you only want to revoke access.`
+    );
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, { method: "DELETE", headers: { Accept: "application/json" } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(typeof data.error === "string" ? data.error : t("Failed.")); return; }
       router.refresh();
     } finally { setBusy(false); }
   }
@@ -130,6 +147,13 @@ export default function UserActions({
         }`}>
         {isActive ? t("NPA") : t("Reinstate")}
       </button>
+      {canDelete && (
+        <button type="button" disabled={busy} onClick={deleteUser}
+          className="text-xs font-semibold hover:underline disabled:opacity-50 text-red-600"
+          title={t("Permanently delete this user")}>
+          {t("Delete")}
+        </button>
+      )}
       {error && <span className="text-[11px] text-(--error-text) basis-full">{error}</span>}
 
       {editingPos && (

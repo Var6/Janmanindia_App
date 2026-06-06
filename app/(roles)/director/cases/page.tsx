@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
+import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
 import DirectorCasesTable, { type CaseRow } from "@/components/director/DirectorCasesTable";
@@ -30,6 +31,12 @@ export default async function AdminCasesPage() {
         .sort({ updatedAt: -1 })
         .lean()
     : [];
+
+  // Active advocates (litigation members) for inline assignment in the table.
+  const advocateDocs = dbOk
+    ? await User.find({ role: "litigation", isActive: true }).select("name").sort({ name: 1 }).lean()
+    : [];
+  const advocates = advocateDocs.map((a) => ({ id: String(a._id), name: a.name }));
 
   const byStatus = cases.reduce<Record<string, number>>((acc, c) => {
     acc[c.status] = (acc[c.status] ?? 0) + 1;
@@ -99,7 +106,7 @@ export default async function AdminCasesPage() {
           <p className="text-sm text-(--muted)">{dbOk ? t("No cases in the system yet.") : t("Connect database.")}</p>
         </div>
       ) : (
-        <DirectorCasesTable cases={rows} />
+        <DirectorCasesTable cases={rows} advocates={advocates} />
       )}
     </div>
   );

@@ -240,6 +240,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                           isActive={u.isActive}
                           roles={ASSIGNABLE_ROLES}
                           roleLabels={ROLE_LABEL}
+                          canDelete={session.role === "superadmin"}
                         />
                       </td>
                     </tr>

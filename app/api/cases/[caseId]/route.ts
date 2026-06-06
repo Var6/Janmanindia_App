@@ -221,6 +221,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     for (const [field, wantRole, label] of [
       ["community", "community", "community member"],
       ["socialWorker", "socialworker", "social worker"],
+      ["litigationMember", "litigation", "advocate"],
     ] as const) {
       if (body[field] === undefined) continue;
       const userId = String(body[field] ?? "").trim();

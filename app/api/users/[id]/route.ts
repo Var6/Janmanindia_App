@@ -77,3 +77,32 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/users/[id] — permanently remove a user. Superadmin only. Refuses
+ * to delete your own account (to avoid locking yourself out).
+ */
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  try {
+    const session = await requireSession();
+    if (session.role !== "superadmin") {
+      return NextResponse.json({ error: "Only a superadmin can delete users." }, { status: 403 });
+    }
+    const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
+    if (id === session.id) {
+      return NextResponse.json({ error: "You can't delete your own account." }, { status: 400 });
+    }
+    await connectDB();
+    const user = await User.findById(id).select("name");
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    await User.deleteOne({ _id: id });
+    return NextResponse.json({ ok: true, deleted: user.name });
+  } catch (err) {
+    if (err instanceof Response) return err;
+    console.error("DELETE /api/users/[id] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
