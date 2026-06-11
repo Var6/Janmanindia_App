@@ -137,6 +137,19 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("metadata_updated", "Updated point of contact");
     }
 
+    /* "Mark as Disposed / Completed" — a one-click finaliser for matters that
+     * have ended (mutual settlement, compromise, bail granted, etc.). It moves
+     * the case to the "Disposal" status, stamps the completion date, and
+     * records an optional reason. The calendar-cleanup block at the end of this
+     * handler picks up the resulting status and removes any hearing event. */
+    if (body.disposeCase) {
+      const reason = typeof body.disposeCase?.reason === "string" ? body.disposeCase.reason.trim() : "";
+      update.status = "Disposal";
+      update.disposedAt = new Date();
+      if (reason) update.disposalReason = reason;
+      logAudit("status_changed", reason ? `Case marked disposed / completed — ${reason}` : "Case marked disposed / completed");
+    }
+
     // Verdict text (criminal path). Set the verdict string and stamp the
     // verdict date the first time a verdict is recorded so the workflow
     // stepper can surface "verdict reached". Ignored for non-criminal matters
@@ -407,6 +420,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       // stepper labels so users see consistent wording across UIs.
       const STAGE_LABELS: Record<string, string> = {
         fir: "FIR Filed", chargesheet: "Chargesheet Filed", charges: "Charges Framed", verdict: "Verdict",
+        bail_applied: "Bail Application Filed", bail_granted: "Bail Granted", bail_rejected: "Bail Rejected",
         petitionFiled: "Petition Filed", supportingAffidavit: "Supporting Affidavit", admission: "Admission",
         counterAffidavit: "Counter Affidavit", rejoinder: "Rejoinder", pleaClose: "Plea Close", inducement: "Inducement",
       };
@@ -417,7 +431,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
 
       if (caseDoc.path === "criminal") {
-        const CRIMINAL = ["fir", "chargesheet", "charges", "verdict"];
+        const CRIMINAL = ["fir", "chargesheet", "charges", "verdict", "bail_applied", "bail_granted", "bail_rejected"];
         if (!CRIMINAL.includes(stage)) {
           return NextResponse.json({ error: `Unknown criminal stage "${stage}"` }, { status: 400 });
         }
@@ -433,6 +447,26 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           // verdict date so the stepper can surface "verdict reached" without
           // forcing a free-text prompt mid-click.
           update["criminalPath.verdictDate"] = advance ? now : null;
+        } else if (stage === "bail_applied") {
+          // Bail sub-track: filing the bail application. Reverting clears the
+          // filing date but leaves any recorded decision in place (the user
+          // can revert the decision separately).
+          update["criminalPath.bailTrack.bailApplied"] = advance;
+          update["criminalPath.bailTrack.bailApplicationDate"] = advance ? now : null;
+        } else if (stage === "bail_granted" || stage === "bail_rejected") {
+          // Granted / rejected are the two terminal outcomes of the bail
+          // track and are mutually exclusive — advancing one records that
+          // decision (and implies the application was filed); reverting clears
+          // the decision so the track returns to "awaiting hearing".
+          const decision = stage === "bail_granted" ? "granted" : "rejected";
+          if (advance) {
+            update["criminalPath.bailTrack.bailApplied"] = true;
+            update["criminalPath.bailTrack.bailDecision"] = decision;
+            update["criminalPath.bailTrack.bailDecisionDate"] = now;
+          } else {
+            update["criminalPath.bailTrack.bailDecision"] = null;
+            update["criminalPath.bailTrack.bailDecisionDate"] = null;
+          }
         }
       } else if (caseDoc.path === "highcourt") {
         const HC_STAGES = [
@@ -590,8 +624,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     }
 
-    // Delete calendar event on case close/dismiss
-    if ((body.status === "Closed" || body.status === "Dismissed") && caseDoc.googleCalendarEventId) {
+    // Delete the hearing calendar event once the matter reaches any final
+    // state — whether set directly via `status` or through the dispose action.
+    // (Previously only Closed/Dismissed were handled, so Disposal/Withdrawn
+    // cases left a stale event on the calendar.)
+    const FINAL_STATUSES = ["Closed", "Dismissed", "Disposal", "Withdrawn"];
+    const effectiveStatus = typeof update.status === "string" ? update.status : undefined;
+    if (effectiveStatus && FINAL_STATUSES.includes(effectiveStatus) && caseDoc.googleCalendarEventId) {
       try {
         await deleteCalendarEvent(caseDoc.googleCalendarEventId);
         await Case.updateOne({ _id: caseId }, { $unset: { googleCalendarEventId: 1 } });

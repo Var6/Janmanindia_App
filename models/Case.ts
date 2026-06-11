@@ -172,6 +172,13 @@ export interface ICase extends Document {
   /** Whether compensation has been awarded / disbursed in this matter. Free
    *  text so the lawyer can capture amount, status, and date in one line. */
   compensationStatus?: string;
+  /** When the case was finalised via the "Mark as Disposed / Completed"
+   *  action (status → Disposal). Lets the UI surface a completion date and
+   *  separates a deliberately-completed matter from a stale Pending one. */
+  disposedAt?: Date;
+  /** Optional one-line note on how the matter ended — e.g. "mutual
+   *  settlement between parties", "compromise petition filed". */
+  disposalReason?: string;
 
   /** Court taxonomy — supreme / highcourt / district / other. Drives which
    *  picker the create form uses and which numbering hint we show. */
@@ -246,6 +253,24 @@ export interface ICase extends Document {
     };
     verdict?: string;
     verdictDate?: Date;
+    /** Bail sub-track. A criminal matter — especially one arising from an
+     *  FIR — is very often pursued purely to secure bail; once bail is
+     *  granted the matter is typically disposed. This is a self-contained
+     *  workflow ("a completely different tree") that runs alongside the main
+     *  trial track. For dedicated Bail Application (BA / ABA) case types it
+     *  IS the case; for an FIR case it sits beside the trial steps. */
+    bailTrack?: {
+      bailApplied: boolean;
+      bailType?: "regular" | "anticipatory" | "interim";
+      bailApplicationDate?: Date;
+      bailApplicationDoc?: IDocument;
+      bailHearingDate?: Date;
+      /** Outcome of the bail application. "granted" usually ends the matter. */
+      bailDecision?: "granted" | "rejected" | "cancelled";
+      bailDecisionDate?: Date;
+      bailOrderDoc?: IDocument;
+      bailConditions?: string;
+    };
   };
 
   // High Court path
@@ -452,6 +477,17 @@ const criminalPathSchema = new Schema(
     },
     verdict: String,
     verdictDate: Date,
+    bailTrack: {
+      bailApplied: { type: Boolean, default: false },
+      bailType: { type: String, enum: ["regular", "anticipatory", "interim"] },
+      bailApplicationDate: Date,
+      bailApplicationDoc: documentSchema,
+      bailHearingDate: Date,
+      bailDecision: { type: String, enum: ["granted", "rejected", "cancelled"] },
+      bailDecisionDate: Date,
+      bailOrderDoc: documentSchema,
+      bailConditions: String,
+    },
   },
   { _id: false }
 );
@@ -545,6 +581,9 @@ const caseSchema = new Schema<ICase>(
     bailAndAppearanceStatus: { type: String, trim: true },
     stage: { type: String, trim: true },
     compensationStatus: { type: String, trim: true },
+    // Set by the "Mark as Disposed / Completed" action (status → Disposal).
+    disposedAt: Date,
+    disposalReason: { type: String, trim: true },
 
     courtType: {
       type: String,

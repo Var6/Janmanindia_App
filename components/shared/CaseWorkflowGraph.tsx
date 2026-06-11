@@ -26,6 +26,10 @@ const STAGE_ID_FOR_NODE: Record<string, string> = {
   cs:         "chargesheet",
   charges:    "charges",
   verdict:    "verdict",
+  // Bail sub-track — node ids map to the bail stage transitions.
+  bail_applied:  "bail_applied",
+  bail_granted:  "bail_granted",
+  bail_rejected: "bail_rejected",
   // High Court — node id matches the stage id verbatim.
   petitionFiled:       "petitionFiled",
   supportingAffidavit: "supportingAffidavit",
@@ -112,7 +116,75 @@ type CrimPath = {
     defenseWitnesses?:     { name: string; deposedAt?: string }[];
   };
   verdict?: string; verdictDate?: string;
+  bailTrack?: {
+    bailApplied: boolean;
+    bailType?: "regular" | "anticipatory" | "interim";
+    bailApplicationDate?: string;
+    bailApplicationDoc?: { url: string };
+    bailHearingDate?: string;
+    bailDecision?: "granted" | "rejected" | "cancelled";
+    bailDecisionDate?: string;
+    bailOrderDoc?: { url: string; label?: string };
+  };
 };
+
+// ── Bail-track graph builder ─────────────────────────────────────────────────
+// A compact, self-contained workflow for bail: application → hearing →
+// granted / rejected. "Granted" is terminal and flags that the matter can be
+// disposed. Used as the primary tree for BA/ABA case types and as an extra
+// track shown alongside the trial workflow on FIR cases.
+function buildBailGraph(cp: CrimPath, createdAt: string): { nodes: GNode[]; edges: GEdge[] } {
+  const nodes: GNode[] = [];
+  const edges: GEdge[] = [];
+  const bt = cp.bailTrack ?? { bailApplied: false };
+
+  const applied  = !!bt.bailApplied;
+  const decided  = !!bt.bailDecision;
+  const granted  = bt.bailDecision === "granted";
+  const rejected = bt.bailDecision === "rejected";
+
+  // 0 case filed · 1 bail applied · 2 hearing · 3 decision
+  const st = makeSt([true, applied, applied, decided]);
+  const ed = (fr: number, fc: 0|1, tr: number, tc: 0|1, s: St) => edges.push({ fr, fc, tr, tc, status: s });
+
+  // Case filed
+  nodes.push({ id: "filed", row: 0, col: 0, status: "done", label: "Case Filed", date: fmt(createdAt) });
+
+  // Bail application filed
+  nodes.push({ id: "bail_applied", row: 1, col: 0, status: st(1), label: "Bail Application Filed",
+    sub: bt.bailType ? `${bt.bailType[0].toUpperCase()}${bt.bailType.slice(1)} bail` : undefined,
+    date: fmt(bt.bailApplicationDate),
+    doc: bt.bailApplicationDoc ? { label: "Bail Application", url: bt.bailApplicationDoc.url } : undefined });
+  ed(0, 0, 1, 0, st(1));
+
+  // Bail hearing (descriptive)
+  nodes.push({ id: "bail_hearing", row: 2, col: 0, status: st(2), label: "Bail Hearing",
+    sub: bt.bailHearingDate ? undefined : "Awaiting order", date: fmt(bt.bailHearingDate) });
+  ed(1, 0, 2, 0, st(2));
+
+  // Decision — Granted (col 0, terminal) vs Rejected (col 1)
+  if (granted) {
+    nodes.push({ id: "bail_granted", row: 3, col: 0, status: "done", label: "Bail Granted",
+      sub: "Matter can be disposed", date: fmt(bt.bailDecisionDate), terminal: true,
+      doc: bt.bailOrderDoc ? { label: bt.bailOrderDoc.label ?? "Bail Order", url: bt.bailOrderDoc.url } : undefined });
+    ed(2, 0, 3, 0, "done");
+  } else if (rejected) {
+    nodes.push({ id: "bail_granted", row: 3, col: 0, status: "pending", label: "Bail Granted", sub: "Not granted" });
+    ed(2, 0, 3, 0, "pending");
+    nodes.push({ id: "bail_rejected", row: 3, col: 1, status: "done", label: "Bail Rejected",
+      sub: "May re-apply / approach higher court", date: fmt(bt.bailDecisionDate), terminal: true });
+    ed(2, 0, 3, 1, "done");
+  } else {
+    // Undecided — both outcomes are offered as clickable next steps.
+    nodes.push({ id: "bail_granted", row: 3, col: 0, status: st(3), label: "Bail Granted",
+      sub: "Matter can be disposed" });
+    ed(2, 0, 3, 0, st(3));
+    nodes.push({ id: "bail_rejected", row: 3, col: 1, status: "pending", label: "Bail Rejected" });
+    ed(2, 0, 3, 1, "pending");
+  }
+
+  return { nodes, edges };
+}
 
 function buildFirGraph(cp: CrimPath, createdAt: string): { nodes: GNode[]; edges: GEdge[] } {
   const nodes: GNode[] = [];
@@ -591,6 +663,11 @@ interface Props {
   criminalPath?: CrimPath;
   highCourtPath?: HCPath;
   firFiled?: boolean;
+  /** Render the dedicated Bail workflow tree (application → hearing →
+   *  granted / rejected) instead of the trial/complaint tree. Used for
+   *  Bail Application (BA / ABA) case types, and as a second track shown
+   *  beside the trial workflow on FIR cases. */
+  bailMatter?: boolean;
   createdAt: string;
   /** Required for click-to-advance — when true, mappable nodes (FIR /
    *  Chargesheet / Charges / Verdict / each HC step) become buttons. */
@@ -605,13 +682,17 @@ interface Props {
   pinnedNotes?: Array<{ _id: string; text: string; byName?: string }>;
 }
 
-export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, createdAt, canEdit, caseId, onChanged, pinnedNotes }: Props) {
+export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes }: Props) {
   const t = useT();
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
 
-  if (path === "criminal" && criminalPath) {
+  if (path === "criminal" && bailMatter) {
+    const result = buildBailGraph(criminalPath ?? { firFiled: false, chargesheetFiled: false, chargesFramed: false }, createdAt);
+    nodes = result.nodes;
+    edges = result.edges;
+  } else if (path === "criminal" && criminalPath) {
     const result = firFiled
       ? buildFirGraph(criminalPath, createdAt)
       : buildComplaintGraph(criminalPath, createdAt);
@@ -666,7 +747,8 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         <div>
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
             {path === "criminal"
-              ? (firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))
+              ? (bailMatter ? t("Bail Workflow")
+                 : firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))
               : t("High Court Workflow")}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>

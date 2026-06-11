@@ -55,6 +55,8 @@ type PopulatedCase = {
   caseNumber: string;
   status: "Open" | "Closed" | "Escalated" | "Pending" | "Dismissed" | "Disposal" | "Withdrawn";
   path: "criminal" | "highcourt";
+  /** eCourts-style short code (e.g. "FIR", "BA", "ABA", "WP(C)"). */
+  caseType?: string;
   district?: string;
   causeTitle?: string;
   courtCaseNumber?: string;
@@ -63,6 +65,8 @@ type PopulatedCase = {
   bailAndAppearanceStatus?: string;
   stage?: string;
   compensationStatus?: string;
+  disposedAt?: string;
+  disposalReason?: string;
   // Court-type-aware fields populated by CreateLitigationCaseForm.
   courtType?: "supreme" | "highcourt" | "district" | "other";
   state?: string;
@@ -109,6 +113,15 @@ type PopulatedCase = {
       evidenceDocs: DocMeta[]; forensicDocs: DocMeta[];
     };
     verdict?: string; verdictDate?: string;
+    bailTrack?: {
+      bailApplied: boolean;
+      bailType?: "regular" | "anticipatory" | "interim";
+      bailApplicationDate?: string; bailApplicationDoc?: DocMeta;
+      bailHearingDate?: string;
+      bailDecision?: "granted" | "rejected" | "cancelled";
+      bailDecisionDate?: string; bailOrderDoc?: DocMeta;
+      bailConditions?: string;
+    };
   };
   highCourtPath?: {
     petitionFiled: HighCourtStep; supportingAffidavit: HighCourtStep;
@@ -1764,6 +1777,76 @@ function StatusEditor({ caseId, value, canEdit, onChanged }: {
   );
 }
 
+/* ── "Mark as Disposed / Completed" — one-click finaliser ───────────────────
+ * Statuses are also reachable from the dropdown, but disposal/completion is
+ * the common end state (mutual settlement, compromise, bail granted) and
+ * deserves an explicit, obvious button. It stamps a completion date and lets
+ * the user record how the matter ended. Hidden once the case is already in a
+ * final state. */
+const FINAL_CASE_STATUSES = ["Disposal", "Closed", "Dismissed", "Withdrawn"];
+function DisposeButton({ caseId, status, canEdit, onChanged }: {
+  caseId: string; status: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (!canEdit || FINAL_CASE_STATUSES.includes(status)) return null;
+
+  async function dispose() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ disposeCase: { reason: reason.trim() } }),
+      });
+      if (res.ok) { setOpen(false); setReason(""); onChanged(); }
+      else {
+        const d = await res.json().catch(() => ({}));
+        alert((d as { error?: string }).error ?? t("Failed to mark the case disposed."));
+      }
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer hover:opacity-80 inline-flex items-center gap-1"
+        style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
+        ✓ {t("Mark Disposed / Completed")}
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-2 left-0 w-72 rounded-xl border p-3 shadow-lg"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: "var(--text)" }}>
+            {t("Mark this case as disposed / completed?")}
+          </p>
+          <p className="text-[11px] mb-2" style={{ color: "var(--muted)" }}>
+            {t("This sets the status to Disposal and records a completion date. Any upcoming hearing on the calendar is removed.")}
+          </p>
+          <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
+            placeholder={t("How did it end? (optional — e.g. mutual settlement, bail granted)")}
+            className="w-full text-xs rounded-lg border px-2 py-1.5 mb-2 focus:outline-none"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }} />
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" disabled={saving} onClick={() => { setOpen(false); setReason(""); }}
+              className="text-xs px-2.5 py-1 rounded-lg" style={{ color: "var(--muted)" }}>
+              {t("Cancel")}
+            </button>
+            <button type="button" disabled={saving} onClick={dispose}
+              className="text-xs font-semibold px-3 py-1 rounded-lg cursor-pointer hover:opacity-90"
+              style={{ background: "var(--success-text)", color: "white" }}>
+              {saving ? t("Saving…") : t("Mark Disposed")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Subject editor — strategic notes (court they / our points / why) ───── */
 function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
   caseId: string;
@@ -2412,6 +2495,14 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
             {c.path === "criminal" ? `⚖ ${t("Criminal")}` : `🏛 ${t("High Court")}`}
           </span>
+          <DisposeButton caseId={c._id} status={c.status} canEdit={canEdit} onChanged={fetchCase} />
+          {c.status === "Disposal" && c.disposedAt && (
+            <span className="text-xs px-2.5 py-1 rounded-full"
+              title={c.disposalReason ? `${t("Reason")}: ${c.disposalReason}` : undefined}
+              style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
+              ✓ {t("Completed")} {fmtDate(c.disposedAt)}
+            </span>
+          )}
         </div>
 
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -2607,17 +2698,45 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             Clicking any mappable node (FIR / Chargesheet / Charges / Verdict
             for criminal; each step for HC) toggles its done-ness. The old
             standalone stepper + duplicate timeline are gone. */}
-        <CaseWorkflowGraph
-          path={c.path}
-          criminalPath={c.criminalPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["criminalPath"]}
-          highCourtPath={c.highCourtPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["highCourtPath"]}
-          firFiled={c.criminalPath?.firFiled}
-          createdAt={c.createdAt}
-          canEdit={canEdit}
-          caseId={c._id}
-          pinnedNotes={(c.caseComments ?? []).filter(n => n.pinned).map(n => ({ _id: n._id, text: n.text, byName: n.byName }))}
-          onChanged={refresh}
-        />
+        {(() => {
+          // A bail matter is a dedicated Bail Application (BA / ABA) case type,
+          // or any criminal case where the bail sub-track has been started.
+          const isBailType = /^(BA|ABA)$/i.test(c.caseType ?? "") || /bail/i.test(c.caseType ?? "");
+          const bailIsPrimary = c.path === "criminal" && isBailType;
+          // Show the bail track as a secondary tree on criminal cases that
+          // aren't themselves bail applications — so the FIR → bail → end flow
+          // ("a completely different tree and track") is always available.
+          const showSecondaryBail = c.path === "criminal" && !isBailType;
+          const crimProp = c.criminalPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["criminalPath"];
+          return (
+            <>
+              <CaseWorkflowGraph
+                path={c.path}
+                bailMatter={bailIsPrimary}
+                criminalPath={crimProp}
+                highCourtPath={c.highCourtPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["highCourtPath"]}
+                firFiled={c.criminalPath?.firFiled}
+                createdAt={c.createdAt}
+                canEdit={canEdit}
+                caseId={c._id}
+                pinnedNotes={(c.caseComments ?? []).filter(n => n.pinned).map(n => ({ _id: n._id, text: n.text, byName: n.byName }))}
+                onChanged={refresh}
+              />
+              {showSecondaryBail && (
+                <CaseWorkflowGraph
+                  path="criminal"
+                  bailMatter
+                  criminalPath={crimProp}
+                  firFiled={c.criminalPath?.firFiled}
+                  createdAt={c.createdAt}
+                  canEdit={canEdit}
+                  caseId={c._id}
+                  onChanged={refresh}
+                />
+              )}
+            </>
+          );
+        })()}
 
         {/* High Court 4-stage tracker + named document slots. Only renders
             for HC matters; criminal cases are covered by the workflow graph. */}
