@@ -2,6 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useT } from "@/components/i18n/LanguageProvider";
+import { uploadFileWithProgress, type UploadProgress } from "@/lib/upload-client";
+
+function fmtMB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type Tab = "file" | "url";
 
@@ -35,6 +40,7 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("file");
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [urlValue, setUrlValue] = useState("");
@@ -52,28 +58,34 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
     if (!file) { setError(t("Please choose a file.")); return; }
     if (!label) { setError(t("Label is required.")); return; }
 
+    const form = e.currentTarget;
     setUploading(true);
+    setProgress({ percent: 0, loadedBytes: 0, totalBytes: file.size });
     try {
-      const upForm = new FormData();
-      upForm.append("file", file);
-      const up = await fetch("/api/upload", { method: "POST", body: upForm });
-      const upData = await up.json();
-      if (!up.ok) { setError(upData.error ?? t("Upload failed.")); return; }
+      // Direct-to-storage upload (no size limit) with live progress.
+      let url: string;
+      try {
+        url = await uploadFileWithProgress(file, setProgress);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("Upload failed."));
+        return;
+      }
 
       const attach = await fetch(`/api/cases/${caseId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ addDocument: { label, url: upData.url, category } }),
+        body: JSON.stringify({ addDocument: { label, url, category } }),
       });
       const attachData = await attach.json();
       if (!attach.ok) { setError(attachData.error ?? t("Failed to attach.")); return; }
 
       setSuccess(t("Document attached."));
-      (e.target as HTMLFormElement).reset();
+      form.reset();
       onUploaded();
       setTimeout(() => setSuccess(""), 3000);
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   }
 
@@ -140,15 +152,38 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
               {cats.map(c => <option key={c.value} value={c.value}>{t(c.label)}</option>)}
             </select>
           </div>
-          <input ref={fileRef} type="file" name="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
-            className="block w-full text-sm text-(--muted) file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:cursor-pointer" />
+          <input ref={fileRef} type="file" name="file" disabled={uploading}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,image/*,video/*"
+            className="block w-full text-sm text-(--muted) file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:cursor-pointer disabled:opacity-60" />
           <button type="submit" disabled={uploading}
             className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {uploading ? t("Uploading…") : t("Attach to Case")}
           </button>
-          <p className="text-[11px] text-(--muted)">{t("PDF / Word / Excel / image · up to 15 MB · choosing a milestone category marks that step as filed.")}</p>
+
+          {/* Upload progress — large files can take a while, so show the bar
+              and the bytes transferred so the user knows to wait. */}
+          {uploading && progress && (
+            <div className="space-y-1">
+              <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "var(--bg-secondary)" }}>
+                <div className="h-full rounded-full transition-all duration-200"
+                  style={{
+                    width: progress.percent != null ? `${progress.percent}%` : "100%",
+                    background: "var(--accent)",
+                    opacity: progress.percent == null ? 0.5 : 1,
+                  }} />
+              </div>
+              <div className="flex items-center justify-between text-[11px]" style={{ color: "var(--muted)" }}>
+                <span>
+                  {progress.percent != null ? `${progress.percent}%` : t("Uploading…")}
+                  {progress.totalBytes > 0 && ` · ${fmtMB(progress.loadedBytes)} / ${fmtMB(progress.totalBytes)}`}
+                </span>
+                <span>{progress.percent === 100 ? t("Finishing…") : t("Please keep this tab open")}</span>
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-(--muted)">{t("PDF / Word / Excel / image / video · large files supported · choosing a milestone category marks that step as filed.")}</p>
         </form>
       ) : (
         <form onSubmit={handleUrlSubmit} className="space-y-3">

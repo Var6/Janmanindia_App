@@ -17,7 +17,11 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "audio/webm", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a",
 ];
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+// Generous backstop. Large case documents now go straight to storage via the
+// presigned-URL route (/api/upload/presign), which has no practical size cap;
+// this server-buffered path is the dev/no-R2 fallback and smaller uploads
+// (avatars, voice notes, receipts).
+const MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
 
 // ── R2 (Cloudflare) — used in production. S3-compatible, zero egress. ────────
 const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only images, PDFs, Word/Excel, or audio files are allowed" }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "File must be under 25 MB" }, { status: 400 });
+      return NextResponse.json({ error: "File is too large to upload" }, { status: 400 });
     }
 
     // Filename: <unguessable>-<original-ext>. Sanitise the extension only;
