@@ -1783,6 +1783,43 @@ function StatusEditor({ caseId, value, canEdit, onChanged }: {
  * deserves an explicit, obvious button. It stamps a completion date and lets
  * the user record how the matter ended. Hidden once the case is already in a
  * final state. */
+/* ── Opt-in to the bail track ──────────────────────────────────────────────
+ * Most criminal cases don't need a bail workflow, so we don't show one by
+ * default. When a bail application is actually filed, the team clicks this to
+ * start (and reveal) the dedicated bail tree. */
+function StartBailTrackButton({ caseId, onChanged }: { caseId: string; onChanged: () => void }) {
+  const t = useT();
+  const [saving, setSaving] = useState(false);
+  async function start() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageTransition: { stage: "bail_applied", action: "advance" } }),
+      });
+      if (res.ok) onChanged();
+      else {
+        const d = await res.json().catch(() => ({}));
+        alert((d as { error?: string }).error ?? t("Failed to start the bail track."));
+      }
+    } finally { setSaving(false); }
+  }
+  return (
+    <button type="button" onClick={start} disabled={saving}
+      className="w-full rounded-2xl border border-dashed px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+      style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--surface)" }}>
+      ＋ {saving ? t("Starting…") : t("Track a bail application")}
+    </button>
+  );
+}
+
+/* ── "Mark as Disposed / Completed" — one-click finaliser ───────────────────
+ * Statuses are also reachable from the dropdown, but disposal/completion is
+ * the common end state (mutual settlement, compromise, bail granted) and
+ * deserves an explicit, obvious button. It stamps a completion date and lets
+ * the user record how the matter ended. Hidden once the case is already in a
+ * final state. */
 const FINAL_CASE_STATUSES = ["Disposal", "Closed", "Dismissed", "Withdrawn"];
 function DisposeButton({ caseId, status, canEdit, onChanged }: {
   caseId: string; status: string; canEdit: boolean; onChanged: () => void;
@@ -1818,7 +1855,7 @@ function DisposeButton({ caseId, status, canEdit, onChanged }: {
         ✓ {t("Mark Disposed / Completed")}
       </button>
       {open && (
-        <div className="absolute z-20 mt-2 left-0 w-72 rounded-xl border p-3 shadow-lg"
+        <div className="absolute z-20 bottom-full mb-2 left-1/2 -translate-x-1/2 w-72 rounded-xl border p-3 shadow-lg"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-xs font-semibold mb-1" style={{ color: "var(--text)" }}>
             {t("Mark this case as disposed / completed?")}
@@ -2495,7 +2532,6 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
             {c.path === "criminal" ? `⚖ ${t("Criminal")}` : `🏛 ${t("High Court")}`}
           </span>
-          <DisposeButton caseId={c._id} status={c.status} canEdit={canEdit} onChanged={fetchCase} />
           {c.status === "Disposal" && c.disposedAt && (
             <span className="text-xs px-2.5 py-1 rounded-full"
               title={c.disposalReason ? `${t("Reason")}: ${c.disposalReason}` : undefined}
@@ -2699,14 +2735,18 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             for criminal; each step for HC) toggles its done-ness. The old
             standalone stepper + duplicate timeline are gone. */}
         {(() => {
-          // A bail matter is a dedicated Bail Application (BA / ABA) case type,
-          // or any criminal case where the bail sub-track has been started.
+          // A bail matter is a dedicated Bail Application (BA / ABA) case type.
+          // For those, the bail tree IS the case workflow.
           const isBailType = /^(BA|ABA)$/i.test(c.caseType ?? "") || /bail/i.test(c.caseType ?? "");
           const bailIsPrimary = c.path === "criminal" && isBailType;
-          // Show the bail track as a secondary tree on criminal cases that
-          // aren't themselves bail applications — so the FIR → bail → end flow
-          // ("a completely different tree and track") is always available.
-          const showSecondaryBail = c.path === "criminal" && !isBailType;
+          // On other criminal cases bail is OPTIONAL — only show the bail track
+          // once it's actually been started (so cases that never need bail don't
+          // get a stray tree). A small opt-in button below lets the team start
+          // it when a bail application is filed.
+          const bailStarted = !!c.criminalPath?.bailTrack?.bailApplied
+            || !!c.criminalPath?.bailTrack?.bailDecision;
+          const showSecondaryBail = c.path === "criminal" && !isBailType && bailStarted;
+          const showStartBail = c.path === "criminal" && !isBailType && !bailStarted && canEdit;
           const crimProp = c.criminalPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["criminalPath"];
           return (
             <>
@@ -2734,6 +2774,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                   onChanged={refresh}
                 />
               )}
+              {showStartBail && <StartBailTrackButton caseId={c._id} onChanged={refresh} />}
             </>
           );
         })()}
@@ -2802,6 +2843,15 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           description={t("Every change to this case — stage flips, document uploads, status updates — is recorded here with the user who did it.")}>
           <CaseAuditLog entries={c.auditLog ?? []} />
         </CollapsibleSection>
+
+        {/* Finaliser — sits at the very bottom of the case so it's the last
+            action after reviewing everything above. Hidden once the case is
+            already in a final state. */}
+        {canEdit && !FINAL_CASE_STATUSES.includes(c.status) && (
+          <div className="pt-2 flex justify-center">
+            <DisposeButton caseId={c._id} status={c.status} canEdit={canEdit} onChanged={fetchCase} />
+          </div>
+        )}
       </div>
     );
   }
