@@ -37,7 +37,13 @@ function xhrSend(
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
-      else reject(new UploadError(`Upload failed (HTTP ${xhr.status})`));
+      else {
+        // Surface the storage provider's error code (R2/S3 return an XML body
+        // with a <Code> tag) so failures are diagnosable instead of opaque.
+        const codeMatch = /<Code>([^<]+)<\/Code>/.exec(xhr.responseText || "");
+        const detail = codeMatch ? `: ${codeMatch[1]}` : "";
+        reject(new UploadError(`Upload failed (HTTP ${xhr.status}${detail})`));
+      }
     };
     xhr.onerror = () => reject(new UploadError("Network error during upload. If this is a large file, check your connection and try again."));
     xhr.ontimeout = () => reject(new UploadError("Upload timed out."));

@@ -44,6 +44,12 @@ const r2 = r2Configured
       region: "auto",
       endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET! },
+      // Newer AWS SDKs add an integrity checksum header (x-amz-checksum-crc32)
+      // by default. For a *presigned browser PUT* the browser can't reproduce
+      // that header, so R2 rejects the upload (500/501). Only add checksums
+      // when the operation actually requires it — the fix for R2 presigned PUTs.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     })
   : null;
 
@@ -84,16 +90,21 @@ export async function POST(request: NextRequest) {
 
   // Sign only Bucket/Key/ContentType — the browser must send the same
   // Content-Type header on its PUT, and nothing else needs signing.
-  const uploadUrl = await getSignedUrl(
-    r2,
-    new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, ContentType: contentType }),
-    { expiresIn: 600 } // 10 minutes — long enough for a slow connection on a big file
-  );
+  try {
+    const uploadUrl = await getSignedUrl(
+      r2,
+      new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, ContentType: contentType }),
+      { expiresIn: 600 } // 10 minutes — long enough for a slow connection on a big file
+    );
 
-  return NextResponse.json({
-    mode: "r2",
-    uploadUrl,
-    publicUrl: `${R2_PUBLIC_BASE}/${key}`,
-    contentType,
-  });
+    return NextResponse.json({
+      mode: "r2",
+      uploadUrl,
+      publicUrl: `${R2_PUBLIC_BASE}/${key}`,
+      contentType,
+    });
+  } catch (err) {
+    console.error("Presign error:", err);
+    return NextResponse.json({ error: "Could not prepare the upload URL." }, { status: 500 });
+  }
 }
