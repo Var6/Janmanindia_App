@@ -617,7 +617,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             attendeeEmails: attendees,
             caseId: String(updated._id),
           });
-          await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
+          if (eventId) await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
         }
       } catch (calErr) {
         console.error("Calendar sync error:", calErr);

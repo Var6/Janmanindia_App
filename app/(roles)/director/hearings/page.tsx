@@ -24,6 +24,7 @@ export default function DirectorHearingsPage() {
   const [hearings, setHearings] = useState<Hearing[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [cal, setCal] = useState<{ ok: boolean; configured: boolean; detail: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/cases/hearings")
@@ -31,6 +32,10 @@ export default function DirectorHearingsPage() {
       .then((d) => setHearings(d.hearings ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
+    fetch("/api/calendar/health")
+      .then((r) => r.json())
+      .then((d) => setCal(d))
+      .catch(() => {});
   }, []);
 
   const filtered = useMemo(() => {
@@ -60,6 +65,23 @@ export default function DirectorHearingsPage() {
         <h1 className="text-2xl font-bold text-(--text)">{t("Upcoming Hearings")}</h1>
         <p className="text-sm text-(--muted) mt-1">{t("Every court date in the next 60 days, across all cases — for follow-up and monitoring.")}</p>
       </div>
+
+      {/* Google Calendar sync status — so the team knows hearings are flowing. */}
+      {cal && (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-xl border text-xs"
+          style={cal.ok
+            ? { background: "var(--success-bg)", borderColor: "color-mix(in srgb,var(--success) 30%,transparent)", color: "var(--success-text)" }
+            : { background: "var(--warning-bg)", borderColor: "color-mix(in srgb,var(--warning) 30%,transparent)", color: "var(--warning-text)" }}>
+          <span>{cal.ok ? "✅" : "⚠️"}</span>
+          <span>
+            {cal.ok
+              ? t("Google Calendar sync is active — hearing dates are pushed to the shared calendar.")
+              : !cal.configured
+                ? t("Google Calendar is not configured. Set the service-account credentials in the environment to sync hearings.")
+                : `${t("Google Calendar sync error")}: ${cal.detail}`}
+          </span>
+        </div>
+      )}
 
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search cases…")}
         className="w-full sm:max-w-md px-3 py-2 rounded-lg border text-sm focus:outline-none"

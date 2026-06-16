@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           caseId: String(caseDoc._id),
         });
 
-        await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
+        if (eventId) await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
       } catch (calErr) {
         console.error("Calendar event creation error:", calErr);
       }
