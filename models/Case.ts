@@ -214,6 +214,10 @@ export interface ICase extends Document {
    *  multiple lawyers. The lead lawyer is always litigationMembers[0]. */
   litigationMembers?: mongoose.Types.ObjectId[];
   socialWorker?: mongoose.Types.ObjectId;
+  /** Which of the four workflows this case follows (criminal / family / civil /
+   *  writ). Drives which step-tree renders. `path` stays for back-compat
+   *  (criminal vs the High-Court render); `flow` is the finer intent. */
+  flow?: "criminal" | "family" | "civil" | "writ";
   nextHearingDate?: Date;
   /** The hearing's Google Calendar event id. Lives on `googleEventOwner`'s
    *  primary calendar; every other team member is an attendee (invited by
@@ -583,6 +587,7 @@ const caseSchema = new Schema<ICase>(
       default: "Pending",
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
+    flow: { type: String, enum: ["criminal", "family", "civil", "writ"] },
     project: { type: Schema.Types.ObjectId, ref: "Project", index: true },
     projectPhase: { type: String, trim: true },
     caseType: { type: String, trim: true, index: true },

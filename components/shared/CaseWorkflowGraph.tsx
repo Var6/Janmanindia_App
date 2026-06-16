@@ -468,6 +468,55 @@ function buildHCGraph(hcp: HCPath, createdAt: string): { nodes: GNode[]; edges: 
   return { nodes, edges };
 }
 
+// ── Family Court & Civil ("Other Cases") graph builders ─────────────────────
+// Both are simple linear flows whose steps have no dedicated typed field —
+// completion is tracked entirely via the generic Case.stageMarks map (keyed by
+// the node id). `marks` lets us light the first unmarked step as the current
+// one; the public component's overlay also stamps `markDone` for click toggles.
+type StepDef = { id: string; label: string };
+
+const FAMILY_STEPS: StepDef[] = [
+  { id: "fam_admission",  label: "Admission" },
+  { id: "fam_appearance", label: "Appearance of Opposite Party" },
+  { id: "fam_ws",         label: "Written Statement" },
+  { id: "fam_issues",     label: "Framing of Issues" },
+  { id: "fam_witness",    label: "Witness" },
+  { id: "fam_arguments",  label: "Arguments" },
+  { id: "fam_outcome",    label: "Final Outcome — Allowed / Disposed" },
+];
+
+const CIVIL_STEPS: StepDef[] = [
+  { id: "civ_admission",  label: "Hearing on Admission" },
+  { id: "civ_ws",         label: "Written Statement / Counter Affidavit" },
+  { id: "civ_rejoinder",  label: "Rejoinder" },
+  { id: "civ_final",      label: "Final Hearing" },
+  { id: "civ_outcome",    label: "Outcome — Allowed / Disposed" },
+];
+
+function buildLinearGraph(
+  steps: StepDef[],
+  marks: Record<string, string | Date>,
+  createdAt: string,
+): { nodes: GNode[]; edges: GEdge[] } {
+  const nodes: GNode[] = [];
+  const edges: GEdge[] = [];
+  nodes.push({ id: "filed", row: 0, col: 0, status: "done", label: "Case Filed", date: fmt(createdAt) });
+
+  const firstUnmarked = steps.findIndex((s) => !marks[s.id]);
+  steps.forEach((s, i) => {
+    const row = i + 1;
+    const marked = Boolean(marks[s.id]);
+    const status: St = marked ? "done" : i === firstUnmarked ? "active" : "pending";
+    nodes.push({
+      id: s.id, row, col: 0, status, label: s.label,
+      date: marked ? fmt(marks[s.id]) : undefined,
+      terminal: i === steps.length - 1 && marked,
+    });
+    edges.push({ fr: row - 1, fc: 0, tr: row, tc: 0, status });
+  });
+  return { nodes, edges };
+}
+
 // ── SVG renderer ────────────────────────────────────────────────────────────
 function GraphSvg({ nodes, edges, totalRows }: { nodes: GNode[]; edges: GEdge[]; totalRows: number }) {
   const h = totalRows * RH;
@@ -679,8 +728,14 @@ function Legend() {
 }
 
 // ── Public component ─────────────────────────────────────────────────────────
+type CaseFlow = "criminal" | "family" | "civil" | "writ";
+
 interface Props {
   path: "criminal" | "highcourt";
+  /** Which of the four workflows to render. When omitted, falls back to the
+   *  path ("criminal" → criminal tree, otherwise the High Court / Writ tree),
+   *  preserving behaviour for cases created before flows existed. */
+  flow?: CaseFlow;
   criminalPath?: CrimPath;
   highCourtPath?: HCPath;
   firFiled?: boolean;
@@ -707,24 +762,43 @@ interface Props {
   pinnedNotes?: Array<{ _id: string; text: string; byName?: string }>;
 }
 
-export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes, stageMarks }: Props) {
+export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes, stageMarks }: Props) {
   const t = useT();
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
   const [busyNodeId, setBusyNodeId] = useState<string | null>(null);
 
-  if (path === "criminal" && bailMatter) {
+  const marks = stageMarks ?? {};
+  // Effective flow: explicit prop wins; otherwise infer from the legacy path.
+  const effFlow: CaseFlow = flow ?? (path === "criminal" ? "criminal" : "writ");
+
+  if (effFlow === "criminal" && bailMatter) {
     const result = buildBailGraph(criminalPath ?? { firFiled: false, chargesheetFiled: false, chargesFramed: false }, createdAt);
     nodes = result.nodes;
     edges = result.edges;
-  } else if (path === "criminal" && criminalPath) {
-    const result = firFiled
-      ? buildFirGraph(criminalPath, createdAt)
-      : buildComplaintGraph(criminalPath, createdAt);
+  } else if (effFlow === "criminal") {
+    const cp = criminalPath ?? { firFiled: false, chargesheetFiled: false, chargesFramed: false };
+    const result = firFiled ? buildFirGraph(cp, createdAt) : buildComplaintGraph(cp, createdAt);
     nodes = result.nodes;
     edges = result.edges;
-  } else if (path === "highcourt" && highCourtPath) {
-    const result = buildHCGraph(highCourtPath, createdAt);
+  } else if (effFlow === "family") {
+    const result = buildLinearGraph(FAMILY_STEPS, marks, createdAt);
+    nodes = result.nodes;
+    edges = result.edges;
+  } else if (effFlow === "civil") {
+    const result = buildLinearGraph(CIVIL_STEPS, marks, createdAt);
+    nodes = result.nodes;
+    edges = result.edges;
+  } else {
+    // writ → the High Court petition flow
+    const result = buildHCGraph(
+      highCourtPath ?? {
+        petitionFiled: { filed: false }, supportingAffidavit: { filed: false },
+        admission: { filed: false }, counterAffidavit: { filed: false },
+        rejoinder: { filed: false }, pleaClose: { filed: false }, inducement: { filed: false },
+      },
+      createdAt,
+    );
     nodes = result.nodes;
     edges = result.edges;
   }
@@ -739,7 +813,6 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
   // ticked, which drives the click toggle (advance vs revert) for generic nodes
   // independently of the inherited positional status. Typed steps and
   // structural outcome nodes are left untouched.
-  const marks = stageMarks ?? {};
   nodes = nodes.map((nd) => {
     if (STAGE_ID_FOR_NODE[nd.id] || NON_CLICKABLE_NODES.has(nd.id)) return nd;
     const markedAt = marks[nd.id];
@@ -791,10 +864,12 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
         style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
         <div>
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-            {path === "criminal"
+            {effFlow === "criminal"
               ? (bailMatter ? t("Bail Workflow")
                  : firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))
-              : t("High Court Workflow")}
+              : effFlow === "family" ? t("Family Court Workflow")
+              : effFlow === "civil" ? t("Civil Court Workflow")
+              : t("High Court / Writ Workflow")}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
             {done} {t("of")} {total} {t("steps completed")}

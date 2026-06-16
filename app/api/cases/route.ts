@@ -194,10 +194,15 @@ export async function POST(request: NextRequest) {
 
     // Resolve workflow path: explicit `path` wins; otherwise derive from caseType
     let path: "criminal" | "highcourt" | undefined = rawPath;
-    if (!path && caseType) {
-      const { lookupCaseType } = await import("@/lib/case-types");
+    let flow: "criminal" | "family" | "civil" | "writ" | undefined;
+    if (caseType) {
       const { lookupECourtType } = await import("@/lib/ecourts-case-types");
-      path = lookupECourtType(caseType)?.path ?? lookupCaseType(caseType)?.path;
+      const eType = lookupECourtType(caseType);
+      flow = eType?.flow;
+      if (!path) {
+        const { lookupCaseType } = await import("@/lib/case-types");
+        path = eType?.path ?? lookupCaseType(caseType)?.path;
+      }
     }
     if (!path) {
       return NextResponse.json({ error: "Either path or a recognised caseType is required" }, { status: 400 });
@@ -332,6 +337,7 @@ export async function POST(request: NextRequest) {
       // Whoever files the case keeps visibility + delete rights on it.
       createdBy: session.id,
       path,
+      ...(flow ? { flow } : {}),
       caseType: caseType?.trim() || undefined,
       district: district?.trim() || undefined,
       causeTitle: causeTitle?.trim() || undefined,

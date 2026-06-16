@@ -73,6 +73,7 @@ function LoginFormInner({ googleEnabled }: Props) {
       setError(detail ? `${base}\n\n[${code}] ${detail}` : base);
     }
   }, [searchParams, googleEnabled]);
+  
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

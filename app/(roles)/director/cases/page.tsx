@@ -59,7 +59,10 @@ export default async function AdminCasesPage() {
     currentStep: c.currentStep ? tt(c.currentStep) : undefined,
     path: c.path,
     status: c.status,
-    district: c.district || c.state || c.courtName || "—",
+    // Place filed = the Janman district, falling back to the state. Do NOT fall
+    // back to courtName — that leaked High Court names ("Patna High Court") into
+    // the District filter. The court has its own filter (`court`, below).
+    district: c.district || c.state || "—",
     court: c.courtName || "",
     community: (c.community as unknown as { name?: string } | null)?.name ?? "",
     lawyer: (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",

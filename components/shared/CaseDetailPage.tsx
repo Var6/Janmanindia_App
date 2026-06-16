@@ -14,6 +14,7 @@ import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
 import { useT } from "@/components/i18n/LanguageProvider";
 import Translatable from "@/components/i18n/Translatable";
+import { lookupECourtType, type CaseFlow } from "@/lib/ecourts-case-types";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 type DocMeta = { _id?: string; label: string; url: string; uploadedAt: string; ocrStatus?: string; ocrText?: string };
@@ -2748,10 +2749,16 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           const showSecondaryBail = c.path === "criminal" && !isBailType && bailStarted;
           const showStartBail = c.path === "criminal" && !isBailType && !bailStarted && canEdit;
           const crimProp = c.criminalPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["criminalPath"];
+          // Which of the four flows to render: stored `flow` wins, else derive
+          // from the case type via the eCourts catalog, else fall back to path.
+          const caseFlow: CaseFlow = (c as { flow?: CaseFlow }).flow
+            ?? lookupECourtType(c.caseType ?? "")?.flow
+            ?? (c.path === "criminal" ? "criminal" : "writ");
           return (
             <>
               <CaseWorkflowGraph
                 path={c.path}
+                flow={bailIsPrimary ? "criminal" : caseFlow}
                 bailMatter={bailIsPrimary}
                 criminalPath={crimProp}
                 highCourtPath={c.highCourtPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["highCourtPath"]}
@@ -2766,6 +2773,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
               {showSecondaryBail && (
                 <CaseWorkflowGraph
                   path="criminal"
+                  flow="criminal"
                   bailMatter
                   criminalPath={crimProp}
                   firFiled={c.criminalPath?.firFiled}
@@ -2781,9 +2789,12 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           );
         })()}
 
-        {/* High Court 4-stage tracker + named document slots. Only renders
-            for HC matters; criminal cases are covered by the workflow graph. */}
-        {c.path === "highcourt" && (
+        {/* High Court 4-stage tracker + named document slots. Only the Writ /
+            High Court flow uses these; criminal/family/civil flows are fully
+            covered by their own workflow graph above. */}
+        {(((c as { flow?: CaseFlow }).flow
+            ?? lookupECourtType(c.caseType ?? "")?.flow
+            ?? (c.path === "criminal" ? "criminal" : "writ")) === "writ") && (
           <HighCourtStagesAndDocs caseId={c._id} caseData={c} canEdit={canEdit} onChanged={refresh} />
         )}
 
