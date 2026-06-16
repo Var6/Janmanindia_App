@@ -11,7 +11,11 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { caseId } = body as { caseId: string };
+    const { caseId, location: locationOverride, nextHearingDate } = body as {
+      caseId: string;
+      location?: string;
+      nextHearingDate?: string;
+    };
 
     if (!caseId) {
       return NextResponse.json({ error: "caseId is required" }, { status: 400 });
@@ -25,27 +29,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    // Determine location from case or social worker — fall back to empty if missing
-    const swUser = caseDoc.socialWorker as unknown as { _id: string } | null;
-    let district = "";
-    if (swUser) {
-      const sw = await User.findById(swUser._id).lean();
-      district = sw?.litigationProfile?.location?.district ?? "";
+    // Persist a hearing date passed from the assign form (so the calendar sync
+    // and dashboard widgets pick it up).
+    if (nextHearingDate) {
+      const d = new Date(nextHearingDate);
+      if (!isNaN(d.getTime())) {
+        caseDoc.nextHearingDate = d;
+        await Case.updateOne({ _id: caseId }, { nextHearingDate: d });
+      }
     }
 
-    // Step 1: Filter litigation members by role, isActive=true, matching district
-    const filter: Record<string, unknown> = { role: "litigation", isActive: true };
-    if (district) filter["litigationProfile.location.district"] = district;
+    // Target location for matching: the override typed on the form wins,
+    // otherwise the case's own district / state (which is what we really want —
+    // not the social worker's home district as before).
+    const swUser = caseDoc.socialWorker as unknown as { _id: string } | null;
+    let swDistrict = "";
+    if (swUser) {
+      const sw = await User.findById(swUser._id).lean();
+      swDistrict = sw?.litigationProfile?.location?.district ?? "";
+    }
+    const targetLoc = (locationOverride?.trim() || caseDoc.district || caseDoc.state || swDistrict || "").trim();
 
-    const candidates = await User.find(filter)
+    // Step 1: all active litigation members, least-loaded first.
+    const allCandidates = await User.find({ role: "litigation", isActive: true })
       .sort({ "litigationProfile.activeCaseCount": 1 })
       .lean();
 
-    if (candidates.length === 0) {
+    if (allCandidates.length === 0) {
       return NextResponse.json(
-        { error: "No active litigation members found for this district" },
+        { error: "No active litigation members exist. Add a lawyer first." },
         { status: 409 }
       );
+    }
+
+    // Step 2: prefer lawyers whose district/city matches the target location.
+    // If none match (or no location known), fall back to ALL — we still assign
+    // by workload rather than hard-failing.
+    let candidates = allCandidates;
+    let note: string | undefined;
+    if (targetLoc) {
+      const lc = targetLoc.toLowerCase();
+      const matched = allCandidates.filter((c) => {
+        const d = (c.litigationProfile?.location?.district ?? "").toLowerCase();
+        const city = (c.litigationProfile?.location?.city ?? "").toLowerCase();
+        return (d && (lc.includes(d) || d.includes(lc))) || (city && (lc.includes(city) || city.includes(lc)));
+      });
+      if (matched.length > 0) {
+        candidates = matched;
+      } else {
+        note = `No lawyer is tagged to "${targetLoc}". Assigned the least-loaded lawyer overall — set lawyer districts in their profile to enable location matching.`;
+      }
+    } else {
+      note = "No location on this case. Assigned the least-loaded lawyer overall.";
     }
 
     const hearingDate = caseDoc.nextHearingDate;
@@ -87,9 +122,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 3: Assign and increment activeCaseCount
+    // Step 3: Assign and increment activeCaseCount. Set the lead
+    // (litigationMember) AND add to litigationMembers[] — the lawyer's case
+    // list queries the array, so without this the assigned case wouldn't show
+    // up for them.
     await Promise.all([
-      Case.updateOne({ _id: caseId }, { litigationMember: assignedUser._id }),
+      Case.updateOne(
+        { _id: caseId },
+        { $set: { litigationMember: assignedUser._id }, $addToSet: { litigationMembers: assignedUser._id } }
+      ),
       User.updateOne(
         { _id: assignedUser._id },
         { $inc: { "litigationProfile.activeCaseCount": 1 } }
@@ -111,6 +152,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       assignedTo: { id: assignedUser._id, name: assignedUser.name, email: assignedUser.email },
+      note,
       case: updatedCase,
     });
   } catch (error) {

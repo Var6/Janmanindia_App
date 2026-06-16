@@ -248,6 +248,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         return NextResponse.json({ error: `Target must be an active ${label}.` }, { status: 400 });
       }
       update[field] = userId;
+      // (Re)assigning the lead advocate must also put them in litigationMembers[]
+      // — the lawyer's case list queries the array, so otherwise the assigned
+      // case wouldn't appear for them.
+      if (field === "litigationMember") {
+        update["$addToSet"] = {
+          ...(update["$addToSet"] as Record<string, unknown> ?? {}),
+          litigationMembers: userId,
+        };
+      }
       logAudit("metadata_updated", `Assigned ${label}: ${target.name}`);
     }
 
