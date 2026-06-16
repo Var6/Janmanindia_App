@@ -196,7 +196,8 @@ export async function POST(request: NextRequest) {
     let path: "criminal" | "highcourt" | undefined = rawPath;
     if (!path && caseType) {
       const { lookupCaseType } = await import("@/lib/case-types");
-      path = lookupCaseType(caseType)?.path;
+      const { lookupECourtType } = await import("@/lib/ecourts-case-types");
+      path = lookupECourtType(caseType)?.path ?? lookupCaseType(caseType)?.path;
     }
     if (!path) {
       return NextResponse.json({ error: "Either path or a recognised caseType is required" }, { status: 400 });

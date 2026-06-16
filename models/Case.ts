@@ -215,7 +215,20 @@ export interface ICase extends Document {
   litigationMembers?: mongoose.Types.ObjectId[];
   socialWorker?: mongoose.Types.ObjectId;
   nextHearingDate?: Date;
+  /** The hearing's Google Calendar event id. Lives on `googleEventOwner`'s
+   *  primary calendar; every other team member is an attendee (invited by
+   *  email), so the hearing lands on each person's own calendar. */
   googleCalendarEventId?: string;
+  /** Whose personal calendar hosts the hearing event — the user whose
+   *  refresh token we used. Needed to patch/delete the event later. */
+  googleEventOwner?: mongoose.Types.ObjectId;
+  /** Free-form per-step completion marks for the workflow tree, keyed by the
+   *  tree node id (e.g. "invest", "cog", "args"). Lets EVERY step in the
+   *  workflow graph be clicked done/undone — including descriptive steps that
+   *  have no dedicated typed field. Value is the timestamp it was marked.
+   *  Typed steps (firFiled, chargesFramed, each HC step …) still use their own
+   *  fields; this map only backs the steps that previously had no store. */
+  stageMarks?: Record<string, Date>;
   documents: IDocument[];
   caseDiary: IDiaryEntry[];
   enquiry?: IEnquiry;
@@ -612,6 +625,10 @@ const caseSchema = new Schema<ICase>(
     socialWorker: { type: Schema.Types.ObjectId, ref: "User" },
     nextHearingDate: Date,
     googleCalendarEventId: String,
+    googleEventOwner: { type: Schema.Types.ObjectId, ref: "User" },
+    // Free-form per-step completion marks for the workflow tree, keyed by node
+    // id. Mixed so any step id can be ticked without a schema change.
+    stageMarks: { type: Schema.Types.Mixed, default: {} },
     documents: [documentSchema],
     caseDiary: [diaryEntrySchema],
     enquiry: enquirySchema,

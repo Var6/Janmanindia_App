@@ -21,6 +21,15 @@ import {
   type CourtType,
 } from "@/lib/courts";
 import { CASE_TYPES, lookupCaseType } from "@/lib/case-types";
+import { caseTypesForCourt, lookupECourtType, type ECourtCaseType } from "@/lib/ecourts-case-types";
+
+/** Friendly group headers for the cascaded case-type dropdown. */
+const FLOW_LABELS: Record<ECourtCaseType["flow"], string> = {
+  criminal: "Criminal",
+  family: "Family Court",
+  civil: "Civil / Other",
+  writ: "Writ & Appeals",
+};
 
 type Community = { _id: string; name: string; email: string; phone?: string };
 type Lawyer    = { _id: string; name: string; email: string };
@@ -90,6 +99,29 @@ export default function CreateLitigationCaseForm() {
 
   /* ── Case-type (workflow path) ───────────────────────────────────── */
   const [caseType, setCaseType] = useState("");
+
+  // Case types cascade off the selected court level. Each option's value is its
+  // short code when the portal gives one, else its name. Grouped by flow for
+  // readability. "Other" courts have no fixed list → fall back to the legacy
+  // grouped catalog below.
+  const availableTypes = useMemo(() => caseTypesForCourt(courtType), [courtType]);
+  const typeValue = (t: ECourtCaseType) => t.code ?? t.name;
+  const typesByFlow = useMemo(() => {
+    const order: ECourtCaseType["flow"][] = ["criminal", "family", "civil", "writ"];
+    return order
+      .map((flow) => ({ flow, types: availableTypes.filter((t) => t.flow === flow) }))
+      .filter((g) => g.types.length > 0);
+  }, [availableTypes]);
+
+  // When the court level changes, drop a case type that no longer belongs to
+  // the new list so we never submit a mismatched (court, type) pair.
+  useEffect(() => {
+    if (availableTypes.length === 0) return; // "other" — keep whatever's chosen
+    if (caseType && !availableTypes.some((t) => typeValue(t) === caseType)) {
+      setCaseType("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courtType]);
 
   /* ── Numbering: assigned vs in-progress ──────────────────────────── */
   const [hasNumber, setHasNumber] = useState(true);
@@ -218,7 +250,10 @@ export default function CreateLitigationCaseForm() {
       return;
     }
 
-    const meta = lookupCaseType(caseType);
+    // Resolve the workflow path from the eCourts catalog first (court-cascaded
+    // types), then fall back to the legacy grouped catalog (used for "Other"
+    // courts and older codes).
+    const meta = lookupECourtType(caseType) ?? lookupCaseType(caseType);
     if (!meta) { setError("That case type isn't recognised."); return; }
 
     setSubmitting(true);
@@ -464,10 +499,21 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── 4. Case type (workflow path) ────────────────────────── */}
-      <Section title="4. Type of case" subtitle="Picks which workflow graph (criminal trial vs civil / writ) drives the case page.">
+      <Section title="4. Type of case" subtitle="Case types shown match the court selected above (eCourts catalog). Picks which workflow graph drives the case page.">
         <Select value={caseType} onChange={e => setCaseType(e.target.value)} required>
           <option value="" disabled>Choose a case type…</option>
-          {CASE_TYPES.map(g => (
+          {/* Cascaded list for Supreme / High Court / District — grouped by flow. */}
+          {typesByFlow.map(g => (
+            <optgroup key={g.flow} label={FLOW_LABELS[g.flow]}>
+              {g.types.map(t => (
+                <option key={typeValue(t)} value={typeValue(t)}>
+                  {t.code ? `${t.code} — ${t.name}` : t.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          {/* Fallback grouped catalog for "Other" courts (tribunals etc.). */}
+          {availableTypes.length === 0 && CASE_TYPES.map(g => (
             <optgroup key={g.group} label={g.group}>
               {g.types.map(t => (
                 <option key={t.code + g.group} value={t.code}>{t.code} — {t.name}</option>

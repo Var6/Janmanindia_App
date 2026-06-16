@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireRole } from "@/lib/auth";
 import Case from "@/models/Case";
 import User from "@/models/User";
-import { createCalendarEvent } from "@/lib/gcal";
+import { syncCaseHearing } from "@/lib/case-calendar-sync";
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,29 +96,12 @@ export async function POST(request: NextRequest) {
       ),
     ]);
 
-    // Step 4: Create Google Calendar event if hearing date set
+    // Step 4: Sync the hearing to Google Calendar if a hearing date is set.
+    // syncCaseHearing reads the case fresh and invites everyone on it (the
+    // assigned advocate, social worker, community member), hosting the event on
+    // the first connected person's calendar. See lib/case-calendar-sync.ts.
     if (hearingDate) {
-      try {
-        const community = caseDoc.community as unknown as { email?: string } | null;
-        const swDoc = caseDoc.socialWorker as unknown as { email?: string } | null;
-        const attendees = [
-          assignedUser.email,
-          community?.email,
-          swDoc?.email,
-        ].filter(Boolean) as string[];
-
-        const eventId = await createCalendarEvent({
-          title: `Hearing: ${caseDoc.caseTitle}`,
-          description: `Case #${caseDoc.caseNumber}`,
-          startDateTime: new Date(hearingDate),
-          attendeeEmails: attendees,
-          caseId: String(caseDoc._id),
-        });
-
-        if (eventId) await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
-      } catch (calErr) {
-        console.error("Calendar event creation error:", calErr);
-      }
+      await syncCaseHearing(caseId);
     }
 
     const updatedCase = await Case.findById(caseId)

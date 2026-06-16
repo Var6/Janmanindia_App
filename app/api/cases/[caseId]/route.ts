@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Case from "@/models/Case";
 import User from "@/models/User";
-import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/gcal";
+import { syncCaseHearing, removeCaseHearing } from "@/lib/case-calendar-sync";
 
 type Params = { params: Promise<{ caseId: string }> };
 
@@ -416,6 +416,28 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
       const advance = action === "advance";
       const now = new Date();
+
+      // Generic per-step mark. Any node in the workflow tree that has no
+      // dedicated typed field (descriptive steps like Investigation,
+      // Cognizance, Arguments, Bail Hearing …) is toggled here via a free-form
+      // `stageMarks` map keyed by the tree node id. This is what makes EVERY
+      // step in the tree clickable. Typed steps (fir, chargesheet, each HC
+      // step …) keep using their own fields below.
+      if (stage.startsWith("mark:")) {
+        const key = stage.slice(5);
+        if (!/^[A-Za-z0-9_]+$/.test(key)) {
+          return NextResponse.json({ error: "Invalid stage mark id" }, { status: 400 });
+        }
+        if (advance) {
+          update[`stageMarks.${key}`] = now;
+        } else {
+          update["$unset"] = { ...(update["$unset"] as Record<string, ""> ?? {}), [`stageMarks.${key}`]: "" };
+        }
+        logAudit(
+          advance ? "stage_advance" : "stage_revert",
+          advance ? "Marked a workflow step done" : "Reverted a workflow step"
+        );
+      } else {
       // Pretty stage labels for the audit summary — keep in sync with the
       // stepper labels so users see consistent wording across UIs.
       const STAGE_LABELS: Record<string, string> = {
@@ -481,6 +503,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         }
         update[`highCourtPath.${stage}.filed`]   = advance;
         update[`highCourtPath.${stage}.filedAt`] = advance ? now : null;
+      }
       }
     }
 
@@ -583,45 +606,21 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const updated = await Case.findByIdAndUpdate(caseId, update, { new: true });
 
-    // Sync Google Calendar on nextHearingDate change
-    if (body.nextHearingDate && updated) {
-      try {
-        const lmUser = await User.findById(updated.litigationMember).lean();
-        const communityUser = await User.findById(updated.community).lean();
-        const swUser = updated.socialWorker
-          ? await User.findById(updated.socialWorker).lean()
-          : null;
-
-        const attendees = [lmUser?.email, communityUser?.email, swUser?.email].filter(
-          Boolean
-        ) as string[];
-
-        const hearingDate = new Date(body.nextHearingDate);
-
-        if (updated.googleCalendarEventId) {
-          // Event already exists — move it to the new hearing date.
-          await updateCalendarEvent(updated.googleCalendarEventId, {
-            title: `Hearing: ${updated.caseTitle}`,
-            startDateTime: hearingDate,
-            attendeeEmails: attendees,
-          });
-        } else {
-          // No event yet (e.g. hearing date set on a case that wasn't created
-          // through the assign flow) — create one. The litigation member is an
-          // attendee, so it lands in their Google Calendar; it also sits on the
-          // shared org calendar the director monitors.
-          const eventId = await createCalendarEvent({
-            title: `Hearing: ${updated.caseTitle}`,
-            description: `Case #${updated.caseNumber}`,
-            startDateTime: hearingDate,
-            attendeeEmails: attendees,
-            caseId: String(updated._id),
-          });
-          if (eventId) await Case.updateOne({ _id: caseId }, { googleCalendarEventId: eventId });
-        }
-      } catch (calErr) {
-        console.error("Calendar sync error:", calErr);
-      }
+    // Sync Google Calendar whenever the hearing date is (re)set OR the people on
+    // the matter change. This creates / moves a single event hosted on one team
+    // member's personal calendar and invites EVERY other person — all litigation
+    // members, the social worker, the community member — so the hearing lands on
+    // each of their own calendars. Re-syncing on a membership change means a
+    // newly added advocate gets the invite and a removed one drops off.
+    // See lib/case-calendar-sync.ts.
+    const peopleChanged =
+      Boolean(body.shareWithLitigation) ||
+      Boolean(body.unshareLitigation) ||
+      body.community !== undefined ||
+      body.socialWorker !== undefined ||
+      body.litigationMember !== undefined;
+    if (updated?.nextHearingDate && (body.nextHearingDate || peopleChanged)) {
+      await syncCaseHearing(caseId);
     }
 
     // Delete the hearing calendar event once the matter reaches any final
@@ -631,12 +630,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const FINAL_STATUSES = ["Closed", "Dismissed", "Disposal", "Withdrawn"];
     const effectiveStatus = typeof update.status === "string" ? update.status : undefined;
     if (effectiveStatus && FINAL_STATUSES.includes(effectiveStatus) && caseDoc.googleCalendarEventId) {
-      try {
-        await deleteCalendarEvent(caseDoc.googleCalendarEventId);
-        await Case.updateOne({ _id: caseId }, { $unset: { googleCalendarEventId: 1 } });
-      } catch (calErr) {
-        console.error("Calendar delete error:", calErr);
-      }
+      await removeCaseHearing(caseId);
     }
 
     return NextResponse.json({ case: updated });
@@ -679,11 +673,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     if (caseDoc.googleCalendarEventId) {
-      try {
-        await deleteCalendarEvent(caseDoc.googleCalendarEventId);
-      } catch {
-        // Non-fatal
-      }
+      await removeCaseHearing(caseId);
     }
 
     await Case.deleteOne({ _id: caseId });

@@ -24,7 +24,8 @@ type St = "done" | "active" | "pending";
 const STAGE_ID_FOR_NODE: Record<string, string> = {
   fir:        "fir",
   cs:         "chargesheet",
-  charges:    "charges",
+  charges:    "charges",      // FIR-graph "Framing of Charges"
+  charge:     "charges",      // complaint-graph "Charge Framed"
   verdict:    "verdict",
   // Bail sub-track — node ids map to the bail stage transitions.
   bail_applied:  "bail_applied",
@@ -40,6 +41,14 @@ const STAGE_ID_FOR_NODE: Record<string, string> = {
   inducement:          "inducement",
 };
 
+/** Nodes that are automatic or structural and must NOT become click-to-mark
+ *  toggles: the always-done "Case Filed" root, and the verdict/bail outcome
+ *  displays which are driven by the recorded verdict / bail decision rather
+ *  than a free click. Everything else in the tree is clickable. */
+const NON_CLICKABLE_NODES = new Set<string>([
+  "filed", "acquit", "convict", "sentence", "closedC", "ff", "notice",
+]);
+
 // ── Data types ──────────────────────────────────────────────────────────────
 interface GNode {
   id: string;
@@ -51,6 +60,9 @@ interface GNode {
   date?: string;
   doc?: { label: string; url: string };
   terminal?: boolean;
+  /** For generic (mark-backed) nodes: whether this step was explicitly ticked.
+   *  Drives the click toggle independently of the inherited positional status. */
+  markDone?: boolean;
 }
 interface GEdge {
   fr: number; fc: 0 | 1;
@@ -422,14 +434,18 @@ function buildHCGraph(hcp: HCPath, createdAt: string): { nodes: GNode[]; edges: 
   const nodes: GNode[] = [];
   const edges: GEdge[] = [];
 
+  // Node ids match the STAGE_ID_FOR_NODE keys verbatim so every HC step is
+  // clickable and routes to its typed stage transition. (Earlier these used
+  // short ids like "petition"/"counter" that didn't match, so 4 of 7 steps
+  // were silently non-clickable.)
   const steps: [string, string, HCStep][] = [
-    ["petition",   "Petition Filed",          hcp.petitionFiled],
-    ["affidavit",  "Supporting Affidavit",    hcp.supportingAffidavit],
-    ["admission",  "Admission",               hcp.admission],
-    ["counter",    "Counter Affidavit",       hcp.counterAffidavit],
-    ["rejoinder",  "Rejoinder",               hcp.rejoinder],
-    ["pleaclose",  "Plea Close",              hcp.pleaClose],
-    ["inducement", "Inducement / Judgment",   hcp.inducement],
+    ["petitionFiled",       "Petition Filed",        hcp.petitionFiled],
+    ["supportingAffidavit", "Supporting Affidavit",  hcp.supportingAffidavit],
+    ["admission",           "Admission",             hcp.admission],
+    ["counterAffidavit",    "Counter Affidavit",     hcp.counterAffidavit],
+    ["rejoinder",           "Rejoinder",             hcp.rejoinder],
+    ["pleaClose",           "Plea Close",            hcp.pleaClose],
+    ["inducement",          "Inducement / Judgment", hcp.inducement],
   ];
 
   const st = makeSt([true, ...steps.map(([,,s]) => s.filed)]);
@@ -512,11 +528,16 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
       {visible.map(n => {
         const top = n.row * RH;
         const isBranch = n.col === 1;
-        // Decide whether the label itself becomes a button: only when the
-        // viewer can edit AND we have a stageTransition mapping for this
-        // node id. Click toggles done-ness via the parent callback.
-        const stageId   = STAGE_ID_FOR_NODE[n.id];
-        const clickable = canEdit && Boolean(stageId) && Boolean(onStageClick);
+        // Every step is clickable to mark, except the automatic/structural
+        // nodes (Case Filed, verdict & bail outcomes). Typed steps route to
+        // their dedicated stage transition; all others use a generic
+        // `mark:<id>` transition backed by Case.stageMarks.
+        const typedStage = STAGE_ID_FOR_NODE[n.id];
+        const stageId    = typedStage ?? `mark:${n.id}`;
+        const clickable  = canEdit && Boolean(onStageClick) && !NON_CLICKABLE_NODES.has(n.id);
+        // For generic nodes the toggle follows the explicit mark, not the
+        // inherited positional status, so a click always flips cleanly.
+        const currentlyDone = typedStage ? n.status === "done" : Boolean(n.markDone);
         const busy      = busyNodeId === n.id;
 
         const labelBody = (
@@ -548,7 +569,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                     background: "color-mix(in srgb, var(--accent) 12%, transparent)",
                     color: "var(--accent)",
                   }}>
-                  {busy ? "…" : n.status === "done" ? t("click to undo") : t("click to mark done")}
+                  {busy ? "…" : currentlyDone ? t("click to undo") : t("click to mark done")}
                 </span>
               )}
             </div>
@@ -600,7 +621,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
               key={n.id}
               type="button"
               disabled={busy}
-              onClick={() => onStageClick!(n.id, stageId, n.status === "done")}
+              onClick={() => onStageClick!(n.id, stageId, currentlyDone)}
               style={{
                 ...wrapperStyle,
                 textAlign: isAlt ? "right" : "left",
@@ -611,7 +632,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                 borderRadius: 8,
               }}
               className="hover:bg-(--bg-secondary) transition-colors"
-              title={n.status === "done" ? t("Click to undo this step") : t("Click to mark this step done")}>
+              title={currentlyDone ? t("Click to undo this step") : t("Click to mark this step done")}>
               {labelBody}
             </button>
           );
@@ -674,6 +695,10 @@ interface Props {
   canEdit?: boolean;
   /** Case id for the PATCH target. Only used when canEdit is true. */
   caseId?: string;
+  /** Free-form per-step completion marks (Case.stageMarks), keyed by tree node
+   *  id. Backs the descriptive steps that have no typed field, so EVERY step in
+   *  the tree can be clicked done. */
+  stageMarks?: Record<string, string | Date>;
   /** Re-fetch the case after a successful stage flip. */
   onChanged?: () => void | Promise<void>;
   /** Pinned cheatcode notes — rendered as floating sticky pills inside
@@ -682,7 +707,7 @@ interface Props {
   pinnedNotes?: Array<{ _id: string; text: string; byName?: string }>;
 }
 
-export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes }: Props) {
+export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes, stageMarks }: Props) {
   const t = useT();
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
@@ -705,6 +730,26 @@ export default function CaseWorkflowGraph({ path, criminalPath, highCourtPath, f
   }
 
   if (nodes.length === 0) return null;
+
+  // Overlay generic per-step marks. Descriptive steps (Investigation,
+  // Cognizance, Arguments, Bail Hearing, …) have no typed field, so an explicit
+  // tick is stored in Case.stageMarks. Marking one shows it done; the natural
+  // positional progression is preserved for everything else so the tree still
+  // reads coherently. `markDone` records whether THIS node was explicitly
+  // ticked, which drives the click toggle (advance vs revert) for generic nodes
+  // independently of the inherited positional status. Typed steps and
+  // structural outcome nodes are left untouched.
+  const marks = stageMarks ?? {};
+  nodes = nodes.map((nd) => {
+    if (STAGE_ID_FOR_NODE[nd.id] || NON_CLICKABLE_NODES.has(nd.id)) return nd;
+    const markedAt = marks[nd.id];
+    return {
+      ...nd,
+      markDone: Boolean(markedAt),
+      status: markedAt ? "done" : nd.status,
+      date: markedAt ? (nd.date ?? fmt(markedAt)) : nd.date,
+    };
+  });
 
   // Toggle the underlying boolean for this stage: done → revert; else → advance.
   // The parent re-fetches the case so the graph re-renders with the new state.

@@ -2759,6 +2759,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                 createdAt={c.createdAt}
                 canEdit={canEdit}
                 caseId={c._id}
+                stageMarks={(c as { stageMarks?: Record<string, string> }).stageMarks}
                 pinnedNotes={(c.caseComments ?? []).filter(n => n.pinned).map(n => ({ _id: n._id, text: n.text, byName: n.byName }))}
                 onChanged={refresh}
               />
@@ -2771,6 +2772,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                   createdAt={c.createdAt}
                   canEdit={canEdit}
                   caseId={c._id}
+                  stageMarks={(c as { stageMarks?: Record<string, string> }).stageMarks}
                   onChanged={refresh}
                 />
               )}
