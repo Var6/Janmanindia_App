@@ -638,8 +638,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // cases left a stale event on the calendar.)
     const FINAL_STATUSES = ["Closed", "Dismissed", "Disposal", "Withdrawn"];
     const effectiveStatus = typeof update.status === "string" ? update.status : undefined;
-    if (effectiveStatus && FINAL_STATUSES.includes(effectiveStatus) && caseDoc.googleCalendarEventId) {
-      await removeCaseHearing(caseId);
+    if (effectiveStatus && FINAL_STATUSES.includes(effectiveStatus)) {
+      if (caseDoc.googleCalendarEventId) await removeCaseHearing(caseId);
+      // Once a case is disposed/closed, its monthly reviews and any pending
+      // review-overdue notifications are no longer relevant — clean them up.
+      const CaseReview = (await import("@/models/CaseReview")).default;
+      const Notification = (await import("@/models/Notification")).default;
+      await Promise.all([
+        CaseReview.deleteMany({ case: caseId }),
+        Notification.deleteMany({ type: "review_overdue", "meta.caseId": String(caseId) }),
+      ]);
     }
 
     return NextResponse.json({ case: updated });

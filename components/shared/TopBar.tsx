@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import NotificationBell from "@/components/shared/NotificationBell";
 import { useT } from "@/components/i18n/LanguageProvider";
 
 const ROLE_PALETTE: Record<string, { bg: string; fg: string }> = {
@@ -61,6 +62,7 @@ export default function TopBar({ userName, role, roles }: Props) {
 
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="hidden sm:inline text-[12px] text-(--text) font-medium truncate max-w-45">{userName}</span>
+        <NotificationBell />
         <RoleSwitcher role={role} roles={roles} />
         <ThemeToggle />
       </div>

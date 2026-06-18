@@ -10,6 +10,7 @@ import CaseAuditLog from "@/components/shared/CaseAuditLog";
 import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
 import CaseFinanceTab from "@/components/case/CaseFinanceTab";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
+import CaseReviewSection from "@/components/shared/CaseReviewSection";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
 import { useT } from "@/components/i18n/LanguageProvider";
@@ -2803,6 +2804,9 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           <VerdictEditor caseId={c._id} verdict={c.criminalPath?.verdict} verdictDate={c.criminalPath?.verdictDate}
             canEdit={canEdit} onChanged={refresh} />
         )}
+
+        {/* Monthly case review — written by the advocate, visible to directors. */}
+        <CaseReviewSection caseId={c._id} caseCreatedAt={c.createdAt} caseStatus={c.status} />
 
         {/* Documents — visible to everyone; editors get upload + rename/delete. */}
         <CollapsibleSection
