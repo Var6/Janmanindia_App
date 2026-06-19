@@ -200,6 +200,20 @@ export interface ICase extends Document {
   /** Registry scrutiny outcome — captured separately from filingStatus so
    *  we can warn on defect deadlines without losing the broader state. */
   reportingStatus?: IReportingStatus;
+  /** Court-escalation history: a case can move up the hierarchy
+   *  (subordinate → High Court → Supreme Court). Each entry records one move;
+   *  the case's current location is `courtType` / `courtName` (kept in sync
+   *  with the latest entry's destination). */
+  escalations?: {
+    fromCourtType?: CourtType;
+    fromCourtName?: string;
+    toCourtType: CourtType;
+    toCourtName?: string;
+    toState?: string;
+    note?: string;
+    at: Date;
+    by?: mongoose.Types.ObjectId;
+  }[];
 
   community?: mongoose.Types.ObjectId;
   /** The user who first filed / registered this case. Always retains access
@@ -609,6 +623,24 @@ const caseSchema = new Schema<ICase>(
       index: true,
     },
     state: { type: String, trim: true, index: true },
+    escalations: {
+      type: [
+        new Schema(
+          {
+            fromCourtType: { type: String, enum: ["supreme", "highcourt", "district", "other"] },
+            fromCourtName: String,
+            toCourtType: { type: String, enum: ["supreme", "highcourt", "district", "other"], required: true },
+            toCourtName: String,
+            toState: String,
+            note: { type: String, trim: true },
+            at: { type: Date, default: Date.now },
+            by: { type: Schema.Types.ObjectId, ref: "User" },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
     parties: partiesSchema,
     subject: subjectSchema,
     pointOfContact: pointOfContactSchema,

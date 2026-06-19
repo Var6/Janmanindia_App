@@ -11,6 +11,8 @@ import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
 import CaseFinanceTab from "@/components/case/CaseFinanceTab";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
 import CaseReviewSection from "@/components/shared/CaseReviewSection";
+import { useToast } from "@/components/ui/ToastProvider";
+import { HIGH_COURTS } from "@/lib/courts";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { Skeleton, SkeletonCard, SkeletonStats } from "@/components/ui/Skeleton";
 import { useT } from "@/components/i18n/LanguageProvider";
@@ -72,6 +74,16 @@ type PopulatedCase = {
   // Court-type-aware fields populated by CreateLitigationCaseForm.
   courtType?: "supreme" | "highcourt" | "district" | "other";
   state?: string;
+  /** Court-escalation history (subordinate → High Court → Supreme Court). */
+  escalations?: Array<{
+    fromCourtType?: "supreme" | "highcourt" | "district" | "other";
+    fromCourtName?: string;
+    toCourtType: "supreme" | "highcourt" | "district" | "other";
+    toCourtName?: string;
+    toState?: string;
+    note?: string;
+    at: string;
+  }>;
   parties?: { petitioners?: string[]; respondents?: string[] };
   subject?: { courtThey?: string; ourPoints?: string; reason?: string };
   pointOfContact?: { name?: string; phone?: string; address?: string };
@@ -1122,9 +1134,36 @@ function CourtPartiesSubjectCard({
             {has(caseData.state) && <Line label={t("State")}><Translatable text={caseData.state} preLine={false} /></Line>}
             {has(caseData.courtName) && (
               <div className="sm:col-span-3">
-                <Line label={t("Court / Forum")} wide><Translatable text={caseData.courtName} preLine={false} /></Line>
+                <Line label={t("Current location")} wide><Translatable text={caseData.courtName} preLine={false} /></Line>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Escalation history — the case's journey up the court hierarchy. */}
+        {(caseData.escalations?.length ?? 0) > 0 && (
+          <div className="pt-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>
+              {t("Escalation history")}
+            </p>
+            <ol className="space-y-1.5">
+              {caseData.escalations!.map((e, i) => {
+                const label = e.toCourtType === "supreme" ? t("Supreme Court")
+                  : e.toCourtType === "highcourt" ? t("High Court")
+                  : e.toCourtType === "district" ? t("Civil / District Court") : t("Tribunal / Forum");
+                return (
+                  <li key={i} className="text-xs flex items-start gap-2" style={{ color: "var(--text)" }}>
+                    <span style={{ color: "var(--accent)" }}>⬆</span>
+                    <span>
+                      <span className="font-semibold">{label}</span>
+                      {e.toCourtName ? ` — ${e.toCourtName}` : ""}
+                      <span style={{ color: "var(--muted)" }}> · {fmtDate(e.at)}</span>
+                      {e.note ? <span style={{ color: "var(--muted)" }}> · {e.note}</span> : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
           </div>
         )}
 
@@ -1878,6 +1917,108 @@ function DisposeButton({ caseId, status, canEdit, onChanged }: {
               className="text-xs font-semibold px-3 py-1 rounded-lg cursor-pointer hover:opacity-90"
               style={{ background: "var(--success-text)", color: "white" }}>
               {saving ? t("Saving…") : t("Mark Disposed")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Migrate / escalate the case up the court hierarchy ─────────────────── */
+const COURT_RANK: Record<string, number> = { other: 0, district: 1, highcourt: 2, supreme: 3 };
+
+function MigrateButton({ caseId, courtType, status, canEdit, onChanged }: {
+  caseId: string; courtType?: string; status: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const t = useT();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState<"highcourt" | "supreme">("highcourt");
+  const [courtName, setCourtName] = useState("");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (!canEdit || FINAL_CASE_STATUSES.includes(status)) return null;
+  const currentRank = COURT_RANK[courtType ?? "district"] ?? 1;
+  // Only forums strictly above the current one can be escalated to.
+  const options = ([
+    { value: "highcourt", label: t("High Court") },
+    { value: "supreme", label: t("Supreme Court") },
+  ] as const).filter((o) => COURT_RANK[o.value] > currentRank);
+  if (options.length === 0) return null; // already at the top (Supreme Court)
+
+  // Keep the selected target valid as options change.
+  const effectiveTarget = options.some((o) => o.value === target) ? target : options[0].value;
+
+  async function migrate() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          migrateCase: {
+            toCourtType: effectiveTarget,
+            toCourtName: effectiveTarget === "supreme" ? "Supreme Court of India" : courtName.trim(),
+            note: note.trim() || undefined,
+          },
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setOpen(false); setCourtName(""); setNote("");
+        toast(t("Case escalated."), "success");
+        onChanged();
+      } else {
+        toast((d as { error?: string }).error ?? t("Failed to escalate the case."), "error");
+      }
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer hover:opacity-80 inline-flex items-center gap-1"
+        style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)" }}>
+        ⬆ {t("Migrate / Escalate")}
+      </button>
+      {open && (
+        <div className="absolute z-20 bottom-full mb-2 left-1/2 -translate-x-1/2 w-72 rounded-xl border p-3 shadow-lg"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: "var(--text)" }}>
+            {t("Escalate this case to a higher court")}
+          </p>
+          <p className="text-[11px] mb-2" style={{ color: "var(--muted)" }}>
+            {t("Moves the case up the hierarchy and switches it to the High Court / writ workflow. The move is recorded in the case history.")}
+          </p>
+          <label className="block text-[11px] font-medium mb-1" style={{ color: "var(--muted)" }}>{t("Escalate to")}</label>
+          <select value={effectiveTarget} onChange={e => setTarget(e.target.value as "highcourt" | "supreme")}
+            className="w-full text-xs rounded-lg border px-2 py-1.5 mb-2 focus:outline-none"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }}>
+            {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          {effectiveTarget === "highcourt" && (
+            <select value={courtName} onChange={e => setCourtName(e.target.value)}
+              className="w-full text-xs rounded-lg border px-2 py-1.5 mb-2 focus:outline-none"
+              style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }}>
+              <option value="">{t("Select High Court…")}</option>
+              {HIGH_COURTS.map(h => <option key={h} value={h}>{h}</option>)}
+            </select>
+          )}
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
+            placeholder={t("Note (optional) — e.g. appeal filed, SLP no.")}
+            className="w-full text-xs rounded-lg border px-2 py-1.5 mb-2 focus:outline-none"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }} />
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" disabled={saving} onClick={() => { setOpen(false); setNote(""); }}
+              className="text-xs px-2.5 py-1 rounded-lg" style={{ color: "var(--muted)" }}>
+              {t("Cancel")}
+            </button>
+            <button type="button" disabled={saving || (effectiveTarget === "highcourt" && !courtName)} onClick={migrate}
+              className="text-xs font-semibold px-3 py-1 rounded-lg cursor-pointer hover:opacity-90 disabled:opacity-50"
+              style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+              {saving ? t("Saving…") : t("Escalate")}
             </button>
           </div>
         </div>
@@ -2865,7 +3006,8 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             action after reviewing everything above. Hidden once the case is
             already in a final state. */}
         {canEdit && !FINAL_CASE_STATUSES.includes(c.status) && (
-          <div className="pt-2 flex justify-center">
+          <div className="pt-2 flex justify-center items-center gap-3 flex-wrap">
+            <MigrateButton caseId={c._id} courtType={c.courtType} status={c.status} canEdit={canEdit} onChanged={fetchCase} />
             <DisposeButton caseId={c._id} status={c.status} canEdit={canEdit} onChanged={fetchCase} />
           </div>
         )}

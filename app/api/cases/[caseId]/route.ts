@@ -150,6 +150,52 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("status_changed", reason ? `Case marked disposed / completed — ${reason}` : "Case marked disposed / completed");
     }
 
+    /* Migrate / escalate the case up the court hierarchy
+     * (subordinate → High Court → Supreme Court). Records the move in
+     * `escalations[]`, updates the case's current location (courtType /
+     * courtName / state), and switches it to the High Court / Writ workflow
+     * since the matter is now an appeal / writ / SLP at the higher forum. */
+    if (body.migrateCase) {
+      const RANK: Record<string, number> = { other: 0, district: 1, highcourt: 2, supreme: 3 };
+      const COURT_LABEL: Record<string, string> = { other: "Tribunal / Forum", district: "District / Subordinate Court", highcourt: "High Court", supreme: "Supreme Court" };
+      const mc = body.migrateCase as { toCourtType?: string; toCourtName?: string; toState?: string; note?: string };
+      const toCourtType = String(mc.toCourtType ?? "");
+      if (!["supreme", "highcourt", "district", "other"].includes(toCourtType)) {
+        return NextResponse.json({ error: "migrateCase.toCourtType must be supreme / highcourt / district / other" }, { status: 400 });
+      }
+      const currentType = caseDoc.courtType ?? "district";
+      if (RANK[toCourtType] <= RANK[currentType]) {
+        return NextResponse.json(
+          { error: `A case can only be escalated upward. It is already at the ${COURT_LABEL[currentType]} level.` },
+          { status: 400 }
+        );
+      }
+      const toCourtName = String(mc.toCourtName ?? "").trim()
+        || (toCourtType === "supreme" ? "Supreme Court of India" : "");
+      const note = typeof mc.note === "string" ? mc.note.trim() : "";
+
+      update.courtType = toCourtType;
+      if (toCourtName) update.courtName = toCourtName;
+      update.state = mc.toState ? String(mc.toState).trim() : (toCourtType === "supreme" ? "Delhi" : caseDoc.state);
+      // At an appellate / writ forum the proceeding follows the High Court flow.
+      update.path = "highcourt";
+      update.flow = "writ";
+      pushOps.escalations = {
+        fromCourtType: caseDoc.courtType,
+        fromCourtName: caseDoc.courtName,
+        toCourtType,
+        toCourtName: toCourtName || undefined,
+        toState: update.state,
+        note: note || undefined,
+        at: new Date(),
+        by: session.id,
+      };
+      logAudit(
+        "status_changed",
+        `Escalated to ${COURT_LABEL[toCourtType]}${toCourtName ? ` — ${toCourtName}` : ""}${note ? ` (${note})` : ""}`
+      );
+    }
+
     // Verdict text (criminal path). Set the verdict string and stamp the
     // verdict date the first time a verdict is recorded so the workflow
     // stepper can surface "verdict reached". Ignored for non-criminal matters
