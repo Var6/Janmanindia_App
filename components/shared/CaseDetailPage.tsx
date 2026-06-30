@@ -2811,9 +2811,11 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
       <CaseDangerZone caseId={c._id} caseNumber={c.caseNumber} createdBy={c.createdBy} backHref={backHref} />
         </div>
 
-        {/* Right rail — chat messages that attached this case. */}
-        <aside className="lg:sticky lg:top-6 space-y-6">
+        {/* Right rail — case discussion (chat) with the cheatcode / strategy
+            notes pinned right below it. */}
+        <aside className="space-y-4">
           <CaseChatPanel caseId={caseId} />
+          <CaseCheatcodes caseId={c._id} comments={c.caseComments ?? []} onChanged={fetchCase} />
         </aside>
       </div>
     </div>
@@ -2868,7 +2870,8 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
         <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
         <LitigationTeamPanel caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
-        <CaseCheatcodes caseId={c._id} comments={c.caseComments ?? []} onChanged={fetchCase} />
+        {/* Cheatcode / strategy notes now live in the right rail beside the case
+            discussion (see the <aside> above), not here. */}
         <EnquirySummary caseId={c._id} enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle}
           canEdit={canEdit} onChanged={fetchCase} />
         <CaseManagementSection caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
