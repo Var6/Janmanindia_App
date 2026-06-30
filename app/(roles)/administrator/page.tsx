@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import StatCard from "@/components/ui/StatCard";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import LogisticsTicket from "@/models/LogisticsTicket";
@@ -61,16 +62,13 @@ export default async function AdministratorDashboard() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Open tickets",     value: open,       highlight: open > 0,       href: "/administrator/tickets?status=open" },
-          { label: "In progress",      value: inProgress, highlight: false,          href: "/administrator/tickets?status=in_progress" },
-          { label: "Fulfilled (total)", value: fulfilled,                            href: "/administrator/tickets?status=fulfilled" },
-          { label: "Districts active", value: byDistrict.length,                     href: "/administrator/offices" },
+          { label: "Open tickets",      value: open,             icon: "🎫", accent: "var(--warning)", bg: "var(--warning-bg)", highlight: open > 0, href: "/administrator/tickets?status=open" },
+          { label: "In progress",       value: inProgress,       icon: "⏳", accent: "var(--info)",    bg: "var(--info-bg)",                         href: "/administrator/tickets?status=in_progress" },
+          { label: "Fulfilled (total)", value: fulfilled,        icon: "✅", accent: "var(--success)", bg: "var(--success-bg)",                      href: "/administrator/tickets?status=fulfilled" },
+          { label: "Districts active",  value: byDistrict.length, icon: "📍", accent: "var(--accent)",  bg: "var(--accent-subtle)",                   href: "/administrator/offices" },
         ].map((kpi) => (
-          <Link key={kpi.label} href={kpi.href}
-            className="glass rounded-2xl p-5 hover:border-(--accent) transition-colors">
-            <p className="text-xs text-(--muted)">{t(kpi.label)}</p>
-            <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-(--accent)" : "text-(--text)"}`}>{kpi.value}</p>
-          </Link>
+          <StatCard key={kpi.label} label={t(kpi.label)} value={kpi.value} icon={kpi.icon}
+            accent={kpi.accent} bg={kpi.bg} highlight={kpi.highlight} href={kpi.href} />
         ))}
       </div>
 

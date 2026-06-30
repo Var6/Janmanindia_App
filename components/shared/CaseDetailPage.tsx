@@ -2556,7 +2556,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
   const [error, setError]         = useState("");
   const [hearingDate, setHearingDate] = useState<string | undefined>();
   const [timelineKey, setTimelineKey] = useState(0);
-  const [tab, setTab] = useState<"legal" | "icp" | "finance">("legal");
+  const [tab, setTab] = useState<"legal" | "icp" | "review" | "finance">("legal");
   const t = useT();
   // The current user — used to grant the case creator full edit rights on the
   // detail page regardless of their role (the server enforces the same rule).
@@ -2749,66 +2749,31 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         )}
       </div>
 
-      {/* Court / parties / subject captured at creation by the lawyer. Only
-          rendered when at least one of these new fields is set so older
-          cases (pre court-type-aware flow) don't show empty headers. */}
-      <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+      {/* The detail cards (court/parties, point of contact, project & funding,
+          litigation team, cheatcodes, enquiry, case management) used to stack
+          here and overwhelm the page. They now live inside the tabs below:
+          legal-management cards under "Legal Progress", funding under "Finance". */}
 
-      {/* Point of contact — who to call about this case. */}
-      <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
-
-      {/* Project & funding-phase this case is filed under. Only the creator or
-          a director / administrator may change the trajectory. */}
-      <ProjectPhaseCard
-        caseId={c._id}
-        project={c.project}
-        phase={c.projectPhase}
-        canChange={isCreator || ["director", "superadmin", "administrator"].includes(meRole)}
-        onChanged={fetchCase}
-      />
-
-      {/* Multi-lawyer share panel — lead + shared members + add/remove. */}
-      <LitigationTeamPanel
-        caseId={c._id}
-        caseData={c}
-        canEdit={canEdit}
-        onChanged={fetchCase}
-      />
-
-      {/* Cheatcode notes — pinned strategy reminders. Anyone with case
-          access can add / reply; only the author can edit / delete. */}
-      <CaseCheatcodes caseId={c._id} comments={c.caseComments ?? []} onChanged={fetchCase} />
-
-      {/* Intake facts captured by the Case Enquiry form. Visible to anyone with
-          access to the case so SW + lawyers see the same paper-form data. */}
-      <EnquirySummary caseId={c._id} enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle}
-        canEdit={canEdit} onChanged={fetchCase} />
-
-      {/* Court-side metadata managed by the assigned lawyer. */}
-      <CaseManagementSection
-        caseId={c._id}
-        caseData={c}
-        canEdit={canEdit}
-        onChanged={fetchCase}
-      />
-
-      {/* Tab nav */}
-      <div className="flex items-center gap-1 p-1 rounded-xl border w-fit"
+      {/* Tab nav — graphic segmented control */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 rounded-2xl border"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         {([
-          ["legal",   "Legal Progress"],
-          ["icp",     "Individual Care Plan"],
-          ["finance", "Case Finance"],
-        ] as const).map(([k, label]) => {
+          ["legal",   "⚖️", "Legal Progress"],
+          ["icp",     "🧑‍⚕️", "Care Plan"],
+          ["review",  "🗓️", "Review & Progress"],
+          ["finance", "💰", "Finance"],
+        ] as const).map(([k, icon, label]) => {
           const sel = tab === k;
           return (
             <button key={k} type="button" onClick={() => setTab(k)}
-              className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+              className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
               style={{
                 background: sel ? "var(--accent)" : "transparent",
                 color: sel ? "var(--accent-contrast)" : "var(--muted)",
+                boxShadow: sel ? "var(--shadow-sm)" : "none",
               }}>
-              {t(label)}
+              <span className="text-lg leading-none">{icon}</span>
+              <span className="text-center leading-tight">{t(label)}</span>
             </button>
           );
         })}
@@ -2820,8 +2785,23 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         ) : (
           <p className="text-sm text-(--muted) px-1">{t("No community member linked to this case yet.")}</p>
         )
+      ) : tab === "review" ? (
+        <div className="space-y-4">
+          <CaseReviewSection caseId={c._id} caseCreatedAt={c.createdAt} caseStatus={c.status} />
+          <CaseReviewMeetings caseId={c._id} creatorId={c.createdBy ? String(c.createdBy) : undefined} />
+        </div>
       ) : tab === "finance" ? (
-        <CaseFinanceTab caseId={c._id} />
+        <div className="space-y-4">
+          {/* Project & funding-phase this case is filed under. */}
+          <ProjectPhaseCard
+            caseId={c._id}
+            project={c.project}
+            phase={c.projectPhase}
+            canChange={isCreator || ["director", "superadmin", "administrator"].includes(meRole)}
+            onChanged={fetchCase}
+          />
+          <CaseFinanceTab caseId={c._id} />
+        </div>
       ) : (
         <LegalProgressBlock />
       )}
@@ -2883,6 +2863,16 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
 
     return (
       <div className="space-y-4">
+        {/* Case context cards — moved out of the always-visible header so the
+            top of the page stays clean. They live here under Legal Progress. */}
+        <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+        <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
+        <LitigationTeamPanel caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+        <CaseCheatcodes caseId={c._id} comments={c.caseComments ?? []} onChanged={fetchCase} />
+        <EnquirySummary caseId={c._id} enquiry={c.enquiry} district={c.district} causeTitle={c.causeTitle}
+          canEdit={canEdit} onChanged={fetchCase} />
+        <CaseManagementSection caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+
         {/* FIR alert (chargesheet timer) — keep visible, it's a deadline. */}
         <FirAlert caseData={c} />
 
@@ -2958,14 +2948,6 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           <VerdictEditor caseId={c._id} verdict={c.criminalPath?.verdict} verdictDate={c.criminalPath?.verdictDate}
             canEdit={canEdit} onChanged={refresh} />
         )}
-
-        {/* Monthly case review — written by the advocate, visible to directors. */}
-        <CaseReviewSection caseId={c._id} caseCreatedAt={c.createdAt} caseStatus={c.status} />
-
-        {/* Review meetings & progress timeline — colour-coded by role, sits
-            right below the workflow tree / review so decisions, attendees and
-            action items read as a flow chart of the case. */}
-        <CaseReviewMeetings caseId={c._id} creatorId={c.createdBy ? String(c.createdBy) : undefined} />
 
         {/* Documents — visible to everyone; editors get upload + rename/delete. */}
         <CollapsibleSection

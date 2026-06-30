@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import StatCard from "@/components/ui/StatCard";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
@@ -54,18 +55,16 @@ export default async function SuperAdminDashboard() {
       {/* System KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: t("Total Cases"),        value: totalCases },
-          { label: t("Open Cases"),         value: openCases,         highlight: true },
-          { label: t("Total Users"),        value: totalUsers },
-          { label: t("Active Users"),       value: activeUsers },
-          { label: t("Pending Invoices"),   value: pendingInvoices,   highlight: pendingInvoices > 0 },
-          { label: t("Open SOS Alerts"),    value: openSos,           highlight: openSos > 0 },
-          { label: t("Unverified Community"),value: unverifiedUsers,   highlight: unverifiedUsers > 0 },
+          { label: t("Total Cases"),         value: totalCases,      icon: "📋", accent: "var(--accent)",  bg: "var(--accent-subtle)" },
+          { label: t("Open Cases"),          value: openCases,       icon: "🟢", accent: "var(--success)", bg: "var(--success-bg)",  highlight: true },
+          { label: t("Total Users"),         value: totalUsers,      icon: "👥", accent: "var(--info)",    bg: "var(--info-bg)" },
+          { label: t("Active Users"),        value: activeUsers,     icon: "🟩", accent: "var(--success)", bg: "var(--success-bg)" },
+          { label: t("Pending Invoices"),    value: pendingInvoices, icon: "🧾", accent: "var(--warning)", bg: "var(--warning-bg)", highlight: pendingInvoices > 0 },
+          { label: t("Open SOS Alerts"),     value: openSos,         icon: "🚨", accent: "var(--error)",   bg: "var(--error-bg)",   highlight: openSos > 0 },
+          { label: t("Unverified Community"), value: unverifiedUsers, icon: "🪪", accent: "var(--warning)", bg: "var(--warning-bg)", highlight: unverifiedUsers > 0 },
         ].map((kpi) => (
-          <div key={kpi.label} className="glass rounded-2xl p-5">
-            <p className="text-xs text-(--muted)">{kpi.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-(--accent)" : "text-(--text)"}`}>{kpi.value}</p>
-          </div>
+          <StatCard key={String(kpi.label)} label={kpi.label} value={kpi.value} icon={kpi.icon}
+            accent={kpi.accent} bg={kpi.bg} highlight={kpi.highlight} />
         ))}
       </div>
 

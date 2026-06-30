@@ -126,7 +126,8 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
             const daysToHearing = hearingDate ? Math.ceil((hearingDate.getTime() - Date.now()) / 86400000) : null;
             return (
               <Link key={c.id} href={`/litigation/cases/${c.id}`}
-                className="block bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(--accent) transition-colors">
+                className="block bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(--accent) transition-colors"
+                style={{ borderLeftWidth: 5, borderLeftColor: STATUS_STYLE[c.status]?.color ?? "var(--muted)" }}>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-(--text) truncate">{c.title}</p>

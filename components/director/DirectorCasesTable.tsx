@@ -241,7 +241,8 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
             {visible.map((c) => {
               const st = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
               return (
-                <div key={c.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-3 transition-colors hover:bg-(--bg)">
+                <div key={c.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-5 py-3 transition-colors hover:bg-(--bg)"
+                  style={{ borderLeft: `4px solid ${st.text}` }}>
                   <Link href={`/director/cases/${c.id}`} className="min-w-0 group">
                     {/* Title first, then the case number BELOW it. */}
                     <p className="text-sm font-semibold text-(--text) truncate group-hover:text-(--accent) transition-colors">

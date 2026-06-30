@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import VoiceRecorder from "@/components/shared/VoiceRecorder";
 import { SkeletonRow } from "@/components/ui/Skeleton";
 import { useT } from "@/components/i18n/LanguageProvider";
+import { roleColor } from "@/lib/role-colors";
 
 interface User { _id: string; name: string; role: string; employeeId?: string }
 interface Conversation {
@@ -438,12 +439,12 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                             </span>
                           )}
                           <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                            style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                            style={{ background: roleColor(u.role).bg, color: roleColor(u.role).text }}>
                             {initials(u.name)}
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
-                            <p className="text-[10px] text-(--muted) capitalize truncate">{u.role}</p>
+                            <p className="text-[10px] font-medium capitalize truncate" style={{ color: roleColor(u.role).text }}>{roleColor(u.role).label}</p>
                           </div>
                         </button>
                       </li>
@@ -476,13 +477,16 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                   const label = convLabel(c);
                   const subtitle = convSubtitle(c);
                   const isGroup = c.type === "group";
+                  const peerRole = isGroup ? undefined : peerOf(c)?.role;
                   return (
                     <li key={c._id} className="relative group">
                       <button onClick={() => setActiveId(c._id)}
                         className="w-full px-3 py-2.5 text-left transition-colors flex items-start gap-2"
                         style={{ background: isActive ? "var(--accent-subtle)" : "transparent" }}>
                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
-                          style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                          style={isGroup
+                            ? { background: "var(--accent-subtle)", color: "var(--accent)" }
+                            : { background: roleColor(peerRole).bg, color: roleColor(peerRole).text }}>
                           {isGroup ? "👥" : initials(label)}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -528,7 +532,9 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
           <>
             <header className="px-4 py-2.5 border-b border-(--border) flex items-center gap-2">
               <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                style={active?.type === "group"
+                  ? { background: "var(--accent-subtle)", color: "var(--accent)" }
+                  : { background: roleColor(activePeer?.role).bg, color: roleColor(activePeer?.role).text }}>
                 {active?.type === "group" ? "👥" : initials(activePeer?.name)}
               </span>
               <div className="min-w-0 flex-1">

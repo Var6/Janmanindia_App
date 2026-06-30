@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import StatCard from "@/components/ui/StatCard";
 import { getSessionFromCookies } from "@/lib/auth";
 import { tryConnectDB } from "@/lib/mongoose";
 import EodReport from "@/models/EodReport";
@@ -54,14 +55,12 @@ export default async function HrDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: "Pending Invoices",       value: pendingInvoices.length, highlight: pendingInvoices.length > 0 },
-          { label: "Active Social Workers",  value: socialWorkers.length },
-          { label: "SLA Breaches",           value: slaBreached.length,     highlight: slaBreached.length > 0 },
+          { label: "Pending Invoices",      value: pendingInvoices.length, icon: "🧾", accent: "var(--warning)", bg: "var(--warning-bg)", highlight: pendingInvoices.length > 0 },
+          { label: "Active Social Workers", value: socialWorkers.length,   icon: "🧑‍⚕️", accent: "var(--success)", bg: "var(--success-bg)" },
+          { label: "SLA Breaches",          value: slaBreached.length,     icon: "⚠️", accent: "var(--error)",   bg: "var(--error-bg)",   highlight: slaBreached.length > 0 },
         ].map((kpi) => (
-          <div key={kpi.label} className="glass rounded-2xl p-5">
-            <p className="text-xs text-(--muted)">{t(kpi.label)}</p>
-            <p className={`text-3xl font-bold mt-1 ${kpi.highlight ? "text-red-500" : "text-(--text)"}`}>{kpi.value}</p>
-          </div>
+          <StatCard key={kpi.label} label={t(kpi.label)} value={kpi.value} icon={kpi.icon}
+            accent={kpi.accent} bg={kpi.bg} highlight={kpi.highlight} />
         ))}
       </div>
 
