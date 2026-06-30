@@ -65,6 +65,26 @@ export interface IUser extends Document {
     voiceIntroUrl?: string;
     voiceIntroDurationSec?: number;
     preferredLanguage?: string;
+    /** Intake facts captured on the public Case Enquiry Form at sign-up. Mirrors
+     *  the `IEnquiry` shape on the Case model so a social worker can later open a
+     *  case from the member without re-keying anything. No case is created here. */
+    enquiry?: {
+      relationshipWithVictim?: string;
+      victimName?: string;
+      victimAddress?: string;
+      issues?: string[];
+      accusedNames?: string;
+      accusedCount?: number;
+      factsOfTheCase?: string;
+      firNumber?: string;
+      policeStation?: string;
+      placeOfOccurrence?: string;
+      incidentDateTime?: Date;
+    };
+    /** Who to call about this member's matter (may differ from the member). */
+    pointOfContact?: { name?: string; phone?: string; address?: string };
+    /** Relevant documents attached on the enquiry form (URLs from /api/upload). */
+    intakeDocs?: string[];
     /** Para Legal Volunteer flow — community member opts in, social worker decides. */
     plvStatus?: "none" | "requested" | "approved" | "rejected";
     plvMotivation?: string;
@@ -110,6 +130,31 @@ const communityProfileSchema = new Schema(
     voiceIntroUrl: { type: String, trim: true },
     voiceIntroDurationSec: { type: Number, min: 0 },
     preferredLanguage: { type: String, trim: true },
+    enquiry: new Schema(
+      {
+        relationshipWithVictim: { type: String, trim: true },
+        victimName:             { type: String, trim: true },
+        victimAddress:          { type: String, trim: true },
+        issues:                 { type: [String], default: undefined },
+        accusedNames:           { type: String, trim: true },
+        accusedCount:           { type: Number, min: 0 },
+        factsOfTheCase:         { type: String, trim: true },
+        firNumber:              { type: String, trim: true },
+        policeStation:          { type: String, trim: true },
+        placeOfOccurrence:      { type: String, trim: true },
+        incidentDateTime:       Date,
+      },
+      { _id: false }
+    ),
+    pointOfContact: new Schema(
+      {
+        name:    { type: String, trim: true },
+        phone:   { type: String, trim: true },
+        address: { type: String, trim: true },
+      },
+      { _id: false }
+    ),
+    intakeDocs:          { type: [String], default: undefined },
     plvStatus:           { type: String, enum: ["none", "requested", "approved", "rejected"], default: "none" },
     plvMotivation:       { type: String, trim: true },
     plvRequestedAt:      Date,

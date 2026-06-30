@@ -91,11 +91,18 @@ export default async function AdminDashboard() {
           <h1 className="text-2xl font-bold text-(--text)">{t("Admin Dashboard")}</h1>
           <p className="text-sm text-(--muted) mt-0.5">{t("Platform overview and management")}</p>
         </div>
-        <Link href="/director/assign"
-          className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-(--accent-contrast) hover:brightness-110 transition shrink-0"
-          style={{ background: "var(--accent)" }}>
-          Reassign Cases
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href="/director/calendar"
+            className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold hover:bg-(--bg-secondary) transition border"
+            style={{ borderColor: "var(--border)", color: "var(--text)" }}>
+            📅 {t("Team Calendar")}
+          </Link>
+          <Link href="/director/assign"
+            className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-(--accent-contrast) hover:brightness-110 transition"
+            style={{ background: "var(--accent)" }}>
+            Reassign Cases
+          </Link>
+        </div>
       </div>
 
       {/* KPI Cards */}

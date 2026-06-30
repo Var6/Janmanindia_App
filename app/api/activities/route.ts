@@ -32,8 +32,10 @@ export async function GET(request: NextRequest) {
     const isPrivileged = ASSIGN_ROLES.includes(session.role);
 
     if (assigneeParam === "all") {
-      // Return all tasks — privileged only
-      if (!isPrivileged) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      // Organisation-wide view: every staff member can SEE all activities
+      // (transparency on what the whole org has planned). Creating/assigning
+      // to others stays gated to privileged roles in POST. Community is already
+      // blocked above.
       // no filter — fetch everything
     } else if (assigneeParam && assigneeParam !== "me") {
       if (!isPrivileged) {

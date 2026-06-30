@@ -9,6 +9,8 @@ import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
 import CaseAuditLog from "@/components/shared/CaseAuditLog";
 import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
 import CaseFinanceTab from "@/components/case/CaseFinanceTab";
+import CaseChatPanel from "@/components/case/CaseChatPanel";
+import CaseReviewMeetings from "@/components/case/CaseReviewMeetings";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
 import CaseReviewSection from "@/components/shared/CaseReviewSection";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -2647,6 +2649,10 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         <span className="font-mono font-semibold text-(--text)">{c.caseNumber}</span>
       </nav>
 
+      {/* Main column + right rail (case discussion from chat). */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
+        <div className="space-y-6 min-w-0">
+
       {/* Header */}
       <div className="rounded-2xl border p-5 sm:p-6"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
@@ -2823,6 +2829,13 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
       {/* Permanent deletion — only rendered for director / superadmin or the
           case creator (gated inside the component via /api/users/me). */}
       <CaseDangerZone caseId={c._id} caseNumber={c.caseNumber} createdBy={c.createdBy} backHref={backHref} />
+        </div>
+
+        {/* Right rail — chat messages that attached this case. */}
+        <aside className="lg:sticky lg:top-6 space-y-6">
+          <CaseChatPanel caseId={caseId} />
+        </aside>
+      </div>
     </div>
   );
 
@@ -2948,6 +2961,11 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
 
         {/* Monthly case review — written by the advocate, visible to directors. */}
         <CaseReviewSection caseId={c._id} caseCreatedAt={c.createdAt} caseStatus={c.status} />
+
+        {/* Review meetings & progress timeline — colour-coded by role, sits
+            right below the workflow tree / review so decisions, attendees and
+            action items read as a flow chart of the case. */}
+        <CaseReviewMeetings caseId={c._id} creatorId={c.createdBy ? String(c.createdBy) : undefined} />
 
         {/* Documents — visible to everyone; editors get upload + rename/delete. */}
         <CollapsibleSection

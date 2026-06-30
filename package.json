@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
+    "cleanup:seed": "node scripts/cleanup-seed.mjs",
     "bootstrap-superadmin": "node scripts/bootstrap-superadmin.mjs"
   },
   "dependencies": {

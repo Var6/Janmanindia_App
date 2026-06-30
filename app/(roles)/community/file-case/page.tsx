@@ -58,6 +58,11 @@ export default function FileCasePage() {
   const [victimAddress, setVictimAddress] = useState("");
   const [victimContact, setVictimContact] = useState("");
 
+  /* Point of contact (mandatory) — who the team should call about the matter */
+  const [pocName, setPocName]       = useState("");
+  const [pocPhone, setPocPhone]     = useState("");
+  const [pocAddress, setPocAddress] = useState("");
+
   /* Case basics */
   const [caseTitle, setCaseTitle] = useState("");
   const [caseType, setCaseType]   = useState("");
@@ -93,6 +98,9 @@ export default function FileCasePage() {
           setMe(d.user);
           setFilerName(d.user.name);
           setFilerPhone(d.user.phone ?? "");
+          // Default the point of contact to the filer — they can change it.
+          setPocName(prev => prev || d.user!.name);
+          setPocPhone(prev => prev || (d.user!.phone ?? ""));
           if (d.user.role === "community") {
             setRelationship("self");
             setVictimName(d.user.name);
@@ -193,14 +201,17 @@ export default function FileCasePage() {
     e.preventDefault();
     setError("");
 
-    if (!caseTitle.trim()) { setError(t("Add a one-line case title.")); return; }
-    if (!caseType)         { setError(t("Pick a case type.")); return; }
-    const meta = lookupCaseType(caseType);
-    if (!meta)             { setError(t("That case type isn't recognised.")); return; }
-    if (!facts.trim() && !voiceUrl) {
-      setError(t("Describe what happened — type the facts or record your voice."));
+    // Only name, mobile and a point of contact are mandatory — everything else
+    // is optional so the form stays quick to file. The server fills in a title
+    // and a default workflow path when they aren't provided.
+    if (!filerName.trim())  { setError(t("Enter your name.")); return; }
+    if (!filerPhone.trim()) { setError(t("Enter your mobile number.")); return; }
+    if (!pocName.trim() || !pocPhone.trim()) {
+      setError(t("Add a point of contact — name and phone number."));
       return;
     }
+    const meta = caseType ? lookupCaseType(caseType) : null;
+    if (caseType && !meta) { setError(t("That case type isn't recognised.")); return; }
 
     setLoading(true);
     try {
@@ -225,12 +236,13 @@ export default function FileCasePage() {
       };
 
       const body = {
-        caseTitle: caseTitle.trim(),
-        caseType,
-        path: meta.path,
+        ...(caseTitle.trim() ? { caseTitle: caseTitle.trim() } : {}),
+        ...(caseType ? { caseType } : {}),
+        ...(meta ? { path: meta.path } : {}),
         communityId,
         district: district || undefined,
         enquiry,
+        pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
         ...(voiceUrl ? { voiceAttachment: { url: voiceUrl, durationSec: voiceDuration } } : {}),
       };
 
@@ -395,15 +407,15 @@ export default function FileCasePage() {
             <Field label={t("Your name (filer)")} required>
               <Input value={filerName} onChange={(e) => setFilerName(e.target.value)} required placeholder={t("Your name")} />
             </Field>
-            <Field label={t("Your phone")}>
-              <Input value={filerPhone} onChange={(e) => setFilerPhone(e.target.value)} placeholder="+91 98765 43210" inputMode="tel" />
+            <Field label={t("Your mobile")} required>
+              <Input value={filerPhone} onChange={(e) => setFilerPhone(e.target.value)} required placeholder="+91 98765 43210" inputMode="tel" />
             </Field>
-            <Field label={t("Relationship with victim")} required
+            <Field label={t("Relationship with victim")}
               hint={t("self · father · sister · neighbour · advocate · paralegal volunteer")}>
-              <Input value={relationship} onChange={(e) => setRelationship(e.target.value)} required placeholder={t("self / father / advocate")} />
+              <Input value={relationship} onChange={(e) => setRelationship(e.target.value)} placeholder={t("self / father / advocate")} />
             </Field>
-            <Field label={t("Victim's name")} required>
-              <Input value={victimName} onChange={(e) => setVictimName(e.target.value)} required placeholder={t("Victim's full name")} />
+            <Field label={t("Victim's name")}>
+              <Input value={victimName} onChange={(e) => setVictimName(e.target.value)} placeholder={t("Victim's full name")} />
             </Field>
             <Field label={t("Victim / relative contact")}
               hint={t("Phone or email the lawyer can reach the victim or their family on (if different from your phone above)")}>
@@ -411,9 +423,28 @@ export default function FileCasePage() {
                 placeholder="+91 98765 43210 or relative@example.com" />
             </Field>
             <div className="sm:col-span-2">
-              <Field label={t("Victim's address")} required>
-                <Textarea value={victimAddress} onChange={(e) => setVictimAddress(e.target.value)} required rows={2}
+              <Field label={t("Victim's address")}>
+                <Textarea value={victimAddress} onChange={(e) => setVictimAddress(e.target.value)} rows={2}
                   placeholder={t("House / lane, village, block, district, PIN")} />
+              </Field>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Point of contact (mandatory) ───────────────────────────── */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-(--muted)">{t("Point of contact")}</h2>
+          <p className="text-xs text-(--muted)">{t("Who should the team call about this matter? Defaults to you — change it if someone else should be contacted.")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label={t("Contact name")} required>
+              <Input value={pocName} onChange={(e) => setPocName(e.target.value)} required placeholder={t("Who should we call?")} />
+            </Field>
+            <Field label={t("Contact mobile")} required>
+              <Input value={pocPhone} onChange={(e) => setPocPhone(e.target.value)} required placeholder="+91 98765 43210" inputMode="tel" />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label={t("Contact address")}>
+                <Input value={pocAddress} onChange={(e) => setPocAddress(e.target.value)} placeholder={t("optional")} />
               </Field>
             </div>
           </div>
@@ -444,15 +475,15 @@ export default function FileCasePage() {
         {/* ─── Case basics ────────────────────────────────────────────── */}
         <section className="space-y-3">
           <h2 className="text-sm font-bold uppercase tracking-wider text-(--muted)">{t("Case basics")}</h2>
-          <Field label={t("One-line case title")} required example={t("Police refused to file FIR for theft on April 18")}>
-            <Input value={caseTitle} onChange={(e) => setCaseTitle(e.target.value)} required maxLength={200}
-              placeholder={t("Short summary of the issue")} />
+          <Field label={t("One-line case title")} example={t("Police refused to file FIR for theft on April 18")}>
+            <Input value={caseTitle} onChange={(e) => setCaseTitle(e.target.value)} maxLength={200}
+              placeholder={t("Optional — we'll generate one from the facts if left blank")} />
           </Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label={t("Type of case (legal procedure)")} required
-              hint={t("Pick the closest match — your social worker will reclassify if needed.")}>
-              <Select value={caseType} onChange={(e) => setCaseType(e.target.value)} required>
-                <option value="" disabled>{t("Choose a case type…")}</option>
+            <Field label={t("Type of case (legal procedure)")}
+              hint={t("Optional — pick the closest match; your social worker will reclassify if needed.")}>
+              <Select value={caseType} onChange={(e) => setCaseType(e.target.value)}>
+                <option value="">{t("Choose a case type…")}</option>
                 {CASE_TYPES.map((g) => (
                   <optgroup key={g.group} label={g.group}>
                     {g.types.map((t) => (
@@ -476,7 +507,7 @@ export default function FileCasePage() {
         {/* ─── Incident facts ─────────────────────────────────────────── */}
         <section className="space-y-3">
           <h2 className="text-sm font-bold uppercase tracking-wider text-(--muted)">{t("Incident facts")}</h2>
-          <Field label={t("Facts of the case")} required
+          <Field label={t("Facts of the case")}
             hint={t("What we know from first interactive enquiry — who, when, where, what, how.")}>
             <Textarea value={facts} onChange={(e) => setFacts(e.target.value)} rows={6}
               placeholder={t("On 18 April around 7pm, two men forced their way into our shop in Purnia and demanded money…")} />

@@ -7,15 +7,21 @@ import { useT } from "@/components/i18n/LanguageProvider";
 
 type Community = { _id: string; name: string; email: string; phone?: string };
 
-export default function CreateCaseForm() {
+export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
   const router = useRouter();
   const t = useT();
 
-  const [open, setOpen]           = useState(false);
+  const [open, setOpen]           = useState(defaultOpen);
   const [query, setQuery]         = useState("");
   const [results, setResults]     = useState<Community[]>([]);
   const [searching, setSearching] = useState(false);
   const [community, setCommunity]     = useState<Community | null>(null);
+  // Mandatory intake — every case needs who's reporting (name + mobile) and a
+  // point of contact. Defaulted from the selected community member; editable.
+  const [reporterName, setReporterName]   = useState("");
+  const [reporterPhone, setReporterPhone] = useState("");
+  const [pocName, setPocName]             = useState("");
+  const [pocPhone, setPocPhone]           = useState("");
   const [caseTitle, setCaseTitle] = useState("");
   const [caseType, setCaseType]   = useState("");
   // Initial status + tracking fields. Default Open keeps the form one-click
@@ -63,6 +69,10 @@ export default function CreateCaseForm() {
     setQuery("");
     setResults([]);
     setCommunity(null);
+    setReporterName("");
+    setReporterPhone("");
+    setPocName("");
+    setPocPhone("");
     setCaseTitle("");
     setCaseType("");
     setCaseStatus("Open");
@@ -84,13 +94,21 @@ export default function CreateCaseForm() {
     if (!caseType) { setError("Pick a case type so we can route the workflow."); return; }
     const meta = lookupCaseType(caseType);
     if (!meta) { setError("That case type isn't recognised — pick one from the list."); return; }
+    if (!reporterName.trim() || !reporterPhone.trim()) {
+      setError("Reporter name and mobile number are required."); return;
+    }
+    if (!pocName.trim() || !pocPhone.trim()) {
+      setError("A point of contact (name and phone) is required."); return;
+    }
     setSubmitting(true);
     setError("");
     try {
-      // Build enquiry sub-doc only when at least one intake field is set —
-      // the API drops empty enquiry blocks but sending `{}` would still trip
-      // the validator path. Keeps the wire body tidy for fresh-case creation.
-      const enquiry: Record<string, string> = {};
+      // Enquiry always carries the mandatory reporter name + mobile; FIR /
+      // police station are added when supplied for an in-progress matter.
+      const enquiry: Record<string, string> = {
+        filerName: reporterName.trim(),
+        filerPhone: reporterPhone.trim(),
+      };
       if (firNumber.trim())     enquiry.firNumber     = firNumber.trim();
       if (policeStation.trim()) enquiry.policeStation = policeStation.trim();
 
@@ -109,7 +127,8 @@ export default function CreateCaseForm() {
           courtCaseNumber:  courtCaseNumber.trim() || undefined,
           courtName:        courtName.trim()       || undefined,
           relevantSections: relevantSections.trim() || undefined,
-          ...(Object.keys(enquiry).length ? { enquiry } : {}),
+          enquiry,
+          pointOfContact: { name: pocName.trim(), phone: pocPhone.trim() },
         }),
       });
       const data = await res.json();
@@ -195,7 +214,13 @@ export default function CreateCaseForm() {
                     style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
                     {results.map((u) => (
                       <button key={u._id} type="button"
-                        onClick={() => { setCommunity(u); setQuery(""); setResults([]); }}
+                        onClick={() => {
+                          setCommunity(u); setQuery(""); setResults([]);
+                          setReporterName((p) => p || u.name);
+                          setReporterPhone((p) => p || (u.phone ?? ""));
+                          setPocName((p) => p || u.name);
+                          setPocPhone((p) => p || (u.phone ?? ""));
+                        }}
                         className="w-full text-left px-4 py-3 text-sm transition-colors"
                         style={{ borderBottom: "1px solid var(--border)" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-secondary)")}
@@ -211,6 +236,46 @@ export default function CreateCaseForm() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Mandatory intake — reporter + point of contact */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">
+                Reporter Name <span style={{ color: "var(--error)" }}>*</span>
+              </label>
+              <input value={reporterName} onChange={(e) => setReporterName(e.target.value)} required
+                placeholder="Who is reporting this?"
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">
+                Reporter Mobile <span style={{ color: "var(--error)" }}>*</span>
+              </label>
+              <input value={reporterPhone} onChange={(e) => setReporterPhone(e.target.value)} required type="tel" inputMode="tel"
+                placeholder="+91 98765 43210"
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">
+                Point of Contact Name <span style={{ color: "var(--error)" }}>*</span>
+              </label>
+              <input value={pocName} onChange={(e) => setPocName(e.target.value)} required
+                placeholder="Who should we call?"
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-(--text) mb-1.5">
+                Point of Contact Mobile <span style={{ color: "var(--error)" }}>*</span>
+              </label>
+              <input value={pocPhone} onChange={(e) => setPocPhone(e.target.value)} required type="tel" inputMode="tel"
+                placeholder="+91 98765 43210"
+                className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+            </div>
           </div>
 
           {/* Case title */}
@@ -346,7 +411,7 @@ export default function CreateCaseForm() {
             </>
           )}
 
-          <button type="submit" disabled={submitting || !community || !caseTitle.trim() || !caseType}
+          <button type="submit" disabled={submitting || !community || !caseTitle.trim() || !caseType || !reporterName.trim() || !reporterPhone.trim() || !pocName.trim() || !pocPhone.trim()}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {submitting ? "Creating…" : "Create Case"}

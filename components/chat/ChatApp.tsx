@@ -50,6 +50,9 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   const [editText, setEditText] = useState("");
   const [sending, setSending] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  // Search boxes: filter the contact picker (whom to talk to) and the chat list.
+  const [contactQuery, setContactQuery] = useState("");
+  const [convSearch, setConvSearch] = useState("");
   // "dm" = clicking a contact starts a 1:1 chat; "group" = checkboxes
   // accumulate into a multi-select with a title field at the bottom.
   const [composeMode, setComposeMode] = useState<"dm" | "group">("dm");
@@ -329,6 +332,19 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   const active = conversations.find((c) => c._id === activeId) as (Conversation & { title?: string }) | undefined;
   const activePeer = active && active.type === "dm" ? peerOf(active) : undefined;
 
+  // Search filters — contact picker (whom to talk to) and the chat list.
+  const cq = contactQuery.trim().toLowerCase();
+  const visibleContacts = cq
+    ? contacts.filter((u) => u.name.toLowerCase().includes(cq) || (u.role ?? "").toLowerCase().includes(cq))
+    : contacts;
+  const vq = convSearch.trim().toLowerCase();
+  const visibleConversations = vq
+    ? conversations.filter((c) =>
+        convLabel(c).toLowerCase().includes(vq)
+        || (c.lastMessagePreview ?? "").toLowerCase().includes(vq)
+        || c.participants.some((p) => p.name.toLowerCase().includes(vq)))
+    : conversations;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3 h-[calc(100vh-160px)]">
       {/* Sidebar */}
@@ -338,7 +354,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
             {showContacts ? (composeMode === "group" ? t("New group") : t("Start chat")) : t("Chats")}
           </p>
           {currentUserRole !== "community" && (
-            <button onClick={() => { if (showContacts) resetCompose(); setShowContacts(!showContacts); }}
+            <button onClick={() => { if (showContacts) resetCompose(); setContactQuery(""); setShowContacts(!showContacts); }}
               className="text-xs px-2 py-0.5 rounded-md text-(--accent-contrast) font-bold"
               style={{ background: "var(--accent)" }}>
               {showContacts ? "✕" : "＋"}
@@ -385,6 +401,13 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
               </div>
             )}
 
+            {/* Search — find whom to talk to */}
+            <div className="px-3 pt-2 pb-2 border-b border-(--border)">
+              <input value={contactQuery} onChange={(e) => setContactQuery(e.target.value)}
+                placeholder={t("Search people by name or role…")}
+                className="w-full px-2.5 py-1.5 text-xs rounded-md border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+            </div>
+
             {/* Contacts list */}
             <div className="overflow-y-auto flex-1">
               {contacts.length === 0 ? (
@@ -393,9 +416,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                     <li key={i} className="px-3 py-2"><SkeletonRow trailing={false} /></li>
                   ))}
                 </ul>
+              ) : visibleContacts.length === 0 ? (
+                <p className="px-3 py-6 text-xs text-center text-(--muted)">{t("No people match")} “{contactQuery}”.</p>
               ) : (
                 <ul className="divide-y divide-(--border)">
-                  {contacts.map((u) => {
+                  {visibleContacts.map((u) => {
                     const checked = groupSelected.has(u._id);
                     return (
                       <li key={u._id}>
@@ -429,14 +454,24 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
             </div>
           </div>
         ) : (
-          <div className="overflow-y-auto flex-1">
+          <div className="flex-1 flex flex-col min-h-0">
+            {conversations.length > 0 && (
+              <div className="px-3 pt-2 pb-2 border-b border-(--border)">
+                <input value={convSearch} onChange={(e) => setConvSearch(e.target.value)}
+                  placeholder={t("Search chats…")}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-md border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
+              </div>
+            )}
+            <div className="overflow-y-auto flex-1">
             {conversations.length === 0 ? (
               <p className="px-3 py-6 text-xs text-center text-(--muted)">
                 {t("No chats yet — tap")} <strong>＋</strong>.
               </p>
+            ) : visibleConversations.length === 0 ? (
+              <p className="px-3 py-6 text-xs text-center text-(--muted)">{t("No chats match")} “{convSearch}”.</p>
             ) : (
               <ul className="divide-y divide-(--border)">
-                {conversations.map((c) => {
+                {visibleConversations.map((c) => {
                   const isActive = c._id === activeId;
                   const label = convLabel(c);
                   const subtitle = convSubtitle(c);
@@ -477,6 +512,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                 })}
               </ul>
             )}
+            </div>
           </div>
         )}
       </aside>

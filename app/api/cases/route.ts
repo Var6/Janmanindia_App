@@ -188,9 +188,8 @@ export async function POST(request: NextRequest) {
       };
     };
 
-    if (!caseTitle) {
-      return NextResponse.json({ error: "caseTitle is required" }, { status: 400 });
-    }
+    // caseTitle is optional on the community intake form — when absent we
+    // synthesise one further down from the enquiry (victim/reporter + issue).
 
     // Resolve workflow path: explicit `path` wins; otherwise derive from caseType
     let path: "criminal" | "highcourt" | undefined = rawPath;
@@ -204,9 +203,10 @@ export async function POST(request: NextRequest) {
         path = eType?.path ?? lookupCaseType(caseType)?.path;
       }
     }
-    if (!path) {
-      return NextResponse.json({ error: "Either path or a recognised caseType is required" }, { status: 400 });
-    }
+    // Case type is optional on the community Case Enquiry Form (only name,
+    // mobile and point of contact are mandatory), so default the workflow to
+    // the criminal path when nothing routes it. A lawyer refines it later.
+    if (!path) path = "criminal";
     if (!["criminal", "highcourt"].includes(path)) {
       return NextResponse.json({ error: "path must be criminal or highcourt" }, { status: 400 });
     }
@@ -279,6 +279,28 @@ export async function POST(request: NextRequest) {
       if (!Object.values(enquiryDoc).some(v => v !== undefined)) enquiryDoc = undefined;
     }
 
+    // ── Mandatory intake gate ──────────────────────────────────────────────
+    // A case can only be opened once the enquiry captures who is reporting
+    // (name + mobile) and who to call about it (point of contact). This holds
+    // for every create path — community filing, litigation quick-create, etc.
+    const reporterName  = (enquiryRaw?.filerName  ?? "").trim();
+    const reporterPhone = (enquiryRaw?.filerPhone ?? "").trim();
+    const pocName  = (pocRaw?.name  ?? "").trim();
+    const pocPhone = (pocRaw?.phone ?? "").trim();
+    if (!reporterName || !reporterPhone || !pocName || !pocPhone) {
+      return NextResponse.json(
+        { error: "Name, mobile number, and a point of contact (name and phone) are required to open a case." },
+        { status: 400 }
+      );
+    }
+
+    // Synthesise a readable title when the intake form doesn't ask for one —
+    // built from the victim (or reporter) plus the first selected issue.
+    const firstIssue = Array.isArray(enquiryDoc?.issues) ? (enquiryDoc!.issues as string[])[0] : undefined;
+    const victimOrReporter = (enquiryRaw?.victimName ?? "").trim() || reporterName;
+    const resolvedTitle = caseTitle?.trim()
+      || [`Enquiry — ${victimOrReporter}`, firstIssue].filter(Boolean).join(" · ");
+
     // Whitelist court taxonomy + reporting status. The Mongoose enum check
     // below is belt-and-braces, but rejecting upfront produces nicer errors.
     const COURT_TYPES = ["supreme", "highcourt", "district", "other"] as const;
@@ -333,7 +355,7 @@ export async function POST(request: NextRequest) {
     }
 
     const baseDoc = {
-      caseTitle,
+      caseTitle: resolvedTitle,
       // Whoever files the case keeps visibility + delete rights on it.
       createdBy: session.id,
       path,

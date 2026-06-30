@@ -80,11 +80,12 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/finance/salaries", label: "Salaries",    icon: "credit-card" },
   ],
   administrator: [
-    { href: "/administrator",          label: "Dashboard",    icon: "home"      },
-    { href: "/administrator/assign",   label: "Assign Tasks", icon: "refresh"   },
-    { href: "/administrator/expenses", label: "My Expenses",  icon: "currency"  },
-    { href: "/administrator/tickets",  label: "Ticket Inbox", icon: "inbox"     },
-    { href: "/administrator/offices",  label: "Offices",      icon: "building"  },
+    { href: "/administrator",          label: "Dashboard",     icon: "home"       },
+    { href: "/administrator/calendar", label: "Team Calendar", icon: "users-team" },
+    { href: "/administrator/assign",   label: "Assign Tasks",  icon: "refresh"    },
+    { href: "/administrator/expenses", label: "My Expenses",   icon: "currency"   },
+    { href: "/administrator/tickets",  label: "Ticket Inbox",  icon: "inbox"      },
+    { href: "/administrator/offices",  label: "Offices",       icon: "building"   },
   ],
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },

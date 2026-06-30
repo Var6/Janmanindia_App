@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useT } from "@/components/i18n/LanguageProvider";
+import { playChime } from "@/lib/notify-sound";
 
 export interface NavItem {
   href: string;
@@ -282,6 +283,8 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initialAvatarUrl);
   const [unreadChat, setUnreadChat] = useState(0);
+  // Baseline for sound: null until the first poll so we don't chime on load.
+  const prevUnread = useRef<number | null>(null);
 
   // Persist collapse state across navigations
   useEffect(() => {
@@ -314,11 +317,20 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
       if (document.hidden) return;
       fetch("/api/chat/unread")
         .then((r) => r.json())
-        .then((d) => { if (!cancelled && typeof d.total === "number") setUnreadChat(d.total); })
+        .then((d) => {
+          if (cancelled || typeof d.total !== "number") return;
+          setUnreadChat(d.total);
+          // Chime when the unread count rises — but not on the first poll, and
+          // not while the user is already on the chat page.
+          if (prevUnread.current !== null && d.total > prevUnread.current && !pathname.startsWith("/chat")) {
+            playChime();
+          }
+          prevUnread.current = d.total;
+        })
         .catch(() => {});
     };
     tick();
-    const t = setInterval(tick, 30000);
+    const t = setInterval(tick, 15000);
     const onVis = () => { if (!document.hidden) tick(); };
     document.addEventListener("visibilitychange", onVis);
     return () => { cancelled = true; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };

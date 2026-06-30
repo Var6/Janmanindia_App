@@ -92,7 +92,11 @@ export default function CreateLitigationCaseForm() {
   /* ── Janman district (where the case is filed) ───────────────────── */
   const [district, setDistrict] = useState("");
 
-  /* ── Point of contact for this case ──────────────────────────────── */
+  /* ── Reporter (mandatory) — who reported this matter ─────────────── */
+  const [reporterName,  setReporterName]  = useState("");
+  const [reporterPhone, setReporterPhone] = useState("");
+
+  /* ── Point of contact for this case (mandatory) ──────────────────── */
   const [pocName,    setPocName]    = useState("");
   const [pocPhone,   setPocPhone]   = useState("");
   const [pocAddress, setPocAddress] = useState("");
@@ -198,7 +202,7 @@ export default function CreateLitigationCaseForm() {
     setHighCourt(""); setState(""); setDistrictCourt(""); setDistrictOther(""); setOtherCourtName("");
     setPetitioners([]); setRespondents([]); setPetitionerDraft(""); setRespondentDraft(""); setTitleOverride("");
     setSubjectCourtThey(""); setSubjectOurPoints(""); setECourtLink("");
-    setDistrict(""); setPocName(""); setPocPhone(""); setPocAddress("");
+    setDistrict(""); setReporterName(""); setReporterPhone(""); setPocName(""); setPocPhone(""); setPocAddress("");
     setCaseType("");
     setHasNumber(true);
     setCourtCaseNumber(""); setFirNumber(""); setPoliceStation(""); setRelevantSections("");
@@ -228,6 +232,8 @@ export default function CreateLitigationCaseForm() {
 
     if (!finalTitle.trim()) { setError("Add at least one petitioner and one respondent — the case title is built from these."); return; }
     if (!caseType) { setError("Pick a case type so we can route the workflow (criminal vs civil/HC)."); return; }
+    if (!reporterName.trim() || !reporterPhone.trim()) { setError("Reporter name and mobile number are required."); return; }
+    if (!pocName.trim() || !pocPhone.trim()) { setError("A point of contact (name and phone) is required."); return; }
 
     if (courtType === "highcourt" && !highCourt) { setError("Select the High Court."); return; }
     if (courtType === "district") {
@@ -280,10 +286,9 @@ export default function CreateLitigationCaseForm() {
         ...(eCourtLink.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
         // Janman district (where filed)
         ...(district.trim() ? { district: district.trim() } : {}),
-        // Point of contact
-        ...((pocName.trim() || pocPhone.trim() || pocAddress.trim())
-          ? { pointOfContact: { name: pocName.trim() || undefined, phone: pocPhone.trim() || undefined, address: pocAddress.trim() || undefined } }
-          : {}),
+        // Point of contact + reporter — mandatory on every case.
+        pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
+        enquiry: { filerName: reporterName.trim(), filerPhone: reporterPhone.trim() },
         // Sharing
         ...(shareWith.length ? { litigationMemberIds: shareWith.map(l => l._id) } : {}),
       };
@@ -294,10 +299,10 @@ export default function CreateLitigationCaseForm() {
         // Pre-existing matter — flag it so the dashboard knows we're tracking, not filing.
         body.isExistingCase = true;
         body.filingStatus = "filed";
-        const enquiry: Record<string, string> = {};
-        if (firNumber.trim())     enquiry.firNumber     = firNumber.trim();
-        if (policeStation.trim()) enquiry.policeStation = policeStation.trim();
-        if (Object.keys(enquiry).length) body.enquiry = enquiry;
+        const extra: Record<string, string> = {};
+        if (firNumber.trim())     extra.firNumber     = firNumber.trim();
+        if (policeStation.trim()) extra.policeStation = policeStation.trim();
+        Object.assign(body.enquiry as Record<string, string>, extra);
       } else {
         body.filingStatus = filingStatus;
         body.reportingStatus = {
@@ -480,13 +485,25 @@ export default function CreateLitigationCaseForm() {
         </div>
       </Section>
 
-      {/* ─── Point of contact ─────────────────────────────────────── */}
-      <Section title="Point of contact" subtitle="Who we call about this case — the litigant, a relative, or a paralegal.">
+      {/* ─── Reporter (mandatory) ─────────────────────────────────── */}
+      <Section title="Reporter" subtitle="Who reported this matter — required on every case." required>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Contact name">
+          <Field label="Reporter name" required>
+            <Input value={reporterName} onChange={e => setReporterName(e.target.value)} placeholder="Full name" />
+          </Field>
+          <Field label="Reporter mobile" required>
+            <Input value={reporterPhone} onChange={e => setReporterPhone(e.target.value)} placeholder="10-digit mobile" type="tel" />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ─── Point of contact ─────────────────────────────────────── */}
+      <Section title="Point of contact" subtitle="Who we call about this case — the litigant, a relative, or a paralegal." required>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Contact name" required>
             <Input value={pocName} onChange={e => setPocName(e.target.value)} placeholder="Full name" />
           </Field>
-          <Field label="Contact phone">
+          <Field label="Contact phone" required>
             <Input value={pocPhone} onChange={e => setPocPhone(e.target.value)} placeholder="10-digit mobile" type="tel" />
           </Field>
           <div className="sm:col-span-2">
@@ -654,7 +671,13 @@ export default function CreateLitigationCaseForm() {
                 style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
                 {communityResults.map(u => (
                   <button key={u._id} type="button"
-                    onClick={() => { setCommunity(u); setCommunityQuery(""); setCommunityResults([]); }}
+                    onClick={() => {
+                      setCommunity(u); setCommunityQuery(""); setCommunityResults([]);
+                      setReporterName(p => p || u.name);
+                      setReporterPhone(p => p || (u.phone ?? ""));
+                      setPocName(p => p || u.name);
+                      setPocPhone(p => p || (u.phone ?? ""));
+                    }}
                     className="w-full text-left px-4 py-3 text-sm hover:bg-(--bg-secondary)"
                     style={{ borderBottom: "1px solid var(--border)" }}>
                     <p className="font-medium text-(--text)">{u.name}</p>

@@ -74,6 +74,9 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine" | "created">("all");
+  // Scope: "mine" = activities I'm on or created; "org" = everything planned
+  // across the whole organisation (read-only visibility for every staff member).
+  const [scope, setScope] = useState<"mine" | "org">("mine");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -105,11 +108,11 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/activities");
+      const res = await fetch(scope === "org" ? "/api/activities?assignee=all" : "/api/activities");
       const d = await res.json();
       setItems(d.activities ?? []);
     } finally { setLoading(false); }
-  }, []);
+  }, [scope]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -427,6 +430,27 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
           </form>
         </section>
       )}
+
+      {/* Scope toggle — personal vs organisation-wide visibility */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-1 p-1 bg-(--surface) border border-(--border) rounded-xl w-fit">
+          {([
+            { k: "mine", l: t("My work") },
+            { k: "org",  l: t("Whole organisation") },
+          ] as const).map((s) => (
+            <button key={s.k} onClick={() => setScope(s.k)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                scope === s.k ? "text-(--accent-contrast)" : "text-(--muted) hover:text-(--text)"
+              }`}
+              style={scope === s.k ? { background: "var(--accent)" } : undefined}>
+              {s.k === "org" ? `🏢 ${s.l}` : `👤 ${s.l}`}
+            </button>
+          ))}
+        </div>
+        {scope === "org" && (
+          <span className="text-[11px] text-(--muted)">{t("Everything planned across the organisation — read-only.")}</span>
+        )}
+      </div>
 
       {/* Filters + view toggle */}
       <div className="flex flex-wrap items-center justify-between gap-2">

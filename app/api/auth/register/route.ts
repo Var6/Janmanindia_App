@@ -1,115 +1,177 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { COOKIE_NAME, hashPassword, signToken } from "@/lib/auth";
+import { filterValidIssues } from "@/lib/case-issues";
 import User from "@/models/User";
 
-/**
- * Normalise the form's snake / lowercase ID-type values to the canonical
- * enum the User schema expects. Anything unrecognised lands as "Other" so
- * registration can't be silently rejected by enum validation.
- */
-function normaliseGovtIdType(raw?: string): "Aadhar" | "VoterId" | "Passport" | "DrivingLicense" | "RationCard" | "Other" {
-  const v = String(raw ?? "").trim().toLowerCase().replace(/[\s_-]+/g, "");
-  switch (v) {
-    case "aadhaar":
-    case "aadhar":           return "Aadhar";
-    case "voterid":
-    case "voter":            return "VoterId";
-    case "passport":         return "Passport";
-    case "drivinglicense":
-    case "drivingliscence":
-    case "dl":               return "DrivingLicense";
-    case "rationcard":
-    case "ration":           return "RationCard";
-    default:                 return "Other";
-  }
-}
+type EnquiryInput = {
+  relationshipWithVictim?: string;
+  victimName?: string;
+  victimAddress?: string;
+  issues?: unknown;
+  accusedNames?: string;
+  accusedCount?: number;
+  factsOfTheCase?: string;
+  firNumber?: string;
+  policeStation?: string;
+  placeOfOccurrence?: string;
+  incidentDateTime?: string;
+};
 
+const trim = (s: unknown) => (typeof s === "string" ? s.trim() : "") || undefined;
+
+/**
+ * POST /api/auth/register
+ *
+ * The public Case Enquiry Form. It forms a community-member record so a social
+ * worker can follow up — it does NOT create a case (a case is opened later from
+ * inside the app, where the same mandatory facts are enforced).
+ *
+ * Mandatory: name, mobile (phone) and a point of contact (name + phone). Email
+ * and password are optional: supply both to get a login account (auto-login),
+ * or leave them blank to create a passwordless record that can be claimed later
+ * by registering with the same email — mirrors /api/community/lite-create.
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
       name, email, password, phone,
-      govtIdUrl, govtIdType,
+      pointOfContact,
       district, village, preferredLanguage,
       voiceIntroUrl, voiceIntroDurationSec,
+      intakeDocs,
+      enquiry,
     } = body as {
       name: string;
-      email: string;
-      password: string;
+      email?: string;
+      password?: string;
       phone?: string;
-      govtIdUrl?: string;
-      govtIdType?: string;
+      pointOfContact?: { name?: string; phone?: string; address?: string };
       district?: string;
       village?: string;
       preferredLanguage?: string;
       voiceIntroUrl?: string;
       voiceIntroDurationSec?: number;
+      intakeDocs?: string[];
+      enquiry?: EnquiryInput;
     };
 
-    if (!name?.trim() || !email?.trim() || !password) {
-      return NextResponse.json({ error: "Name, email, and password are required." }, { status: 400 });
+    const memberName = trim(name);
+    const memberPhone = trim(phone);
+    const pocName = trim(pointOfContact?.name);
+    const pocPhone = trim(pointOfContact?.phone);
+
+    if (!memberName) {
+      return NextResponse.json({ error: "Name is required." }, { status: 400 });
     }
-    if (password.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+    if (!memberPhone) {
+      return NextResponse.json({ error: "Mobile number is required." }, { status: 400 });
     }
-    // Either an ID document OR a voice intro must be provided so the social
-    // worker has something to work with at verification time.
-    if (!govtIdUrl?.trim() && !voiceIntroUrl?.trim()) {
+    if (!pocName || !pocPhone) {
       return NextResponse.json(
-        { error: "Please attach an ID document or record a short voice introduction so a social worker can verify you." },
+        { error: "A point of contact (name and phone number) is required." },
         { status: 400 }
       );
     }
 
-    await connectDB();
-
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existing) {
-      return NextResponse.json({ error: "Email already registered." }, { status: 409 });
+    // Email + password are optional, but if either is given both must be valid.
+    const wantsLogin = Boolean(email?.trim()) || Boolean(password);
+    if (wantsLogin) {
+      if (!email?.trim()) return NextResponse.json({ error: "Enter an email to create a login." }, { status: 400 });
+      if (!password || password.length < 8) {
+        return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+      }
     }
 
-    const passwordHash = await hashPassword(password);
+    await connectDB();
+
+    // Email is unique on the User model. When the filer didn't ask for a login
+    // we synthesise a stub address so the schema's unique constraint holds; the
+    // member can later claim the account by registering with a real email.
+    const realEmail = email?.trim().toLowerCase();
+    if (realEmail) {
+      const existing = await User.findOne({ email: realEmail });
+      if (existing) return NextResponse.json({ error: "Email already registered." }, { status: 409 });
+    }
+    const stubEmail = realEmail
+      || `community-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}@noreply.janmanindia.local`;
+
+    // Clean the optional enquiry facts (controlled-vocab issues, parsed date).
+    let enquiryDoc: Record<string, unknown> | undefined;
+    if (enquiry && typeof enquiry === "object") {
+      const issues = filterValidIssues(enquiry.issues);
+      const incidentDateTime = enquiry.incidentDateTime ? new Date(enquiry.incidentDateTime) : undefined;
+      const accusedCount = typeof enquiry.accusedCount === "number"
+        ? Math.max(0, Math.floor(enquiry.accusedCount))
+        : undefined;
+      enquiryDoc = {
+        relationshipWithVictim: trim(enquiry.relationshipWithVictim),
+        victimName: trim(enquiry.victimName),
+        victimAddress: trim(enquiry.victimAddress),
+        issues: issues.length ? issues : undefined,
+        accusedNames: trim(enquiry.accusedNames),
+        accusedCount,
+        factsOfTheCase: trim(enquiry.factsOfTheCase),
+        firNumber: trim(enquiry.firNumber),
+        policeStation: trim(enquiry.policeStation),
+        placeOfOccurrence: trim(enquiry.placeOfOccurrence),
+        incidentDateTime: incidentDateTime && !isNaN(incidentDateTime.getTime()) ? incidentDateTime : undefined,
+      };
+      if (!Object.values(enquiryDoc).some((v) => v !== undefined)) enquiryDoc = undefined;
+    }
+
+    const docs = Array.isArray(intakeDocs)
+      ? intakeDocs.map((u) => trim(u)).filter(Boolean) as string[]
+      : [];
+
+    const passwordHash = wantsLogin && password ? await hashPassword(password) : undefined;
 
     const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      passwordHash,
+      name: memberName,
+      email: stubEmail,
+      ...(passwordHash ? { passwordHash, lastLoginAt: new Date() } : {}),
       role: "community",
-      phone: phone?.trim() || undefined,
+      phone: memberPhone,
       isActive: true,
-      lastLoginAt: new Date(),
       communityProfile: {
-        govtIdUrl: govtIdUrl?.trim() || undefined,
-        govtIdType: govtIdUrl ? normaliseGovtIdType(govtIdType) : undefined,
         verificationStatus: "pending",
-        district: district?.trim() || undefined,
-        village: village?.trim() || undefined,
-        preferredLanguage: preferredLanguage?.trim() || undefined,
-        voiceIntroUrl: voiceIntroUrl?.trim() || undefined,
+        district: trim(district),
+        village: trim(village),
+        preferredLanguage: trim(preferredLanguage),
+        voiceIntroUrl: trim(voiceIntroUrl),
         voiceIntroDurationSec: typeof voiceIntroDurationSec === "number" ? Math.max(0, Math.floor(voiceIntroDurationSec)) : undefined,
+        pointOfContact: { name: pocName, phone: pocPhone, address: trim(pointOfContact?.address) },
+        ...(enquiryDoc ? { enquiry: enquiryDoc } : {}),
+        ...(docs.length ? { intakeDocs: docs } : {}),
       },
     });
 
-    // Auto-login: a community member who just gave us their details shouldn't
-    // have to type them again. Sign the same JWT the login route uses and set
-    // the auth_token cookie so the next request lands them inside /community.
-    const token = await signToken({
-      id: String(user._id),
-      role: user.role,
-      name: user.name,
-    });
+    // Passwordless record — nothing to log into. The filer (often a paralegal
+    // on someone's behalf) just sees a confirmation.
+    if (!passwordHash) {
+      return NextResponse.json(
+        {
+          success: true,
+          account: "stub",
+          message: "Enquiry received. A social worker will verify the details and reach out within 48 hours.",
+        },
+        { status: 201 }
+      );
+    }
 
+    // Login account — auto-login so the member lands inside /community.
+    const token = await signToken({ id: String(user._id), role: user.role, name: user.name });
     const response = NextResponse.json(
       {
         success: true,
+        account: "login",
         role: user.role,
         redirectTo: "/community",
         message: "Welcome to Janman. A social worker will verify your details and reach out within 48 hours.",
       },
       { status: 201 }
     );
-
     response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -117,7 +179,6 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });
-
     return response;
   } catch (error) {
     console.error("Register error:", error);

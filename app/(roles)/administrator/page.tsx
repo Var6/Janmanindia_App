@@ -46,9 +46,16 @@ export default async function AdministratorDashboard() {
       {/* Quick line to a social worker — SW is the single contact point. */}
       <QueriesBox currentUserId={session.id} currentUserRole={session.role} compact />
 
-      <div>
-        <h1 className="text-2xl font-bold text-(--text)">{t("Administrator — Operations")}</h1>
-        <p className="text-sm text-(--muted) mt-1">{t("Office logistics, supplies, transport, and district operations.")}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Administrator — Operations")}</h1>
+          <p className="text-sm text-(--muted) mt-1">{t("Office logistics, supplies, transport, and district operations.")}</p>
+        </div>
+        <Link href="/administrator/calendar"
+          className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold hover:bg-(--bg-secondary) transition border shrink-0"
+          style={{ borderColor: "var(--border)", color: "var(--text)" }}>
+          📅 {t("Team Calendar")}
+        </Link>
       </div>
 
       {/* KPI cards */}
