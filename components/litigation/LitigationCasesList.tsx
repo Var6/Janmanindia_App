@@ -150,7 +150,7 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
                       {c.place && c.place !== "—" && <span className="text-[11px] text-(--muted)">📍 {c.place}</span>}
                     </div>
                     <p className="text-xs text-(--muted) mt-0.5">
-                      {t("Community")}: {c.community || "—"} · {t("SW")}: {c.sw || "—"}
+                      {t("Victim/Client")}: {c.community || "—"} · {t("SW")}: {c.sw || "—"}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"

@@ -155,13 +155,13 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
             <path d="M3 8h10M8 3v10"/>
           </svg>
-          {t("Create Case for Community Member")}
+          {t("Create Case for Victim/Client")}
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="rounded-2xl border p-6 space-y-4"
           style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-(--text)">{t("Create Case for Community Member")}</h2>
+            <h2 className="font-semibold text-(--text)">{t("Create Case for Victim/Client")}</h2>
             <button type="button" onClick={reset}
               className="text-xs text-(--muted) hover:text-(--text) px-2 py-1 rounded-lg hover:bg-(--bg-secondary) transition-colors">
               {t("Cancel")}
@@ -178,7 +178,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
           {/* Community search */}
           <div>
             <label className="block text-sm font-medium text-(--text) mb-1.5">
-              Search Community <span style={{ color: "var(--error)" }}>*</span>
+              Search Victim/Client <span style={{ color: "var(--error)" }}>*</span>
             </label>
             {community ? (
               <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border"
@@ -232,7 +232,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
                   </div>
                 )}
                 {query.length >= 2 && !searching && results.length === 0 && (
-                  <p className="text-xs text-(--muted) mt-1">No community members found matching "{query}".</p>
+                  <p className="text-xs text-(--muted) mt-1">No victims/clients found matching "{query}".</p>
                 )}
               </div>
             )}

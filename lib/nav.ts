@@ -174,7 +174,7 @@ export function navItemsFor(role: string): NavItem[] {
 }
 
 export const ROLE_LABELS: Record<string, string> = {
-  community:     "Community Portal",
+  community:     "Victim / Client",
   socialworker:  "Social Worker",
   litigation:    "Litigation Team",
   hr:            "HR Department",

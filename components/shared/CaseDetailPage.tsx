@@ -2718,7 +2718,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
               after registration — both are often created/linked later. The
               lead litigation member is managed in the Litigation Team panel. */}
           <PersonAssignEditor
-            caseId={c._id} label="Community" field="community" role="community"
+            caseId={c._id} label="Victim/Client" field="community" role="community"
             person={c.community} canEdit={canEdit}
             href={canManageCarePlan && c.community?._id ? `/socialworker/community/${c.community._id}` : undefined}
             onChanged={fetchCase} />

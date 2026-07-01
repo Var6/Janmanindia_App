@@ -24,12 +24,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, email, district, village } = body as {
+    const { name, phone, email, district, village, pointOfContact } = body as {
       name: string;
       phone?: string;
       email?: string;
       district?: string;
       village?: string;
+      pointOfContact?: { name?: string; phone?: string; address?: string };
     };
 
     if (!name?.trim()) {
@@ -58,6 +59,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // A client/victim created by a staff member is immediately usable — no ID
+    // verification step gates case entry. Community members filing on someone
+    // else's behalf still create a "pending" profile the SW verifies later.
+    const isStaff = session.role !== "community";
+    const poc = pointOfContact && (pointOfContact.name?.trim() || pointOfContact.phone?.trim())
+      ? {
+          name: pointOfContact.name?.trim() || undefined,
+          phone: pointOfContact.phone?.trim() || undefined,
+          address: pointOfContact.address?.trim() || undefined,
+        }
+      : undefined;
+
     const user = await User.create({
       name: name.trim(),
       email: stubEmail,
@@ -67,7 +80,9 @@ export async function POST(request: NextRequest) {
       communityProfile: {
         district: district?.trim() || undefined,
         village: village?.trim() || undefined,
-        verificationStatus: "pending",
+        verificationStatus: isStaff ? "verified" : "pending",
+        ...(isStaff ? { verifiedBy: session.id, verifiedAt: new Date() } : {}),
+        ...(poc ? { pointOfContact: poc } : {}),
       },
     });
 

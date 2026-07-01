@@ -170,7 +170,7 @@ export default function FileCasePage() {
     if (filingFor === "self") return me?._id ?? null;
     if (filingFor === "existing") {
       if (!pickedMember) {
-        setError(t("Pick the community member you're filing for, or switch to creating a new one."));
+        setError(t("Pick the victim/client you're filing for, or switch to creating a new one."));
         return null;
       }
       return pickedMember._id;
@@ -181,7 +181,7 @@ export default function FileCasePage() {
       return null;
     }
     if (!newMember.phone.trim() && !newMember.email.trim()) {
-      setError(t("Add a phone number or email for the new community member so the social worker can reach them."));
+      setError(t("Add a phone number or email for the new victim/client so the social worker can reach them."));
       return null;
     }
     const res = await fetch("/api/community/lite-create", {
@@ -191,7 +191,7 @@ export default function FileCasePage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? t("Could not create the community member profile."));
+      setError(data.error ?? t("Could not create the victim/client profile."));
       return null;
     }
     return data.user._id;
@@ -307,8 +307,8 @@ export default function FileCasePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {([
               { v: "self",     label: t("Myself"),                   hint: t("I am the victim") },
-              { v: "existing", label: t("Existing community member"), hint: t("Someone already on Janman") },
-              { v: "new",      label: t("New community member"),      hint: t("Create their profile too") },
+              { v: "existing", label: t("Existing victim/client"), hint: t("Someone already on Janman") },
+              { v: "new",      label: t("New victim/client"),      hint: t("Create their profile too") },
             ] as { v: FilingFor; label: string; hint: string }[]).map(opt => (
               <label key={opt.v}
                 className="flex items-start gap-2.5 cursor-pointer rounded-xl border px-3 py-2.5 transition-colors"
@@ -360,7 +360,7 @@ export default function FileCasePage() {
                   )}
                   {memberQuery.length >= 2 && !memberSearching && memberResults.length === 0 && (
                     <p className="text-[11px] text-(--muted) mt-1">
-                      {t("No member matches")} "{memberQuery}". {t('Switch to "New community member" to create their profile.')}
+                      {t("No member matches")} "{memberQuery}". {t('Switch to "New victim/client" to create their profile.')}
                     </p>
                   )}
                 </div>

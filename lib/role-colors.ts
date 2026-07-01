@@ -25,7 +25,7 @@ const PALETTE: Record<string, { base: string; label: string }> = {
   administrator: { base: "#0d9488", label: "Administrator" },  // teal
   hr:            { base: "#db2777", label: "HR" },             // pink
   finance:       { base: "#ea580c", label: "Finance" },        // orange
-  community:     { base: "#d97706", label: "Community" },      // amber
+  community:     { base: "#d97706", label: "Victim/Client" },  // amber
   pending:       { base: "#6b7280", label: "Pending" },        // grey
 };
 

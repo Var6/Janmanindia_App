@@ -650,7 +650,7 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── 7. Community member ────────────────────────────────── */}
-      <Section title={t("7. Community member")} subtitle={t("Whose case is this? Optional — you can link the beneficiary later.")}>
+      <Section title={t("7. Victim / Client")} subtitle={t("Whose case is this? Optional — you can link the beneficiary later.")}>
         {community ? (
           <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border"
             style={{ background: "var(--bg)", borderColor: "var(--accent)" }}>
@@ -687,7 +687,7 @@ export default function CreateLitigationCaseForm() {
               </div>
             )}
             {communityQuery.length >= 2 && !communitySearching && communityResults.length === 0 && (
-              <p className="text-[11px] text-(--muted) mt-1">No community members match "{communityQuery}".</p>
+              <p className="text-[11px] text-(--muted) mt-1">No victims/clients match "{communityQuery}".</p>
             )}
           </div>
         )}

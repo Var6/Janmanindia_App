@@ -5,6 +5,7 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import CreateClientButton from "@/components/shared/CreateClientButton";
 import DirectorCasesTable, { type CaseRow } from "@/components/director/DirectorCasesTable";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -85,7 +86,10 @@ export default async function AdminCasesPage() {
           <h1 className="text-2xl font-bold text-(--text)">{t("All Cases")}</h1>
           <p className="text-sm text-(--muted) mt-1">{cases.length} {t("total cases across all litigation members.")}</p>
         </div>
-        <CreateCaseForm />
+        <div className="flex items-center gap-2 flex-wrap">
+          <CreateClientButton />
+          <CreateCaseForm />
+        </div>
       </div>
 
       {/* Status summary */}

@@ -7,6 +7,7 @@ import Case from "@/models/Case";
 import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
+import CreateClientButton from "@/components/shared/CreateClientButton";
 import ExportCasesButton from "@/components/shared/ExportCasesButton";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -51,12 +52,15 @@ export default async function SWCasesPage() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-(--text)">{t("Cases")}</h1>
           <p className="text-sm text-(--muted) mt-1">{t("Assigned cases, ID verifications, and case creation.")}</p>
         </div>
-        <CreateCaseForm />
+        <div className="flex items-center gap-2 flex-wrap">
+          <CreateClientButton />
+          <CreateCaseForm />
+        </div>
       </div>
 
       {/* ID Verification Queue */}

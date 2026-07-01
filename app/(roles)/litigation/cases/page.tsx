@@ -6,6 +6,7 @@ import { tryConnectDB } from "@/lib/mongoose";
 import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
+import CreateClientButton from "@/components/shared/CreateClientButton";
 import LitigationCasesList, { type LitCaseRow } from "@/components/litigation/LitigationCasesList";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -88,7 +89,10 @@ export default async function LitigationCasesPage() {
             {open.length} {t("active")} · {closed.length} {t("closed")} · {t("sorted by next hearing date")}
           </p>
         </div>
-        <CreateLitigationCaseForm />
+        <div className="flex items-center gap-2 flex-wrap">
+          <CreateClientButton />
+          <CreateLitigationCaseForm />
+        </div>
       </div>
 
       <section>
