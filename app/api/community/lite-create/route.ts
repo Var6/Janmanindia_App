@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
+import { filterValidIssues } from "@/lib/case-issues";
 import User from "@/models/User";
+
+type EnquiryInput = {
+  relationshipWithVictim?: string;
+  victimName?: string;
+  victimAddress?: string;
+  issues?: unknown;
+  accusedNames?: string;
+  accusedCount?: number;
+  factsOfTheCase?: string;
+  firNumber?: string;
+  policeStation?: string;
+  placeOfOccurrence?: string;
+  incidentDateTime?: string;
+};
+
+const trim = (s: unknown) => (typeof s === "string" ? s.trim() : "") || undefined;
 
 /**
  * POST /api/community/lite-create
@@ -24,13 +41,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, email, district, village, pointOfContact } = body as {
+    const { name, phone, email, district, village, pointOfContact, enquiry, intakeDocs } = body as {
       name: string;
       phone?: string;
       email?: string;
       district?: string;
       village?: string;
       pointOfContact?: { name?: string; phone?: string; address?: string };
+      enquiry?: EnquiryInput;
+      intakeDocs?: string[];
     };
 
     if (!name?.trim()) {
@@ -71,6 +90,29 @@ export async function POST(request: NextRequest) {
         }
       : undefined;
 
+    // Clean the optional Case Enquiry facts (controlled-vocab issues, parsed date).
+    let enquiryDoc: Record<string, unknown> | undefined;
+    if (enquiry && typeof enquiry === "object") {
+      const issues = filterValidIssues(enquiry.issues);
+      const incidentDateTime = enquiry.incidentDateTime ? new Date(enquiry.incidentDateTime) : undefined;
+      const accusedCount = typeof enquiry.accusedCount === "number" ? Math.max(0, Math.floor(enquiry.accusedCount)) : undefined;
+      enquiryDoc = {
+        relationshipWithVictim: trim(enquiry.relationshipWithVictim),
+        victimName: trim(enquiry.victimName),
+        victimAddress: trim(enquiry.victimAddress),
+        issues: issues.length ? issues : undefined,
+        accusedNames: trim(enquiry.accusedNames),
+        accusedCount,
+        factsOfTheCase: trim(enquiry.factsOfTheCase),
+        firNumber: trim(enquiry.firNumber),
+        policeStation: trim(enquiry.policeStation),
+        placeOfOccurrence: trim(enquiry.placeOfOccurrence),
+        incidentDateTime: incidentDateTime && !isNaN(incidentDateTime.getTime()) ? incidentDateTime : undefined,
+      };
+      if (!Object.values(enquiryDoc).some((v) => v !== undefined)) enquiryDoc = undefined;
+    }
+    const docUrls = Array.isArray(intakeDocs) ? intakeDocs.map((u) => trim(u)).filter(Boolean) as string[] : [];
+
     const user = await User.create({
       name: name.trim(),
       email: stubEmail,
@@ -83,6 +125,8 @@ export async function POST(request: NextRequest) {
         verificationStatus: isStaff ? "verified" : "pending",
         ...(isStaff ? { verifiedBy: session.id, verifiedAt: new Date() } : {}),
         ...(poc ? { pointOfContact: poc } : {}),
+        ...(enquiryDoc ? { enquiry: enquiryDoc } : {}),
+        ...(docUrls.length ? { intakeDocs: docUrls } : {}),
       },
     });
 

@@ -119,7 +119,8 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
 
 /** Cross-role utility items shown to every staff role. */
 const STAFF_ITEMS: NavItem[] = [
-  { href: "/activities", label: "Activities", icon: "target"  },
+  { href: "/cases/new",  label: "New Case",   icon: "file-plus" },
+  { href: "/activities", label: "Activities", icon: "target"    },
 ];
 
 /** Logistics is an admin-only function — fulfilling tickets, raising office
