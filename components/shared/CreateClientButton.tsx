@@ -142,7 +142,7 @@ export default function CreateClientButton() {
       <button type="button" onClick={() => { reset(); setOpen(true); }}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-        <span className="text-base leading-none">＋</span> {t("Create Client/Victim")}
+        <span className="text-base leading-none">＋</span> {t("Intake Form")}
       </button>
     );
   }
@@ -151,7 +151,7 @@ export default function CreateClientButton() {
     <div className="w-full rounded-2xl border p-5 space-y-4" style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-(--text)">{t("Create Client/Victim")}</h2>
+          <h2 className="font-semibold text-(--text)">{t("Intake Form")}</h2>
           <p className="text-[11px] text-(--muted) mt-0.5">{t("Case Enquiry intake — no verification needed. Only Name + Mobile are required.")}</p>
         </div>
         <button type="button" onClick={() => setOpen(false)}
@@ -262,7 +262,7 @@ export default function CreateClientButton() {
           <button type="submit" disabled={saving}
             className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-            {saving ? t("Creating…") : t("Create client/victim")}
+            {saving ? t("Saving…") : t("Submit intake form")}
           </button>
         </form>
       )}
