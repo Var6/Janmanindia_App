@@ -70,6 +70,11 @@ export default function FileCasePage() {
 
   /* Issues multi-select */
   const [issues, setIssues] = useState<string[]>([]);
+  const [otherIssue, setOtherIssue] = useState("");
+
+  /* Relevant documents */
+  const [docs, setDocs] = useState<string[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   /* Incident facts */
   const [facts, setFacts]                       = useState("");
@@ -163,6 +168,21 @@ export default function FileCasePage() {
     setIssues(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   }
 
+  async function uploadDoc(file: File) {
+    setUploadingDoc(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? t("Document upload failed.")); return; }
+      setDocs(prev => [...prev, data.url]);
+      setError("");
+    } finally {
+      setUploadingDoc(false);
+    }
+  }
+
   /** Resolve the case's `community` ObjectId based on filing scope. May
    *  trigger a stub-user creation for the "new" path. Returns null on error
    *  (with `setError` already populated). */
@@ -218,6 +238,11 @@ export default function FileCasePage() {
       const communityId = await resolveCommunityId();
       if (!communityId) { setLoading(false); return; }
 
+      // "Other" issue free-text is folded into the facts (issues is a
+      // controlled vocabulary).
+      const factsCombined = [facts.trim(), otherIssue.trim() ? `Other: ${otherIssue.trim()}` : ""]
+        .filter(Boolean).join("\n");
+
       const enquiry = {
         filerName: filerName.trim() || undefined,
         filerPhone: filerPhone.trim() || undefined,
@@ -228,7 +253,7 @@ export default function FileCasePage() {
         issues,
         accusedNames: accusedNames.trim() || undefined,
         accusedCount: accusedCount.trim() ? Number(accusedCount) : undefined,
-        factsOfTheCase: facts.trim() || undefined,
+        factsOfTheCase: factsCombined || undefined,
         firNumber: firNumber.trim() || undefined,
         policeStation: policeStation.trim() || undefined,
         placeOfOccurrence: placeOfOccurrence.trim() || undefined,
@@ -243,6 +268,7 @@ export default function FileCasePage() {
         district: district || undefined,
         enquiry,
         pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
+        ...(docs.length ? { attachments: docs.map((url) => ({ url, label: "Relevant document" })) } : {}),
         ...(voiceUrl ? { voiceAttachment: { url: voiceUrl, durationSec: voiceDuration } } : {}),
       };
 
@@ -470,6 +496,8 @@ export default function FileCasePage() {
               );
             })}
           </div>
+          <Input value={otherIssue} onChange={(e) => setOtherIssue(e.target.value)}
+            placeholder={t("Other (describe)…")} />
         </section>
 
         {/* ─── Case basics ────────────────────────────────────────────── */}
@@ -539,6 +567,31 @@ export default function FileCasePage() {
                 onChange={(e) => setAccusedCount(e.target.value)} placeholder="2" />
             </Field>
           </div>
+        </section>
+
+        {/* ─── Relevant documents ─────────────────────────────────────── */}
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-(--muted)">{t("Relevant documents, if available")}</h2>
+          <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium cursor-pointer"
+            style={{ background: "var(--bg-secondary)", borderColor: "var(--border)", color: "var(--text)" }}>
+            <input type="file" accept="image/*,application/pdf" className="hidden" disabled={uploadingDoc}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc(f); e.target.value = ""; }} />
+            {uploadingDoc ? t("Uploading…") : t("📎 Attach a document (PDF / image)")}
+          </label>
+          {docs.length > 0 && (
+            <ul className="space-y-1">
+              {docs.map((u, i) => (
+                <li key={u} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-xs"
+                  style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
+                  <span>✓ {t("Document")} {i + 1}</span>
+                  <button type="button" onClick={() => setDocs(prev => prev.filter(x => x !== u))}
+                    className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                    {t("Remove")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {/* ─── Voice ──────────────────────────────────────────────────── */}

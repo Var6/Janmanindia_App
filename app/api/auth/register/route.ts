@@ -68,12 +68,6 @@ export async function POST(request: NextRequest) {
     if (!memberPhone) {
       return NextResponse.json({ error: "Mobile number is required." }, { status: 400 });
     }
-    if (!pocName || !pocPhone) {
-      return NextResponse.json(
-        { error: "A point of contact (name and phone number) is required." },
-        { status: 400 }
-      );
-    }
 
     // Email + password are optional, but if either is given both must be valid.
     const wantsLogin = Boolean(email?.trim()) || Boolean(password);
@@ -141,7 +135,7 @@ export async function POST(request: NextRequest) {
         preferredLanguage: trim(preferredLanguage),
         voiceIntroUrl: trim(voiceIntroUrl),
         voiceIntroDurationSec: typeof voiceIntroDurationSec === "number" ? Math.max(0, Math.floor(voiceIntroDurationSec)) : undefined,
-        pointOfContact: { name: pocName, phone: pocPhone, address: trim(pointOfContact?.address) },
+        ...((pocName || pocPhone) ? { pointOfContact: { name: pocName, phone: pocPhone, address: trim(pointOfContact?.address) } } : {}),
         ...(enquiryDoc ? { enquiry: enquiryDoc } : {}),
         ...(docs.length ? { intakeDocs: docs } : {}),
       },

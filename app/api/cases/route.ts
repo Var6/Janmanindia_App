@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
             litigationMemberIds,
             enquiry: enquiryRaw,
             pointOfContact: pocRaw,
+            attachments: attachmentsRaw,
             voiceAttachment } = body as {
       caseTitle: string;
       path?: "criminal" | "highcourt";
@@ -186,6 +187,8 @@ export async function POST(request: NextRequest) {
         durationSec?: number;
         label?: string;
       };
+      /** Relevant documents uploaded on the intake form. */
+      attachments?: { url: string; label?: string }[];
     };
 
     // caseTitle is optional on the community intake form — when absent we
@@ -390,16 +393,27 @@ export async function POST(request: NextRequest) {
       currentStep:    currentStep?.trim() || undefined,
       existingNotes:  existingNotes?.trim() || undefined,
       ...(enquiryDoc ? { enquiry: enquiryDoc } : {}),
-      documents: voiceAttachment?.url
-        ? [{
-            label: voiceAttachment.label?.trim()
-              || `Voice description${voiceAttachment.durationSec ? ` (${voiceAttachment.durationSec}s)` : ""}`,
-            url: voiceAttachment.url,
+      documents: [
+        ...(voiceAttachment?.url
+          ? [{
+              label: voiceAttachment.label?.trim()
+                || `Voice description${voiceAttachment.durationSec ? ` (${voiceAttachment.durationSec}s)` : ""}`,
+              url: voiceAttachment.url,
+              uploadedBy: session.id,
+              uploadedAt: new Date(),
+              ocrStatus: "pending" as const,
+            }]
+          : []),
+        ...((Array.isArray(attachmentsRaw) ? attachmentsRaw : [])
+          .filter((a) => a && typeof a.url === "string" && a.url.trim())
+          .map((a) => ({
+            label: (typeof a.label === "string" && a.label.trim()) || "Relevant document",
+            url: a.url.trim(),
             uploadedBy: session.id,
             uploadedAt: new Date(),
             ocrStatus: "pending" as const,
-          }]
-        : [],
+          }))),
+      ],
       caseDiary: [],
       courtAppearances: [],
       ...(path === "criminal"

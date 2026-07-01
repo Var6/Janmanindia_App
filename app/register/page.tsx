@@ -73,10 +73,6 @@ export default function RegisterPage() {
 
     if (!name.trim())     { setError(t("Name is required.")); return; }
     if (!phone.trim())    { setError(t("Mobile number is required.")); return; }
-    if (!pocName.trim() || !pocPhone.trim()) {
-      setError(t("A point of contact (name and phone number) is required."));
-      return;
-    }
     if (wantLogin) {
       if (!email.trim())       { setError(t("Enter an email to create a login.")); return; }
       if (password.length < 8) { setError(t("Password must be at least 8 characters.")); return; }
@@ -92,7 +88,9 @@ export default function RegisterPage() {
     const payload = {
       name: name.trim(),
       phone: phone.trim(),
-      pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
+      ...((pocName.trim() || pocPhone.trim())
+        ? { pointOfContact: { name: pocName.trim() || undefined, phone: pocPhone.trim() || undefined, address: pocAddress.trim() || undefined } }
+        : {}),
       district: district || undefined,
       ...(wantLogin ? { email: email.trim(), password } : {}),
       ...(voiceUrl ? { voiceIntroUrl: voiceUrl, voiceIntroDurationSec: voiceDur } : {}),
@@ -262,19 +260,34 @@ export default function RegisterPage() {
                   autoComplete="tel" placeholder="+91 99999 99999" className="form-input" />
               </Field>
 
-              {/* Point of contact — mandatory */}
+              <Field label={t("Victim's Name / पीड़ित का नाम")}>
+                <input value={victimName} onChange={(e) => setVictimName(e.target.value)} type="text"
+                  placeholder={t("optional")} className="form-input" />
+              </Field>
+
+              <Field label={t("Address")}>
+                <textarea value={victimAddress} onChange={(e) => setVictimAddress(e.target.value)} rows={2}
+                  placeholder={t("Where does the victim live?")} className="form-input resize-y" />
+              </Field>
+
+              <Field label={t("Relationship with victim / पीड़िता से रिश्ता")}>
+                <input value={relationship} onChange={(e) => setRelationship(e.target.value)} type="text"
+                  placeholder={t("self · father · sister · neighbour")} className="form-input" />
+              </Field>
+
+              {/* Point of contact — optional; the reporter above is the default contact. */}
               <fieldset className="rounded-xl border p-3 space-y-3"
-                style={{ borderColor: "color-mix(in srgb, var(--accent) 35%, var(--border))", background: "var(--bg)" }}>
+                style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
                 <legend className="text-xs font-semibold text-(--text) px-1">
-                  {t("Point of Contact")} <span style={{ color: "var(--error)" }}>*</span>
+                  {t("Point of Contact (optional)")}
                 </legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={t("Contact name")} required>
-                    <input value={pocName} onChange={(e) => setPocName(e.target.value)} required type="text"
+                  <Field label={t("Contact name")}>
+                    <input value={pocName} onChange={(e) => setPocName(e.target.value)} type="text"
                       placeholder={t("Who should we call?")} className="form-input" />
                   </Field>
-                  <Field label={t("Contact mobile")} required>
-                    <input value={pocPhone} onChange={(e) => setPocPhone(e.target.value)} required type="tel" inputMode="tel"
+                  <Field label={t("Contact mobile")}>
+                    <input value={pocPhone} onChange={(e) => setPocPhone(e.target.value)} type="tel" inputMode="tel"
                       placeholder="+91 99999 99999" className="form-input" />
                   </Field>
                 </div>
@@ -283,22 +296,6 @@ export default function RegisterPage() {
                     placeholder={t("optional")} className="form-input" />
                 </Field>
               </fieldset>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t("Victim's Name / पीड़ित का नाम")}>
-                  <input value={victimName} onChange={(e) => setVictimName(e.target.value)} type="text"
-                    placeholder={t("optional")} className="form-input" />
-                </Field>
-                <Field label={t("Relationship with victim")}>
-                  <input value={relationship} onChange={(e) => setRelationship(e.target.value)} type="text"
-                    placeholder={t("self · father · sister · neighbour")} className="form-input" />
-                </Field>
-              </div>
-
-              <Field label={t("Address")}>
-                <textarea value={victimAddress} onChange={(e) => setVictimAddress(e.target.value)} rows={2}
-                  placeholder={t("Where does the victim live?")} className="form-input resize-y" />
-              </Field>
 
               <Field label={t("District")}>
                 <select value={district} onChange={(e) => setDistrict(e.target.value)} className="form-input">
