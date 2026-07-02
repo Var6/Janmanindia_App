@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Activity, { type ActivityStatus, type ActivityPriority } from "@/models/Activity";
 import TaskAssignment from "@/models/TaskAssignment";
+import User from "@/models/User";
 import { syncActivityUpdate, syncActivityReassign, syncActivityDelete } from "@/lib/activity-calendar-sync";
 
 const ASSIGN_ROLES = ["director", "superadmin", "administrator", "hr"];
@@ -19,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await req.json();
     const { status, notes, priority, dueDate, endsAt, title, description, assignee, coAssignees, note,
-            addTodo, toggleTodo, editTodo, removeTodo } = body as {
+            addTodo, toggleTodo, editTodo, removeTodo, commentTodo } = body as {
       status?: ActivityStatus; notes?: string; priority?: ActivityPriority;
       dueDate?: string; endsAt?: string;
       title?: string; description?: string;
@@ -32,11 +33,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       toggleTodo?: { id: string; done: boolean };
       editTodo?:   { id: string; title: string; mentions?: string[] };
       removeTodo?: { id: string };
+      /** Post a message on a checklist item's discussion thread. Open to any
+       *  staff member (activities are org-visible), not just the owner. */
+      commentTodo?: { id: string; text: string };
     };
 
     await connectDB();
     const activity = await Activity.findById(id);
     if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // ── Todo discussion thread ─────────────────────────────────────────────
+    // Any signed-in staff member can post on a checklist item's thread — a todo
+    // doubles as a place to talk about that specific topic. Handled before the
+    // owner/privileged gate below so non-owners can still chime in.
+    if (commentTodo) {
+      if (session.role === "community") {
+        return NextResponse.json({ error: "Activities are staff-only" }, { status: 403 });
+      }
+      if (!mongoose.Types.ObjectId.isValid(commentTodo.id)) {
+        return NextResponse.json({ error: "Invalid todo id" }, { status: 400 });
+      }
+      const text = String(commentTodo.text ?? "").trim();
+      if (!text) return NextResponse.json({ error: "Message is required" }, { status: 400 });
+      const todo = activity.todos.find((tt) => String(tt._id) === commentTodo.id);
+      if (!todo) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+      const me = await User.findById(session.id).select("name role").lean();
+      todo.comments.push({
+        text: text.slice(0, 2000),
+        by: new mongoose.Types.ObjectId(session.id),
+        byName: me?.name ?? "",
+        byRole: session.role,
+        createdAt: new Date(),
+      } as never);
+      await activity.save();
+      return NextResponse.json({ activity });
+    }
 
     // Anyone listed on the activity (assignee, co-assignee, or creator) plus
     // privileged roles can mutate it. Co-assignees couldn't tick todos before

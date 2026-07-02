@@ -9,6 +9,14 @@ import { localInputToISO } from "@/lib/datetime";
 import MentionInput, { MentionText, type MentionMember } from "./MentionInput";
 import { useT } from "@/components/i18n/LanguageProvider";
 
+interface TodoComment {
+  _id: string;
+  text: string;
+  byName?: string;
+  byRole?: string;
+  createdAt: string;
+}
+
 interface Todo {
   _id: string;
   title: string;
@@ -16,6 +24,8 @@ interface Todo {
   doneAt?: string;
   /** Populated user refs for everyone @-mentioned in `title`. */
   mentions?: { _id: string; name: string; role?: string }[];
+  /** Threaded discussion on this checklist item. */
+  comments?: TodoComment[];
 }
 
 interface Activity {
@@ -75,8 +85,9 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine" | "created">("all");
   // Scope: "mine" = activities I'm on or created; "org" = everything planned
-  // across the whole organisation (read-only visibility for every staff member).
-  const [scope, setScope] = useState<"mine" | "org">("mine");
+  // across the whole organisation. Defaults to "org" so every staff member sees
+  // what the whole org has going on; switch to "My work" to focus on your own.
+  const [scope, setScope] = useState<"mine" | "org">("org");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -629,6 +640,16 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [editDraft, setEditDraft]   = useState("");
   const [editMentions, setEditMentions] = useState<string[]>([]);
+  // Which checklist item's discussion thread is expanded, and the in-flight reply.
+  const [threadFor, setThreadFor] = useState<string | null>(null);
+  const [reply, setReply] = useState("");
+
+  async function sendReply(todoId: string) {
+    const txt = reply.trim();
+    if (!txt) return;
+    setReply("");
+    await call({ commentTodo: { id: todoId, text: txt } });
+  }
 
   const total = todos.length;
   const done  = todos.filter((t) => t.done).length;
@@ -711,43 +732,82 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
       <ul className="space-y-0.5">
         {todos.map((todo) => {
           const isEditing = editingId === todo._id;
+          const commentCount = todo.comments?.length ?? 0;
+          const threadOpen = threadFor === todo._id;
           return (
-            <li key={todo._id} className="flex items-center gap-2 group/item">
-              <input type="checkbox" checked={todo.done} disabled={busy || isEditing}
-                onChange={(e) => call({ toggleTodo: { id: todo._id, done: e.target.checked } })}
-                className="accent-(--accent) cursor-pointer" />
-              {isEditing ? (
-                <MentionInput
-                  value={editDraft}
-                  members={members}
-                  onChange={(text, ids) => { setEditDraft(text); setEditMentions(ids); }}
-                  onCommit={commitEdit}
-                  onCancel={() => { setEditingId(null); setEditDraft(""); setEditMentions([]); }}
-                  autoFocus
-                  className="flex-1 w-full px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
-                />
-              ) : (
-                <button type="button" onClick={() => startEdit(todo)}
-                  title={t("Click to edit")}
-                  className="flex-1 text-left cursor-text">
-                  <MentionText text={todo.title} members={members} struck={todo.done} />
-                </button>
-              )}
-              {!isEditing && (
-                <>
-                  <button type="button" disabled={busy}
-                    onClick={() => startEdit(todo)}
-                    className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--accent) transition-all px-1"
-                    title={t("Edit")}>
-                    ✎
+            <li key={todo._id} className="group/item">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={todo.done} disabled={busy || isEditing}
+                  onChange={(e) => call({ toggleTodo: { id: todo._id, done: e.target.checked } })}
+                  className="accent-(--accent) cursor-pointer" />
+                {isEditing ? (
+                  <MentionInput
+                    value={editDraft}
+                    members={members}
+                    onChange={(text, ids) => { setEditDraft(text); setEditMentions(ids); }}
+                    onCommit={commitEdit}
+                    onCancel={() => { setEditingId(null); setEditDraft(""); setEditMentions([]); }}
+                    autoFocus
+                    className="flex-1 w-full px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                  />
+                ) : (
+                  <button type="button" onClick={() => startEdit(todo)}
+                    title={t("Click to edit")}
+                    className="flex-1 text-left cursor-text">
+                    <MentionText text={todo.title} members={members} struck={todo.done} />
                   </button>
-                  <button type="button" disabled={busy}
-                    onClick={() => call({ removeTodo: { id: todo._id } })}
-                    className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
-                    title={t("Remove")}>
-                    ×
-                  </button>
-                </>
+                )}
+                {!isEditing && (
+                  <>
+                    <button type="button"
+                      onClick={() => setThreadFor(threadOpen ? null : todo._id)}
+                      className={`text-[11px] transition-all px-1 ${commentCount > 0 || threadOpen ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"} ${threadOpen ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
+                      title={t("Discuss")}>
+                      💬{commentCount > 0 ? ` ${commentCount}` : ""}
+                    </button>
+                    <button type="button" disabled={busy}
+                      onClick={() => startEdit(todo)}
+                      className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--accent) transition-all px-1"
+                      title={t("Edit")}>
+                      ✎
+                    </button>
+                    <button type="button" disabled={busy}
+                      onClick={() => call({ removeTodo: { id: todo._id } })}
+                      className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
+                      title={t("Remove")}>
+                      ×
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Discussion thread on this checklist item */}
+              {threadOpen && (
+                <div className="ml-6 mt-1 mb-1.5 pl-3 border-l space-y-1" style={{ borderColor: "var(--border)" }}>
+                  {commentCount === 0 && (
+                    <p className="text-[11px] text-(--muted) italic">{t("No messages yet — start the discussion.")}</p>
+                  )}
+                  {(todo.comments ?? []).map((c) => (
+                    <p key={c._id} className="text-[11px] leading-snug">
+                      <span className="font-semibold text-(--text)">{c.byName || t("Unknown")}</span>
+                      {c.byRole && <span className="text-(--muted)"> · {c.byRole}</span>}
+                      <span className="text-(--muted)">: </span>
+                      <span className="text-(--text)">{c.text}</span>
+                    </p>
+                  ))}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input value={reply} onChange={(e) => setReply(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(todo._id); } }}
+                      placeholder={t("Write a message…")}
+                      className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                      style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                    <button type="button" onClick={() => sendReply(todo._id)} disabled={busy || !reply.trim()}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
+                      style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                      {t("Send")}
+                    </button>
+                  </div>
+                </div>
               )}
             </li>
           );

@@ -23,6 +23,16 @@ export interface IActivityTodo {
    *  query "todos where I'm mentioned" without parsing strings. Always a
    *  subset of the activity's assignee + co-assignees. */
   mentions: mongoose.Types.ObjectId[];
+  /** Threaded discussion on this checklist item — anyone in the org can chime
+   *  in, so a todo doubles as a mini communication thread on that topic. */
+  comments: {
+    _id?: mongoose.Types.ObjectId;
+    text: string;
+    by: mongoose.Types.ObjectId;
+    byName: string;
+    byRole?: string;
+    createdAt: Date;
+  }[];
 }
 
 export interface IActivity extends Document {
@@ -57,6 +67,17 @@ export interface IActivity extends Document {
   updatedAt: Date;
 }
 
+const todoCommentSchema = new Schema(
+  {
+    text:      { type: String, required: true, trim: true, maxlength: 2000 },
+    by:        { type: Schema.Types.ObjectId, ref: "User", required: true },
+    byName:    { type: String, trim: true },
+    byRole:    { type: String, trim: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const todoSchema = new Schema<IActivityTodo>(
   {
     title:    { type: String, required: true, trim: true, maxlength: 280 },
@@ -66,6 +87,7 @@ const todoSchema = new Schema<IActivityTodo>(
     addedBy:  { type: Schema.Types.ObjectId, ref: "User", required: true },
     addedAt:  { type: Date, default: Date.now },
     mentions: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    comments: { type: [todoCommentSchema], default: [] },
   },
   { _id: true }
 );
