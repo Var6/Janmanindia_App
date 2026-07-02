@@ -12,6 +12,7 @@ import { useT } from "@/components/i18n/LanguageProvider";
 interface TodoComment {
   _id: string;
   text: string;
+  by?: string;
   byName?: string;
   byRole?: string;
   createdAt: string;
@@ -84,10 +85,11 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine" | "created">("all");
-  // Scope: "mine" = activities I'm on or created; "org" = everything planned
-  // across the whole organisation. Defaults to "org" so every staff member sees
-  // what the whole org has going on; switch to "My work" to focus on your own.
-  const [scope, setScope] = useState<"mine" | "org">("org");
+  // Scope is a VIEW only — an activity is always assigned to specific people,
+  // never "organisation-wide" as a property. "mine" = activities I'm on or
+  // created (the default); "org" = a read-only view of everything the whole
+  // organisation has planned. Switch with the toggle.
+  const [scope, setScope] = useState<"mine" | "org">("mine");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -578,6 +580,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                     ...(a.assignee ? [{ _id: a.assignee._id, name: a.assignee.name, role: a.assignee.role }] : []),
                     ...(a.coAssignees ?? []).map((c) => ({ _id: c._id, name: c.name, role: c.role })),
                   ].filter((m, i, arr) => arr.findIndex((x) => x._id === m._id) === i)}
+                  currentUserId={currentUserId}
                   onChanged={load}
                 />
 
@@ -621,11 +624,12 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
 
 /** Per-activity checklist — fetches no extra data; mutates via PATCH on the
  *  parent activity and asks the planner to reload after each change. */
-function ActivityTodos({ activityId, todos, members, onChanged }: {
+function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }: {
   activityId: string;
   todos: Todo[];
   /** Whom you can @-mention in this activity (assignee + co-assignees). */
   members: MentionMember[];
+  currentUserId: string;
   onChanged: () => void | Promise<void>;
 }) {
   const t = useT();
@@ -643,12 +647,22 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
   // Which checklist item's discussion thread is expanded, and the in-flight reply.
   const [threadFor, setThreadFor] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const [editCommentId, setEditCommentId] = useState<string | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   async function sendReply(todoId: string) {
     const txt = reply.trim();
     if (!txt) return;
     setReply("");
     await call({ commentTodo: { id: todoId, text: txt } });
+  }
+
+  async function saveCommentEdit(todoId: string) {
+    const id = editCommentId;
+    const txt = editCommentText.trim();
+    setEditCommentId(null); setEditCommentText("");
+    if (!id || !txt) return;
+    await call({ editTodoComment: { todoId, commentId: id, text: txt } });
   }
 
   const total = todos.length;
@@ -761,8 +775,8 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
                   <>
                     <button type="button"
                       onClick={() => setThreadFor(threadOpen ? null : todo._id)}
-                      className={`text-[11px] transition-all px-1 ${commentCount > 0 || threadOpen ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"} ${threadOpen ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
-                      title={t("Discuss")}>
+                      className={`text-[11px] transition-all px-1 ${threadOpen ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
+                      title={t("Reply")}>
                       💬{commentCount > 0 ? ` ${commentCount}` : ""}
                     </button>
                     <button type="button" disabled={busy}
@@ -781,32 +795,61 @@ function ActivityTodos({ activityId, todos, members, onChanged }: {
                 )}
               </div>
 
-              {/* Discussion thread on this checklist item */}
-              {threadOpen && (
+              {/* Discussion thread — messages are always visible; the reply box
+                  opens on the 💬 button so anyone can chime in. */}
+              {(commentCount > 0 || threadOpen) && (
                 <div className="ml-6 mt-1 mb-1.5 pl-3 border-l space-y-1" style={{ borderColor: "var(--border)" }}>
-                  {commentCount === 0 && (
+                  {commentCount === 0 && threadOpen && (
                     <p className="text-[11px] text-(--muted) italic">{t("No messages yet — start the discussion.")}</p>
                   )}
-                  {(todo.comments ?? []).map((c) => (
-                    <p key={c._id} className="text-[11px] leading-snug">
-                      <span className="font-semibold text-(--text)">{c.byName || t("Unknown")}</span>
-                      {c.byRole && <span className="text-(--muted)"> · {c.byRole}</span>}
-                      <span className="text-(--muted)">: </span>
-                      <span className="text-(--text)">{c.text}</span>
-                    </p>
-                  ))}
-                  <div className="flex items-center gap-2 pt-1">
-                    <input value={reply} onChange={(e) => setReply(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(todo._id); } }}
-                      placeholder={t("Write a message…")}
-                      className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
-                      style={{ borderColor: "var(--border)", color: "var(--text)" }} />
-                    <button type="button" onClick={() => sendReply(todo._id)} disabled={busy || !reply.trim()}
-                      className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
-                      style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                      {t("Send")}
-                    </button>
-                  </div>
+                  {(todo.comments ?? []).map((c) => {
+                    const mine = Boolean(c.by && c.by === currentUserId);
+                    const editing = editCommentId === c._id;
+                    return (
+                      <div key={c._id} className="group/msg flex items-start gap-1 text-[11px] leading-snug">
+                        {editing ? (
+                          <div className="flex-1 flex items-center gap-1">
+                            <input value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveCommentEdit(todo._id); } if (e.key === "Escape") { setEditCommentId(null); setEditCommentText(""); } }}
+                              autoFocus
+                              className="flex-1 px-1.5 py-0.5 text-[11px] rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                              style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                            <button type="button" onClick={() => saveCommentEdit(todo._id)} className="text-[11px] px-1" style={{ color: "var(--accent)" }} title={t("Save")}>✓</button>
+                            <button type="button" onClick={() => { setEditCommentId(null); setEditCommentText(""); }} className="text-[11px] px-1 text-(--muted)" title={t("Cancel")}>✕</button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="flex-1 min-w-0">
+                              <span className="font-semibold text-(--text)">{c.byName || t("Unknown")}</span>
+                              {c.byRole && <span className="text-(--muted)"> · {c.byRole}</span>}
+                              <span className="text-(--muted)">: </span>
+                              <span className="text-(--text)">{c.text}</span>
+                            </span>
+                            {mine && (
+                              <span className="opacity-0 group-hover/msg:opacity-100 flex gap-0.5 shrink-0 transition-opacity">
+                                <button type="button" onClick={() => { setEditCommentId(c._id); setEditCommentText(c.text); }} className="px-1 text-(--muted) hover:text-(--accent)" title={t("Edit")}>✎</button>
+                                <button type="button" onClick={() => call({ deleteTodoComment: { todoId: todo._id, commentId: c._id } })} className="px-1 text-(--muted) hover:text-(--error)" title={t("Delete")}>×</button>
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {threadOpen && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <input value={reply} onChange={(e) => setReply(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(todo._id); } }}
+                        placeholder={t("Write a message…")}
+                        className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                        style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                      <button type="button" onClick={() => sendReply(todo._id)} disabled={busy || !reply.trim()}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
+                        style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                        {t("Send")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </li>

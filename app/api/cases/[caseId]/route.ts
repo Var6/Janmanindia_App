@@ -675,7 +675,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       body.socialWorker !== undefined ||
       body.litigationMember !== undefined;
     if (updated?.nextHearingDate && (body.nextHearingDate || peopleChanged)) {
-      await syncCaseHearing(caseId);
+      await syncCaseHearing(caseId, session.id);
     }
 
     // Delete the hearing calendar event once the matter reaches any final

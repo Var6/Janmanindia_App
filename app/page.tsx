@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { DEMO_ACCOUNTS, SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman";
+import Image from "next/image";
+import { SCHEMES, SITE_SUBTITLE, USER_ROLES } from "@/data/janman";
 import RoleCard from "@/components/shared/RoleCard";
 import { getServerT } from "@/lib/i18n-server";
 
 const ROLE_CONFIG = [
-  { icon: "👤", color: "var(--info-bg)",    border: "var(--info)",    label: "Community"       },
-  { icon: "⚖️", color: "var(--success-bg)", border: "var(--success)", label: "Advocate"      },
-  { icon: "🤝", color: "var(--accent-subtle)", border: "var(--accent)", label: "Social Worker" },
-  { icon: "🛡️", color: "var(--error-bg)",   border: "var(--error)",   label: "Admin"         },
+  { icon: "👤", color: "var(--info-bg)",       border: "var(--info)",    label: "Community"     },
+  { icon: "⚖️", color: "var(--success-bg)",    border: "var(--success)", label: "Advocate"      },
+  { icon: "🤝", color: "var(--accent-subtle)", border: "var(--accent)",  label: "Social Worker" },
+  { icon: "🛡️", color: "var(--error-bg)",      border: "var(--error)",   label: "Admin"         },
 ];
 
 const PLATFORM_FEATURES = [
@@ -22,6 +23,32 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-(--bg) text-(--text)">
 
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 border-b border-(--border)"
+        style={{ background: "color-mix(in srgb, var(--surface) 88%, transparent)", backdropFilter: "blur(12px)" }}>
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/logo.png" alt="Janman" width={34} height={34} priority
+              className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
+            <div className="leading-none">
+              <p className="text-sm font-bold text-(--text) tracking-tight">Janman</p>
+              <p className="text-[10px] text-(--muted) uppercase tracking-widest mt-0.5">{t("Legal Aid")}</p>
+            </div>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/login"
+              className="rounded-xl px-4 py-2 text-sm font-semibold text-(--text) hover:bg-(--bg-secondary) transition">
+              {t("Sign in")}
+            </Link>
+            <Link href="/register"
+              className="rounded-xl px-4 py-2 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
+              style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
+              {t("Get legal help")}
+            </Link>
+          </div>
+        </div>
+      </header>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="border-b border-(--border) bg-(--surface)">
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
@@ -32,7 +59,7 @@ export default async function Home() {
                 <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold ring-1"
                   style={{ background: "var(--accent-subtle)", color: "var(--accent)", ["--tw-ring-color" as string]: "var(--accent-muted)" }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                  {t("Legal aid for Bihar's most vulnerable communities")}
+                  {t("Free legal aid for Bihar's most vulnerable communities")}
                 </span>
 
                 <h1 className="text-4xl font-extrabold tracking-tight text-(--text) sm:text-5xl lg:text-6xl leading-[1.1]">
@@ -44,26 +71,26 @@ export default async function Home() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link href="/login"
+                <Link href="/register"
                   className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
                   style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
-                  {t("Login to Dashboard")}
+                  {t("Get legal help")}
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
                     <path d="M3 8h10M9 4l4 4-4 4"/>
                   </svg>
                 </Link>
-                <Link href="/jan-sahayak"
+                <Link href="/login"
                   className="inline-flex items-center gap-2 rounded-xl border border-(--border) bg-(--bg) px-6 py-3 text-sm font-semibold text-(--text) hover:border-(--accent) hover:bg-(--surface) transition">
-                  {t("Explore Community")}
+                  {t("Sign in to your dashboard")}
                 </Link>
               </div>
 
-              {/* Stats row */}
-              <div className="flex flex-wrap gap-6 pt-2 border-t border-(--border)">
+              {/* Stats row — qualitative, no fabricated numbers */}
+              <div className="flex flex-wrap gap-8 pt-4 border-t border-(--border)">
                 {[
-                  { value: "7",    label: t("Role types") },
-                  { value: "Bihar", label: t("Focus state") },
-                  { value: t("Free"),  label: t("Legal aid") },
+                  { value: t("Free"),         label: t("Always, no cost") },
+                  { value: "Bihar",           label: t("Rooted in") },
+                  { value: t("Confidential"), label: t("Your data, protected") },
                 ].map((s) => (
                   <div key={s.label}>
                     <p className="text-xl font-bold text-(--text)">{s.value}</p>
@@ -103,9 +130,9 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-12">
           <div className="mb-10 max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Separate journeys for each role")}</p>
-            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("One platform, seven roles")}</h2>
+            <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("One platform, every role")}</h2>
             <p className="mt-3 text-(--muted) leading-relaxed">
-              {t("Community members, social workers, litigation members, HR, finance, admin, and superadmin — each gets a tailored dashboard.")}
+              {t("Community members, social workers, advocates, and administrators — each gets a dashboard built for their work.")}
             </p>
           </div>
 
@@ -153,9 +180,9 @@ export default async function Home() {
               {
                 tag: `📢 ${t("Campaign design")}`,
                 title: "Janman Events Planner",
-                desc: t("Plan awareness campaigns and community mobilization using guided AI-powered workflows."),
+                desc: t("Plan awareness campaigns and community mobilization with guided workflows."),
                 bullets: [
-                  t("Generate agendas and campaigns inspired by Indian people's movements"),
+                  t("Build agendas and campaigns inspired by Indian people's movements"),
                   t("Coordinate paralegal and advocate teams on one timeline"),
                   t("Track progress and document impact across districts"),
                 ],
@@ -229,37 +256,37 @@ export default async function Home() {
           <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
             <div className="space-y-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Get started now")}</p>
-                <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("Sign in to your dashboard")}</h2>
+                <p className="text-xs font-bold uppercase tracking-widest text-(--accent)">{t("Get started")}</p>
+                <h2 className="mt-2 text-3xl font-bold text-(--text) sm:text-4xl">{t("Facing injustice? We're with you.")}</h2>
                 <p className="mt-3 text-(--muted) leading-relaxed max-w-lg">
-                  {t("Use a demo account to explore the platform designed for your role. Each dashboard is built to match your workflow.")}
+                  {t("Fill a short case enquiry and a trained social worker in your district will review it and reach out — usually within 48 hours. Free of cost, fully confidential.")}
                 </p>
               </div>
-              <Link href="/login"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-(--accent-contrast) transition hover:brightness-110"
-                style={{ background: "var(--accent)", boxShadow: "var(--shadow-accent)" }}>
-                {t("Sign in now")}
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
-                  <path d="M3 8h10M9 4l4 4-4 4"/>
-                </svg>
-              </Link>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {DEMO_ACCOUNTS.map((account, i) => {
-                const cfg = ROLE_CONFIG[i] ?? ROLE_CONFIG[0];
-                return (
-                  <div key={account.id}
-                    className="rounded-xl border border-(--border) bg-(--bg) p-4 hover:border-(--accent) transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">{cfg.icon}</span>
-                      <p className="text-sm font-semibold text-(--text)">{account.role}</p>
-                    </div>
-                    <p className="text-xs font-mono text-(--accent) truncate">{account.id}</p>
-                    <p className="text-xs text-(--muted) mt-0.5">{t("Pass:")} <span className="font-mono">{account.password}</span></p>
-                  </div>
-                );
-              })}
+              <Link href="/register"
+                className="rounded-2xl border p-5 transition-colors hover:border-(--accent)"
+                style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+                <p className="text-2xl">📝</p>
+                <p className="mt-3 text-sm font-bold text-(--text)">{t("File a case enquiry")}</p>
+                <p className="mt-1 text-xs text-(--muted)">{t("New here? Tell us what happened — no login needed.")}</p>
+                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                  {t("Start now")}
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3 h-3"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </span>
+              </Link>
+              <Link href="/login"
+                className="rounded-2xl border p-5 transition-colors hover:border-(--accent)"
+                style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+                <p className="text-2xl">🔑</p>
+                <p className="mt-3 text-sm font-bold text-(--text)">{t("Sign in")}</p>
+                <p className="mt-1 text-xs text-(--muted)">{t("Staff and registered members — open your dashboard.")}</p>
+                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                  {t("Go to login")}
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3 h-3"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+                </span>
+              </Link>
             </div>
           </div>
         </div>
@@ -280,7 +307,7 @@ export default async function Home() {
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link href="/jan-sahayak" className="hover:text-(--text) transition-colors">{t("Community")}</Link>
-            <Link href="/events" className="hover:text-(--text) transition-colors">{t("Events")}</Link>
+            <Link href="/register" className="hover:text-(--text) transition-colors">{t("Get help")}</Link>
             <Link href="/login" className="hover:text-(--text) transition-colors">{t("Sign in")}</Link>
             <Link href="/privacy" className="hover:text-(--text) transition-colors">{t("Privacy Policy")}</Link>
             <Link href="/terms" className="hover:text-(--text) transition-colors">{t("Terms of Service")}</Link>

@@ -120,6 +120,10 @@ export async function syncActivityCreate(activityId: string): Promise<void> {
   try {
     const act = await Activity.findById(activityId).lean();
     if (!act?.dueDate) return; // no due date — skip calendar sync
+    // Idempotency guard: if this activity already has a synced event, never
+    // insert a second one. Prevents the duplicate that showed up when the sync
+    // ran twice (double submit / a follow-up update racing the first create).
+    if (act.googleEventId) return;
 
     const owner = await pickEventOwner(act.assignee, act.createdBy, act.coAssignees ?? []);
     if (!owner) return;

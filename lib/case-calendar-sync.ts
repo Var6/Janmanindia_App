@@ -31,10 +31,14 @@ async function resolveHost(caseDoc: {
   socialWorker?: mongoose.Types.ObjectId;
   community?: mongoose.Types.ObjectId;
   createdBy?: mongoose.Types.ObjectId;
-}): Promise<HostResolution | null> {
+}, actingUserId?: string): Promise<HostResolution | null> {
   try {
     // Preference order for who hosts the event. Advocates first (they run the
-    // hearing), then social worker, community, and finally the creator.
+    // hearing), then social worker, community, and finally the creator. The
+    // person making the change (actingUserId) is appended so a director /
+    // administrator who sets a hearing on a case they aren't assigned to still
+    // gets the event on their own calendar (as attendee, or owner if nobody
+    // else has connected Google).
     const advocates = caseDoc.litigationMembers?.length
       ? caseDoc.litigationMembers
       : caseDoc.litigationMember
@@ -45,6 +49,7 @@ async function resolveHost(caseDoc: {
       caseDoc.socialWorker,
       caseDoc.community,
       caseDoc.createdBy,
+      ...(actingUserId && mongoose.Types.ObjectId.isValid(actingUserId) ? [new mongoose.Types.ObjectId(actingUserId)] : []),
     ].filter((id): id is mongoose.Types.ObjectId => Boolean(id));
 
     // De-dupe while preserving order (a person can hold two roles on a case).
@@ -101,7 +106,7 @@ function hearingTimes(date: Date): { start: Date; end: Date } {
  * date changes OR the people on the case change (so newly added advocates get
  * the invite). Safe to call repeatedly.
  */
-export async function syncCaseHearing(caseId: string): Promise<void> {
+export async function syncCaseHearing(caseId: string, actingUserId?: string): Promise<void> {
   try {
     const c = await Case.findById(caseId).lean();
     if (!c) return;
@@ -112,7 +117,7 @@ export async function syncCaseHearing(caseId: string): Promise<void> {
       return;
     }
 
-    const host = await resolveHost(c);
+    const host = await resolveHost(c, actingUserId);
     if (!host) return; // nobody has connected Google — silently skip
 
     const { start, end } = hearingTimes(new Date(c.nextHearingDate));
