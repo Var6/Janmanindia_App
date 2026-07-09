@@ -59,6 +59,9 @@ async function main() {
   console.log("");
 
   // ── Users ────────────────────────────────────────────────────────────────
+  // The Google Play review login is intentionally on the dev domain but is a
+  // REAL, needed account (Play Console → Sign in details). Never delete it.
+  const PROTECTED_EMAILS = ["community@dev.janmanindia.in"];
   const userOr = [
     { email: RX("@dev\\.janmanindia\\.in$") },
     { employeeId: RX("^JPF/(DEV|DEMO)/") },
@@ -67,7 +70,7 @@ async function main() {
   if (INCLUDE_IMPORTS) userOr.push({ email: RX("@stub\\.janmanindia\\.org$") });
   // Seed-admin (kumar@janmanindia.org) only when explicitly requested.
   if (INCLUDE_SEED_ADMIN) userOr.push({ email: "kumar@janmanindia.org" });
-  const userQuery = { $or: userOr };
+  const userQuery = { $and: [{ $or: userOr }, { email: { $nin: PROTECTED_EMAILS } }] };
   const seededUsers = await db.collection("users").find(userQuery).project({ email: 1, role: 1, employeeId: 1 }).toArray();
   console.log(`users  (seed/demo/stub): ${seededUsers.length}`);
   for (const u of seededUsers) console.log(`   - ${u.email}  [${u.role}${u.employeeId ? " · " + u.employeeId : ""}]`);
