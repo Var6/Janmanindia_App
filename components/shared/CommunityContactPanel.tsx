@@ -46,7 +46,7 @@ export default function CommunityContactPanel() {
       {/* Assigned SW — primary contact */}
       <section className="rounded-2xl border-2 p-5"
         style={{ background: "var(--accent-subtle)", borderColor: "var(--accent)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--accent)" }}>
+        <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--accent)" }}>
           Your Social Worker · First point of contact
         </p>
         {sw ? (
@@ -90,7 +90,7 @@ export default function CommunityContactPanel() {
       {(showFallback || !sw) && (
         helpline ? (
           <section className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-(--muted) mb-1">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-(--muted) mb-1">
               District Helpline · {helpline.district}
             </p>
             <p className="font-semibold text-(--text)">{helpline.primaryName}</p>
@@ -120,7 +120,7 @@ export default function CommunityContactPanel() {
 
       {/* National emergency — always shown */}
       <section className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-(--muted) mb-2">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-(--muted) mb-2">
           National Emergency · always available
         </p>
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">

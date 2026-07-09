@@ -105,12 +105,12 @@ export default function DirectorHearingsPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-sm font-bold text-(--text)">{day !== "—" ? fmt(day) : "—"}</h2>
                   {days !== null && (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                    <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full"
                       style={soon ? { background: "var(--error-bg)", color: "var(--error-text)" } : { background: "var(--bg-secondary)", color: "var(--muted)" }}>
                       {days <= 0 ? t("today") : `${days}d`}
                     </span>
                   )}
-                  <span className="text-[11px] text-(--muted)">· {items.length}</span>
+                  <span className="text-[12px] text-(--muted)">· {items.length}</span>
                 </div>
                 <div className="rounded-2xl border overflow-hidden divide-y" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
                   {items.map((h) => (
@@ -118,7 +118,7 @@ export default function DirectorHearingsPage() {
                       className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-(--bg) transition-colors">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-(--text) truncate">{h.caseTitle}</p>
-                        <p className="text-[11px] text-(--muted) flex flex-wrap gap-x-2 mt-0.5">
+                        <p className="text-[12px] text-(--muted) flex flex-wrap gap-x-2 mt-0.5">
                           <span className="font-mono">{h.courtCaseNumber || h.caseNumber}</span>
                           {h.district && <span>· 📍 {h.district}</span>}
                           {h.courtName && <span>· {h.courtName}</span>}
@@ -126,7 +126,7 @@ export default function DirectorHearingsPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs text-(--text)">{h.lawyer || <span className="text-(--muted) italic">{t("Unassigned")}</span>}</p>
-                        <p className="text-[11px] text-(--muted)">{h.status}</p>
+                        <p className="text-[12px] text-(--muted)">{h.status}</p>
                       </div>
                     </Link>
                   ))}

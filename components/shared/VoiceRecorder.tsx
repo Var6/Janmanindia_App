@@ -123,8 +123,8 @@ export default function VoiceRecorder({ onUploaded, className, compact, disabled
             ● {minutes}:{seconds}
           </button>
         )}
-        {busy && <span className="text-[11px] text-(--muted)">uploading…</span>}
-        {error && <span className="text-[11px] text-(--error-text)">{error}</span>}
+        {busy && <span className="text-[12px] text-(--muted)">uploading…</span>}
+        {error && <span className="text-[12px] text-(--error-text)">{error}</span>}
       </div>
     );
   }

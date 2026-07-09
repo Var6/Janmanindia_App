@@ -58,7 +58,7 @@ export default function PlvRequestsList({ pending, approved }: Props) {
                     </p>
                   </div>
                   {r.requestedAt && (
-                    <p className="text-[11px] text-(--muted) shrink-0">
+                    <p className="text-[12px] text-(--muted) shrink-0">
                       Requested {new Date(r.requestedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   )}
@@ -66,7 +66,7 @@ export default function PlvRequestsList({ pending, approved }: Props) {
 
                 {r.motivation && (
                   <div className="rounded-xl p-3" style={{ background: "var(--bg)" }}>
-                    <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Motivation</p>
+                    <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">Motivation</p>
                     <p className="text-sm text-(--text) whitespace-pre-line leading-relaxed">{r.motivation}</p>
                   </div>
                 )}

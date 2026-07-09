@@ -377,7 +377,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
           {!collapsed && (
             <div className="min-w-0 text-left flex-1">
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{t(roleLabel)}</p>
+              <p className="text-[11px] text-(--muted) mt-0.5 truncate uppercase tracking-wide">{t(roleLabel)}</p>
             </div>
           )}
         </button>
@@ -413,7 +413,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
               <span className="shrink-0 transition-colors relative" style={{ color: active ? "var(--sidebar-active-text)" : "var(--sidebar-icon)" }}>
                 {ICONS[item.icon]}
                 {item.href === "/chat" && unreadChat > 0 && collapsed && (
-                  <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center px-1"
                     style={{ background: "var(--error, #dc2626)", color: "white" }}>
                     {unreadChat > 99 ? "99+" : unreadChat}
                   </span>
@@ -421,7 +421,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
               </span>
               {!collapsed && <span className="truncate">{t(item.label)}</span>}
               {!collapsed && item.href === "/chat" && unreadChat > 0 && (
-                <span className="ml-auto min-w-4.5 h-4.5 rounded-full text-[10px] font-bold flex items-center justify-center px-1.5 shrink-0"
+                <span className="ml-auto min-w-4.5 h-4.5 rounded-full text-[11px] font-bold flex items-center justify-center px-1.5 shrink-0"
                   style={{ background: "var(--error, #dc2626)", color: "white" }}>
                   {unreadChat > 99 ? "99+" : unreadChat}
                 </span>
@@ -452,7 +452,7 @@ export default function SidebarNav({ navItems, roleLabel, userName, roleSlug, in
             {!collapsed && (
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-(--text) truncate leading-none">{userName}</p>
-                <p className="text-[10px] text-(--muted) mt-0.5 truncate">{t(roleLabel)}</p>
+                <p className="text-[11px] text-(--muted) mt-0.5 truncate">{t(roleLabel)}</p>
               </div>
             )}
           </Link>

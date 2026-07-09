@@ -286,7 +286,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
           <div className="flex items-center gap-2 text-xs">
             <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 {t("receipt attached")}</a>
             <button type="button" onClick={() => setReceiptUrl("")}
-              className="px-2 py-0.5 rounded text-[11px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
+              className="px-2 py-0.5 rounded text-[12px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
           </div>
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
@@ -302,7 +302,7 @@ function AddCaseExpenseForm({ caseId, paidByOrg, onCreated }: {
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
         {busy ? t("Submitting…") : t("Submit for Approval")}
       </button>
-      <p className="text-[11px] text-(--muted)">
+      <p className="text-[12px] text-(--muted)">
         {t("Routing: HR verifies → Director approves → Finance marks it paid.")}
       </p>
     </form>
@@ -353,13 +353,13 @@ function ExpenseCard({ expense: x, role, onChanged }: {
           </div>
           <p className="text-xs text-(--muted) mt-0.5">
             <span className="capitalize">{x.category}</span>
-            {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
+            {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[11px]">({x.submittedRole})</span>
             {" · "}{fmtDate(x.submittedAt)}
           </p>
         </div>
         <div className="text-right shrink-0">
           <p className="text-base font-bold text-(--text)">₹{x.amount.toLocaleString("en-IN")}</p>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
             style={{ background: stat.bg, color: stat.text }}>{t(stat.label)}</span>
         </div>
       </div>

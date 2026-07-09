@@ -38,6 +38,9 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
   const [status, setStatus] = useState("all");
   const [place, setPlace] = useState("all");
   const [sort, setSort] = useState<SortKey>("hearing");
+  // Seeded once per mount so "days to hearing" is identical between the server
+  // render and client hydration (Date.now() in render caused mismatches).
+  const [now] = useState(() => Date.now());
 
   const statuses = useMemo(() => Array.from(new Set(rows.map((r) => r.status))).filter(Boolean).sort(), [rows]);
   const places = useMemo(() => Array.from(new Set(rows.map((r) => r.place).filter((p) => p && p !== "—"))).sort(), [rows]);
@@ -123,10 +126,10 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
         <div className="space-y-3">
           {view.map((c) => {
             const hearingDate = c.hearingISO ? new Date(c.hearingISO) : null;
-            const daysToHearing = hearingDate ? Math.ceil((hearingDate.getTime() - Date.now()) / 86400000) : null;
+            const daysToHearing = hearingDate ? Math.ceil((hearingDate.getTime() - now) / 86400000) : null;
             return (
               <Link key={c.id} href={`/litigation/cases/${c.id}`}
-                className="block bg-(--surface) rounded-2xl border border-(--border) p-5 hover:border-(--accent) transition-colors"
+                className="block bg-(--surface) rounded-2xl border border-(--border) p-5 card-lift"
                 style={{ borderLeftWidth: 5, borderLeftColor: STATUS_STYLE[c.status]?.color ?? "var(--muted)" }}>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
@@ -141,13 +144,13 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
                         </span>
                       )}
                       {c.courtNumber && c.caseNumber && (
-                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" title="Janman tracker no."
+                        <span className="text-[12px] font-mono px-1.5 py-0.5 rounded" title="Janman tracker no."
                           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                           {c.caseNumber}
                         </span>
                       )}
                       <span className="text-xs text-(--muted)">{c.courtLabel}</span>
-                      {c.place && c.place !== "—" && <span className="text-[11px] text-(--muted)">📍 {c.place}</span>}
+                      {c.place && c.place !== "—" && <span className="text-[12px] text-(--muted)">📍 {c.place}</span>}
                     </div>
                     <p className="text-xs text-(--muted) mt-0.5">
                       {t("Victim/Client")}: {c.community || "—"} · {t("SW")}: {c.sw || "—"}

@@ -203,7 +203,7 @@ export default function MentionInput({
                 style={{ background: i === highlight ? "var(--bg-secondary, #f3f4f6)" : "transparent", color: "var(--text)" }}
               >
                 <span className="font-medium truncate">{m.name}</span>
-                {m.role && <span className="text-(--muted) text-[10px] uppercase tracking-wide">{m.role}</span>}
+                {m.role && <span className="text-(--muted) text-[11px] uppercase tracking-wide">{m.role}</span>}
               </button>
             </li>
           ))}

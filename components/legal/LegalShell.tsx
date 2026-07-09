@@ -24,7 +24,7 @@ export default function LegalShell({ title, lastUpdated, children }: Props) {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div>
               <p className="text-sm font-bold leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")}</p>
+              <p className="text-[11px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")}</p>
             </div>
           </Link>
           <Link href="/" className="text-xs font-medium text-(--muted) hover:text-(--text) transition-colors">

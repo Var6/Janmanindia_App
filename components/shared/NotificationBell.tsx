@@ -68,7 +68,7 @@ export default function NotificationBell() {
         </svg>
         {unread > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+            className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full text-[11px] font-bold flex items-center justify-center"
             style={{ background: "#dc2626", color: "#fff" }}
           >
             {unread > 9 ? "9+" : unread}
@@ -83,7 +83,7 @@ export default function NotificationBell() {
             className="absolute right-0 mt-1.5 z-30 w-80 max-h-96 overflow-y-auto rounded-xl border"
             style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}
           >
-            <p className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold border-b sticky top-0"
+            <p className="px-3 py-2 text-[11px] uppercase tracking-wide font-semibold border-b sticky top-0"
               style={{ color: "var(--muted)", borderColor: "var(--border)", background: "var(--surface)" }}>
               {t("Notifications")}
             </p>

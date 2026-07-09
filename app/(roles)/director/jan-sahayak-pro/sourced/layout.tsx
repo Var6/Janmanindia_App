@@ -21,7 +21,7 @@ export default async function SourcedLayout({ children }: { children: React.Reac
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] uppercase tracking-wider text-(--accent) font-bold">
+          <span className="text-[11px] uppercase tracking-wider text-(--accent) font-bold">
             {t("Ported from jan-sahayak-pro repo")}
           </span>
           <Link href="/director/jan-sahayak-pro" className="text-xs text-(--muted) hover:text-(--accent)">

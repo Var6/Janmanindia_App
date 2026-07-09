@@ -147,7 +147,7 @@ export default function RegisterPage() {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div>
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")} · निःशुल्क कानूनी सहायता</p>
+              <p className="text-[11px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")} · निःशुल्क कानूनी सहायता</p>
             </div>
           </Link>
           <Link href="/login" className="text-sm font-medium text-(--muted) hover:text-(--text) transition-colors">
@@ -379,7 +379,7 @@ export default function RegisterPage() {
                         style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
                         <span>✓ {t("Document")} {i + 1}</span>
                         <button type="button" onClick={() => setDocs((prev) => prev.filter((x) => x !== u))}
-                          className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                          className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                           {t("Remove")}
                         </button>
                       </li>
@@ -400,7 +400,7 @@ export default function RegisterPage() {
                       <audio controls preload="metadata" src={voiceUrl} className="block w-full mt-1" />
                     </div>
                     <button type="button" onClick={() => { setVoiceUrl(""); setVoiceDur(0); }}
-                      className="text-[11px] px-2 py-0.5 rounded shrink-0" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                      className="text-[12px] px-2 py-0.5 rounded shrink-0" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                       {t("Re-record")}
                     </button>
                   </div>
@@ -416,7 +416,7 @@ export default function RegisterPage() {
                   className="mt-0.5 accent-(--accent) cursor-pointer" />
                 <span>
                   <p className="text-sm font-medium text-(--text)">{t("I want to create a login to track my case")}</p>
-                  <p className="text-[11px] text-(--muted) mt-0.5">{t("Optional — add an email and password to sign in later.")}</p>
+                  <p className="text-[12px] text-(--muted) mt-0.5">{t("Optional — add an email and password to sign in later.")}</p>
                 </span>
               </label>
               {wantLogin && (
@@ -445,7 +445,7 @@ export default function RegisterPage() {
                 {loading ? t("Submitting…") : t("Submit enquiry")}
               </button>
 
-              <p className="text-[11px] text-(--muted) text-center leading-relaxed">
+              <p className="text-[12px] text-(--muted) text-center leading-relaxed">
                 By submitting you agree that a Janman social worker may contact you.
                 Your information stays private. <Link href="/policies" className="underline hover:text-(--text)">Read our policies</Link>.
               </p>

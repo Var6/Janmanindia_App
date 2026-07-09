@@ -115,9 +115,10 @@ export default function JnpEventPipeline(){
   }
 
   async function callAI(prompt){
-    var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    // Server-side proxy — the API key never reaches the browser.
+    var r=await fetch("/api/ai/draft",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({max_tokens:1000,messages:[{role:"user",content:prompt}]})});
     var d=await r.json();
-    return (d.content||[]).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("")||"Error generating content.";
+    return d.text||"Error generating content.";
   }
 
   async function genConceptNote(){
@@ -166,12 +167,11 @@ export default function JnpEventPipeline(){
   }
 
   async function sendInviteEmail(){
-    setEmailMsg("Sending...");
-    try{
-      var body="Send an email using Gmail. To: "+inviteEmail+". Subject: Invitation to Speak at "+setup.eventTitle+" | Janman Peoples Foundation. Body:\n\n"+formalInvite;
-      await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,mcp_servers:[{type:"url",url:"https://gmail.mcp.claude.com/mcp",name:"gmail"}],messages:[{role:"user",content:body}]})});
-      setEmailMsg("Invitation sent via Gmail!");
-    }catch(e){setEmailMsg("Email dispatch failed.");}
+    // Opens the drafted invitation in the user's own mail client — reliable
+    // and keeps sending under the user's account.
+    var subject="Invitation to Speak at "+setup.eventTitle+" | Janman Peoples Foundation";
+    window.open("mailto:"+encodeURIComponent(inviteEmail||"")+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(formalInvite),"_blank");
+    setEmailMsg("Opened in your email app — review and hit send.");
     setTimeout(function(){setEmailMsg("");},5000);
   }
 
@@ -213,26 +213,35 @@ export default function JnpEventPipeline(){
   }
 
   async function sendReminders(){
-    setEmailMsg("Sending reminders...");
+    // Opens a pre-filled reminder in the user's own mail client — they choose
+    // the recipients (no hardcoded address).
     var pending=checklist.filter(function(item){return !item.done;});
     var lines=pending.map(function(item){return "Task: "+item.task+" | Assignee: "+item.assignee+" | Deadline: "+item.deadline+" | Priority: "+item.priority;}).join("\n");
-    var body="Send an email using Gmail. To: sshashwat8@gmail.com. Subject: Reminder — Event Preparation Tasks for "+setup.eventTitle+". Body:\n\nDear Team,\n\nThis is a reminder for pending tasks for: "+setup.eventTitle+" on "+fmt(setup.date)+" at "+setup.location+".\n\nPENDING TASKS:\n"+lines+"\n\nPlease ensure all tasks are completed by the deadline.\n\nRegards,\n"+setup.coordinator+"\n"+setup.role+"\nJanman Peoples Foundation";
-    try{
-      await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,mcp_servers:[{type:"url",url:"https://gmail.mcp.claude.com/mcp",name:"gmail"}],messages:[{role:"user",content:body}]})});
-      setEmailMsg("Reminder emails sent via Gmail!");
-    }catch(e){setEmailMsg("Email dispatch failed.");}
+    var subject="Reminder — Event Preparation Tasks for "+setup.eventTitle;
+    var body="Dear Team,\n\nThis is a reminder for pending tasks for: "+setup.eventTitle+" on "+fmt(setup.date)+" at "+setup.location+".\n\nPENDING TASKS:\n"+lines+"\n\nPlease ensure all tasks are completed by the deadline.\n\nRegards,\n"+setup.coordinator+"\n"+setup.role+"\nJanman Peoples Foundation";
+    window.open("mailto:?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body),"_blank");
+    setEmailMsg("Reminder opened in your email app — add recipients and send.");
     setTimeout(function(){setEmailMsg("");},5000);
   }
 
   async function scheduleMeeting(){
-    setCalMsg("Scheduling meeting...");
+    // Opens a pre-filled Google Calendar event-creation page — works without
+    // any API key and lets the user confirm attendees before saving.
     var desc="Planning meeting for: "+setup.eventTitle+" ("+setup.eventType+")\nProject: "+selProject.name+"\nEvent Date: "+setup.date+"\nAgenda: "+meetingAgenda+"\nAttendees: "+meetingAttendees.join(", ")+"\nOrganiser: "+setup.coordinator;
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,mcp_servers:[{type:"url",url:"https://gcal.mcp.claude.com/mcp",name:"gcal"}],messages:[{role:"user",content:"Create a Google Calendar event on primary calendar. Title: Planning Meeting for "+setup.eventTitle+". Date: "+meetingDate+", time "+meetingTime+" IST, duration 1.5 hours. Description: "+desc}]})});
-      var d=await r.json();
-      var txt=(d.content||[]).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("");
-      setCalMsg(txt.toLowerCase().indexOf("created")>=0||txt.toLowerCase().indexOf("event")>=0?"Meeting scheduled in Google Calendar!":"Meeting scheduling requested.");
-    }catch(e){setCalMsg("Calendar sync failed.");}
+      var startLocal=meetingDate.replace(/-/g,"")+"T"+meetingTime.replace(/:/g,"")+"00";
+      var endDt=new Date(meetingDate+"T"+meetingTime+":00");
+      endDt.setMinutes(endDt.getMinutes()+90);
+      var pad=function(n){return (n<10?"0":"")+n;};
+      var endLocal=""+endDt.getFullYear()+pad(endDt.getMonth()+1)+pad(endDt.getDate())+"T"+pad(endDt.getHours())+pad(endDt.getMinutes())+"00";
+      var url="https://calendar.google.com/calendar/render?action=TEMPLATE"
+        +"&text="+encodeURIComponent("Planning Meeting for "+setup.eventTitle)
+        +"&dates="+startLocal+"/"+endLocal
+        +"&ctz=Asia/Kolkata"
+        +"&details="+encodeURIComponent(desc);
+      window.open(url,"_blank");
+      setCalMsg("Opened in Google Calendar — review and save the event.");
+    }catch(e){setCalMsg("Could not open Google Calendar.");}
     setTimeout(function(){setCalMsg("");},5000);
   }
 

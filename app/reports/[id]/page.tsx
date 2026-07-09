@@ -66,7 +66,7 @@ export default async function ReportDetail({ params }: { params: Promise<{ id: s
         <div className="rounded-2xl border p-5 text-sm text-(--muted)"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           {t("This report uses an unknown template")} ({report.template}). {t("Raw data:")}
-          <pre className="mt-3 p-3 rounded-lg text-[11px] overflow-auto"
+          <pre className="mt-3 p-3 rounded-lg text-[12px] overflow-auto"
             style={{ background: "var(--bg-secondary, #f3f4f6)" }}>{JSON.stringify(data, null, 2)}</pre>
         </div>
       ) : (

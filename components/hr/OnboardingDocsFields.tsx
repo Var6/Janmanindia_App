@@ -171,7 +171,7 @@ function SingleDoc({ label, value, busy, onUpload, onClear }: {
             ✓ {t("Uploaded — view")}
           </a>
           <button type="button" onClick={onClear}
-            className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+            className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
             {t("Remove")}
           </button>
         </div>
@@ -206,7 +206,7 @@ function MultiDocList({ label, docs, busy, onAdd, onRemove }: {
                 {d.label}
               </a>
               <button type="button" onClick={() => onRemove(i)}
-                className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                 {t("Remove")}
               </button>
             </li>

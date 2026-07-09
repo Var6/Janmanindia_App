@@ -41,7 +41,7 @@ export default function CaseAuditLog({ entries }: Props) {
               style={{ background: actionColor(e.action) }} />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-(--text) leading-snug">{e.summary}</p>
-              <p className="text-[11px] text-(--muted) mt-0.5">
+              <p className="text-[12px] text-(--muted) mt-0.5">
                 <span className="font-semibold">{author?.name ?? t("Unknown")}</span>
                 {role && <span> · {role}</span>}
                 <span> · {dateStr} {timeStr}</span>

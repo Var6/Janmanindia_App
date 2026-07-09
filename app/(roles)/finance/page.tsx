@@ -132,12 +132,12 @@ export default async function FinanceDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        <span className="text-[12px] font-mono font-bold px-1.5 py-0.5 rounded"
                           style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>{p.code}</span>
                         <p className="text-base font-bold text-(--text)">{p.name}</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
                       style={{
                         background: p.status === "active" ? "var(--success-bg)" : p.status === "on_hold" ? "var(--warning-bg)" : "var(--bg-secondary)",
                         color:      p.status === "active" ? "var(--success-text)" : p.status === "on_hold" ? "var(--warning-text)" : "var(--muted)",
@@ -156,7 +156,7 @@ export default async function FinanceDashboard() {
 
                   {Object.keys(cats).length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-semibold tracking-wide text-(--muted)">{t("By category")}</p>
+                      <p className="text-[11px] uppercase font-semibold tracking-wide text-(--muted)">{t("By category")}</p>
                       <ul className="space-y-1">
                         {Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => (
                           <li key={cat} className="flex items-center justify-between text-xs text-(--text)">
@@ -183,9 +183,9 @@ export default async function FinanceDashboard() {
               const pct = totalSpent > 0 ? Math.round((amt / totalSpent) * 100) : 0;
               return (
                 <li key={cat} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                  <p className="text-[11px] text-(--muted) uppercase tracking-wide">{CATEGORY_LABEL[cat] ?? cat}</p>
+                  <p className="text-[12px] text-(--muted) uppercase tracking-wide">{CATEGORY_LABEL[cat] ?? cat}</p>
                   <p className="text-base font-bold text-(--text)">₹{amt.toLocaleString("en-IN")}</p>
-                  <p className="text-[11px] text-(--muted)">{pct}% {t("of total")}</p>
+                  <p className="text-[12px] text-(--muted)">{pct}% {t("of total")}</p>
                 </li>
               );
             })}
@@ -212,7 +212,7 @@ export default async function FinanceDashboard() {
                 <div key={String(x._id)} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-(--text)">
-                      <span className="font-mono text-[11px] mr-2 px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--accent)" }}>{proj?.code ?? "—"}</span>
+                      <span className="font-mono text-[12px] mr-2 px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--accent)" }}>{proj?.code ?? "—"}</span>
                       {x.title}
                     </p>
                     <p className="text-xs text-(--muted)">
@@ -241,7 +241,7 @@ export default async function FinanceDashboard() {
               return (
                 <div key={String(r._id)} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-(--text)">{sw?.name ?? "—"} <span className="text-[10px] text-(--muted)">({sw?.role})</span></p>
+                    <p className="text-sm font-medium text-(--text)">{sw?.name ?? "—"} <span className="text-[11px] text-(--muted)">({sw?.role})</span></p>
                     <p className="text-xs text-(--muted)">{new Date(r.date).toLocaleDateString("en-IN")} · {r.hoursWorked}h</p>
                   </div>
                   <p className="text-sm font-bold text-(--success-text) shrink-0">₹{total.toLocaleString("en-IN")}</p>
@@ -266,7 +266,7 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="rounded-xl p-2 text-center" style={{ background: "var(--bg)" }}>
-      <p className="text-[10px] uppercase tracking-wide text-(--muted)">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-(--muted)">{label}</p>
       <p className="text-sm font-bold" style={{ color: color ?? "var(--text)" }}>{value}</p>
     </div>
   );

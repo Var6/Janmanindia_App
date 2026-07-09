@@ -122,23 +122,23 @@ export default function TicketList({ mode }: Props) {
                 <header className="flex items-start justify-between gap-3 mb-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                      <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                         {t.category}
                       </span>
-                      <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                      <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: us.bg, color: us.color }}>
                         {t.urgency}
                       </span>
                     </div>
                     <p className="font-semibold text-sm text-(--text)">{t.title}</p>
-                    <p className="text-[11px] text-(--muted) mt-0.5">
+                    <p className="text-[12px] text-(--muted) mt-0.5">
                       {tr("Raised by")} {t.raisedBy?.name ?? "—"}
                       {t.raisedBy?.role ? ` (${t.raisedBy.role}` : ""}
                       {t.raisedBy?.employeeId ? ` · ${t.raisedBy.employeeId})` : t.raisedBy?.role ? ")" : ""}
                       {" · "}{new Date(t.createdAt).toLocaleString("en-IN")}
                     </p>
-                    <p className="text-[11px] text-(--muted)">
+                    <p className="text-[12px] text-(--muted)">
                       {t.beneficiary ? `${tr("For:")} ${t.beneficiary} · ` : ""}
                       {t.district ? `${t.district}` : ""}{t.location ? ` · ${t.location}` : ""}
                     </p>
@@ -154,7 +154,7 @@ export default function TicketList({ mode }: Props) {
                 {t.response && (
                   <div className="rounded-lg border-l-4 px-3 py-2 mb-3"
                     style={{ borderColor: "var(--accent)", background: "var(--accent-subtle)" }}>
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-(--accent) mb-1">
+                    <p className="text-[12px] font-bold uppercase tracking-wide text-(--accent) mb-1">
                       {tr("Administrator response")}{t.assignedTo ? ` · ${t.assignedTo.name}` : ""}
                     </p>
                     <p className="text-sm text-(--text) whitespace-pre-wrap">{t.response}</p>
@@ -163,7 +163,7 @@ export default function TicketList({ mode }: Props) {
                 {t.rejectedReason && (
                   <div className="rounded-lg border-l-4 px-3 py-2 mb-3"
                     style={{ borderColor: "var(--error, #dc2626)", background: "var(--error-bg)" }}>
-                    <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--error-text)" }}>
+                    <p className="text-[12px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--error-text)" }}>
                       {tr("Rejected")}
                     </p>
                     <p className="text-sm text-(--text) whitespace-pre-wrap">{t.rejectedReason}</p>

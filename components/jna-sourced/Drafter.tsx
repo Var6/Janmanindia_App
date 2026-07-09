@@ -74,12 +74,12 @@ If grounds reference Supreme Court cases, preserve them verbatim.`;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5 space-y-4">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold">{t("Senior Advocate Mode")}</div>
+        <div className="text-[11px] uppercase tracking-wider text-(--accent) font-bold">{t("Senior Advocate Mode")}</div>
         <h2 className="text-lg font-bold text-(--text)">{t("AI Drafter")}</h2>
         <p className="text-xs text-(--muted)">{t("Server-side legal drafting with case-linked context.")}</p>
 
         <div>
-          <label className="text-[11px] text-(--muted) block mb-1">{t("Document type")}</label>
+          <label className="text-[12px] text-(--muted) block mb-1">{t("Document type")}</label>
           <select
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
@@ -90,7 +90,7 @@ If grounds reference Supreme Court cases, preserve them verbatim.`;
         </div>
 
         <div>
-          <label className="text-[11px] text-(--muted) block mb-1">{t("Link case (optional)")}</label>
+          <label className="text-[12px] text-(--muted) block mb-1">{t("Link case (optional)")}</label>
           <select
             value={linkedCaseId}
             onChange={(e) => setLinkedCaseId(e.target.value)}
@@ -100,14 +100,14 @@ If grounds reference Supreme Court cases, preserve them verbatim.`;
             {DEMO_CASES.map((c) => <option key={c.id} value={c.id}>{c.client} · {c.caseNo || "no number"}</option>)}
           </select>
           {linkedCase && (
-            <p className="text-[11px] text-(--muted) mt-1">
+            <p className="text-[12px] text-(--muted) mt-1">
               {t("Will inject facts, grounds, and relief from")} <span className="text-(--accent)">{linkedCase.title}</span>.
             </p>
           )}
         </div>
 
         <div>
-          <label className="text-[11px] text-(--muted) block mb-1">{t("Advocate directions")}</label>
+          <label className="text-[12px] text-(--muted) block mb-1">{t("Advocate directions")}</label>
           <textarea
             value={directions}
             onChange={(e) => setDirections(e.target.value)}
@@ -128,7 +128,7 @@ If grounds reference Supreme Court cases, preserve them verbatim.`;
       </section>
 
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold mb-2">{t("Draft output")}</div>
+        <div className="text-[11px] uppercase tracking-wider text-(--accent) font-bold mb-2">{t("Draft output")}</div>
         {output ? (
           <pre className="whitespace-pre-wrap text-xs text-(--text) font-mono leading-relaxed">{output}</pre>
         ) : (

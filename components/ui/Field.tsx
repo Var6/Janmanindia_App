@@ -36,7 +36,7 @@ export default function Field({ label, hint, example, required, children, error,
       {hint && <p id={hintId} className="text-xs text-(--muted) leading-relaxed">{hint}</p>}
       {children}
       {example && (
-        <p id={exampleId} className="text-[11px] text-(--muted) italic">
+        <p id={exampleId} className="text-[12px] text-(--muted) italic">
           e.g. <span className="not-italic font-mono text-(--text-2)">{example}</span>
         </p>
       )}

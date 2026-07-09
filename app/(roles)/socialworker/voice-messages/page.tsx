@@ -116,7 +116,7 @@ export default function VoiceMessagesPage() {
                     {m.durationSec ? ` · ${fmt(m.durationSec)}` : ""}
                   </p>
                 </div>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize"
+                <span className="text-[12px] font-semibold px-2.5 py-0.5 rounded-full capitalize"
                   style={
                     m.status === "new"       ? { background: "var(--warning-bg)", color: "var(--warning-text)" }
                   : m.status === "heard"     ? { background: "var(--info-bg)",    color: "var(--info-text)"    }

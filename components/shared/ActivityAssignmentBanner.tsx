@@ -162,21 +162,21 @@ export default function ActivityAssignmentBanner({ currentUserId, pollMs = 30_00
               <p className="text-sm font-medium text-(--text) truncate">
                 {a.title}
                 {a.priority === "high" && (
-                  <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                  <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("HIGH")}</span>
                 )}
               </p>
-              <p className="text-[11px] text-(--muted) mt-0.5">
+              <p className="text-[12px] text-(--muted) mt-0.5">
                 {a.createdBy?.name ? `${t("by")} ${a.createdBy.name}` : t("Unknown")}
                 {a.dueDate && ` · ${t("due")} ${new Date(a.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
               </p>
             </Link>
             <button type="button" onClick={() => dismissOne(a._id)}
-              className="text-[11px] text-(--muted) hover:text-(--text) shrink-0">×</button>
+              className="text-[12px] text-(--muted) hover:text-(--text) shrink-0">×</button>
           </li>
         ))}
         {overflow > 0 && (
-          <li className="px-4 py-2 text-[11px] text-(--muted) text-center">
+          <li className="px-4 py-2 text-[12px] text-(--muted) text-center">
             {t("and")} {overflow} {t("more — open the planner to see all.")}
           </li>
         )}

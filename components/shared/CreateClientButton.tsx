@@ -152,7 +152,7 @@ export default function CreateClientButton() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold text-(--text)">{t("Intake Form")}</h2>
-          <p className="text-[11px] text-(--muted) mt-0.5">{t("Case Enquiry intake — no verification needed. Only Name + Mobile are required.")}</p>
+          <p className="text-[12px] text-(--muted) mt-0.5">{t("Case Enquiry intake — no verification needed. Only Name + Mobile are required.")}</p>
         </div>
         <button type="button" onClick={() => setOpen(false)}
           className="text-xs text-(--muted) hover:text-(--text) px-2 py-1 rounded-lg hover:bg-(--bg-secondary)">{t("Close")}</button>
@@ -194,7 +194,7 @@ export default function CreateClientButton() {
                 const on = issues.includes(iss.value);
                 return (
                   <button key={iss.value} type="button" onClick={() => toggleIssue(iss.value)}
-                    className="px-2.5 py-1 rounded-full border text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-full border text-[12px] transition-colors"
                     style={{
                       background: on ? "var(--accent)" : "var(--bg)",
                       color: on ? "var(--accent-contrast)" : "var(--text)",
@@ -240,7 +240,7 @@ export default function CreateClientButton() {
                 {docs.map((u, i) => (
                   <li key={u} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
                     <span>✓ {t("Document")} {i + 1}</span>
-                    <button type="button" onClick={() => setDocs((prev) => prev.filter((x) => x !== u))} className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
+                    <button type="button" onClick={() => setDocs((prev) => prev.filter((x) => x !== u))} className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
                   </li>
                 ))}
               </ul>

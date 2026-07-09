@@ -121,23 +121,23 @@ export default function HrGrievancesPage() {
                 <header className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                      <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                         {g.category}
                       </span>
                       {g.anonymous && (
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border border-(--border) text-(--muted)">
+                        <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded border border-(--border) text-(--muted)">
                           {t("Anonymous")}
                         </span>
                       )}
                     </div>
                     <p className="font-semibold text-sm text-(--text)">{g.subject}</p>
-                    <p className="text-[11px] text-(--muted) mt-0.5">
+                    <p className="text-[12px] text-(--muted) mt-0.5">
                       {g.submittedBy
                         ? <>{t("By")} {g.submittedBy.name} · {g.submittedBy.role}{g.submittedBy.employeeId ? ` · ${g.submittedBy.employeeId}` : ""} · {g.submittedBy.email}</>
                         : <>{t("Submitter hidden (anonymous)")}</>}
                     </p>
-                    <p className="text-[11px] text-(--muted)">
+                    <p className="text-[12px] text-(--muted)">
                       {t("Submitted")} {new Date(g.createdAt).toLocaleString("en-IN")}
                       {g.incidentDate ? ` · ${t("Incident")} ${new Date(g.incidentDate).toLocaleDateString("en-IN")}` : ""}
                       {g.incidentLocation ? ` · ${g.incidentLocation}` : ""}
@@ -160,7 +160,7 @@ export default function HrGrievancesPage() {
                 {g.hrResponse && (
                   <div className="mt-2 mb-3 rounded-lg border-l-4 px-3 py-2"
                     style={{ borderColor: "var(--accent)", background: "var(--accent-subtle)" }}>
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-(--accent) mb-1">
+                    <p className="text-[12px] font-bold uppercase tracking-wide text-(--accent) mb-1">
                       {t("Response")} · {g.respondedBy?.name ?? t("HR")}{g.respondedAt ? ` · ${new Date(g.respondedAt).toLocaleDateString("en-IN")}` : ""}
                     </p>
                     <p className="text-sm text-(--text) whitespace-pre-wrap">{g.hrResponse}</p>

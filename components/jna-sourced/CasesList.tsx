@@ -75,12 +75,12 @@ export default function CasesList() {
             <div className="flex items-start justify-between gap-3 mb-2">
               <p className="font-semibold text-sm text-(--text) leading-snug">{c.title}</p>
               <div className="flex gap-1 flex-shrink-0">
-                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${STATUS_TONE[c.status] ?? ""}`}>{c.status}</span>
-                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${PRIORITY_TONE[c.priority] ?? ""}`}>{c.priority}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${STATUS_TONE[c.status] ?? ""}`}>{c.status}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${PRIORITY_TONE[c.priority] ?? ""}`}>{c.priority}</span>
               </div>
             </div>
             <p className="text-xs text-(--muted) mb-2">{c.client} v. {c.respondent}</p>
-            <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
+            <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-[12px]">
               <dt className="text-(--muted)">{t("Court")}</dt>      <dd className="text-(--text)">{c.court}</dd>
               <dt className="text-(--muted)">{t("Case No.")}</dt>   <dd className="text-(--text)">{c.caseNo || "—"}</dd>
               <dt className="text-(--muted)">{t("Advocate")}</dt>   <dd className="text-(--text)">{c.advocate}</dd>

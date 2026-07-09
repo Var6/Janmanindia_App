@@ -4,7 +4,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
-import SessionProvider from "@/components/ui/SessionProvider";
 import LanguageProvider from "@/components/i18n/LanguageProvider";
 import SecurityGuard from "@/components/security/SecurityGuard";
 import ToastProvider from "@/components/ui/ToastProvider";
@@ -75,12 +74,10 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-(--bg) text-(--text) transition-colors duration-300 app-bg">
         <ThemeProvider>
           <LanguageProvider initialLang={lang}>
-            <SessionProvider>
-              <ToastProvider>
-                <SecurityGuard />
-                {children}
-              </ToastProvider>
-            </SessionProvider>
+            <ToastProvider>
+              <SecurityGuard />
+              {children}
+            </ToastProvider>
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />

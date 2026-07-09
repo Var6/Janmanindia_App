@@ -187,13 +187,13 @@ export default function QueriesBox({ currentUserId, currentUserRole, title, comp
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-(--text)">{headerTitle}</h2>
             {Object.keys(unread).length > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                 style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                 {Object.values(unread).reduce((a, b) => a + b, 0)} new
               </span>
             )}
           </div>
-          <p className="text-[11px] text-(--muted) mt-0.5 leading-snug">{headerSub}</p>
+          <p className="text-[12px] text-(--muted) mt-0.5 leading-snug">{headerSub}</p>
         </div>
         <Link href="/chat" className="text-xs font-semibold shrink-0 hover:underline" style={{ color: "var(--accent)" }}>
           Open Chat →
@@ -267,9 +267,9 @@ function CommunityVariant({
       <div className="rounded-xl p-3" style={{ background: "var(--bg)" }}>
         <p className="text-xs font-semibold text-(--text)">
           {peer?.name ?? firstSwContact?.name}
-          <span className="ml-2 text-[10px] font-normal text-(--muted)">Social Worker</span>
+          <span className="ml-2 text-[11px] font-normal text-(--muted)">Social Worker</span>
           {unread > 0 && (
-            <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+            <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full"
               style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
               {unread} new
             </span>
@@ -291,7 +291,7 @@ function CommunityVariant({
           className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none resize-none"
           style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
         <div className="flex items-center justify-between mt-2">
-          <p className="text-[11px] text-(--muted)">
+          <p className="text-[12px] text-(--muted)">
             Replies are private. For emergencies, use <Link href="/community/sos" className="underline" style={{ color: "var(--error)" }}>SOS</Link> instead.
           </p>
           <button type="button" onClick={onSend} disabled={sending || !draft.trim()}
@@ -343,7 +343,7 @@ function SwVariant({
                 <p className="text-sm font-semibold text-(--text) truncate">
                   {p?.name ?? c.title ?? "Conversation"}
                   {p && (
-                    <span className="ml-2 text-[10px] font-normal text-(--muted)">{ROLE_LABEL[p.role] ?? p.role}</span>
+                    <span className="ml-2 text-[11px] font-normal text-(--muted)">{ROLE_LABEL[p.role] ?? p.role}</span>
                   )}
                 </p>
                 {c.lastMessagePreview && (
@@ -351,9 +351,9 @@ function SwVariant({
                 )}
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="text-[10px] text-(--muted)">{fmtRelative(c.lastMessageAt)}</span>
+                <span className="text-[11px] text-(--muted)">{fmtRelative(c.lastMessageAt)}</span>
                 {u > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                     {u}
                   </span>
@@ -397,9 +397,9 @@ function StaffVariant({
                   )}
                 </div>
                 <div className="flex flex-col items-end shrink-0">
-                  <span className="text-[10px] text-(--muted)">{fmtRelative(c.lastMessageAt)}</span>
+                  <span className="text-[11px] text-(--muted)">{fmtRelative(c.lastMessageAt)}</span>
                   {u > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
                       style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                       {u}
                     </span>
@@ -415,7 +415,7 @@ function StaffVariant({
 
       {swContacts.length > 0 && (
         <div className="pt-2 border-t" style={{ borderColor: "var(--border)" }}>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1.5">Start new</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1.5">Start new</p>
           <div className="flex flex-wrap gap-1.5">
             {swContacts.slice(0, 6).map(c => (
               <Link key={c._id} href="/chat"

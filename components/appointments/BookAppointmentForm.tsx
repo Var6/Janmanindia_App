@@ -216,7 +216,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
           </div>
           <button type="button"
             onClick={() => { setSuggestions([]); setConflictNames([]); setError(""); }}
-            className="text-[11px] underline" style={{ color: "var(--warning-text)" }}>
+            className="text-[12px] underline" style={{ color: "var(--warning-text)" }}>
             {t("Dismiss")}
           </button>
         </div>
@@ -293,7 +293,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
                 <div className="flex flex-wrap gap-1.5">
                   {coAttendees.map((u) => (
                     <span key={u._id}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px]"
                       style={{ background: "var(--bg-secondary)", color: "var(--text)" }}>
                       {u.name}
                       <button type="button" onClick={() => removeCoAttendee(u._id)}
@@ -361,7 +361,7 @@ export default function BookAppointmentForm({ allowedRoles, onCreated }: Props) 
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t"
         style={{ borderColor: "var(--border)" }}>
-        <p className="text-[11px] text-(--muted)">
+        <p className="text-[12px] text-(--muted)">
           {t("We'll automatically check both calendars are free before sending.")}
         </p>
         <button type="submit" disabled={busy}

@@ -105,13 +105,13 @@ export default function ExpenseQueue({ items, action, allowReject, empty, title 
                         <>{" · "}<span className="capitalize">{x.paidByOrg ? t("requisition") : t("reimbursement")}</span></>
                       )}
                       {" · "}<span className="capitalize">{x.category}</span>
-                      {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[10px]">({x.submittedRole})</span>
+                      {" · "}{t("filed by")} {x.submittedBy?.name ?? "—"} <span className="text-[11px]">({x.submittedRole})</span>
                       {" · "}{new Date(x.submittedAt).toLocaleDateString("en-IN")}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-base font-bold text-(--text)">₹{x.amount.toLocaleString("en-IN")}</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase mt-1 inline-block"
                       style={{ background: stat.bg, color: stat.text }}>
                       {t(stat.label)}
                     </span>

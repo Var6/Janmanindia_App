@@ -231,13 +231,13 @@ export default function OnboardingPage() {
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">
                 {t("Project Code")} <span className="text-red-500">*</span>
-                <span className="ml-1 text-[11px] font-normal text-(--muted)">{t("3 letters · used in Employee ID")}</span>
+                <span className="ml-1 text-[12px] font-normal text-(--muted)">{t("3 letters · used in Employee ID")}</span>
               </label>
               <input name="project" required maxLength={3} pattern="[A-Za-z]{3}"
                 placeholder="JNA"
                 onInput={(e) => { e.currentTarget.value = e.currentTarget.value.toUpperCase().replace(/[^A-Z]/g, ""); }}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-(--border) bg-(--bg) text-(--text) text-sm uppercase tracking-widest font-mono focus:outline-none focus:border-(--accent)" />
-              <p className="text-[11px] text-(--muted) mt-1 italic">{t("e.g. JNA · DLF · COR — generates JPF/JNA/26/01")}</p>
+              <p className="text-[12px] text-(--muted) mt-1 italic">{t("e.g. JNA · DLF · COR — generates JPF/JNA/26/01")}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-(--text) mb-1.5">{t("Bar Council ID")} <span className="text-xs text-(--muted)">({t("Litigation")})</span></label>
@@ -307,12 +307,12 @@ export default function OnboardingPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-(--text)">{s.name}</p>
                         {s.employeeId && (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                          <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
                             style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                             {s.employeeId}
                           </span>
                         )}
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-(--accent)/10 text-(--accent)">
+                        <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-(--accent)/10 text-(--accent)">
                           {s.role}
                         </span>
                       </div>
@@ -328,13 +328,13 @@ export default function OnboardingPage() {
                     </div>{/* end avatar+info flex row */}
                     <div className="flex items-center gap-2 shrink-0">
                       {!isDocComplete && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
                           ⚠ {docsMissing.length} {docsMissing.length === 1 ? t("doc") : t("docs")} {t("missing")} · {docCompletion.pct}%
                         </span>
                       )}
                       {isDocComplete && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase"
                           style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>✓ {t("docs complete")}</span>
                       )}
                       {open && outstanding > 0 && (
@@ -365,12 +365,12 @@ export default function OnboardingPage() {
                                   {a.name}
                                   {a.identifier && <span className="text-(--muted) text-xs"> · {a.identifier}</span>}
                                 </p>
-                                <p className="text-[11px] text-(--muted)">
+                                <p className="text-[12px] text-(--muted)">
                                   {t("Assigned")} {new Date(a.assignedAt).toLocaleDateString("en-IN")}
                                   {a.returnedAt ? ` · ${t("Returned")} ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
                                 </p>
                               </div>
-                              <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
+                              <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
                                 style={
                                   a.status === "assigned"  ? { background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }
                                 : a.status === "returned"  ? { background: "var(--success-bg, #dcfce7)", color: "var(--success-text, #15803d)" }

@@ -288,7 +288,7 @@ function buildFirGraph(cp: CrimPath, createdAt: string): { nodes: GNode[]; edges
 
   // Cognizance
   n({ id:"cog", row:R.cog, col:0, status:st(4), label:"Cognizance",
-      doc: cp.cognizanceOrderDoc ? { label:"Cognizance Order", url:(cp.cognizanceOrderDoc as any).url } : undefined });
+      doc: cp.cognizanceOrderDoc ? { label:"Cognizance Order", url:cp.cognizanceOrderDoc.url } : undefined });
 
   // Appearance
   n({ id:"appear", row:R.appear, col:0, status:st(4), label:"Appearance of Accused" });
@@ -387,7 +387,7 @@ function buildComplaintGraph(cp: CrimPath, createdAt: string): { nodes: GNode[];
   step(3,  "summon",  "Pre-Cognizance Summon",       3);
   step(4,  "cog",     "Cognizance",                  4,
     undefined,
-    cp.cognizanceOrderDoc ? { label:"Cognizance Order", url:(cp.cognizanceOrderDoc as any).url } : undefined);
+    cp.cognizanceOrderDoc ? { label:"Cognizance Order", url:cp.cognizanceOrderDoc.url } : undefined);
   step(5,  "appear",  "Summon & Appearance",         5);
   step(6,  "bce",     "Before Charge Evidence",      5, "Evidence recorded before framing charges");
   step(7,  "charge",  "Charge Framed",               6,
@@ -614,19 +614,19 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
                 {t(n.label)}
               </span>
               {isBranch && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "color-mix(in srgb, var(--warning) 15%, transparent)", color: "var(--warning, #92400e)" }}>
                   {t("alt path")}
                 </span>
               )}
               {n.terminal && n.status === "done" && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "color-mix(in srgb, var(--success) 15%, transparent)", color: "#166534" }}>
                   {t("closed")}
                 </span>
               )}
               {clickable && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-opacity"
+                <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full transition-opacity"
                   style={{
                     background: "color-mix(in srgb, var(--accent) 12%, transparent)",
                     color: "var(--accent)",
@@ -650,7 +650,7 @@ function GraphLabels({ nodes, side, canEdit, onStageClick, busyNodeId }: LabelPr
             {n.doc && (
               <a href={n.doc.url} target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium hover:underline underline-offset-2"
+                className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium hover:underline underline-offset-2"
                 style={{ color: "var(--accent)" }}>
                 <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-3 h-3">
                   <path d="M2 1.5h6l2.5 2.5V12a.5.5 0 01-.5.5H2a.5.5 0 01-.5-.5V2a.5.5 0 01.5-.5z"/>
@@ -934,7 +934,7 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
 
         {pinnedNotes && pinnedNotes.length > 0 && (
           <aside className="shrink-0 w-56 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
+            <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
               📌 {t("Pinned notes")}
             </p>
             {pinnedNotes.map((n, i) => (
@@ -948,7 +948,7 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
                 }}>
                 <p className="whitespace-pre-line">{n.text}</p>
                 {n.byName && (
-                  <p className="mt-1 text-[10px] italic" style={{ color: "#a16207" }}>— {n.byName}</p>
+                  <p className="mt-1 text-[11px] italic" style={{ color: "#a16207" }}>— {n.byName}</p>
                 )}
               </div>
             ))}

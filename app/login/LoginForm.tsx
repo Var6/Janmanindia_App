@@ -106,7 +106,7 @@ function LoginFormInner({ googleEnabled }: Props) {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div>
               <p className="text-sm font-bold text-(--text) leading-none tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")}</p>
+              <p className="text-[11px] text-(--muted) mt-0.5 uppercase tracking-widest">{t("Legal Aid")}</p>
             </div>
           </Link>
           <Link href="/" className="text-sm font-medium text-(--muted) hover:text-(--text) transition-colors">
@@ -171,7 +171,7 @@ function LoginFormInner({ googleEnabled }: Props) {
 
               {googleEnabled && (
                 <>
-                  <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-(--muted)">
+                  <div className="my-5 flex items-center gap-3 text-[12px] uppercase tracking-widest text-(--muted)">
                     <div className="flex-1 h-px bg-(--border)" />
                     <span>{t("or")}</span>
                     <div className="flex-1 h-px bg-(--border)" />

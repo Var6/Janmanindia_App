@@ -197,8 +197,8 @@ function CarePlanCard({ plan, canManage, onPatch }: { plan: Plan; canManage: boo
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: prio.bg, color: prio.text }}>{plan.priority}</span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: stat.bg, color: stat.text }}>{plan.status.replace("_", " ")}</span>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: prio.bg, color: prio.text }}>{plan.priority}</span>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: stat.bg, color: stat.text }}>{plan.status.replace("_", " ")}</span>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ function CarePlanCard({ plan, canManage, onPatch }: { plan: Plan; canManage: boo
 
       {plan.goals.length > 0 && (
         <div className="rounded-xl p-3" style={{ background: "var(--bg)" }}>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">Goals ({plan.goals.filter(g => g.completed).length}/{plan.goals.length})</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-2">Goals ({plan.goals.filter(g => g.completed).length}/{plan.goals.length})</p>
           <ul className="space-y-1.5">
             {plan.goals.map(g => (
               <li key={g._id} className="flex items-start gap-2 text-xs text-(--text)">
@@ -223,7 +223,7 @@ function CarePlanCard({ plan, canManage, onPatch }: { plan: Plan; canManage: boo
                   {g.completed && <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="white" strokeWidth="2"><path d="M2 6l3 3 5-6"/></svg>}
                 </button>
                 <span className={g.completed ? "line-through text-(--muted)" : ""}>{g.description}</span>
-                {g.targetDate && <span className="text-(--muted) text-[10px] ml-auto">by {new Date(g.targetDate).toLocaleDateString("en-IN")}</span>}
+                {g.targetDate && <span className="text-(--muted) text-[11px] ml-auto">by {new Date(g.targetDate).toLocaleDateString("en-IN")}</span>}
               </li>
             ))}
           </ul>

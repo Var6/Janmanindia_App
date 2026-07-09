@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getServerT } from "@/lib/i18n-server";
 import ActivityPlanner from "@/components/activities/ActivityPlanner";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function ActivitiesPage() {
   const session = await getSessionFromCookies();
@@ -12,14 +13,10 @@ export default async function ActivitiesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-(--text)">{t("Activity Planner")}</h1>
-        <p className="text-sm text-(--muted) mt-1">
-          {canAssign
-            ? t("Plan your work and assign activities to other team members. Track status with the chart.")
-            : t("Plan your work, track progress, and see what others have assigned to you.")}
-        </p>
-      </div>
+      <PageHeader icon="🎯" title={t("Activity Planner")}
+        subtitle={canAssign
+          ? t("Plan your work and assign activities to other team members. Track status with the chart.")
+          : t("Plan your work, track progress, and see what others have assigned to you.")} />
 
       <ActivityPlanner currentUserId={session.id} currentRole={session.role} />
     </div>

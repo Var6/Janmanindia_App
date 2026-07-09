@@ -18,7 +18,7 @@ export default function PlvTrainingView() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
       <aside className="space-y-1">
-        <div className="text-[10px] uppercase tracking-wider text-(--muted) font-bold mb-2 px-2">
+        <div className="text-[11px] uppercase tracking-wider text-(--muted) font-bold mb-2 px-2">
           {t("Quick PLV modules")} · {QUICK_PLV_MODULES.length}
         </div>
         {QUICK_PLV_MODULES.map((m) => {
@@ -35,7 +35,7 @@ export default function PlvTrainingView() {
             >
               <span className="mr-2">{m.icon}</span>
               <span className="font-semibold">{m.title}</span>
-              <div className="text-[11px] text-(--muted) mt-0.5">{m.hi}</div>
+              <div className="text-[12px] text-(--muted) mt-0.5">{m.hi}</div>
             </button>
           );
         })}

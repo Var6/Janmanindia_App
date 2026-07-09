@@ -80,7 +80,7 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-(--text)">₹{total.toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}{t("h worked")} · {r.expenses.length} {r.expenses.length === 1 ? t("expense line") : t("expense lines")}</p>
+                      <p className="text-[12px] text-(--muted)">{r.hoursWorked}{t("h worked")} · {r.expenses.length} {r.expenses.length === 1 ? t("expense line") : t("expense lines")}</p>
                     </div>
                   </div>
 
@@ -161,9 +161,9 @@ export default function InvoiceApprovalList({ pending, recent }: Props) {
                 <div className="min-w-0">
                   <p className="text-sm text-(--text) truncate">{r.summary}</p>
                   <p className="text-xs text-(--muted)">{r.submitter} · ₹{r.amount.toLocaleString("en-IN")} · {new Date(r.updatedAt).toLocaleDateString("en-IN")}</p>
-                  {r.rejectionReason && <p className="text-[11px] text-(--error-text) mt-0.5">{t("Reason:")} {r.rejectionReason}</p>}
+                  {r.rejectionReason && <p className="text-[12px] text-(--error-text) mt-0.5">{t("Reason:")} {r.rejectionReason}</p>}
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{
                   background: r.status === "approved" ? "var(--success-bg)" : "var(--error-bg)",
                   color:      r.status === "approved" ? "var(--success-text)" : "var(--error-text)",
                 }}>{r.status}</span>

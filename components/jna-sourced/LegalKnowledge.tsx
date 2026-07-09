@@ -70,12 +70,12 @@ Be plain-spoken, India-specific, and practical.`;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5 space-y-4">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold">{t("Legal Knowledge")}</div>
+        <div className="text-[11px] uppercase tracking-wider text-(--accent) font-bold">{t("Legal Knowledge")}</div>
         <h2 className="text-lg font-bold text-(--text)">{t("Grounded research")}</h2>
         <p className="text-xs text-(--muted)">{t("Query a vetted source library and generate audience-targeted output.")}</p>
 
         <div>
-          <label className="text-[11px] text-(--muted) block mb-1">{t("Research request")}</label>
+          <label className="text-[12px] text-(--muted) block mb-1">{t("Research request")}</label>
           <textarea
             value={request}
             onChange={(e) => setRequest(e.target.value)}
@@ -87,7 +87,7 @@ Be plain-spoken, India-specific, and practical.`;
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] text-(--muted) block mb-1">{t("Audience")}</label>
+            <label className="text-[12px] text-(--muted) block mb-1">{t("Audience")}</label>
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
@@ -101,7 +101,7 @@ Be plain-spoken, India-specific, and practical.`;
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-(--muted) block mb-1">{t("Output mode")}</label>
+            <label className="text-[12px] text-(--muted) block mb-1">{t("Output mode")}</label>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as typeof mode)}
@@ -123,13 +123,13 @@ Be plain-spoken, India-specific, and practical.`;
 
         {matchedSources.length > 0 && (
           <div className="border-t border-(--border) pt-4">
-            <div className="text-[11px] text-(--muted) uppercase tracking-wider mb-2">{t("Matched sources")}</div>
+            <div className="text-[12px] text-(--muted) uppercase tracking-wider mb-2">{t("Matched sources")}</div>
             <ol className="space-y-2">
               {matchedSources.map((s, i) => (
                 <li key={s.id} className="text-xs">
                   <span className="text-(--accent) font-bold">[{i + 1}]</span>{" "}
                   <span className="text-(--text) font-semibold">{s.title}</span>
-                  <div className="text-(--muted) text-[11px] mt-0.5">{s.citation} · {s.documentType}</div>
+                  <div className="text-(--muted) text-[12px] mt-0.5">{s.citation} · {s.documentType}</div>
                 </li>
               ))}
             </ol>
@@ -138,7 +138,7 @@ Be plain-spoken, India-specific, and practical.`;
       </section>
 
       <section className="bg-(--surface) border border-(--border) rounded-2xl p-5">
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold mb-2">{t("Output")}</div>
+        <div className="text-[11px] uppercase tracking-wider text-(--accent) font-bold mb-2">{t("Output")}</div>
         {output ? (
           <pre className="whitespace-pre-wrap text-xs text-(--text) font-sans leading-relaxed">{output}</pre>
         ) : (

@@ -8,6 +8,7 @@ import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
 import CreateClientButton from "@/components/shared/CreateClientButton";
+import PageHeader from "@/components/ui/PageHeader";
 import ExportCasesButton from "@/components/shared/ExportCasesButton";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -52,16 +53,11 @@ export default async function SWCasesPage() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-(--text)">{t("Cases")}</h1>
-          <p className="text-sm text-(--muted) mt-1">{t("Assigned cases, ID verifications, and case creation.")}</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <CreateClientButton />
-          <CreateCaseForm />
-        </div>
-      </div>
+      <PageHeader icon="⚖️" title={t("Cases")}
+        subtitle={t("Assigned cases, ID verifications, and case creation.")}>
+        <CreateClientButton />
+        <CreateCaseForm />
+      </PageHeader>
 
       {/* ID Verification Queue */}
       {pendingVerifications.length > 0 && (
@@ -143,7 +139,7 @@ export default async function SWCasesPage() {
               const st      = STATUS_STYLE[c.status] ?? STATUS_STYLE.Closed;
               return (
                 <Link key={String(c._id)} href={`/socialworker/cases/${c._id}`}
-                  className="block rounded-2xl border border-(--border) hover:border-(--accent) p-5 transition-all"
+                  className="block rounded-2xl border border-(--border) p-5 card-lift"
                   style={{ background: "var(--surface)", boxShadow: "var(--shadow-xs)" }}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="min-w-0">

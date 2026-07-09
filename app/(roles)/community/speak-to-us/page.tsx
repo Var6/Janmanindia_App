@@ -169,7 +169,7 @@ export default function SpeakToUsPage() {
                       {new Date(m.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       {m.durationSec ? ` · ${fmt(m.durationSec)}` : ""}
                     </p>
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+                    <span className="text-[12px] font-semibold px-2.5 py-0.5 rounded-full"
                       style={{ background: st.bg, color: st.color }}>
                       {st.label}
                     </span>

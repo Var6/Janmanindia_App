@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 /* ── Light theme — Jan Sahayak / lawyer-letterhead aesthetic ─────────────── */
-/*  Warm terracotta (#C84B31) on cream (#FAF6EE) + clay borders. The fonts
- *  pair Manrope (body) with Fraunces (display) — set via next/font.       */
+/*  Warm terracotta (#C84B31) on cream (#FAF6EE) + clay borders, enriched with
+ *  a teal secondary accent + indigo tertiary for gradients and graphics. The
+ *  fonts pair Manrope (body) with Fraunces (display) — set via next/font.   */
 :root {
   color-scheme: light;
 
@@ -22,43 +23,47 @@
   --border:       #EBDDC9;
   --border-2:     #F1E5D2;
 
-  /* Accent — terracotta */
-  --accent:         #C84B31;
+  /* Accent — terracotta, with teal + indigo companions for gradients */
+  --accent:         #C8431F;
   --accent-hover:   #9B3722;
   --accent-contrast:#FFFCF6;
   --accent-muted:   #FBE6DF;
   --accent-subtle:  #FDF1EC;
+  --accent-2:       #0E7C7B;
+  --accent-2-bg:    #E4F4F3;
+  --accent-3:       #4F46E5;
+  --accent-3-bg:    #EDEBFE;
 
-  /* Status */
-  --success:     #10b981;
-  --success-bg:  #ecfdf5;
+  /* Status — punchier than before */
+  --success:     #059669;
+  --success-bg:  #E7F8F1;
   --success-text:#065f46;
 
-  --error:       #ef4444;
-  --error-bg:    #fef2f2;
-  --error-text:  #991b1b;
+  --error:       #E11D48;
+  --error-bg:    #FDECF0;
+  --error-text:  #9F1239;
 
-  --warning:     #f59e0b;
-  --warning-bg:  #fffbeb;
+  --warning:     #D97706;
+  --warning-bg:  #FEF3DE;
   --warning-text:#92400e;
 
-  --info:        #3b82f6;
-  --info-bg:     #eff6ff;
+  --info:        #2563EB;
+  --info-bg:     #E8F0FE;
   --info-text:   #1e40af;
 
-  /* Shadows */
-  --shadow-xs:  0 1px 2px rgba(15,23,42,0.04);
-  --shadow-sm:  0 1px 4px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
-  --shadow:     0 4px 16px rgba(15,23,42,0.08), 0 2px 4px rgba(15,23,42,0.04);
-  --shadow-lg:  0 16px 48px rgba(15,23,42,0.10), 0 6px 16px rgba(15,23,42,0.06);
-  --shadow-xl:  0 24px 64px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.06);
-  --shadow-accent: 0 8px 24px rgba(200,75,49,0.28);
+  /* Shadows — warm-tinted so cards read as layered paper, not grey boxes */
+  --shadow-xs:  0 1px 2px rgba(120,60,30,0.05);
+  --shadow-sm:  0 1px 4px rgba(120,60,30,0.08), 0 1px 2px rgba(120,60,30,0.05);
+  --shadow:     0 4px 16px rgba(120,60,30,0.10), 0 2px 4px rgba(120,60,30,0.05);
+  --shadow-lg:  0 16px 48px rgba(120,60,30,0.13), 0 6px 16px rgba(120,60,30,0.07);
+  --shadow-xl:  0 24px 64px rgba(120,60,30,0.15), 0 8px 24px rgba(120,60,30,0.08);
+  --shadow-accent: 0 8px 24px rgba(200,67,31,0.30);
 
   /* Sidebar — paper */
   --sidebar:            #FFFCF6;
   --sidebar-border:     #EBDDC9;
-  --sidebar-hover:      rgba(200,75,49,0.07);
-  --sidebar-active-bg:  rgba(200,75,49,0.11);
+  --sidebar-hover:      rgba(200,67,31,0.07);
+  --sidebar-active-bg:  rgba(200,67,31,0.11);
   --sidebar-active-text:#9B3722;
   --sidebar-icon:       #8A7766;
 }
@@ -67,39 +72,43 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --bg:           #090e1a;
-  --bg-secondary: #0d1526;
-  --surface:      #111c2d;
-  --surface-2:    #162035;
+  --bg:           #0a0f1e;
+  --bg-secondary: #0e1730;
+  --surface:      #121e36;
+  --surface-2:    #17233e;
 
   --text:         #f1f5f9;
   --text-2:       #cbd5e1;
-  --muted:        #8b9ab0;
-  --muted-2:      #596880;
+  --muted:        #93a3ba;
+  --muted-2:      #5e6f8a;
 
-  --border:       #1e2d47;
-  --border-2:     #162032;
+  --border:       #22335a;
+  --border-2:     #182441;
 
   --accent:         #fbbf24;
   --accent-hover:   #f59e0b;
   --accent-contrast:#0c0a00;
-  --accent-muted:   #261a00;
-  --accent-subtle:  #1a1200;
+  --accent-muted:   #2b1f02;
+  --accent-subtle:  #201703;
+  --accent-2:       #2dd4bf;
+  --accent-2-bg:    #042f2c;
+  --accent-3:       #818cf8;
+  --accent-3-bg:    #1a1e46;
 
   --success:     #34d399;
-  --success-bg:  #052016;
+  --success-bg:  #062b1e;
   --success-text:#6ee7b7;
 
-  --error:       #f87171;
-  --error-bg:    #1e0606;
-  --error-text:  #fca5a5;
+  --error:       #fb7185;
+  --error-bg:    #2a0a12;
+  --error-text:  #fda4af;
 
   --warning:     #fbbf24;
-  --warning-bg:  #180f00;
+  --warning-bg:  #221503;
   --warning-text:#fde68a;
 
   --info:        #60a5fa;
-  --info-bg:     #08152e;
+  --info-bg:     #0a1a38;
   --info-text:   #93c5fd;
 
   --shadow-xs:  0 1px 2px rgba(0,0,0,0.25);
@@ -107,14 +116,14 @@
   --shadow:     0 4px 16px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.35);
   --shadow-lg:  0 16px 48px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
   --shadow-xl:  0 24px 64px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.45);
-  --shadow-accent: 0 8px 24px rgba(251,191,36,0.18);
+  --shadow-accent: 0 8px 24px rgba(251,191,36,0.20);
 
-  --sidebar:            #0d1526;
-  --sidebar-border:     #1e2d47;
+  --sidebar:            #0e1730;
+  --sidebar-border:     #22335a;
   --sidebar-hover:      rgba(251,191,36,0.07);
   --sidebar-active-bg:  rgba(251,191,36,0.12);
   --sidebar-active-text:#fbbf24;
-  --sidebar-icon:       #596880;
+  --sidebar-icon:       #5e6f8a;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -122,6 +131,9 @@ html {
   min-height: 100%;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* Global readability bump: every rem-based size (Tailwind text-xs/sm/base…)
+   * scales up ~6% so the UI stops feeling squint-small. */
+  font-size: 17px;
 }
 
 body {
@@ -163,9 +175,9 @@ code, pre, .font-mono {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(800px 500px at 12% -10%,  color-mix(in srgb, var(--accent)  18%, transparent), transparent 60%),
-    radial-gradient(700px 480px at 92% 10%,   color-mix(in srgb, #E59500        14%, transparent), transparent 60%),
-    radial-gradient(900px 600px at 50% 110%,  color-mix(in srgb, #2E7D32        10%, transparent), transparent 60%);
+    radial-gradient(800px 500px at 12% -10%,  color-mix(in srgb, var(--accent)   20%, transparent), transparent 60%),
+    radial-gradient(700px 480px at 92% 10%,   color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%,  color-mix(in srgb, var(--accent-3) 12%, transparent), transparent 60%);
   pointer-events: none;
 }
 .app-bg::after {
@@ -196,12 +208,88 @@ code, pre, .font-mono {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
+/* ── Graphic utilities — headers, gradient buttons, lifting cards ─────────── */
+/* Page hero band: warm tri-colour wash used by <PageHeader>. */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background:
+    radial-gradient(600px 220px at 0% 0%,    color-mix(in srgb, var(--accent)   14%, transparent), transparent 65%),
+    radial-gradient(520px 200px at 100% 0%,  color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 65%),
+    var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+/* Accent gradient — primary CTAs / highlights. */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 62%, var(--accent-3)) 100%);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-accent);
+  transition: filter .15s ease, transform .15s ease;
+}
+.btn-gradient:hover { filter: brightness(1.08); transform: translateY(-1px); }
+/* Cards that lift on hover — makes lists feel alive. */
+.card-lift {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+/* Gradient display text for hero numerals / headings. */
+.gradient-text {
+  background: linear-gradient(120deg, var(--accent), var(--accent-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Styled tooltips ──────────────────────────────────────────────────────── */
+/* Native title= tooltips are tiny and slow. Elements with a `data-tip`
+ * attribute get an instant, readable, theme-aware tooltip instead. */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: pre-line;
+  max-width: 260px;
+  width: max-content;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 60;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+[data-tip-side="bottom"]::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
 * {
   box-sizing: border-box;
 }
 
 ::selection {
-  background: rgba(200, 75, 49, 0.22);
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
   color: var(--text);
 }
 
@@ -213,7 +301,7 @@ code, pre, .font-mono {
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar          { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track    { background: transparent; }
 ::-webkit-scrollbar-thumb    { background: var(--border); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-2); }
@@ -233,7 +321,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(200,75,49,0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 input::placeholder, textarea::placeholder {
@@ -262,20 +350,28 @@ input::placeholder, textarea::placeholder {
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
+  .card-lift, .btn-gradient { transition: none; }
 }
 
 /* ── Content protection ──────────────────────────────────────────────────── */
 /*  Disable text selection app-wide as a second layer behind the JS clipboard
- *  guard (components/security/SecurityGuard.tsx). Inputs/textareas still accept
- *  typing — selection is suppressed so there's nothing to drag-copy out, and
- *  the JS guard blocks copy/cut/paste/contextmenu outright. Images can't be
- *  dragged out either. This cannot stop OS-level screenshots (no web API can). */
+ *  guard (components/security/SecurityGuard.tsx). This cannot stop OS-level
+ *  screenshots (no web API can). */
 * {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   -webkit-touch-callout: none; /* suppress iOS long-press copy/save menu */
+}
+
+/* …but typing fields MUST stay selectable — without this users can't select
+ * text inside their own inputs to correct it, which made forms feel broken. */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 img,

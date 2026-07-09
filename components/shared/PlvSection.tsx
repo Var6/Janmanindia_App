@@ -87,7 +87,7 @@ export default function PlvSection() {
             You'll get free training and join a network of grassroots legal first-responders.
           </p>
         </div>
-        <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide"
+        <span className="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide"
           style={{ background: style.bg, color: style.text }}>
           {style.icon} {style.label}
         </span>
@@ -129,7 +129,7 @@ export default function PlvSection() {
             className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
             style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-[11px] text-(--muted)">{motivation.length} / 20+ characters</p>
+            <p className="text-[12px] text-(--muted)">{motivation.length} / 20+ characters</p>
             <button type="submit" disabled={busy || motivation.trim().length < 20}
               className="px-5 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent)" }}>

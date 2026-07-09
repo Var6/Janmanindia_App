@@ -200,7 +200,7 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
         <Filter label={t("Court")} value={court} onChange={setCourt} allLabel={t("All courts")} options={courts} cls={selectCls} style={selectStyle} />
         <Filter label={t("Status")} value={status} onChange={setStatus} allLabel={t("All statuses")} options={statuses} cls={selectCls} style={selectStyle} translateOpts />
         <div className="flex flex-col gap-1 ml-auto">
-          <span className="text-[10px] uppercase tracking-wide text-(--muted) font-semibold">{t("Sort by")}</span>
+          <span className="text-[11px] uppercase tracking-wide text-(--muted) font-semibold">{t("Sort by")}</span>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={selectCls} style={selectStyle}>
             <option value="lawyer">{t("Advocate")}</option>
             <option value="recent">{t("Recent")}</option>
@@ -257,30 +257,30 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
                         {(c.courtNumber || c.caseNumber || "—")}
                       </span>
                       {c.courtNumber && c.caseNumber && (
-                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded"
+                        <span className="text-[12px] font-mono px-1.5 py-0.5 rounded"
                           title="Janman tracker no."
                           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                           {c.caseNumber}
                         </span>
                       )}
                       {c.isExisting && (
-                        <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
+                        <span className="text-[11px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
                           {t("Existing")}
                         </span>
                       )}
                       {c.district && c.district !== "—" && (
-                        <span className="text-[11px] text-(--muted)">📍 {c.district}</span>
+                        <span className="text-[12px] text-(--muted)">📍 {c.district}</span>
                       )}
                     </div>
                     {/* Hearing dates — just below the location. */}
                     {(c.lastHearingISO || c.nextHearingISO) && (
-                      <p className="text-[11px] text-(--muted) mt-0.5 flex flex-wrap gap-x-3">
+                      <p className="text-[12px] text-(--muted) mt-0.5 flex flex-wrap gap-x-3">
                         {c.lastHearingISO && <span>{t("Last hearing")}: {fmtDate(c.lastHearingISO)}</span>}
                         {c.nextHearingISO && <span className="font-medium" style={{ color: "var(--accent)" }}>{t("Next hearing")}: {fmtDate(c.nextHearingISO)}</span>}
                       </p>
                     )}
-                    {c.currentStep && <p className="text-[11px] text-(--muted) italic mt-0.5 line-clamp-1">{c.currentStep}</p>}
+                    {c.currentStep && <p className="text-[12px] text-(--muted) italic mt-0.5 line-clamp-1">{c.currentStep}</p>}
                     <p className="text-xs text-(--muted) mt-0.5">{c.community || "—"}</p>
                   </Link>
 
@@ -342,7 +342,7 @@ function Filter({ label, value, onChange, allLabel, options, cls, style, transla
   const t = useT();
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-wide text-(--muted) font-semibold">{label}</span>
+      <span className="text-[11px] uppercase tracking-wide text-(--muted) font-semibold">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={cls} style={style}>
         <option value="all">{allLabel}</option>
         {options.map((o) => <option key={o} value={o}>{translateOpts ? t(o) : o}</option>)}

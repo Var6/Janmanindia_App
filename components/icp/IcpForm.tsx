@@ -123,7 +123,7 @@ export default function IcpForm({ caseId, canEdit, caseNumber, caseTitle }: Prop
       {/* Top controls — hidden in print */}
       <div className="icp-controls flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>
+          <p className="text-[12px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>
             {t("Individual Care Plan")}
           </p>
           <p className="text-xs text-(--muted) mt-1">
@@ -715,7 +715,7 @@ function FamilyMembers({ value, onChange, ro }: { value: any[]; onChange: (v: an
             <p className="text-xs font-semibold text-(--text)">{t("Member #")}{i + 1}{m.isPrimaryEarner ? ` · ${t("primary earner")}` : ""}</p>
             {!ro && (
               <button type="button" onClick={() => remove(i)}
-                className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Remove")}</button>
+                className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Remove")}</button>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -731,7 +731,7 @@ function FamilyMembers({ value, onChange, ro }: { value: any[]; onChange: (v: an
             <TextArea value={m.aspirations} onChange={v => update(i, { aspirations: v })} placeholder={t("Aspirations / interests")} ro={ro} />
           </div>
           {!ro && (
-            <label className="flex items-center gap-2 text-[11px]">
+            <label className="flex items-center gap-2 text-[12px]">
               <input type="checkbox" checked={!!m.isPrimaryEarner} onChange={e => update(i, { isPrimaryEarner: e.target.checked })} />
               <span className="text-(--text)">{t("Primary breadwinner")}</span>
             </label>

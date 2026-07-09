@@ -94,7 +94,7 @@ export default async function CaseTrackerPage() {
 
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
+                    <p className="text-[11px] text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
                     <p className="text-sm font-semibold text-(--text) mt-0.5">
                       {c.nextHearingDate
                         ? new Date(c.nextHearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
@@ -102,11 +102,11 @@ export default async function CaseTrackerPage() {
                     </p>
                   </div>
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Documents")}</p>
+                    <p className="text-[11px] text-(--muted) uppercase tracking-wide">{t("Documents")}</p>
                     <p className="text-sm font-semibold text-(--text) mt-0.5">{docsCount} {t("files")}</p>
                   </div>
                   <div className="p-2.5 rounded-xl border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-                    <p className="text-[10px] text-(--muted) uppercase tracking-wide">{t("Updated")}</p>
+                    <p className="text-[11px] text-(--muted) uppercase tracking-wide">{t("Updated")}</p>
                     <p className="text-sm font-semibold text-(--text) mt-0.5">
                       {new Date((c as unknown as { updatedAt: Date }).updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </p>
@@ -116,7 +116,7 @@ export default async function CaseTrackerPage() {
                 {lastDiary && (
                   <div className="p-3 rounded-xl border"
                     style={{ background: "color-mix(in srgb,var(--accent) 5%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 20%,transparent)" }}>
-                    <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Latest diary entry")}</p>
+                    <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Latest diary entry")}</p>
                     <p className="text-sm text-(--text) line-clamp-2">{lastDiary.findings}</p>
                     <p className="text-xs text-(--muted) mt-1">
                       {new Date(lastDiary.date).toLocaleDateString("en-IN")}

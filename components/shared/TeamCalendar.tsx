@@ -304,12 +304,12 @@ export default async function TeamCalendar({
                               <div key={`ap-${i}-${String(ap._id)}`} className="rounded-lg border px-3 py-2 text-xs"
                                 style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
                                 <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
+                                  <span className="text-[11px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
                                     {t("Appointment")}
                                   </span>
-                                  <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
-                                  <span className="text-[10px] uppercase font-semibold"
+                                  <span className="text-[11px] text-(--muted)">{formatTime(it.at)}</span>
+                                  <span className="text-[11px] uppercase font-semibold"
                                     style={{ color: ap.status.startsWith("confirmed") ? "var(--success-text)" : "var(--warning-text)" }}>
                                     {ap.status.replace(/_/g, " ")}
                                   </span>
@@ -332,16 +332,16 @@ export default async function TeamCalendar({
                               <div key={`tr-${i}-${String(tr._id)}`} className="rounded-lg border px-3 py-2 text-xs"
                                 style={{ borderColor: "color-mix(in srgb, var(--accent) 35%, var(--border))", background: "var(--bg)" }}>
                                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
+                                  <span className="text-[11px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>
                                     {t("Training")}
                                   </span>
-                                  <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
-                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase"
+                                  <span className="text-[11px] text-(--muted)">{formatTime(it.at)}</span>
+                                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded uppercase"
                                     style={{ background: ts.bg, color: ts.text }}>
                                     {tr.status}
                                   </span>
-                                  <span className="text-[10px] text-(--muted)">{enrolled}/{tr.capacity} {t("enrolled")}</span>
+                                  <span className="text-[11px] text-(--muted)">{enrolled}/{tr.capacity} {t("enrolled")}</span>
                                 </div>
                                 <p className="font-medium text-(--text) truncate">{tr.title}</p>
                                 <p className="text-(--muted) mt-0.5 truncate">
@@ -356,12 +356,12 @@ export default async function TeamCalendar({
                             const hearingInner = (
                               <>
                                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
+                                  <span className="text-[11px] font-bold uppercase px-1.5 py-0.5 rounded"
                                     style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                                     {t("Court Hearing")}
                                   </span>
-                                  <span className="text-[10px] text-(--muted)">{formatTime(it.at)}</span>
-                                  <span className="text-[10px] font-semibold uppercase"
+                                  <span className="text-[11px] text-(--muted)">{formatTime(it.at)}</span>
+                                  <span className="text-[11px] font-semibold uppercase"
                                     style={{ color: "var(--muted)" }}>{c.status}</span>
                                 </div>
                                 <p className="font-medium text-(--text) truncate">{c.caseTitle}</p>
@@ -395,19 +395,19 @@ export default async function TeamCalendar({
                               style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
                               <div className="flex items-center gap-2 flex-wrap mb-0.5">
                                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: PRIORITY_DOT[a.priority] }} />
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
                                   style={{ background: st.bg, color: st.text }}>
                                   {a.status.replace("_", " ")}
                                 </span>
-                                <span className="text-[10px] text-(--muted) capitalize">{a.category}</span>
-                                <span className="text-[10px] text-(--muted)">
+                                <span className="text-[11px] text-(--muted) capitalize">{a.category}</span>
+                                <span className="text-[11px] text-(--muted)">
                                   {formatTime(it.at)}
                                   {a.endsAt
                                     ? ` – ${new Date(a.endsAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
                                     : ""}
                                 </span>
                                 {overdue && (
-                                  <span className="text-[10px] uppercase font-bold"
+                                  <span className="text-[11px] uppercase font-bold"
                                     style={{ color: "var(--error-text)" }}>{t("Overdue")}</span>
                                 )}
                               </div>
@@ -447,7 +447,7 @@ export default async function TeamCalendar({
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
-                        <p className="text-[10px] uppercase tracking-wide text-(--muted) mt-0.5">
+                        <p className="text-[11px] uppercase tracking-wide text-(--muted) mt-0.5">
                           {ROLE_LABELS[u.role] ?? u.role}
                         </p>
                       </div>
@@ -456,7 +456,7 @@ export default async function TeamCalendar({
                         {active}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-1.5 flex-wrap text-[10px]">
+                    <div className="mt-1.5 flex items-center gap-1.5 flex-wrap text-[11px]">
                       {load.in_progress > 0 && (
                         <span className="px-1.5 py-0.5 rounded font-semibold"
                           style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>

@@ -207,14 +207,14 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                 {user.email}{user.phone ? ` · ${user.phone}` : ""}
               </p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase"
+                <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full uppercase"
                   style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{user.role}</span>
                 {verif && (
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full"
                     style={{ background: verif.bg, color: verif.text }}>{t(verif.label)}</span>
                 )}
                 {!user.isActive && (
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full"
                     style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{t("Inactive")}</span>
                 )}
               </div>
@@ -334,7 +334,7 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                       <p className="text-xs text-(--muted) mt-0.5">{t("Next hearing:")} {fmtDate(c.nextHearingDate)}</p>
                     )}
                   </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                  <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full shrink-0"
                     style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{c.status}</span>
                 </div>
               </Link>
@@ -377,9 +377,9 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase"
                         style={{ background: prio.bg, color: prio.text }}>{p.priority}</span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase"
                         style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{p.status.replace("_", " ")}</span>
                     </div>
                   </div>
@@ -396,7 +396,7 @@ export default function CommunityMemberDetailPage({ params }: { params: Promise<
 function Fact({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+      <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
       <p className="text-sm text-(--text) mt-0.5">{value || <span className="text-(--muted) italic">—</span>}</p>
     </div>
   );

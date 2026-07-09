@@ -6,6 +6,7 @@ import User from "@/models/User";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateCaseForm from "@/components/shared/CreateCaseForm";
 import CreateClientButton from "@/components/shared/CreateClientButton";
+import PageHeader from "@/components/ui/PageHeader";
 import DirectorCasesTable, { type CaseRow } from "@/components/director/DirectorCasesTable";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -81,16 +82,11 @@ export default async function AdminCasesPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-(--text)">{t("All Cases")}</h1>
-          <p className="text-sm text-(--muted) mt-1">{cases.length} {t("total cases across all litigation members.")}</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <CreateClientButton />
-          <CreateCaseForm />
-        </div>
-      </div>
+      <PageHeader icon="⚖️" title={t("All Cases")}
+        subtitle={`${cases.length} ${t("total cases across all litigation members.")}`}>
+        <CreateClientButton />
+        <CreateCaseForm />
+      </PageHeader>
 
       {/* Status summary */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

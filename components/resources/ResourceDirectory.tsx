@@ -121,7 +121,7 @@ export default function ResourceDirectory({ kind }: { kind: "scheme" | "liveliho
             <article key={r._id} className="rounded-2xl border p-5 space-y-2" style={{ background: "var(--surface)", borderColor: "var(--border)", opacity: r.isActive ? 1 : 0.55 }}>
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-bold text-(--text)">{r.title}</h2>
-                {r.category && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: "color-mix(in srgb,var(--accent) 12%,transparent)", color: "var(--accent)" }}>{r.category}</span>}
+                {r.category && <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: "color-mix(in srgb,var(--accent) 12%,transparent)", color: "var(--accent)" }}>{r.category}</span>}
               </div>
               <p className="text-sm text-(--muted)">{r.description}</p>
               {r.eligibility && <p className="text-xs text-(--text)"><span className="font-semibold">{t("Eligibility")}:</span> {r.eligibility}</p>}

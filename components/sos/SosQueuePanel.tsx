@@ -79,10 +79,10 @@ export default function SosQueuePanel({
                   <p className="text-xs text-(--muted) mt-0.5">📍 {a.location}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                     {t(STAGE_LABEL[a.stage ?? "socialworker"] ?? "With Social Worker")}
                   </span>
-                  <p className="text-[11px] text-(--muted) mt-1">{new Date(a.createdAt).toLocaleString("en-IN")}</p>
+                  <p className="text-[12px] text-(--muted) mt-1">{new Date(a.createdAt).toLocaleString("en-IN")}</p>
                 </div>
               </div>
               <p className="text-sm text-(--text) mb-4">{a.description}</p>

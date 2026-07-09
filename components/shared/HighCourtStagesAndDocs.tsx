@@ -101,7 +101,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
 
         {/* 4-stage strip */}
         <div>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Stages")}</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Stages")}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {STAGES.map(stage => {
               const step = (hcp as Record<string, Step | undefined>)[stage.id];
@@ -122,13 +122,13 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
                       style={{ background: done ? "var(--success)" : "var(--muted)" }} />
                     <p className="text-xs font-semibold text-(--text)">{t(stage.label)}</p>
                   </div>
-                  <p className="text-[10px] text-(--muted) leading-snug">{t(stage.sub)}</p>
+                  <p className="text-[11px] text-(--muted) leading-snug">{t(stage.sub)}</p>
                   {done && step?.filedAt && (
-                    <p className="text-[10px] text-(--success-text)">{t("Reached")} {fmtDate(step.filedAt)}</p>
+                    <p className="text-[11px] text-(--success-text)">{t("Reached")} {fmtDate(step.filedAt)}</p>
                   )}
                   {canEdit && (
                     <button type="button" disabled={busy} onClick={() => flipStage(stage.id, !done)}
-                      className="text-[10px] font-medium mt-auto self-start hover:underline"
+                      className="text-[11px] font-medium mt-auto self-start hover:underline"
                       style={{ color: done ? "var(--muted)" : "var(--accent)" }}>
                       {busy ? "…" : done ? t("Mark not reached") : t("Mark reached")}
                     </button>
@@ -141,7 +141,7 @@ export default function HighCourtStagesAndDocs({ caseId, caseData, canEdit, onCh
 
         {/* Document slots */}
         <div>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Documents")}</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-2">{t("Documents")}</p>
           <div className="space-y-2">
             {SLOTS.map(slot => {
               const value = (hcp as Record<string, unknown>)[slot.key];
@@ -217,11 +217,11 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
           <p className="text-sm font-semibold text-(--text)">
             {t(label)}
             {docs.length > 0 && (
-              <span className="ml-2 text-[10px] font-normal text-(--muted)">{docs.length} {t("on file")}</span>
+              <span className="ml-2 text-[11px] font-normal text-(--muted)">{docs.length} {t("on file")}</span>
             )}
           </p>
           {docs.length === 0 && (
-            <p className="text-[11px] text-(--muted) italic">{t("Not yet attached.")}</p>
+            <p className="text-[12px] text-(--muted) italic">{t("Not yet attached.")}</p>
           )}
         </div>
         {canEdit && (multi || docs.length === 0) && !adding && (
@@ -317,7 +317,7 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("List of Dates")} · {sorted.length}</p>
+        <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("List of Dates")} · {sorted.length}</p>
         {canEdit && !adding && (
           <button type="button" onClick={() => setAdding(true)}
             className="text-xs hover:underline" style={{ color: "var(--accent)" }}>{t("+ Add entry")}</button>
@@ -338,7 +338,7 @@ function ListOfDatesSection({ caseId, entries, canEdit, onChanged }: {
               </p>
               {e.doc && (
                 <a href={e.doc.url} target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>
+                  className="text-[12px] hover:underline" style={{ color: "var(--accent)" }}>
                   📎 {e.doc.label}
                 </a>
               )}

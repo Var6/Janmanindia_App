@@ -45,7 +45,7 @@ export default async function TodoWidget({ userId }: Props) {
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-(--text) text-sm">{t("My Todos")}</h2>
           {overdue > 0 && (
-            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full text-white"
+            <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full text-white"
               style={{ background: "var(--error, #dc2626)" }}>
               {overdue} {t("overdue")}
             </span>
@@ -59,15 +59,15 @@ export default async function TodoWidget({ userId }: Props) {
       <div className="grid grid-cols-3 divide-x divide-(--border)">
         <div className="p-4 text-center">
           <p className="text-2xl font-bold text-(--text)">{planned}</p>
-          <p className="text-[10px] uppercase tracking-wide text-(--muted) mt-1">{t("Planned")}</p>
+          <p className="text-[11px] uppercase tracking-wide text-(--muted) mt-1">{t("Planned")}</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-2xl font-bold" style={{ color: "var(--warning, #f59e0b)" }}>{inProgress}</p>
-          <p className="text-[10px] uppercase tracking-wide text-(--muted) mt-1">{t("In progress")}</p>
+          <p className="text-[11px] uppercase tracking-wide text-(--muted) mt-1">{t("In progress")}</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-2xl font-bold" style={{ color: "var(--success, #16a34a)" }}>{doneRecent}</p>
-          <p className="text-[10px] uppercase tracking-wide text-(--muted) mt-1">{t("Done")} · 7d</p>
+          <p className="text-[11px] uppercase tracking-wide text-(--muted) mt-1">{t("Done")} · 7d</p>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export default async function TodoWidget({ userId }: Props) {
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: PRIORITY_DOT[u.priority] }} />
                   <p className="text-sm text-(--text) truncate">{u.title}</p>
                 </div>
-                <span className={`text-[10px] shrink-0 ${isOverdue ? "font-bold" : ""}`}
+                <span className={`text-[11px] shrink-0 ${isOverdue ? "font-bold" : ""}`}
                   style={isOverdue ? { color: "var(--error, #dc2626)" } : { color: "var(--muted)" }}>
                   {u.dueDate ? new Date(u.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : u.status}
                 </span>

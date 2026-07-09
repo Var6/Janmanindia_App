@@ -107,7 +107,7 @@ export default function DailyReportsIndex() {
                       {(r.summary?.urgentFlagged ?? 0) > 0 && ` · ${r.summary?.urgentFlagged} ${t("urgent")}`}
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
                     style={{ background: stat.bg, color: stat.text }}>{r.status}</span>
                 </div>
               </button>

@@ -202,7 +202,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                           <p className="text-sm font-medium text-(--text) truncate">
                             {u.name}
                             {u.employeeId && (
-                              <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded"
+                              <span className="ml-2 text-[11px] font-mono px-1.5 py-0.5 rounded"
                                 style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                                 {u.employeeId}
                               </span>
@@ -219,8 +219,8 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                       <td className={`px-4 py-3 ${cellBorder}`} style={{ borderColor: "var(--border)" }}>
                         {!u.isActive ? (
                           <div className="flex flex-col items-start gap-1">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 uppercase tracking-wide">{t("NPA")}</span>
-                            <span className="text-[10px] text-(--muted)">
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 uppercase tracking-wide">{t("NPA")}</span>
+                            <span className="text-[11px] text-(--muted)">
                               {exitedAt ? exitedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                               {tenure ? ` · ~${tenure} ${t("mo")}` : ""}
                             </span>

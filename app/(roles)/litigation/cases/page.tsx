@@ -7,6 +7,7 @@ import Case from "@/models/Case";
 import NoDBBanner from "@/components/shared/NoDBBanner";
 import CreateLitigationCaseForm from "@/components/shared/CreateLitigationCaseForm";
 import CreateClientButton from "@/components/shared/CreateClientButton";
+import PageHeader from "@/components/ui/PageHeader";
 import LitigationCasesList, { type LitCaseRow } from "@/components/litigation/LitigationCasesList";
 import { getServerT, getServerLang } from "@/lib/i18n-server";
 import { translateTitles } from "@/lib/translate-batch-server";
@@ -82,18 +83,11 @@ export default async function LitigationCasesPage() {
     <div className="space-y-8">
       {!dbOk && <NoDBBanner />}
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-(--text)">{t("My Cases")}</h1>
-          <p className="text-sm text-(--muted) mt-1">
-            {open.length} {t("active")} · {closed.length} {t("closed")} · {t("sorted by next hearing date")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <CreateClientButton />
-          <CreateLitigationCaseForm />
-        </div>
-      </div>
+      <PageHeader icon="⚖️" title={t("My Cases")}
+        subtitle={`${open.length} ${t("active")} · ${closed.length} ${t("closed")} · ${t("sorted by next hearing date")}`}>
+        <CreateClientButton />
+        <CreateLitigationCaseForm />
+      </PageHeader>
 
       <section>
         <h2 className="font-semibold text-(--text) mb-3">{t("Active Cases")}</h2>

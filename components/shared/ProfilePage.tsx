@@ -363,7 +363,7 @@ function GoogleCalendarSection({ profile, onUpdate }: { profile: UserProfile | n
             Connect your @janmanindia.org calendar so appointments you create here automatically appear on it (and on the other person's).
           </p>
         </div>
-        <span className="text-[11px] font-bold px-2 py-1 rounded-full"
+        <span className="text-[12px] font-bold px-2 py-1 rounded-full"
           style={{
             background: connected ? "var(--success-bg)" : "var(--bg-secondary)",
             color: connected ? "var(--success-text)" : "var(--muted)",

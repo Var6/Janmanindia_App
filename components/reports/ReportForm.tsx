@@ -101,7 +101,7 @@ function Field({ field: f, value, setValue, toggleCheckbox }: {
       {f.required && <span style={{ color: "var(--error)" }}> *</span>}
     </span>
   );
-  const hintEl = f.hint ? <p className="text-[11px] text-(--muted) mt-1 leading-relaxed">{f.hint}</p> : null;
+  const hintEl = f.hint ? <p className="text-[12px] text-(--muted) mt-1 leading-relaxed">{f.hint}</p> : null;
   const inputBase = "w-full px-3 py-2 rounded-lg border text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all";
   const inputStyle = { background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" } as const;
 

@@ -216,12 +216,12 @@ export default function ProjectsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>{p.code}</span>
+                      <span className="text-[12px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>{p.code}</span>
                       <p className="text-base font-bold text-(--text)">{p.name}</p>
                     </div>
                     {p.description && <p className="text-xs text-(--muted) mt-1">{p.description}</p>}
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
                     style={{ background: stat.bg, color: stat.text }}>{p.status.replace("_", " ")}</span>
                 </div>
 
@@ -235,7 +235,7 @@ export default function ProjectsPage() {
                 <div className="rounded-full h-2 overflow-hidden" style={{ background: "var(--bg-secondary)" }}>
                   <div className="h-full transition-all" style={{ width: `${pct}%`, background: overrun ? "var(--error)" : "var(--accent)" }} />
                 </div>
-                <p className="text-[11px] text-(--muted)">
+                <p className="text-[12px] text-(--muted)">
                   {pct}{t("% utilised")}{overrun && t(" — overrunning budget")}
                 </p>
 
@@ -287,8 +287,8 @@ export default function ProjectsPage() {
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-semibold text-(--text)">{ph.name}</span>
                           <span className="flex items-center gap-2">
-                            {ph.budget ? <span className="text-[11px] text-(--muted)">₹{ph.budget.toLocaleString("en-IN")}</span> : null}
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                            {ph.budget ? <span className="text-[12px] text-(--muted)">₹{ph.budget.toLocaleString("en-IN")}</span> : null}
+                            <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
                               style={{ background: ph.status === "active" ? "var(--success-bg)" : ph.status === "completed" ? "var(--bg-secondary)" : "var(--warning-bg)", color: ph.status === "active" ? "var(--success-text)" : ph.status === "completed" ? "var(--muted)" : "var(--warning-text)" }}>
                               {t(ph.status === "active" ? "Active" : ph.status === "completed" ? "Completed" : "Upcoming")}
                             </span>
@@ -297,7 +297,7 @@ export default function ProjectsPage() {
                         {(ph.objectives ?? []).length > 0 && (
                           <ul className="mt-1 space-y-0.5">
                             {ph.objectives.map((o, oi) => (
-                              <li key={o._id ?? oi} className="text-[11px] text-(--muted) flex items-center gap-1.5">
+                              <li key={o._id ?? oi} className="text-[12px] text-(--muted) flex items-center gap-1.5">
                                 <span>{o.done ? "✓" : "•"}</span>
                                 <span>{o.label}{o.target ? ` — ${o.current ?? 0}/${o.target}` : ""}</span>
                               </li>
@@ -350,7 +350,7 @@ export default function ProjectsPage() {
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="rounded-xl p-2 text-center" style={{ background: "var(--bg)" }}>
-      <p className="text-[10px] uppercase tracking-wide text-(--muted)">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-(--muted)">{label}</p>
       <p className="text-sm font-bold" style={{ color: color ?? "var(--text)" }}>{value}</p>
     </div>
   );

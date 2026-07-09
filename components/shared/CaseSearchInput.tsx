@@ -55,7 +55,7 @@ export default function CaseSearchInput({ value, onChange, placeholder, disabled
         <span className="text-(--muted) truncate">— {value.caseTitle}</span>
         {!disabled && (
           <button type="button" onClick={() => { onChange(null); setQ(""); }}
-            className="ml-auto text-[11px] px-1.5 py-0.5 rounded shrink-0"
+            className="ml-auto text-[12px] px-1.5 py-0.5 rounded shrink-0"
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
             ✕
           </button>
@@ -81,11 +81,11 @@ export default function CaseSearchInput({ value, onChange, placeholder, disabled
               <button type="button" onMouseDown={(e) => { e.preventDefault(); onChange(c); setQ(""); setResults([]); setOpen(false); }}
                 className={`w-full text-left ${pad} hover:bg-(--bg-secondary) transition-colors`}>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded"
+                  <span className="font-mono text-[12px] font-bold px-1.5 py-0.5 rounded"
                     style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
                     {c.caseNumber}
                   </span>
-                  {c.status && <span className="text-[10px] text-(--muted) uppercase">{c.status}</span>}
+                  {c.status && <span className="text-[11px] text-(--muted) uppercase">{c.status}</span>}
                 </div>
                 <p className={`${text} text-(--text) truncate mt-0.5`}>{c.caseTitle}</p>
               </button>

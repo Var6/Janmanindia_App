@@ -146,7 +146,7 @@ export default function SubmitExpenseForm({ restrictCategories, onCreated }: Pro
           <div className="flex items-center gap-2 text-xs">
             <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "var(--accent)" }}>📎 {t("receipt attached")}</a>
             <button type="button" onClick={() => setReceiptUrl("")}
-              className="px-2 py-0.5 rounded text-[11px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
+              className="px-2 py-0.5 rounded text-[12px]" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{t("Remove")}</button>
           </div>
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()} disabled={uploadingReceipt}
@@ -162,7 +162,7 @@ export default function SubmitExpenseForm({ restrictCategories, onCreated }: Pro
         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
         {busy ? t("Submitting…") : t("Submit for Approval")}
       </button>
-      <p className="text-[11px] text-(--muted)">
+      <p className="text-[12px] text-(--muted)">
         {t("Routing: HR verifies → Director approves → Finance marks it paid (deducts from project budget).")}
       </p>
     </form>

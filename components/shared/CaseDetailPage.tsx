@@ -4,11 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CaseDocsUpload from "@/components/shared/CaseDocsUpload";
-import IcpForm from "@/components/icp/IcpForm";
+import dynamic from "next/dynamic";
+// Tab-gated heavyweights are code-split so the case page loads fast: IcpForm
+// alone drags in the whole PDF renderer, and Finance is rarely the first tab.
+const IcpForm = dynamic(() => import("@/components/icp/IcpForm"), {
+  loading: () => <div className="skeleton h-40 rounded-2xl" />,
+});
 import CaseWorkflowGraph from "@/components/shared/CaseWorkflowGraph";
 import CaseAuditLog from "@/components/shared/CaseAuditLog";
 import CaseCheatcodes from "@/components/shared/CaseCheatcodes";
-import CaseFinanceTab from "@/components/case/CaseFinanceTab";
+const CaseFinanceTab = dynamic(() => import("@/components/case/CaseFinanceTab"), {
+  loading: () => <div className="skeleton h-40 rounded-2xl" />,
+});
 import CaseChatPanel from "@/components/case/CaseChatPanel";
 import CaseReviewMeetings from "@/components/case/CaseReviewMeetings";
 import HighCourtStagesAndDocs from "@/components/shared/HighCourtStagesAndDocs";
@@ -426,7 +433,7 @@ function EnquirySummary({ caseId, enquiry, district, causeTitle, canEdit, onChan
           <Line label={t("Issues")} wide>
             <span className="flex flex-wrap gap-1.5">
               {enquiry!.issues!.map(i => (
-                <span key={i} className="text-[11px] px-2 py-0.5 rounded-full"
+                <span key={i} className="text-[12px] px-2 py-0.5 rounded-full"
                   style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{i}</span>
               ))}
             </span>
@@ -591,7 +598,7 @@ function EnquiryEditor({ caseId, enquiry, district, causeTitle, onClose, onSaved
 function Line({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
     <div className={wide ? "sm:col-span-2" : ""}>
-      <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
+      <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{label}</p>
       <div className="text-sm text-(--text) mt-0.5">{children}</div>
     </div>
   );
@@ -759,7 +766,7 @@ function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
       <label className="block text-xs font-semibold text-(--muted) mb-1">
         {label}
         {disabled && (
-          <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-normal text-(--muted)">
+          <span className="ml-1.5 inline-flex items-center gap-1 text-[11px] font-normal text-(--muted)">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-3 h-3">
               <rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/>
             </svg>
@@ -771,7 +778,7 @@ function CmInput({ label, value, onChange, placeholder, disabled, hint }: {
         disabled={disabled} readOnly={disabled} title={disabled ? hint : undefined}
         className={`w-full px-3 py-2 rounded-xl border text-sm focus:outline-none ${disabled ? "cursor-not-allowed opacity-70" : ""}`}
         style={{ background: disabled ? "var(--bg-secondary)" : "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
-      {disabled && hint && <p className="text-[10px] text-(--muted) mt-1">{hint}</p>}
+      {disabled && hint && <p className="text-[11px] text-(--muted) mt-1">{hint}</p>}
     </div>
   );
 }
@@ -843,7 +850,7 @@ function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
           </span>
           <div className="flex items-center gap-2">
             {ap.currentStatus && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full"
+              <span className="text-[12px] px-2 py-0.5 rounded-full"
                 style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>{ap.currentStatus}</span>
             )}
             {canEdit && (
@@ -856,7 +863,7 @@ function AppearanceEntry({ caseId, ap, canEdit, onChanged }: {
         </div>
         <div className="px-4 py-3 space-y-2">
           <p className="text-sm text-(--text) leading-relaxed"><Translatable text={ap.dailyOrderBrief} /></p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-(--muted)">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-(--muted)">
             {ap.lastHearingDate && <span>{t("Last Date of Hearing")}: {fmtDate(ap.lastHearingDate)}</span>}
             {ap.nextHearingDate && <span className="font-semibold" style={{ color: "var(--accent)" }}>{t("Next Date of Hearing")}: {fmtDate(ap.nextHearingDate)}</span>}
           </div>
@@ -1138,7 +1145,7 @@ function CourtLevelEditor({
 
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>
+      <p className="text-[12px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>
         {t("Court level")}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -1158,8 +1165,8 @@ function CourtLevelEditor({
               }}>
               <span>{l.icon}</span>
               <span>{t(l.label)}</span>
-              {isCurrent && <span className="text-[10px] opacity-90">· {t("Current")}</span>}
-              {wasHere && <span className="text-[11px]" style={{ color: "var(--success)" }}>✓</span>}
+              {isCurrent && <span className="text-[11px] opacity-90">· {t("Current")}</span>}
+              {wasHere && <span className="text-[12px]" style={{ color: "var(--success)" }}>✓</span>}
             </button>
           );
         })}
@@ -1260,7 +1267,7 @@ function CourtPartiesSubjectCard({
         {/* Escalation history — the case's journey up the court hierarchy. */}
         {(caseData.escalations?.length ?? 0) > 0 && (
           <div className="pt-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>
+            <p className="text-[12px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--muted)" }}>
               {t("Escalation history")}
             </p>
             <ol className="space-y-1.5">
@@ -1304,7 +1311,7 @@ function CourtPartiesSubjectCard({
             <Line label={t("Reporting")}>
               {r.status === "conflict" ? t("Defect") : r.status === "success" ? t("Cleared") : t("Pending")}
               {r.defectDeadline && (
-                <span className="block text-[11px] text-(--muted) mt-0.5">
+                <span className="block text-[12px] text-(--muted) mt-0.5">
                   {t("Cure by")} {fmtDate(r.defectDeadline)}{r.defectNote ? ` · ${r.defectNote}` : ""}
                 </span>
               )}
@@ -1376,7 +1383,7 @@ function PartiesEditor({
     return (
       <div className="pt-3 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Parties")}</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Parties")}</p>
           {canEdit && (
             <button type="button" onClick={() => setEditing(true)}
               className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
@@ -1388,7 +1395,7 @@ function PartiesEditor({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             {petitioners.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Petitioner(s)")}</p>
+                <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Petitioner(s)")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {petitioners.map((name, i) => (
                     <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}><Translatable text={name} preLine={false} /></span>
@@ -1398,7 +1405,7 @@ function PartiesEditor({
             )}
             {respondents.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Respondent(s) / Defendant(s)")}</p>
+                <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Respondent(s) / Defendant(s)")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {respondents.map((name, i) => (
                     <span key={i} className="text-xs px-2 py-0.5 rounded-full" style={chipStyle}><Translatable text={name} preLine={false} /></span>
@@ -1508,7 +1515,7 @@ function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
             </a>
             {canEdit && (
               <button type="button" onClick={() => setEditing(true)}
-                className="text-[10px] hover:underline shrink-0" style={{ color: "var(--muted)" }}>
+                className="text-[11px] hover:underline shrink-0" style={{ color: "var(--muted)" }}>
                 {t("Edit")}
               </button>
             )}
@@ -1518,7 +1525,7 @@ function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
             <span className="text-xs text-(--muted) italic">{t("Not set")}</span>
             {canEdit && (
               <button type="button" onClick={() => setEditing(true)}
-                className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
+                className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>
                 + {t("Add")}
               </button>
             )}
@@ -1530,7 +1537,7 @@ function ECourtLinkEditor({ caseId, value, canEdit, onChanged }: {
 
   return (
     <div className="sm:col-span-3">
-      <label className="block text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("e-Courts link")}</label>
+      <label className="block text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("e-Courts link")}</label>
       <div className="flex gap-2">
         <input value={draft} onChange={e => setDraft(e.target.value)} type="url"
           placeholder={t("https://services.ecourts.gov.in/…")}
@@ -1666,7 +1673,7 @@ function LitigationTeamPanel({
                   <p className="text-sm font-semibold text-(--text)">
                     {m.name}
                     {i === 0 && (
-                      <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                         style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>{t("Lead")}</span>
                     )}
                   </p>
@@ -1695,7 +1702,7 @@ function LitigationTeamPanel({
               placeholder={t("Search by name or email…")}
               className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none"
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
-            {searching && <p className="text-[11px] text-(--muted)">{t("Searching…")}</p>}
+            {searching && <p className="text-[12px] text-(--muted)">{t("Searching…")}</p>}
             {results.length > 0 && (
               <div className="rounded-lg border overflow-hidden"
                 style={{ borderColor: "var(--border)" }}>
@@ -1716,7 +1723,7 @@ function LitigationTeamPanel({
               </div>
             )}
             {query.length >= 2 && !searching && results.length === 0 && (
-              <p className="text-[11px] text-(--muted)">{t("No matches for")} &quot;{query}&quot;.</p>
+              <p className="text-[12px] text-(--muted)">{t("No matches for")} &quot;{query}&quot;.</p>
             )}
           </div>
         )}
@@ -2018,7 +2025,7 @@ function DisposeButton({ caseId, status, canEdit, onChanged }: {
           <p className="text-xs font-semibold mb-1" style={{ color: "var(--text)" }}>
             {t("Mark this case as disposed / completed?")}
           </p>
-          <p className="text-[11px] mb-2" style={{ color: "var(--muted)" }}>
+          <p className="text-[12px] mb-2" style={{ color: "var(--muted)" }}>
             {t("This sets the status to Disposal and records a completion date. Any upcoming hearing on the calendar is removed.")}
           </p>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
@@ -2098,7 +2105,7 @@ function SubjectEditor({ caseId, subject, canEdit, onChanged }: {
     return (
       <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Subject")}</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Subject")}</p>
           {canEdit && (
             <button type="button" onClick={() => setEditing(true)}
               className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
@@ -2292,16 +2299,16 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
     return (
       <div className="rounded-xl p-3 border" style={wrapperStyle}>
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
           <button type="button" onClick={() => { setEditing(false); setQuery(""); setResults([]); setErr(""); }}
-            className="text-[10px] text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
+            className="text-[11px] text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
         </div>
-        {err && <p className="text-[11px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
+        {err && <p className="text-[12px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
         <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
           placeholder={`${t("Search")} ${t(label)}…`}
           className="w-full px-2.5 py-1.5 rounded-lg border text-sm focus:outline-none"
           style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
-        {searching && <p className="text-[10px] text-(--muted) mt-1">{t("Searching…")}</p>}
+        {searching && <p className="text-[11px] text-(--muted) mt-1">{t("Searching…")}</p>}
         {results.length > 0 && (
           <div className="mt-1 rounded-lg border overflow-hidden" style={{ borderColor: "var(--border)" }}>
             {results.map(u => (
@@ -2309,13 +2316,13 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
                 className="w-full text-left px-2.5 py-1.5 text-sm hover:bg-(--bg-secondary)"
                 style={{ borderBottom: "1px solid var(--border)" }}>
                 <span className="font-medium text-(--text)">{u.name}</span>
-                <span className="text-[11px] text-(--muted) ml-1.5">{u.email}</span>
+                <span className="text-[12px] text-(--muted) ml-1.5">{u.email}</span>
               </button>
             ))}
           </div>
         )}
         {query.trim().length >= 2 && !searching && results.length === 0 && (
-          <p className="text-[10px] text-(--muted) mt-1">{t("No matches")} — &quot;{query}&quot;.</p>
+          <p className="text-[11px] text-(--muted) mt-1">{t("No matches")} — &quot;{query}&quot;.</p>
         )}
       </div>
     );
@@ -2334,14 +2341,14 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
     if (href && person) {
       return (
         <Link href={href} className="rounded-xl p-3 border transition-colors hover:border-(--accent)" style={wrapperStyle}>
-          <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)} →</p>
+          <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)} →</p>
           {inner}
         </Link>
       );
     }
     return (
       <div className="rounded-xl p-3 border" style={wrapperStyle}>
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)}</p>
+        <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t(label)}</p>
         {inner}
       </div>
     );
@@ -2351,21 +2358,21 @@ function PersonAssignEditor({ caseId, label, field, role, person, canEdit, href,
   return (
     <div className="rounded-xl p-3 border" style={wrapperStyle}>
       <div className="flex items-center justify-between mb-1 gap-2">
-        <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
+        <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t(label)}</p>
         <span className="flex items-center gap-2 shrink-0">
           <button type="button" onClick={() => setEditing(true)}
-            className="text-[10px] hover:underline" style={{ color: "var(--accent)" }}>
+            className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>
             {person ? t("Change") : t("Assign")}
           </button>
           {person && (
             <button type="button" disabled={busy} onClick={() => assign(null)}
-              className="text-[10px] hover:underline disabled:opacity-50" style={{ color: "var(--error)" }}>
+              className="text-[11px] hover:underline disabled:opacity-50" style={{ color: "var(--error)" }}>
               {t("Remove")}
             </button>
           )}
         </span>
       </div>
-      {err && <p className="text-[11px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
+      {err && <p className="text-[12px] mb-1" style={{ color: "var(--error-text)" }}>{err}</p>}
       {href && person ? (
         <Link href={href} className="block hover:opacity-80">{inner}</Link>
       ) : inner}
@@ -2717,11 +2724,11 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           {hearingDate && (
             <div className="shrink-0 text-right rounded-xl p-3 border"
               style={{ background: "color-mix(in srgb,var(--accent) 8%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 25%,transparent)" }}>
-              <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
+              <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
               <p className="text-base font-bold mt-0.5" style={{ color: "var(--accent)" }}>
                 {new Date(hearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </p>
-              <p className="text-[10px] text-(--muted)">{new Date(hearingDate).getFullYear()}</p>
+              <p className="text-[11px] text-(--muted)">{new Date(hearingDate).getFullYear()}</p>
             </div>
           )}
         </div>
@@ -2741,7 +2748,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             href={canManageCarePlan && c.community?._id ? `/socialworker/community/${c.community._id}` : undefined}
             onChanged={fetchCase} />
           <div className="rounded-xl p-3 border" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Litigation Member")}</p>
+            <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide mb-1">{t("Litigation Member")}</p>
             {c.litigationMember
               ? <>
                   <p className="text-sm font-semibold text-(--text)"><Translatable text={c.litigationMember.name} preLine={false} /></p>
@@ -3148,7 +3155,7 @@ function CaseDocsList({
                   {doc.label}
                 </a>
               )}
-              <p className="text-[11px] text-(--muted) mt-0.5">
+              <p className="text-[12px] text-(--muted) mt-0.5">
                 {new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
               </p>
             </div>
@@ -3156,12 +3163,12 @@ function CaseDocsList({
             {canEdit && !isEditing && (
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => startEdit(doc)}
-                  className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
+                  className="text-[12px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity"
                   style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
                   {t("Rename")}
                 </button>
                 <button onClick={() => deleteDoc(docId)} disabled={isDeleting}
-                  className="text-[11px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
+                  className="text-[12px] px-2 py-1 rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
                   style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                   {isDeleting ? "…" : t("Delete")}
                 </button>
@@ -3176,7 +3183,7 @@ function CaseDocsList({
 
 function CountPill({ n }: { n: number }) {
   return (
-    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
       style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
       {n}
     </span>

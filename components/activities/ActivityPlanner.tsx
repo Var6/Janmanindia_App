@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import StatusChart from "./StatusChart";
 import KanbanBoard from "./KanbanBoard";
-import Field, { Input, Textarea, Select } from "@/components/ui/Field";
 import { Skeleton, SkeletonRow } from "@/components/ui/Skeleton";
 import { localInputToISO } from "@/lib/datetime";
 import MentionInput, { MentionText, type MentionMember } from "./MentionInput";
@@ -339,7 +338,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                       ? <span>{t("Co-assignees")}</span>
                       : <span className="font-semibold text-(--text)">{coAssignees.length} {coAssignees.length === 1 ? t("co-assignee") : t("co-assignees")}</span>}
                   </span>
-                  <span className="opacity-60 text-[10px]">{coOpen ? "▲" : "▼"}</span>
+                  <span className="opacity-60 text-[11px]">{coOpen ? "▲" : "▼"}</span>
                 </button>
                 {coOpen && (
                   <div className="max-h-40 overflow-y-auto border-t" style={{ borderColor: "var(--border)" }}>
@@ -375,12 +374,12 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-dashed transition-colors hover:border-(--accent) hover:text-(--accent) text-(--muted)"
                 style={{ borderColor: "var(--border)" }}>
                 <span className="text-sm">📅</span> {t("Schedule")}
-                <span className="text-[10px] text-(--muted) font-normal italic">{t("— supports multi-day, syncs to Google Calendar")}</span>
+                <span className="text-[11px] text-(--muted) font-normal italic">{t("— supports multi-day, syncs to Google Calendar")}</span>
               </button>
             ) : (
               <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: "var(--border)" }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Schedule")}</p>
+                  <p className="text-[12px] font-semibold text-(--muted) uppercase tracking-wide">{t("Schedule")}</p>
                   <button type="button"
                     onClick={() => { setTimeOpen(false); setStartDate(""); setStartTime(""); setEndDate(""); setEndTime(""); }}
                     className="text-xs text-(--muted) hover:text-(--error) transition-colors px-1.5 py-0.5"
@@ -390,7 +389,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 </div>
                 {/* Start row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">{t("From")}</span>
+                  <span className="text-[12px] font-medium text-(--muted) w-10 shrink-0">{t("From")}</span>
                   <input type="date" value={startDate}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -409,7 +408,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 </div>
                 {/* End row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-medium text-(--muted) w-10 shrink-0">{t("To")}</span>
+                  <span className="text-[12px] font-medium text-(--muted) w-10 shrink-0">{t("To")}</span>
                   <input type="date" value={endDate}
                     min={startDate || undefined}
                     onChange={(e) => setEndDate(e.target.value)}
@@ -420,7 +419,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                     className="w-36 px-2.5 py-2 rounded-lg border border-(--border) bg-(--bg) text-(--text) text-sm focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all" />
                 </div>
                 {endDate && startDate && endDate !== startDate && (
-                  <p className="text-[10px] text-(--muted) italic">
+                  <p className="text-[11px] text-(--muted) italic">
                     {t("Multi-day activity — runs across")} {dayCount(startDate, endDate)} {t("days.")}
                   </p>
                 )}
@@ -461,7 +460,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
           ))}
         </div>
         {scope === "org" && (
-          <span className="text-[11px] text-(--muted)">{t("Everything planned across the organisation — read-only.")}</span>
+          <span className="text-[12px] text-(--muted)">{t("Everything planned across the organisation — read-only.")}</span>
         )}
       </div>
 
@@ -532,13 +531,13 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 <header className="flex items-start justify-between gap-3 mb-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                      <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                      <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: ps.bg, color: ps.color }}>{a.priority}</span>
-                      <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded text-(--muted) border border-(--border)">
+                      <span className="text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded text-(--muted) border border-(--border)">
                         {a.category}
                       </span>
                       {overdue && (
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded text-white"
+                        <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded text-white"
                           style={{ background: "var(--error, #dc2626)" }}>
                           {t("Overdue")}
                         </span>
@@ -546,7 +545,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                     </div>
                     <p className="text-sm font-semibold text-(--text) leading-snug">{a.title}</p>
                     {a.description && <p className="text-xs text-(--muted) mt-1 leading-relaxed line-clamp-2">{a.description}</p>}
-                    <p className="text-[11px] text-(--muted) mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <p className="text-[12px] text-(--muted) mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                       <span className="font-medium text-(--text-2)">{a.assignee?.name ?? "—"}</span>
                       {a.coAssignees && a.coAssignees.length > 0 && (
                         <span className="font-medium text-(--text-2)">+ {a.coAssignees.map((c) => c.name).join(", ")}</span>
@@ -561,7 +560,7 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                       )}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                  <span className="shrink-0 text-[12px] font-semibold px-2.5 py-1 rounded-full"
                     style={{ background: st.bg, color: st.color }}>
                     {t(st.label)}
                   </span>
@@ -587,27 +586,27 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                 <div className="flex flex-wrap gap-1.5 pt-3 mt-1 border-t border-(--border)/70">
                   {a.status !== "in_progress" && a.status !== "done" && (
                     <button onClick={() => patch(a._id, { status: "in_progress" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[11px] font-semibold rounded text-white disabled:opacity-50"
+                      className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-50"
                       style={{ background: "var(--warning, #f59e0b)" }}>
                       {t("Start")}
                     </button>
                   )}
                   {a.status !== "done" && (
                     <button onClick={() => patch(a._id, { status: "done" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[11px] font-semibold rounded text-white disabled:opacity-50"
+                      className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-50"
                       style={{ background: "var(--success, #16a34a)" }}>
                       {t("Done")}
                     </button>
                   )}
                   {a.status !== "cancelled" && (
                     <button onClick={() => patch(a._id, { status: "cancelled" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[11px] font-semibold rounded border border-(--border) text-(--muted) disabled:opacity-50">
+                      className="px-2.5 py-1 text-[12px] font-semibold rounded border border-(--border) text-(--muted) disabled:opacity-50">
                       {t("Cancel")}
                     </button>
                   )}
                   {(a.createdBy?._id === currentUserId || canAssign) && (
                     <button onClick={() => remove(a._id)} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[11px] font-semibold rounded ml-auto disabled:opacity-50"
+                      className="px-2.5 py-1 text-[12px] font-semibold rounded ml-auto disabled:opacity-50"
                       style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                       {t("Delete")}
                     </button>
@@ -715,7 +714,7 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
   if (total === 0 && !adding) {
     return (
       <button type="button" onClick={() => setAdding(true)}
-        className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-(--muted) hover:text-(--accent) transition-colors">
+        className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-(--muted) hover:text-(--accent) transition-colors">
         <span className="text-xs">＋</span> {t("Add a checklist")}
       </button>
     );
@@ -725,7 +724,7 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
     <div className="mt-3 rounded-lg border bg-(--bg) px-3 py-2 space-y-1.5"
       style={{ borderColor: "var(--border)" }}>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-(--muted)">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-(--muted)">
           {t("Checklist")} {total > 0 && <span className="font-normal">· {done}/{total} {t("done")}</span>}
         </p>
         {total > 0 && (
@@ -738,7 +737,7 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
           </div>
         )}
         <button type="button" onClick={() => setAdding((v) => !v)}
-          className="text-[11px] text-(--muted) hover:text-(--accent) transition-colors px-1">
+          className="text-[12px] text-(--muted) hover:text-(--accent) transition-colors px-1">
           {adding ? t("Cancel") : t("+ Add")}
         </button>
       </div>
@@ -775,19 +774,19 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
                   <>
                     <button type="button"
                       onClick={() => setThreadFor(threadOpen ? null : todo._id)}
-                      className={`text-[11px] transition-all px-1 ${threadOpen ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
+                      className={`text-[12px] transition-all px-1 ${threadOpen ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
                       title={t("Reply")}>
                       💬{commentCount > 0 ? ` ${commentCount}` : ""}
                     </button>
                     <button type="button" disabled={busy}
                       onClick={() => startEdit(todo)}
-                      className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--accent) transition-all px-1"
+                      className="opacity-0 group-hover/item:opacity-100 text-[12px] text-(--muted) hover:text-(--accent) transition-all px-1"
                       title={t("Edit")}>
                       ✎
                     </button>
                     <button type="button" disabled={busy}
                       onClick={() => call({ removeTodo: { id: todo._id } })}
-                      className="opacity-0 group-hover/item:opacity-100 text-[11px] text-(--muted) hover:text-(--error) transition-all px-1"
+                      className="opacity-0 group-hover/item:opacity-100 text-[12px] text-(--muted) hover:text-(--error) transition-all px-1"
                       title={t("Remove")}>
                       ×
                     </button>
@@ -800,22 +799,22 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
               {(commentCount > 0 || threadOpen) && (
                 <div className="ml-6 mt-1 mb-1.5 pl-3 border-l space-y-1" style={{ borderColor: "var(--border)" }}>
                   {commentCount === 0 && threadOpen && (
-                    <p className="text-[11px] text-(--muted) italic">{t("No messages yet — start the discussion.")}</p>
+                    <p className="text-[12px] text-(--muted) italic">{t("No messages yet — start the discussion.")}</p>
                   )}
                   {(todo.comments ?? []).map((c) => {
                     const mine = Boolean(c.by && c.by === currentUserId);
                     const editing = editCommentId === c._id;
                     return (
-                      <div key={c._id} className="group/msg flex items-start gap-1 text-[11px] leading-snug">
+                      <div key={c._id} className="group/msg flex items-start gap-1 text-[12px] leading-snug">
                         {editing ? (
                           <div className="flex-1 flex items-center gap-1">
                             <input value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveCommentEdit(todo._id); } if (e.key === "Escape") { setEditCommentId(null); setEditCommentText(""); } }}
                               autoFocus
-                              className="flex-1 px-1.5 py-0.5 text-[11px] rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
+                              className="flex-1 px-1.5 py-0.5 text-[12px] rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
                               style={{ borderColor: "var(--border)", color: "var(--text)" }} />
-                            <button type="button" onClick={() => saveCommentEdit(todo._id)} className="text-[11px] px-1" style={{ color: "var(--accent)" }} title={t("Save")}>✓</button>
-                            <button type="button" onClick={() => { setEditCommentId(null); setEditCommentText(""); }} className="text-[11px] px-1 text-(--muted)" title={t("Cancel")}>✕</button>
+                            <button type="button" onClick={() => saveCommentEdit(todo._id)} className="text-[12px] px-1" style={{ color: "var(--accent)" }} title={t("Save")}>✓</button>
+                            <button type="button" onClick={() => { setEditCommentId(null); setEditCommentText(""); }} className="text-[12px] px-1 text-(--muted)" title={t("Cancel")}>✕</button>
                           </div>
                         ) : (
                           <>
@@ -844,7 +843,7 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
                         className="flex-1 px-1.5 py-0.5 text-xs rounded border bg-(--surface) focus:outline-none focus:border-(--accent)"
                         style={{ borderColor: "var(--border)", color: "var(--text)" }} />
                       <button type="button" onClick={() => sendReply(todo._id)} disabled={busy || !reply.trim()}
-                        className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
+                        className="px-2.5 py-1 rounded-md text-[12px] font-semibold disabled:opacity-50"
                         style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
                         {t("Send")}
                       </button>
@@ -869,7 +868,7 @@ function ActivityTodos({ activityId, todos, members, currentUserId, onChanged }:
             placeholder={t("Sub-task — type @ to assign someone")}
           />
           <button type="button" onClick={add} disabled={busy || !draft.trim()}
-            className="px-2.5 py-1 rounded-md text-[11px] font-semibold disabled:opacity-50"
+            className="px-2.5 py-1 rounded-md text-[12px] font-semibold disabled:opacity-50"
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {t("Add")}
           </button>

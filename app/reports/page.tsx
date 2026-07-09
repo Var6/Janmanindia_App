@@ -83,7 +83,7 @@ export default async function ReportsIndex() {
                 return (
                   <Link key={String(r._id)} href={`/reports/${String(r._id)}`}
                     className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-5 py-3.5 hover:bg-(--bg) transition-colors">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full whitespace-nowrap"
+                    <span className="text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full whitespace-nowrap"
                       style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
                       {tpl?.name ?? r.template}
                     </span>

@@ -232,7 +232,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
                   </div>
                 )}
                 {query.length >= 2 && !searching && results.length === 0 && (
-                  <p className="text-xs text-(--muted) mt-1">No victims/clients found matching "{query}".</p>
+                  <p className="text-xs text-(--muted) mt-1">No victims/clients found matching &ldquo;{query}&rdquo;.</p>
                 )}
               </div>
             )}
@@ -309,7 +309,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
                 </optgroup>
               ))}
             </select>
-            <p className="text-[11px] text-(--muted) mt-1">
+            <p className="text-[12px] text-(--muted) mt-1">
               We&apos;ll route the workflow (criminal / high court) automatically based on the selected type.
             </p>
           </div>
@@ -323,7 +323,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
               className="mt-0.5 accent-(--accent) cursor-pointer" />
             <span>
               <p className="text-sm font-medium text-(--text)">Already in progress (track only)</p>
-              <p className="text-[11px] text-(--muted) mt-0.5">
+              <p className="text-[12px] text-(--muted) mt-0.5">
                 The case is already underway at a police station / court. Janman is monitoring,
                 not filing. Litigation members will see this case in their queue.
               </p>
@@ -404,7 +404,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
                       style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
                   </div>
                 </div>
-                <p className="text-[11px] text-(--muted) mt-2">
+                <p className="text-[12px] text-(--muted) mt-2">
                   All optional — fill what you have on hand. The internal Janman case number is generated automatically.
                 </p>
               </div>

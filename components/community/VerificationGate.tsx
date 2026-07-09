@@ -150,7 +150,7 @@ function RejectedScreen({ reason, initialType }: { reason?: string; initialType?
               style={{ background: "var(--success-bg)", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)", color: "var(--success-text)" }}>
               <span>✓ {t("New ID attached")}</span>
               <button type="button" onClick={() => setNewUrl("")}
-                className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                 {t("Replace")}
               </button>
             </div>

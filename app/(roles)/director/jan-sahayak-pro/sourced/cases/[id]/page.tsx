@@ -17,7 +17,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         </Link>
         <h2 className="text-xl font-bold text-(--text) mt-2">{c.title}</h2>
         <p className="text-sm text-(--muted) mt-1">{c.client} {t("v.")} {c.respondent}</p>
-        <div className="flex gap-2 mt-2 text-[10px] font-bold uppercase tracking-wider">
+        <div className="flex gap-2 mt-2 text-[11px] font-bold uppercase tracking-wider">
           <span className="px-2 py-0.5 rounded border border-(--border) text-(--accent)">{c.status}</span>
           <span className="px-2 py-0.5 rounded border border-(--border) text-(--accent)">{c.priority}</span>
           <span className="px-2 py-0.5 rounded border border-(--border) text-(--muted)">{c.type}</span>
@@ -66,10 +66,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             {c.hearings.map((h) => (
               <li key={h.id} className="border-l-2 border-(--accent) pl-3">
                 <div className="text-xs font-semibold text-(--text)">{h.date} · {h.purpose}</div>
-                <div className="text-[11px] text-(--muted)">{h.court}</div>
+                <div className="text-[12px] text-(--muted)">{h.court}</div>
                 <div className="text-xs text-(--text) mt-1">{h.outcome}</div>
-                {h.nextDate && <div className="text-[11px] text-(--accent) mt-1">{t("Next:")} {h.nextDate}</div>}
-                <div className="text-[10px] text-(--muted) mt-1">{t("by")} {h.by}</div>
+                {h.nextDate && <div className="text-[12px] text-(--accent) mt-1">{t("Next:")} {h.nextDate}</div>}
+                <div className="text-[11px] text-(--muted) mt-1">{t("by")} {h.by}</div>
               </li>
             ))}
           </ul>
@@ -86,7 +86,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               <li key={d.id} className="border-l-2 border-(--border) pl-3">
                 <div className="text-xs font-semibold text-(--text)">{d.date} · {d.action}</div>
                 <div className="text-xs text-(--text) mt-1">{d.notes}</div>
-                <div className="text-[10px] text-(--muted) mt-1">{t("by")} {d.by}</div>
+                <div className="text-[11px] text-(--muted) mt-1">{t("by")} {d.by}</div>
               </li>
             ))}
           </ul>

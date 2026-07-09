@@ -154,12 +154,12 @@ export default function UserActions({
           {t("Delete")}
         </button>
       )}
-      {error && <span className="text-[11px] text-(--error-text) basis-full">{error}</span>}
+      {error && <span className="text-[12px] text-(--error-text) basis-full">{error}</span>}
 
       {editingPos && (
         <div className="basis-full mt-1 rounded-xl border p-3"
           style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-          <p className="text-[11px] text-(--muted) mb-2">
+          <p className="text-[12px] text-(--muted) mb-2">
             {t("Extra roles this person can switch into (besides their primary role). They get a role switcher in the top bar.")}
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -169,7 +169,7 @@ export default function UserActions({
               return (
                 <button key={r} type="button" disabled={isPrimary}
                   onClick={() => setExtra((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r])}
-                  className="text-[11px] font-medium px-2 py-1 rounded-full border transition-colors disabled:opacity-60"
+                  className="text-[12px] font-medium px-2 py-1 rounded-full border transition-colors disabled:opacity-60"
                   style={on
                     ? { background: "var(--accent)", color: "var(--accent-contrast)", borderColor: "var(--accent)" }
                     : { background: "var(--surface)", color: "var(--text)", borderColor: "var(--border)" }}>

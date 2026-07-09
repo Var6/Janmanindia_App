@@ -53,13 +53,13 @@ export default function MaterialList({ materials, currentUserId, currentRole }: 
             <div className="p-4 flex-1 flex flex-col">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <p className="font-semibold text-sm text-(--text) leading-snug">{m.title}</p>
-                <span className="shrink-0 text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                <span className="shrink-0 text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                   style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                   {FILE_TYPE_LABELS[m.fileType]}
                 </span>
               </div>
               {m.description && <p className="text-xs text-(--muted) line-clamp-2 mb-2">{m.description}</p>}
-              <p className="text-[11px] text-(--muted) mt-auto">
+              <p className="text-[12px] text-(--muted) mt-auto">
                 {m.uploadedBy?.name ?? "Unknown"} · <span className="capitalize">{m.uploadedBy?.role ?? "—"}</span>
                 {m.category ? ` · ${m.category}` : ""}
               </p>

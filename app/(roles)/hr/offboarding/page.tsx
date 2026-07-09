@@ -160,12 +160,12 @@ export default function OffboardingPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-(--text)">{s.name}</p>
                             {s.employeeId && (
-                              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                              <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
                                 style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                                 {s.employeeId}
                               </span>
                             )}
-                            <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-(--accent)/10 text-(--accent)">
+                            <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-(--accent)/10 text-(--accent)">
                               {s.role}
                             </span>
                           </div>
@@ -206,7 +206,7 @@ export default function OffboardingPage() {
                                       {a.name}
                                       {a.identifier && <span className="text-(--muted) text-xs"> · {a.identifier}</span>}
                                     </p>
-                                    <p className="text-[11px] text-(--muted)">
+                                    <p className="text-[12px] text-(--muted)">
                                       {t("Assigned")} {new Date(a.assignedAt).toLocaleDateString("en-IN")}
                                       {a.returnedAt ? ` · ${t("Closed")} ${new Date(a.returnedAt).toLocaleDateString("en-IN")}` : ""}
                                     </p>
@@ -217,7 +217,7 @@ export default function OffboardingPage() {
                                         <button key={opt.value}
                                           disabled={busyAsset === a._id}
                                           onClick={() => markAsset(a._id, s._id, opt.value)}
-                                          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg disabled:opacity-50"
+                                          className="px-2.5 py-1 text-[12px] font-semibold rounded-lg disabled:opacity-50"
                                           style={
                                             opt.tone === "ok"   ? { background: "var(--success, #16a34a)", color: "#fff" }
                                           : opt.tone === "warn" ? { background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }
@@ -228,7 +228,7 @@ export default function OffboardingPage() {
                                       ))}
                                     </div>
                                   ) : (
-                                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
+                                    <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
                                       style={a.status === "returned"
                                         ? { background: "var(--success-bg, #dcfce7)", color: "var(--success-text, #15803d)" }
                                         : { background: "var(--error-bg)", color: "var(--error-text)" }}>
@@ -272,7 +272,7 @@ export default function OffboardingPage() {
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-(--text)">{s.name}</p>
                         {s.employeeId && (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+                          <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
                             style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                             {s.employeeId}
                           </span>

@@ -35,7 +35,7 @@ export default function StatCard({
       <p className="text-3xl font-bold tabular-nums" style={{ color: highlight ? accent : "var(--text)" }}>{value}</p>
     </>
   );
-  const cls = "rounded-2xl border border-(--border) p-5 flex flex-col gap-3";
+  const cls = "rounded-2xl border border-(--border) p-5 flex flex-col gap-3 card-lift";
   const style = { background: "var(--surface)", boxShadow: "var(--shadow-sm)" } as React.CSSProperties;
   return href ? (
     <Link href={href} className={`${cls} transition-colors hover:border-(--accent)`} style={style}>{inner}</Link>

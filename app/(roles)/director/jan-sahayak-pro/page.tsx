@@ -17,7 +17,7 @@ export default async function Page() {
         href="/director/jan-sahayak-pro/sourced/cases"
         className="block bg-(--surface) border border-(--accent)/40 rounded-2xl p-4 hover:border-(--accent) transition-colors"
       >
-        <div className="text-[10px] uppercase tracking-wider text-(--accent) font-bold mb-1">
+        <div className="text-[11px] uppercase tracking-wider text-(--accent) font-bold mb-1">
           {t("New · Ported from jan-sahayak-pro repo")}
         </div>
         <div className="text-sm font-semibold text-(--text)">

@@ -62,14 +62,14 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                       <span className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: PRIORITY_DOT[c.priority] }} />
                       <p className="text-sm font-medium text-(--text) leading-snug">{c.title}</p>
                     </div>
-                    <p className="text-[11px] text-(--muted) ml-4">
+                    <p className="text-[12px] text-(--muted) ml-4">
                       {c.assignee?.name ?? t("Unassigned")}
                       {c.coAssignees && c.coAssignees.length > 0 ? ` +${c.coAssignees.length}` : ""}
                       {" · "}<span className="capitalize">{c.category}</span>
                       {c.dueDate ? ` · ${formatKanbanWhen(c.dueDate, c.endsAt)}` : ""}
                     </p>
                     {overdue && (
-                      <p className="text-[10px] uppercase font-bold mt-1 ml-4" style={{ color: "var(--error, #dc2626)" }}>
+                      <p className="text-[11px] uppercase font-bold mt-1 ml-4" style={{ color: "var(--error, #dc2626)" }}>
                         {t("Overdue")}
                       </p>
                     )}
@@ -79,7 +79,7 @@ export default function KanbanBoard({ items, onStatus, busyId }: Props) {
                           onClick={() => onStatus(c._id, other.key)}
                           disabled={busyId === c._id}
                           title={`${t("Move to")} ${t(other.label)}`}
-                          className="text-[10px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text) hover:border-(--accent) disabled:opacity-50">
+                          className="text-[11px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text) hover:border-(--accent) disabled:opacity-50">
                           → {t(other.label)}
                         </button>
                       ))}

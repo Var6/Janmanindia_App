@@ -139,7 +139,7 @@ export default function CaseReviewSection({
               <div key={r._id} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs font-semibold text-(--text)">{r.authorName ?? t("Advocate")}</span>
-                  <span className="text-[11px] text-(--muted)">
+                  <span className="text-[12px] text-(--muted)">
                     {fmt(r.createdAt)}{r.locked ? ` · 🔒 ${t("locked")}` : ""}
                   </span>
                 </div>
@@ -159,8 +159,8 @@ export default function CaseReviewSection({
                     <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--text)" }}>{r.text}</p>
                     {r.mine && !r.locked && (
                       <div className="flex justify-end gap-3 mt-2">
-                        <button type="button" onClick={() => { setEditing(r._id); setEditText(r.text); }} className="text-[11px] font-medium text-(--accent) hover:underline">{t("Edit")}</button>
-                        <button type="button" onClick={() => remove(r._id)} className="text-[11px] font-medium text-red-600 hover:underline">{t("Delete")}</button>
+                        <button type="button" onClick={() => { setEditing(r._id); setEditText(r.text); }} className="text-[12px] font-medium text-(--accent) hover:underline">{t("Edit")}</button>
+                        <button type="button" onClick={() => remove(r._id)} className="text-[12px] font-medium text-red-600 hover:underline">{t("Delete")}</button>
                       </div>
                     )}
                   </>

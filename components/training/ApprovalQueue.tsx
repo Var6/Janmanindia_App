@@ -55,13 +55,13 @@ export default function ApprovalQueue({ materials }: Props) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="font-medium text-sm text-(--text)">{m.title}</p>
-                  <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                  <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                     style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                     {FILE_TYPE_LABELS[m.fileType]}
                   </span>
                 </div>
                 {m.description && <p className="text-xs text-(--muted) mb-1">{m.description}</p>}
-                <p className="text-[11px] text-(--muted)">
+                <p className="text-[12px] text-(--muted)">
                   By {m.uploadedBy?.name ?? "Unknown"} · <span className="capitalize">{m.uploadedBy?.role ?? "—"}</span>
                   {m.category ? ` · ${m.category}` : ""}
                 </p>

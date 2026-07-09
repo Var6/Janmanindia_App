@@ -264,7 +264,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       {/* Top bar */}
       <div className="dr-controls flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>{t("Daily Social Worker Report")}</p>
+          <p className="text-[12px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>{t("Daily Social Worker Report")}</p>
           <p className="text-xs text-(--muted) mt-1">
             {t("Status:")} <span className="capitalize">{report.status}</span>
             {report.submittedAt && ` · ${t("submitted")} ${new Date(report.submittedAt).toLocaleString("en-IN")}`}
@@ -300,7 +300,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       <header className="dr-section rounded-2xl border p-5"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
         <h1 className="text-base font-bold text-(--text)">{t("Daily Social Worker Report — Survivor / Victim legal aid, rehabilitation and follow-up")}</h1>
-        <p className="text-[11px] text-(--muted) italic mt-1">
+        <p className="text-[12px] text-(--muted) italic mt-1">
           {t("Confidential. Use Case ID / Client Code wherever possible. Avoid unnecessary disclosure of survivor/victim identity.")}
         </p>
       </header>
@@ -389,7 +389,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
                     <td className="py-1 align-top">
                       {!ro && (
                         <button type="button" onClick={() => removeCaseRow(i)}
-                          className="text-[10px] px-1.5 py-0.5 rounded"
+                          className="text-[11px] px-1.5 py-0.5 rounded"
                           style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>✕</button>
                       )}
                     </td>
@@ -487,7 +487,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
                     </td>
                     <td className="py-1 pr-2 align-top"><Cell ro={ro} value={row.status} onChange={v => updateEscalation(i, { status: v })} placeholder={t("Open / in progress / closed")} /></td>
                     <td className="py-1 align-top">
-                      {!ro && <button type="button" onClick={() => removeEscalation(i)} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>✕</button>}
+                      {!ro && <button type="button" onClick={() => removeEscalation(i)} className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>✕</button>}
                     </td>
                   </tr>
                 );
@@ -550,7 +550,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
         </Grid>
       </Section>
 
-      <p className="text-[11px] text-(--muted) italic text-center pb-12">
+      <p className="text-[12px] text-(--muted) italic text-center pb-12">
         {t("Confidentiality reminder: store this report securely. Use Case ID and Client / Survivor Code instead of names where disclosure is not required. Avoid unnecessary detail of trauma history or identity markers.")}
       </p>
     </div>
@@ -608,14 +608,14 @@ function Counter({ label, value, fallback, onChange, ro }: { label: string; valu
   const isAuto = value === undefined || value === null;
   return (
     <div className="dr-pill rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-      <p className="text-[11px] font-semibold text-(--muted) leading-tight">{label}</p>
+      <p className="text-[12px] font-semibold text-(--muted) leading-tight">{label}</p>
       <div className="flex items-baseline gap-2 mt-1">
         <input type="number" min={0} value={display} disabled={ro}
           onChange={e => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
           className="w-16 px-2 py-1 rounded-lg border text-base font-bold disabled:opacity-100"
           style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
         {isAuto && fallback > 0 && (
-          <span className="text-[10px] text-(--muted) italic">auto</span>
+          <span className="text-[11px] text-(--muted) italic">auto</span>
         )}
       </div>
     </div>

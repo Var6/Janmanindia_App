@@ -276,7 +276,7 @@ export default function AdminAssignPage() {
                   )}
                 </div>
                 {coAssigneeIds.length > 0 && (
-                  <p className="text-[11px] text-(--text-2) mt-1.5 font-medium">
+                  <p className="text-[12px] text-(--text-2) mt-1.5 font-medium">
                     {coAssigneeIds.length} co-assignee{coAssigneeIds.length === 1 ? "" : "s"} selected
                   </p>
                 )}
@@ -343,13 +343,13 @@ export default function AdminAssignPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${PRIORITY_COLOR[act.priority]}`}>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${PRIORITY_COLOR[act.priority]}`}>
                               {act.priority}
                             </span>
-                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLOR[act.status]}`}>
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLOR[act.status]}`}>
                               {act.status.replace("_"," ")}
                             </span>
-                            <span className="text-[10px] text-(--muted) border border-(--border) px-2 py-0.5 rounded-full capitalize">
+                            <span className="text-[11px] text-(--muted) border border-(--border) px-2 py-0.5 rounded-full capitalize">
                               {act.category}
                             </span>
                           </div>
@@ -485,11 +485,11 @@ export default function AdminAssignPage() {
                   </div>
                   <div className="shrink-0 text-right">
                     {r.activity && (
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLOR[r.activity.status]}`}>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLOR[r.activity.status]}`}>
                         {r.activity.status.replace("_"," ")}
                       </span>
                     )}
-                    <p className="text-[10px] text-(--muted) mt-1">
+                    <p className="text-[11px] text-(--muted) mt-1">
                       {new Date(r.assignedAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })}
                       {" "}{new Date(r.assignedAt).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" })}
                     </p>

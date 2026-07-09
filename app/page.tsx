@@ -32,7 +32,7 @@ export default async function Home() {
               className="rounded-lg object-contain" style={{ border: "1px solid var(--border)" }} />
             <div className="leading-none">
               <p className="text-sm font-bold text-(--text) tracking-tight">Janman</p>
-              <p className="text-[10px] text-(--muted) uppercase tracking-widest mt-0.5">{t("Legal Aid")}</p>
+              <p className="text-[11px] text-(--muted) uppercase tracking-widest mt-0.5">{t("Legal Aid")}</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -313,7 +313,7 @@ export default async function Home() {
             <Link href="/terms" className="hover:text-(--text) transition-colors">{t("Terms of Service")}</Link>
           </div>
         </div>
-        <p className="mx-auto max-w-7xl mt-6 pt-4 border-t border-(--border) text-[11px] text-(--muted)">
+        <p className="mx-auto max-w-7xl mt-6 pt-4 border-t border-(--border) text-[12px] text-(--muted)">
           {t("© 2026 Janman People's Foundation. All rights reserved.")}
         </p>
       </footer>

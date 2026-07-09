@@ -134,16 +134,16 @@ export default async function CommunityDashboard() {
                 <div key={String(c._id)} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-(--bg) transition-colors">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-(--text) truncate">{c.caseTitle}</p>
-                    <p className="text-[11px] text-(--muted) mt-0.5">#{c.caseNumber} · {c.path === "criminal" ? "Criminal" : "High Court"}</p>
+                    <p className="text-[12px] text-(--muted) mt-0.5">#{c.caseNumber} · {c.path === "criminal" ? "Criminal" : "High Court"}</p>
                     {lastDiary && <p className="text-xs text-(--muted) mt-1.5 line-clamp-1">📌 {lastDiary.findings}</p>}
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                    <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
                       style={{ background: st.bg, color: st.color }}>
                       {c.status}
                     </span>
                     {c.nextHearingDate && (
-                      <span className="text-[11px] text-(--muted)">
+                      <span className="text-[12px] text-(--muted)">
                         Hearing {new Date(c.nextHearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </span>
                     )}
@@ -167,7 +167,7 @@ export default async function CommunityDashboard() {
               <BentoCard accent={g.accent} size="sm"
                 icon="🏛️" title={g.title} description={g.hi}>
                 <p className="text-xs text-(--muted) mt-2 leading-relaxed">{g.description}</p>
-                <p className="text-[11px] mt-2 font-semibold" style={{ color: g.accent }}>Open official site →</p>
+                <p className="text-[12px] mt-2 font-semibold" style={{ color: g.accent }}>Open official site →</p>
               </BentoCard>
             </a>
           ))}
@@ -189,9 +189,9 @@ export default async function CommunityDashboard() {
                 <li key={String(apt._id)} className="px-5 py-3 flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="text-sm text-(--text) truncate">{apt.reason}</p>
-                    <p className="text-[11px] text-(--muted) mt-0.5">{new Date(apt.proposedDate).toLocaleDateString("en-IN")}</p>
+                    <p className="text-[12px] text-(--muted) mt-0.5">{new Date(apt.proposedDate).toLocaleDateString("en-IN")}</p>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                  <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
                     style={{ background: "var(--warning-bg, #fef3c7)", color: "var(--warning-text, #92400e)" }}>
                     {apt.status.replace("_", " ")}
                   </span>

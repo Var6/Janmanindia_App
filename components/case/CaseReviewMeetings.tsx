@@ -44,7 +44,7 @@ function fmtDateTime(d?: string): string {
 function RoleBadge({ name, role, creator }: { name: string; role?: string; creator?: boolean }) {
   const c = creator ? CREATOR_COLOR : roleColor(role);
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium"
       style={{ background: c.bg, color: c.text }}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
       {name}{role ? <span className="opacity-70">· {creator ? "creator" : c.label}</span> : null}
@@ -171,7 +171,7 @@ export default function CaseReviewMeetings({ caseId, creatorId }: { caseId: stri
       <div className="px-5 py-3 border-b flex items-center justify-between flex-wrap gap-2" style={{ borderColor: "var(--border)" }}>
         <div>
           <h2 className="font-semibold text-(--text) text-sm">🗓️ {t("Review meetings & progress")}</h2>
-          <p className="text-[11px] text-(--muted) mt-0.5">{t("Who met, what was decided, actions taken, and the next discussion — colour-coded by role.")}</p>
+          <p className="text-[12px] text-(--muted) mt-0.5">{t("Who met, what was decided, actions taken, and the next discussion — colour-coded by role.")}</p>
         </div>
         {canWrite && (
           <button onClick={() => setOpen((o) => !o)}
@@ -243,7 +243,7 @@ export default function CaseReviewMeetings({ caseId, creatorId }: { caseId: stri
                   <input value={a.text} placeholder={t("What needs to be done?")}
                     onChange={(e) => setActions((p) => p.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
                     className="cm-input flex-1" />
-                  <label className="flex items-center gap-1 text-[11px] text-(--muted) whitespace-nowrap cursor-pointer">
+                  <label className="flex items-center gap-1 text-[12px] text-(--muted) whitespace-nowrap cursor-pointer">
                     <input type="checkbox" checked={a.createActivity} className="accent-(--accent)"
                       onChange={(e) => setActions((p) => p.map((x, j) => j === i ? { ...x, createActivity: e.target.checked } : x))} />
                     {t("create activity")}
@@ -295,14 +295,14 @@ export default function CaseReviewMeetings({ caseId, creatorId }: { caseId: stri
                         <RoleBadge name={m.authorName ?? t("Unknown")} role={m.authorRole} creator={isCreator} />
                       </div>
                       {m.canDelete && (
-                        <button onClick={() => deleteMeeting(m._id)} className="text-[11px] text-(--muted) hover:text-(--error)">{t("Delete")}</button>
+                        <button onClick={() => deleteMeeting(m._id)} className="text-[12px] text-(--muted) hover:text-(--error)">{t("Delete")}</button>
                       )}
                     </div>
 
                     {/* attendees */}
                     {m.attendees.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        <span className="text-[11px] text-(--muted) mr-1">{t("Present:")}</span>
+                        <span className="text-[12px] text-(--muted) mr-1">{t("Present:")}</span>
                         {m.attendees.map((a, i) => <RoleBadge key={i} name={a.name} role={a.role} />)}
                       </div>
                     )}
@@ -325,8 +325,8 @@ export default function CaseReviewMeetings({ caseId, creatorId }: { caseId: stri
                               className="mt-0.5 accent-(--accent)" />
                             <span className={a.done ? "line-through text-(--muted)" : "text-(--text)"}>
                               {a.text}
-                              {a.activity && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px]" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)" }}>📋 {t("activity")}</span>}
-                              {a.outcome && <span className="block text-[11px] text-(--muted) mt-0.5">↳ {a.outcome}</span>}
+                              {a.activity && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[11px]" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)" }}>📋 {t("activity")}</span>}
+                              {a.outcome && <span className="block text-[12px] text-(--muted) mt-0.5">↳ {a.outcome}</span>}
                             </span>
                           </li>
                         ))}
@@ -340,7 +340,7 @@ export default function CaseReviewMeetings({ caseId, creatorId }: { caseId: stri
                       </p>
                     )}
                     {m.nextDate && (
-                      <p className="text-[11px] mt-2 font-medium" style={{ color: "var(--accent)" }}>
+                      <p className="text-[12px] mt-2 font-medium" style={{ color: "var(--accent)" }}>
                         ⏭ {t("Next discussion:")} {fmtDateTime(m.nextDate)}
                       </p>
                     )}

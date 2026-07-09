@@ -147,14 +147,14 @@ export default async function AdministratorDashboard() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
+                        <span className="text-[11px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded"
                           style={{
                             background: t.urgency === "critical" ? "var(--error-bg)" : t.urgency === "high" ? "var(--warning-bg, #fef3c7)" : "var(--bg-secondary, #f3f4f6)",
                             color:      t.urgency === "critical" ? "var(--error-text)" : t.urgency === "high" ? "var(--warning-text, #92400e)" : "var(--muted)",
                           }}>
                           {t.urgency}
                         </span>
-                        <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded text-(--muted) border border-(--border)">
+                        <span className="text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded text-(--muted) border border-(--border)">
                           {t.category}
                         </span>
                       </div>

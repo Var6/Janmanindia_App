@@ -218,7 +218,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
       }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] text-(--muted)">
+          <p className="text-[12px] text-(--muted)">
             {comment.pinned && <span className="mr-1.5">📌</span>}
             <span className="font-semibold text-(--text)">{comment.byName}</span>
             {comment.byRole && <span className="ml-1.5">· {comment.byRole}</span>}
@@ -248,7 +248,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
         </div>
 
         {isMine && !editing && (
-          <div className="flex items-center gap-2 text-[11px] shrink-0">
+          <div className="flex items-center gap-2 text-[12px] shrink-0">
             <button type="button" onClick={() => call({ op: "togglePin", commentId: comment._id })}
               className="hover:underline" style={{ color: "var(--muted)" }}>
               {comment.pinned ? t("Unpin") : t("Pin")}
@@ -295,7 +295,7 @@ function CommentRow({ caseId, comment, currentUserId, onChanged }: {
           </div>
         ) : (
           <button type="button" onClick={() => setReplying(true)}
-            className="text-[11px] hover:underline" style={{ color: "var(--accent)" }}>{t("+ Reply")}</button>
+            className="text-[12px] hover:underline" style={{ color: "var(--accent)" }}>{t("+ Reply")}</button>
         )}
       </div>
     </div>
@@ -350,7 +350,7 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
                 await call({ op: "editReply", commentId, replyId: reply._id, text: draft.trim() });
                 setEditing(false);
               }}
-              className="px-2 py-0.5 rounded text-[11px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="px-2 py-0.5 rounded text-[12px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>{t("Save")}</button>
             <button type="button" onClick={() => { setEditing(false); setDraft(reply.text); }}
               className="text-(--muted) hover:text-(--text)">{t("Cancel")}</button>
@@ -360,7 +360,7 @@ function ReplyRow({ caseId, commentId, reply, currentUserId, onChanged }: {
         <p className="text-(--text) whitespace-pre-line leading-relaxed mt-0.5">{reply.text}</p>
       )}
       {isMine && !editing && (
-        <div className="flex items-center gap-2 mt-1 text-[11px]">
+        <div className="flex items-center gap-2 mt-1 text-[12px]">
           <button type="button" onClick={() => setEditing(true)} className="hover:underline" style={{ color: "var(--accent)" }}>{t("Edit")}</button>
           <button type="button" onClick={() => {
             if (confirm(t("Delete this reply?"))) call({ op: "deleteReply", commentId, replyId: reply._id });

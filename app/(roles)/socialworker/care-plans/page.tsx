@@ -89,8 +89,8 @@ function Section({ title, plans }: { title: string; plans: PlanLean[] }) {
                   </p>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: prio.bg, color: prio.text }}>{p.priority}</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: stat.bg, color: stat.text }}>{p.status.replace("_", " ")}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: prio.bg, color: prio.text }}>{p.priority}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase" style={{ background: stat.bg, color: stat.text }}>{p.status.replace("_", " ")}</span>
                 </div>
               </div>
             </Link>

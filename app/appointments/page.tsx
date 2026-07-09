@@ -210,7 +210,7 @@ function Section({ title, empty, appts, myId, onRespond, onCancel, onLitigationD
                     </p>
                     <p className="text-xs text-(--muted)">{startStr}{a.endDate && ` – ${new Date(a.endDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}</p>
                   </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase shrink-0"
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase shrink-0"
                     style={{ background: stat.bg, color: stat.text }}>{stat.label}</span>
                 </div>
                 <p className="text-sm text-(--text)">{a.reason}</p>
@@ -294,7 +294,7 @@ function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: strin
             <Link key={h._id} href={`${baseHref}/${h._id}`}
               className="flex items-start gap-3 px-4 py-3 rounded-2xl border transition-colors hover:border-(--accent)"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-              <span className="shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded mt-0.5"
+              <span className="shrink-0 text-[11px] font-bold uppercase px-2 py-1 rounded mt-0.5"
                 style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
                 {t("Hearing")}
               </span>
@@ -308,7 +308,7 @@ function HearingsSection({ hearings, role }: { hearings: Hearing[]; role?: strin
                 <p className="text-xs font-semibold text-(--text)">
                   {d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                 </p>
-                <p className="text-[10px]"
+                <p className="text-[11px]"
                   style={{ color: days <= 3 ? "var(--error-text)" : "var(--muted)" }}>
                   {days === 0 ? t("Today") : days === 1 ? t("Tomorrow") : `in ${days}d`}
                 </p>

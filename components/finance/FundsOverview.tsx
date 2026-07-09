@@ -72,7 +72,7 @@ export default function FundsOverview({ href }: { href?: string }) {
 function Cell({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="rounded-xl border p-3" style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
-      <p className="text-[10px] uppercase tracking-wide text-(--muted) font-semibold">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-(--muted) font-semibold">{label}</p>
       <p className="text-lg font-bold mt-0.5" style={{ color: color ?? "var(--text)" }}>{value}</p>
     </div>
   );

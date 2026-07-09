@@ -117,7 +117,7 @@ export default async function FinanceExpensesPage() {
         ) : (
           <div className="rounded-2xl border overflow-hidden"
             style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b text-[11px] font-semibold text-(--muted) uppercase tracking-wide"
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] px-5 py-3 border-b text-[12px] font-semibold text-(--muted) uppercase tracking-wide"
               style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
               <span>{t("Project")}</span>
               <span className="px-3 text-right">{t("Budget")}</span>
@@ -197,7 +197,7 @@ export default async function FinanceExpensesPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-(--text)">₹{e.amount.toLocaleString("en-IN")}</p>
-                      <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full"
+                      <span className="text-[11px] uppercase font-semibold px-1.5 py-0.5 rounded-full"
                         style={{ background: STATUS_LABEL[e.status].bg, color: STATUS_LABEL[e.status].color }}>
                         {t(STATUS_LABEL[e.status].label)}
                       </span>
@@ -233,7 +233,7 @@ export default async function FinanceExpensesPage() {
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-(--text) whitespace-nowrap">₹{e.amount.toLocaleString("en-IN")}</p>
-                    <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                    <span className="text-[11px] uppercase font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
                       style={{ background: st.bg, color: st.color }}>
                       {t(st.label)}
                     </span>

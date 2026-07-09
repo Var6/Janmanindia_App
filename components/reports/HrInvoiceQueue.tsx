@@ -71,12 +71,12 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-(--text)">{r.submitterName}</p>
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full"
+                        <span className="text-[11px] uppercase font-bold px-1.5 py-0.5 rounded-full"
                           style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)" }}>
                           {r.submitterRole}
                         </span>
                         {r.submitterDistrict && (
-                          <span className="text-[10px] text-(--muted)">· {r.submitterDistrict}</span>
+                          <span className="text-[11px] text-(--muted)">· {r.submitterDistrict}</span>
                         )}
                       </div>
                       <p className="text-xs text-(--muted) mt-0.5">
@@ -85,7 +85,7 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-(--text)">₹{r.amount.toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] text-(--muted)">{r.hoursWorked}h · {r.expenses.length} {r.expenses.length === 1 ? t("line") : t("lines")}</p>
+                      <p className="text-[12px] text-(--muted)">{r.hoursWorked}h · {r.expenses.length} {r.expenses.length === 1 ? t("line") : t("lines")}</p>
                     </div>
                   </div>
 
@@ -158,12 +158,12 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
             {forwarded.map(r => (
               <div key={r._id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-(--text)">{r.submitterName} <span className="text-[10px] text-(--muted)">· {r.submitterRole}</span></p>
+                  <p className="text-sm font-medium text-(--text)">{r.submitterName} <span className="text-[11px] text-(--muted)">· {r.submitterRole}</span></p>
                   <p className="text-xs text-(--muted)">
                     {r.submitterDistrict ?? t("no district")} · {new Date(r.date).toLocaleDateString("en-IN")} · ₹{r.amount.toLocaleString("en-IN")}
                   </p>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase"
                   style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>{t("HR Verified")}</span>
               </div>
             ))}
@@ -181,7 +181,7 @@ export default function HrInvoiceQueue({ pending, forwarded, recent }: Props) {
                   <p className="text-sm font-medium text-(--text)">{r.submitterName}</p>
                   <p className="text-xs text-(--muted)">{new Date(r.date).toLocaleDateString("en-IN")} · ₹{r.amount.toLocaleString("en-IN")}</p>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase" style={{
                   background: r.status === "approved" ? "var(--success-bg)" : "var(--error-bg)",
                   color:      r.status === "approved" ? "var(--success-text)" : "var(--error-text)",
                 }}>{r.status}</span>

@@ -51,7 +51,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
       <div className="glass rounded-2xl p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--accent)" }}>
+            <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--accent)" }}>
               {t("Janman People's Foundation")}
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold text-(--text) tracking-tight">{active.title}</h2>
@@ -87,7 +87,7 @@ export default function PolicyViewer({ policies, downloads }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
         {/* Section index */}
         <nav className="glass rounded-2xl p-2 h-fit lg:sticky lg:top-20">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-(--muted) px-3 py-2">{t("On this page")}</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-(--muted) px-3 py-2">{t("On this page")}</p>
           <ul className="space-y-0.5">
             {active.sections.map((s, i) => {
               const id = `sec-${i}`;

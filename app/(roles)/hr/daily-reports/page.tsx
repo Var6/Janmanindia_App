@@ -89,7 +89,7 @@ function Section({ title, rows, t }: { title: string; rows: Lean[]; t: (s: strin
                     {(r.summary?.needSupervisorReview ?? 0) > 0 && ` · ${r.summary?.needSupervisorReview} ${t("for review")}`}
                   </p>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0"
                   style={{ background: stat.bg, color: stat.text }}>{r.status}</span>
               </div>
             </Link>

@@ -183,7 +183,7 @@ export default function OfflineSessions({ currentUserId, canCreate }: Props) {
                       {s.endDate && ` – ${new Date(s.endDate).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
                     </p>
                   </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase shrink-0"
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase shrink-0"
                     style={{
                       background: seatsLeft <= 5 ? "var(--warning-bg)" : "var(--success-bg)",
                       color: seatsLeft <= 5 ? "var(--warning-text)" : "var(--success-text)",
@@ -197,7 +197,7 @@ export default function OfflineSessions({ currentUserId, canCreate }: Props) {
                 {s.topics?.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {s.topics.map(t => (
-                      <span key={t} className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      <span key={t} className="text-[11px] px-2 py-0.5 rounded-full font-medium"
                         style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)" }}>
                         {t}
                       </span>

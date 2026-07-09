@@ -512,11 +512,11 @@ function ApprovalTimeline({ detail }: { detail: ReportDetail }) {
             <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: dot(st.tone) }} />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-(--text)">{st.label}</p>
-              <p className="text-[11px] text-(--muted)">
+              <p className="text-[12px] text-(--muted)">
                 {st.person ?? "—"}{st.at ? ` · ${new Date(st.at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
               </p>
               {st.notes && (
-                <p className="text-[11px] text-(--text-2) mt-1 italic px-2 py-1 rounded"
+                <p className="text-[12px] text-(--text-2) mt-1 italic px-2 py-1 rounded"
                   style={{ background: "var(--bg)" }}>
                   {st.notes}
                 </p>

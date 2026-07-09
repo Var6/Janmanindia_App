@@ -381,7 +381,7 @@ export default function CreateLitigationCaseForm() {
                   onChange={() => setCourtType(opt.value)} className="mt-0.5 accent-(--accent) cursor-pointer" />
                 <span>
                   <p className="text-sm font-semibold text-(--text)">{opt.label}</p>
-                  <p className="text-[11px] text-(--muted) mt-0.5">{opt.description}</p>
+                  <p className="text-[12px] text-(--muted) mt-0.5">{opt.description}</p>
                 </span>
               </label>
             );
@@ -453,7 +453,7 @@ export default function CreateLitigationCaseForm() {
         </div>
         {autoTitle && (
           <div className="rounded-xl px-3 py-2.5" style={{ background: "var(--bg-secondary)" }}>
-            <p className="text-[10px] font-semibold text-(--muted) uppercase tracking-wide">Auto-generated title</p>
+            <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">Auto-generated title</p>
             <p className="text-sm text-(--text) font-mono mt-0.5">{autoTitle}</p>
           </div>
         )}
@@ -585,7 +585,7 @@ export default function CreateLitigationCaseForm() {
                         onChange={() => setFilingStatus(opt.value)} className="mt-0.5 accent-(--accent)" />
                       <span>
                         <p className="text-xs font-semibold text-(--text)">{opt.label}</p>
-                        <p className="text-[10px] text-(--muted) mt-0.5">{opt.description}</p>
+                        <p className="text-[11px] text-(--muted) mt-0.5">{opt.description}</p>
                       </span>
                     </label>
                   );
@@ -603,7 +603,7 @@ export default function CreateLitigationCaseForm() {
                         onChange={() => setReportingStatus(opt.value)} className="mt-0.5 accent-(--accent)" />
                       <span>
                         <p className="text-xs font-semibold text-(--text)">{opt.label}</p>
-                        <p className="text-[10px] text-(--muted) mt-0.5">{opt.description}</p>
+                        <p className="text-[11px] text-(--muted) mt-0.5">{opt.description}</p>
                       </span>
                     </label>
                   );
@@ -620,8 +620,8 @@ export default function CreateLitigationCaseForm() {
                 <Field label="Last date to cure" required>
                   <Input type="date" value={defectDeadline} onChange={e => setDefectDeadline(e.target.value)} required />
                 </Field>
-                <p className="sm:col-span-2 text-[11px]" style={{ color: "var(--warning-text)" }}>
-                  We'll surface a banner on the dashboard 3 days before this date.
+                <p className="sm:col-span-2 text-[12px]" style={{ color: "var(--warning-text)" }}>
+                  We&apos;ll surface a banner on the dashboard 3 days before this date.
                 </p>
               </div>
             )}
@@ -641,7 +641,7 @@ export default function CreateLitigationCaseForm() {
                   onChange={() => setCaseStatus(opt.value)} className="mt-0.5 accent-(--accent)" />
                 <span>
                   <p className="text-xs font-semibold text-(--text)">{opt.label}</p>
-                  <p className="text-[10px] text-(--muted) mt-0.5">{opt.description}</p>
+                  <p className="text-[11px] text-(--muted) mt-0.5">{opt.description}</p>
                 </span>
               </label>
             );
@@ -665,7 +665,7 @@ export default function CreateLitigationCaseForm() {
           <div className="relative">
             <Input value={communityQuery} onChange={e => setCommunityQuery(e.target.value)}
               placeholder="Search by name or email…" />
-            {communitySearching && <p className="text-[11px] text-(--muted) mt-1">Searching…</p>}
+            {communitySearching && <p className="text-[12px] text-(--muted) mt-1">Searching…</p>}
             {communityResults.length > 0 && (
               <div className="absolute z-10 mt-1 w-full rounded-xl border shadow-lg overflow-hidden"
                 style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -687,7 +687,7 @@ export default function CreateLitigationCaseForm() {
               </div>
             )}
             {communityQuery.length >= 2 && !communitySearching && communityResults.length === 0 && (
-              <p className="text-[11px] text-(--muted) mt-1">No victims/clients match "{communityQuery}".</p>
+              <p className="text-[12px] text-(--muted) mt-1">No victims/clients match &ldquo;{communityQuery}&rdquo;.</p>
             )}
           </div>
         )}
@@ -712,7 +712,7 @@ export default function CreateLitigationCaseForm() {
         <div className="relative">
           <Input value={lawyerQuery} onChange={e => setLawyerQuery(e.target.value)}
             placeholder="Search lawyer by name or email…" />
-          {lawyerSearching && <p className="text-[11px] text-(--muted) mt-1">Searching…</p>}
+          {lawyerSearching && <p className="text-[12px] text-(--muted) mt-1">Searching…</p>}
           {lawyerResults.length > 0 && (
             <div className="absolute z-10 mt-1 w-full rounded-xl border shadow-lg overflow-hidden"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -750,7 +750,7 @@ function Section({ title, subtitle, children, required }: { title: string; subti
           {title}
           {required && <span className="ml-1" style={{ color: "var(--error)" }}>*</span>}
         </h3>
-        {subtitle && <p className="text-[11px] text-(--muted) mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="text-[12px] text-(--muted) mt-0.5">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -765,7 +765,7 @@ function Field({ label, hint, required, children }: { label: string; hint?: stri
         {required && <span className="ml-1" style={{ color: "var(--error)" }}>*</span>}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-(--muted) mt-1">{hint}</p>}
+      {hint && <p className="text-[12px] text-(--muted) mt-1">{hint}</p>}
     </div>
   );
 }

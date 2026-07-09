@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getSessionFromCookies } from "@/lib/auth";
 
 /** Single generic proxy used by Jan Sahayak / Legal Suite / Aangan / JNA Pro.
  *  Body: { system: string; messages: { role; content }[]; max_tokens?: number }
@@ -7,6 +8,13 @@ import Anthropic from "@anthropic-ai/sdk";
  *  Note: the API key never leaves the server. */
 export async function POST(req: NextRequest) {
   try {
+    // Signed-in users only — this endpoint spends real API credits, so it must
+    // never be callable anonymously.
+    const session = await getSessionFromCookies();
+    if (!session || session.role === "pending") {
+      return NextResponse.json({ text: "", error: "Unauthorized" }, { status: 401 });
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ text: "AI is not configured on this deployment yet.", error: "missing_key" }, { status: 503 });

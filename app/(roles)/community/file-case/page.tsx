@@ -343,7 +343,7 @@ export default function FileCasePage() {
                   onChange={() => setFilingFor(opt.v)} className="mt-0.5 accent-(--accent) cursor-pointer" />
                 <span>
                   <p className="text-sm font-medium text-(--text)">{opt.label}</p>
-                  <p className="text-[11px] text-(--muted) mt-0.5">{opt.hint}</p>
+                  <p className="text-[12px] text-(--muted) mt-0.5">{opt.hint}</p>
                 </span>
               </label>
             ))}
@@ -368,7 +368,7 @@ export default function FileCasePage() {
                   <Input value={memberQuery} onChange={(e) => setMemberQuery(e.target.value)}
                     placeholder={t("Search by name or email…")} />
                   {memberSearching && (
-                    <p className="text-[11px] text-(--muted) mt-1">{t("Searching…")}</p>
+                    <p className="text-[12px] text-(--muted) mt-1">{t("Searching…")}</p>
                   )}
                   {memberResults.length > 0 && (
                     <div className="absolute z-10 mt-1 w-full rounded-xl border shadow-lg overflow-hidden"
@@ -385,8 +385,8 @@ export default function FileCasePage() {
                     </div>
                   )}
                   {memberQuery.length >= 2 && !memberSearching && memberResults.length === 0 && (
-                    <p className="text-[11px] text-(--muted) mt-1">
-                      {t("No member matches")} "{memberQuery}". {t('Switch to "New victim/client" to create their profile.')}
+                    <p className="text-[12px] text-(--muted) mt-1">
+                      {t("No member matches")} &ldquo;{memberQuery}&rdquo;. {t('Switch to "New victim/client" to create their profile.')}
                     </p>
                   )}
                 </div>
@@ -419,7 +419,7 @@ export default function FileCasePage() {
                 <Input value={newMember.village} onChange={(e) => setNewMember(s => ({ ...s, village: e.target.value }))}
                   placeholder="Khajanchi Hat" />
               </Field>
-              <p className="text-[11px] text-(--muted) sm:col-span-2 -mt-1">
+              <p className="text-[12px] text-(--muted) sm:col-span-2 -mt-1">
                 {t("We'll create a basic community profile for them. They can claim the account later by registering with the same email/phone.")}
               </p>
             </div>
@@ -585,7 +585,7 @@ export default function FileCasePage() {
                   style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
                   <span>✓ {t("Document")} {i + 1}</span>
                   <button type="button" onClick={() => setDocs(prev => prev.filter(x => x !== u))}
-                    className="text-[11px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
+                    className="text-[12px] px-2 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                     {t("Remove")}
                   </button>
                 </li>
@@ -635,7 +635,7 @@ export default function FileCasePage() {
           {loading ? t("Filing your enquiry…") : t("Submit Enquiry")}
         </button>
 
-        <p className="text-[11px] text-center text-(--muted)">
+        <p className="text-[12px] text-center text-(--muted)">
           {t("Your enquiry is private. Only your assigned social worker and lawyer can see it.")}
         </p>
       </form>

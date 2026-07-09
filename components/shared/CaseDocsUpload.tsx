@@ -173,7 +173,7 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
                     opacity: progress.percent == null ? 0.5 : 1,
                   }} />
               </div>
-              <div className="flex items-center justify-between text-[11px]" style={{ color: "var(--muted)" }}>
+              <div className="flex items-center justify-between text-[12px]" style={{ color: "var(--muted)" }}>
                 <span>
                   {progress.percent != null ? `${progress.percent}%` : t("Uploading…")}
                   {progress.totalBytes > 0 && ` · ${fmtMB(progress.loadedBytes)} / ${fmtMB(progress.totalBytes)}`}
@@ -183,7 +183,7 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
             </div>
           )}
 
-          <p className="text-[11px] text-(--muted)">{t("PDF / Word / Excel / image / video · large files supported · choosing a milestone category marks that step as filed.")}</p>
+          <p className="text-[12px] text-(--muted)">{t("PDF / Word / Excel / image / video · large files supported · choosing a milestone category marks that step as filed.")}</p>
         </form>
       ) : (
         <form onSubmit={handleUrlSubmit} className="space-y-3">
@@ -208,7 +208,7 @@ export default function CaseDocsUpload({ caseId, caseType, onUploaded }: Props) 
             style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
             {uploading ? t("Linking…") : t("Link to Case")}
           </button>
-          <p className="text-[11px] text-(--muted)">{t("Paste any publicly accessible S3 or external document URL — it will be stored as a case document.")}</p>
+          <p className="text-[12px] text-(--muted)">{t("Paste any publicly accessible S3 or external document URL — it will be stored as a case document.")}</p>
         </form>
       )}
     </div>

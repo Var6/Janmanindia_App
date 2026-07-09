@@ -64,7 +64,7 @@ export default function CaseChatPanel({ caseId }: { caseId: string }) {
         <div className="px-4 py-8 text-center">
           <p className="text-2xl mb-1">📎</p>
           <p className="text-xs text-(--muted)">{t("No chat discussion yet.")}</p>
-          <p className="text-[11px] text-(--muted) mt-1">{t("Attach this case to a message in Chat to start a thread about it.")}</p>
+          <p className="text-[12px] text-(--muted) mt-1">{t("Attach this case to a message in Chat to start a thread about it.")}</p>
         </div>
       ) : (
         <ul className="divide-y max-h-[60vh] overflow-y-auto" style={{ borderColor: "var(--border)" }}>
@@ -72,13 +72,13 @@ export default function CaseChatPanel({ caseId }: { caseId: string }) {
             <li key={m._id}>
               <Link href="/chat" className="block px-4 py-2.5 hover:bg-(--bg-secondary) transition-colors">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
                     style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                     {m.sender ? initials(m.sender.name) : "?"}
                   </span>
                   <span className="text-xs font-semibold text-(--text) truncate">{m.sender?.name ?? t("Unknown")}</span>
-                  {m.sender?.role && <span className="text-[10px] text-(--muted) capitalize">{m.sender.role}</span>}
-                  <span className="text-[10px] text-(--muted) ml-auto shrink-0">{timeAgo(m.createdAt)}</span>
+                  {m.sender?.role && <span className="text-[11px] text-(--muted) capitalize">{m.sender.role}</span>}
+                  <span className="text-[11px] text-(--muted) ml-auto shrink-0">{timeAgo(m.createdAt)}</span>
                 </div>
                 <p className="text-xs text-(--muted) line-clamp-2 pl-8">
                   {m.audioUrl ? `🎤 ${t("Voice message")}` : (m.text || t("(no text)"))}

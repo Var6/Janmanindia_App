@@ -81,7 +81,8 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
   async function loadCaseOptions() {
     if (caseOptions) return;
     try {
-      const res = await fetch("/api/cases?limit=2000");
+      // Recent 500 is plenty for the attach picker; the search box filters within.
+      const res = await fetch("/api/cases?limit=500");
       const d = await res.json();
       setCaseOptions((d.cases ?? []).map((c: { _id: string; caseNumber?: string; courtCaseNumber?: string; caseTitle?: string }) => ({
         id: String(c._id),
@@ -390,11 +391,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                   placeholder={t("Group name (optional)")} maxLength={80}
                   className="w-full px-2.5 py-1.5 text-xs rounded-md border border-(--border) bg-(--bg) text-(--text) focus:outline-none focus:border-(--accent)" />
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] text-(--muted)">
+                  <p className="text-[11px] text-(--muted)">
                     {groupSelected.size === 0 ? t("Pick members below") : `${groupSelected.size} selected`}
                   </p>
                   <button onClick={createGroup} disabled={groupSelected.size === 0 || creatingGroup}
-                    className="text-[11px] px-2.5 py-1 rounded-md font-bold disabled:opacity-40"
+                    className="text-[12px] px-2.5 py-1 rounded-md font-bold disabled:opacity-40"
                     style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
                     {creatingGroup ? t("Creating…") : t("Create group")}
                   </button>
@@ -435,16 +436,16 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                                 borderColor: checked ? "var(--accent)" : "var(--border)",
                                 color: "var(--accent-contrast)",
                               }}>
-                              {checked && <span className="text-[10px] leading-none">✓</span>}
+                              {checked && <span className="text-[11px] leading-none">✓</span>}
                             </span>
                           )}
-                          <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
+                          <span className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
                             style={{ background: roleColor(u.role).bg, color: roleColor(u.role).text }}>
                             {initials(u.name)}
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-(--text) truncate">{u.name}</p>
-                            <p className="text-[10px] font-medium capitalize truncate" style={{ color: roleColor(u.role).text }}>{roleColor(u.role).label}</p>
+                            <p className="text-[11px] font-medium capitalize truncate" style={{ color: roleColor(u.role).text }}>{roleColor(u.role).label}</p>
                           </div>
                         </button>
                       </li>
@@ -483,7 +484,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                       <button onClick={() => setActiveId(c._id)}
                         className="w-full px-3 py-2.5 text-left transition-colors flex items-start gap-2"
                         style={{ background: isActive ? "var(--accent-subtle)" : "transparent" }}>
-                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5"
+                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 mt-0.5"
                           style={isGroup
                             ? { background: "var(--accent-subtle)", color: "var(--accent)" }
                             : { background: roleColor(peerRole).bg, color: roleColor(peerRole).text }}>
@@ -493,7 +494,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                           <div className="flex justify-between items-baseline gap-2">
                             <p className="text-sm font-semibold text-(--text) truncate">{label}</p>
                             {c.lastMessageAt && (
-                              <span className="text-[10px] text-(--muted) shrink-0">
+                              <span className="text-[11px] text-(--muted) shrink-0">
                                 {timeAgo(c.lastMessageAt)}
                               </span>
                             )}
@@ -501,7 +502,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                           {c.lastMessagePreview ? (
                             <p className="text-xs text-(--muted) truncate mt-0.5">{c.lastMessagePreview}</p>
                           ) : (
-                            <p className="text-[10px] text-(--muted) capitalize mt-0.5">{subtitle}</p>
+                            <p className="text-[11px] text-(--muted) capitalize mt-0.5">{subtitle}</p>
                           )}
                         </div>
                       </button>
@@ -541,7 +542,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                 <p className="text-sm font-semibold text-(--text) truncate">
                   {active ? convLabel(active) : t("Conversation")}
                 </p>
-                <p className="text-[10px] text-(--muted) capitalize truncate">
+                <p className="text-[11px] text-(--muted) capitalize truncate">
                   {active?.type === "group"
                     ? active.participants.map((p) => p.name).join(", ")
                     : activePeer?.role}
@@ -563,11 +564,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                       {mine && !isEditing && (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5">
                           <button onClick={() => { setEditingId(m._id); setEditText(m.text); }}
-                            title={t("Edit")} className="text-[10px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text)">
+                            title={t("Edit")} className="text-[11px] px-1.5 py-0.5 rounded border border-(--border) text-(--muted) hover:text-(--text)">
                             ✎
                           </button>
                           <button onClick={() => deleteMessage(m._id)}
-                            title={t("Delete")} className="text-[10px] px-1.5 py-0.5 rounded text-(--error-text)"
+                            title={t("Delete")} className="text-[11px] px-1.5 py-0.5 rounded text-(--error-text)"
                             style={{ background: "var(--error-bg)" }}>
                             ✕
                           </button>
@@ -578,7 +579,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                           ? { background: "var(--accent)", color: "var(--accent-contrast)" }
                           : { background: "var(--bg)", color: "var(--text)" }}>
                         {!mine && !grouped && (
-                          <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 mb-0.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide opacity-70 mb-0.5">
                             {m.sender.name}
                           </p>
                         )}
@@ -589,11 +590,11 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                               className="w-full px-2 py-1 text-sm rounded border border-(--border) bg-(--bg) text-(--text) resize-none focus:outline-none" />
                             <div className="flex gap-1 justify-end">
                               <button onClick={() => setEditingId(null)}
-                                className="text-[10px] px-2 py-0.5 rounded border border-(--border) text-(--text)" style={{ background: "var(--bg)" }}>
+                                className="text-[11px] px-2 py-0.5 rounded border border-(--border) text-(--text)" style={{ background: "var(--bg)" }}>
                                 {t("Cancel")}
                               </button>
                               <button onClick={() => saveEdit(m._id)}
-                                className="text-[10px] px-2 py-0.5 rounded font-semibold text-(--accent-contrast)"
+                                className="text-[11px] px-2 py-0.5 rounded font-semibold text-(--accent-contrast)"
                                 style={{ background: "var(--accent)" }}>
                                 {t("Save")}
                               </button>
@@ -612,7 +613,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                                   <span className="text-base leading-none">📎</span>
                                   <span className="min-w-0">
                                     <span className="block text-xs font-semibold truncate">{m.caseRef!.caseTitle || t("Case")}</span>
-                                    {m.caseRef!.caseNumber && <span className="block text-[10px] font-mono opacity-70">{m.caseRef!.caseNumber}</span>}
+                                    {m.caseRef!.caseNumber && <span className="block text-[11px] font-mono opacity-70">{m.caseRef!.caseNumber}</span>}
                                   </span>
                                 </span>
                               );
@@ -621,7 +622,7 @@ export default function ChatApp({ currentUserId, currentUserRole }: Props) {
                                 : <div className="block mb-1 px-2.5 py-1.5 rounded-lg border" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>{inner}</div>;
                             })()}
                             {m.text && <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>}
-                            <p className="text-[10px] opacity-60 mt-0.5 text-right">
+                            <p className="text-[11px] opacity-60 mt-0.5 text-right">
                               {m.audioUrl && typeof m.audioDurationSec === "number" && `🎤 ${m.audioDurationSec}s · `}
                               {new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                               {m.editedAt && ` · ${t("edited")}`}

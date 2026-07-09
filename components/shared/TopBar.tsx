@@ -40,7 +40,7 @@ export default function TopBar({ userName, role, roles }: Props) {
       <div className="min-w-0 flex-1">
         {/* Always render the small line — falls back to the role label when there are no parent crumbs.
             Keeps the topbar a consistent height across nested and root pages. */}
-        <nav className="flex items-center gap-1 text-[11px] text-(--muted) leading-none mb-1.5 ">
+        <nav className="flex items-center gap-1 text-[12px] text-(--muted) leading-none mb-1.5 ">
           {parents.length > 0 ? (
             <>
               {parents.map((c, i) => (
@@ -105,7 +105,7 @@ function RoleSwitcher({ role, roles }: { role: string; roles?: string[] }) {
 
   if (!multi) {
     return (
-      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap"
+      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide capitalize whitespace-nowrap"
         style={{ background: palette.bg, color: palette.fg }}>
         {role}
       </span>
@@ -115,7 +115,7 @@ function RoleSwitcher({ role, roles }: { role: string; roles?: string[] }) {
   return (
     <div className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)} disabled={busy} title={t("Switch role")}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
+        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide capitalize whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-60"
         style={{ background: palette.bg, color: palette.fg }}>
         {busy ? "…" : role}
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3"><path d="M4 6l4 4 4-4" /></svg>
@@ -125,7 +125,7 @@ function RoleSwitcher({ role, roles }: { role: string; roles?: string[] }) {
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-1.5 z-30 min-w-44 rounded-xl border overflow-hidden"
             style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-md)" }}>
-            <p className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold border-b"
+            <p className="px-3 py-2 text-[11px] uppercase tracking-wide font-semibold border-b"
               style={{ color: "var(--muted)", borderColor: "var(--border)" }}>{t("Switch role")}</p>
             {options.map((r) => {
               const p = ROLE_PALETTE[r] ?? ROLE_PALETTE.superadmin;
@@ -137,7 +137,7 @@ function RoleSwitcher({ role, roles }: { role: string; roles?: string[] }) {
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.fg }} />
                     <span className="capitalize text-(--text)">{r}</span>
                   </span>
-                  {active && <span className="text-[10px]" style={{ color: "var(--accent)" }}>✓ {t("Active")}</span>}
+                  {active && <span className="text-[11px]" style={{ color: "var(--accent)" }}>✓ {t("Active")}</span>}
                 </button>
               );
             })}
