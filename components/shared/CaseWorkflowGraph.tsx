@@ -493,6 +493,19 @@ const CIVIL_STEPS: StepDef[] = [
   { id: "civ_outcome",    label: "Outcome — Allowed / Disposed" },
 ];
 
+// Supreme Court flow (SLP / appeal / writ under Art. 32). Generic enough to
+// cover civil and criminal SLPs — completion tracked via Case.stageMarks.
+const SUPREME_STEPS: StepDef[] = [
+  { id: "sc_slp",       label: "SLP / Petition Filed" },
+  { id: "sc_defects",   label: "Registry Scrutiny / Defects Cleared" },
+  { id: "sc_notice",    label: "Notice Issued / Listed for Admission" },
+  { id: "sc_leave",     label: "Leave Granted — Appeal Admitted" },
+  { id: "sc_counter",   label: "Counter Affidavit / Reply" },
+  { id: "sc_rejoinder", label: "Rejoinder" },
+  { id: "sc_arguments", label: "Final Arguments" },
+  { id: "sc_judgment",  label: "Judgment / Order" },
+];
+
 function buildLinearGraph(
   steps: StepDef[],
   marks: Record<string, string | Date>,
@@ -760,9 +773,12 @@ interface Props {
    *  the graph card so the must-know facts are visible while planning
    *  next steps. Pass already-filtered (pinned only) entries. */
   pinnedNotes?: Array<{ _id: string; text: string; byName?: string }>;
+  /** Current court level. When "supreme" the dedicated Supreme Court tree is
+   *  rendered instead of reusing the High Court / Writ flow. */
+  courtType?: "supreme" | "highcourt" | "district" | "other";
 }
 
-export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes, stageMarks }: Props) {
+export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtPath, firFiled, bailMatter, createdAt, canEdit, caseId, onChanged, pinnedNotes, stageMarks, courtType }: Props) {
   const t = useT();
   let nodes: GNode[] = [];
   let edges: GEdge[] = [];
@@ -771,8 +787,14 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
   const marks = stageMarks ?? {};
   // Effective flow: explicit prop wins; otherwise infer from the legacy path.
   const effFlow: CaseFlow = flow ?? (path === "criminal" ? "criminal" : "writ");
+  // A Supreme Court matter gets its own tree regardless of the underlying flow.
+  const isSupreme = courtType === "supreme";
 
-  if (effFlow === "criminal" && bailMatter) {
+  if (isSupreme) {
+    const result = buildLinearGraph(SUPREME_STEPS, marks, createdAt);
+    nodes = result.nodes;
+    edges = result.edges;
+  } else if (effFlow === "criminal" && bailMatter) {
     const result = buildBailGraph(criminalPath ?? { firFiled: false, chargesheetFiled: false, chargesFramed: false }, createdAt);
     nodes = result.nodes;
     edges = result.edges;
@@ -864,7 +886,9 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
         style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
         <div>
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-            {effFlow === "criminal"
+            {isSupreme
+              ? t("Supreme Court Workflow")
+              : effFlow === "criminal"
               ? (bailMatter ? t("Bail Workflow")
                  : firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))
               : effFlow === "family" ? t("Family Court Workflow")

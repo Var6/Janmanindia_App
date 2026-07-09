@@ -196,6 +196,40 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
+    /* Set the case's CURRENT court level in ANY direction — fix a wrong pick,
+     * move it down, or move it up. Unlike migrateCase this does NOT rewrite
+     * path/flow, so the case keeps its criminal / civil / family workflow when
+     * the level changes. Every change is recorded in `escalations[]` so the
+     * level history / trail is preserved. */
+    if (body.setCourtLevel) {
+      const LEVEL_LABEL: Record<string, string> = { other: "Tribunal / Forum", district: "Civil / District Court", highcourt: "High Court", supreme: "Supreme Court" };
+      const sc = body.setCourtLevel as { toCourtType?: string; toCourtName?: string; toState?: string; note?: string };
+      const toCourtType = String(sc.toCourtType ?? "");
+      if (!["supreme", "highcourt", "district", "other"].includes(toCourtType)) {
+        return NextResponse.json({ error: "setCourtLevel.toCourtType must be supreme / highcourt / district / other" }, { status: 400 });
+      }
+      const fromType = caseDoc.courtType;
+      if (toCourtType !== fromType) {
+        const nextName = sc.toCourtName !== undefined ? String(sc.toCourtName).trim() : caseDoc.courtName;
+        const nextState = sc.toState !== undefined ? String(sc.toState).trim() : caseDoc.state;
+        const note = typeof sc.note === "string" ? sc.note.trim() : "";
+        update.courtType = toCourtType;
+        if (sc.toCourtName !== undefined) update.courtName = nextName || undefined;
+        if (sc.toState !== undefined) update.state = nextState || undefined;
+        pushOps.escalations = {
+          fromCourtType: fromType,
+          fromCourtName: caseDoc.courtName,
+          toCourtType,
+          toCourtName: nextName || undefined,
+          toState: nextState || undefined,
+          note: note || undefined,
+          at: new Date(),
+          by: session.id,
+        };
+        logAudit("metadata_updated", `Court level set to ${LEVEL_LABEL[toCourtType]}${nextName ? ` — ${nextName}` : ""}${note ? ` (${note})` : ""}`);
+      }
+    }
+
     // Verdict text (criminal path). Set the verdict string and stamp the
     // verdict date the first time a verdict is recorded so the workflow
     // stepper can surface "verdict reached". Ignored for non-criminal matters
