@@ -55,7 +55,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/litigation/cases",        label: "Cases",        icon: "scale"     },
     { href: "/litigation/sos",          label: "SOS Alerts",   icon: "flame"     },
     { href: "/litigation/tools",        label: "Legal Tools",  icon: "gavel"     },
-    { href: "/litigation/reports",      label: "Daily Report", icon: "document"  },
+    { href: "/litigation/reports",      label: "EOD & Invoice", icon: "receipt"  },
     // Invoice / expense approval is finance / director / HR's responsibility,
     // not litigation's. The /litigation/invoices route still exists for the
     // head-lawyer escrow flow, but we don't surface it in the sidebar so
@@ -65,6 +65,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   hr: [
     { href: "/hr",                       label: "Dashboard",       icon: "home"       },
+    { href: "/reports/daily/review",     label: "Report Review",   icon: "bar-chart"  },
     { href: "/hr/invoices",              label: "Invoices",        icon: "receipt"    },
     { href: "/hr/expense-verification",  label: "Expense Verify",  icon: "currency"   },
     { href: "/hr/daily-reports",         label: "Daily Reports",   icon: "document"   },
@@ -81,6 +82,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   administrator: [
     { href: "/administrator",          label: "Dashboard",     icon: "home"       },
+    { href: "/reports/daily/review",   label: "Report Review", icon: "bar-chart"  },
     { href: "/administrator/calendar", label: "Team Calendar", icon: "users-team" },
     { href: "/administrator/assign",   label: "Assign Tasks",  icon: "refresh"    },
     { href: "/administrator/expenses", label: "My Expenses",   icon: "currency"   },
@@ -89,6 +91,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
+    { href: "/reports/daily/review",        label: "Report Review",     icon: "bar-chart"   },
     { href: "/director/projects",           label: "Projects",          icon: "folder"      },
     { href: "/director/hearings",           label: "Hearings",          icon: "calendar"    },
     { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
@@ -104,6 +107,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   superadmin: [
     { href: "/superadmin",            label: "Overview",       icon: "compass"     },
+    { href: "/reports/daily/review",  label: "Report Review",  icon: "bar-chart"   },
     { href: "/superadmin/projects",   label: "Projects",       icon: "folder"      },
     { href: "/director/calendar",     label: "Team Calendar",  icon: "users-team"  },
     { href: "/director/users",        label: "Users",          icon: "users"       },
@@ -119,8 +123,9 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
 
 /** Cross-role utility items shown to every staff role. */
 const STAFF_ITEMS: NavItem[] = [
-  { href: "/cases/new",  label: "New Case",   icon: "file-plus" },
-  { href: "/activities", label: "Activities", icon: "target"    },
+  { href: "/cases/new",     label: "New Case",     icon: "file-plus" },
+  { href: "/activities",    label: "Activities",   icon: "target"    },
+  { href: "/reports/daily", label: "Daily Report", icon: "document"  },
 ];
 
 /** Logistics is an admin-only function — fulfilling tickets, raising office

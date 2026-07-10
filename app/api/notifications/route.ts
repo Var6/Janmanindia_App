@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Notification from "@/models/Notification";
 import { runReviewOverdueCheck } from "@/lib/review-reminders";
+import { runDailyReportReminders, istHour } from "@/lib/daily-report";
 
 const DIRECTOR_ROLES = ["director", "superadmin", "administrator"];
 
@@ -12,6 +13,12 @@ const DIRECTOR_ROLES = ["director", "superadmin", "administrator"];
 let lastCheckAt = 0;
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
+// Daily-report reminders fire from 6pm IST onward. The Vercel cron at 18:00
+// IST is authoritative; this backstop (throttled to once/30min per process)
+// makes sure reminders still go out on deployments without cron.
+let lastReportCheckAt = 0;
+const REPORT_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+
 export async function GET(_request: NextRequest) {
   try {
     const session = await requireSession();
@@ -20,6 +27,14 @@ export async function GET(_request: NextRequest) {
     if (DIRECTOR_ROLES.includes(session.role) && Date.now() - lastCheckAt > CHECK_INTERVAL_MS) {
       lastCheckAt = Date.now();
       try { await runReviewOverdueCheck(); } catch { /* never block the fetch */ }
+    }
+
+    // Any staff member's bell poll after 6pm IST sweeps the daily-report
+    // reminders (deduped inside), so nobody's 6pm nudge depends on cron.
+    if (session.role !== "community" && session.role !== "pending"
+        && istHour() >= 18 && Date.now() - lastReportCheckAt > REPORT_CHECK_INTERVAL_MS) {
+      lastReportCheckAt = Date.now();
+      try { await runDailyReportReminders(); } catch { /* never block the fetch */ }
     }
 
     const notifications = await Notification.find({ recipient: session.id })
