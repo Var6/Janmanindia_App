@@ -17,6 +17,7 @@ export interface CaseIssue {
 }
 
 export const CASE_ISSUES: CaseIssue[] = [
+  { value: "Gender Based Violence (GBV)",  hi: "लैंगिक हिंसा" },
   { value: "Domestic Violence",            hi: "घरेलू हिंसा" },
   { value: "Sexual Harassment",            hi: "यौन उत्पीड़न" },
   { value: "POCSO" },

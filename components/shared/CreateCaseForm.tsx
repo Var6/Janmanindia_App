@@ -24,6 +24,9 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
   const [pocPhone, setPocPhone]           = useState("");
   const [caseTitle, setCaseTitle] = useState("");
   const [caseType, setCaseType]   = useState("");
+  // Project (grant / programme, e.g. GBV, Fellowship) this case is taken under.
+  const [projects, setProjects] = useState<{ _id: string; name: string; code?: string }[]>([]);
+  const [projectId, setProjectId] = useState("");
   // Initial status + tracking fields. Default Open keeps the form one-click
   // for fresh cases; Pending / Escalated apply when registering one that's
   // already underway (police station, lower court, etc).
@@ -43,6 +46,13 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
   const debounceRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/projects")
+      .then((r) => (r.ok ? r.json() : { projects: [] }))
+      .then((d) => setProjects(d.projects ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!query || query.length < 2 || community) {
@@ -129,6 +139,7 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
           relevantSections: relevantSections.trim() || undefined,
           enquiry,
           pointOfContact: { name: pocName.trim(), phone: pocPhone.trim() },
+          ...(projectId ? { project: projectId } : {}),
         }),
       });
       const data = await res.json();
@@ -311,6 +322,22 @@ export default function CreateCaseForm({ defaultOpen = false }: { defaultOpen?: 
             </select>
             <p className="text-[12px] text-(--muted) mt-1">
               We&apos;ll route the workflow (criminal / high court) automatically based on the selected type.
+            </p>
+          </div>
+
+          {/* Project — which programme/grant (e.g. GBV) funds this case */}
+          <div>
+            <label className="block text-sm font-medium text-(--text) mb-1.5">Project</label>
+            <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+              <option value="">Not linked to a project</option>
+              {projects.map((pr) => (
+                <option key={pr._id} value={pr._id}>{pr.code ? `${pr.code} — ` : ""}{pr.name}</option>
+              ))}
+            </select>
+            <p className="text-[12px] text-(--muted) mt-1">
+              Keeps each project&apos;s cases and finances separate (changeable later on the case page).
             </p>
           </div>
 

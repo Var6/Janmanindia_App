@@ -787,11 +787,27 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
   const marks = stageMarks ?? {};
   // Effective flow: explicit prop wins; otherwise infer from the legacy path.
   const effFlow: CaseFlow = flow ?? (path === "criminal" ? "criminal" : "writ");
-  // A Supreme Court matter gets its own tree regardless of the underlying flow.
+  // The tree follows the case's CURRENT court level (the pills on the Court &
+  // Parties card), not just its flow: a matter sitting in the Supreme Court
+  // gets the SC tree, one in a High Court gets the HC petition tree — even if
+  // it started life as a criminal/civil case lower down. District / other
+  // levels keep their flow-specific trees.
   const isSupreme = courtType === "supreme";
+  const isHighCourt = courtType === "highcourt";
 
   if (isSupreme) {
     const result = buildLinearGraph(SUPREME_STEPS, marks, createdAt);
+    nodes = result.nodes;
+    edges = result.edges;
+  } else if (isHighCourt) {
+    const result = buildHCGraph(
+      highCourtPath ?? {
+        petitionFiled: { filed: false }, supportingAffidavit: { filed: false },
+        admission: { filed: false }, counterAffidavit: { filed: false },
+        rejoinder: { filed: false }, pleaClose: { filed: false }, inducement: { filed: false },
+      },
+      createdAt,
+    );
     nodes = result.nodes;
     edges = result.edges;
   } else if (effFlow === "criminal" && bailMatter) {
@@ -888,6 +904,8 @@ export default function CaseWorkflowGraph({ path, flow, criminalPath, highCourtP
           <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
             {isSupreme
               ? t("Supreme Court Workflow")
+              : isHighCourt
+              ? t("High Court Workflow")
               : effFlow === "criminal"
               ? (bailMatter ? t("Bail Workflow")
                  : firFiled ? t("Criminal — FIR Workflow") : t("Criminal — Complaint Workflow"))

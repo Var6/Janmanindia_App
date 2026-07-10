@@ -2893,6 +2893,15 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         {/* Case context cards — moved out of the always-visible header so the
             top of the page stays clean. They live here under Legal Progress. */}
         <CourtPartiesSubjectCard caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
+        {/* Which project (grant / programme, e.g. GBV, Fellowship) funds this
+            case — dropdown editable by the creator or director+. */}
+        <ProjectPhaseCard
+          caseId={c._id}
+          project={c.project}
+          phase={c.projectPhase}
+          canChange={isCreator || ["director", "superadmin", "administrator"].includes(meRole)}
+          onChanged={fetchCase}
+        />
         <PointOfContactCard caseId={c._id} poc={c.pointOfContact} canEdit={canEdit} onChanged={fetchCase} />
         <LitigationTeamPanel caseId={c._id} caseData={c} canEdit={canEdit} onChanged={fetchCase} />
         {/* Cheatcode / strategy notes now live in the right rail beside the case
@@ -2963,10 +2972,11 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
           );
         })()}
 
-        {/* High Court 4-stage tracker + named document slots. Only the Writ /
-            High Court flow uses these; criminal/family/civil flows are fully
-            covered by their own workflow graph above. */}
-        {(((c as { flow?: CaseFlow }).flow
+        {/* High Court 4-stage tracker + named document slots. Shown for the
+            Writ flow AND for any case whose CURRENT level is the High Court
+            (the tree above follows the court-level pills the same way). */}
+        {(c.courtType === "highcourt"
+          || ((c as { flow?: CaseFlow }).flow
             ?? lookupECourtType(c.caseType ?? "")?.flow
             ?? (c.path === "criminal" ? "criminal" : "writ")) === "writ") && (
           <HighCourtStagesAndDocs caseId={c._id} caseData={c} canEdit={canEdit} onChanged={refresh} />

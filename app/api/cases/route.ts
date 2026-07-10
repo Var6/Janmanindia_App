@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Case from "@/models/Case";
@@ -113,6 +114,8 @@ export async function POST(request: NextRequest) {
             enquiry: enquiryRaw,
             pointOfContact: pocRaw,
             attachments: attachmentsRaw,
+            project: projectRaw,
+            projectPhase: projectPhaseRaw,
             voiceAttachment } = body as {
       caseTitle: string;
       path?: "criminal" | "highcourt";
@@ -189,6 +192,11 @@ export async function POST(request: NextRequest) {
       };
       /** Relevant documents uploaded on the intake form. */
       attachments?: { url: string; label?: string }[];
+      /** Project (grant / programme, e.g. GBV, Fellowship) funding this case,
+       *  plus the phase within it. Optional at creation; editable later from
+       *  the case page's Project card. */
+      project?: string;
+      projectPhase?: string;
     };
 
     // caseTitle is optional on the community intake form — when absent we
@@ -373,6 +381,8 @@ export async function POST(request: NextRequest) {
       stage: stage?.trim() || undefined,
       compensationStatus: compensationStatus?.trim() || undefined,
       community: communityRef,
+      ...(projectRaw && mongoose.Types.ObjectId.isValid(projectRaw) ? { project: projectRaw } : {}),
+      ...(typeof projectPhaseRaw === "string" && projectPhaseRaw.trim() ? { projectPhase: projectPhaseRaw.trim() } : {}),
       // Litigation members on the case. Lead is the first id (session lawyer
       // when they file themselves, else the first explicit share). The
       // legacy single-lawyer field stays mirrored for back-compat.

@@ -92,6 +92,17 @@ export default function CreateLitigationCaseForm() {
   /* ── Janman district (where the case is filed) ───────────────────── */
   const [district, setDistrict] = useState("");
 
+  /* ── Project (grant / programme, e.g. GBV, Fellowship) ───────────── */
+  const [projects, setProjects] = useState<{ _id: string; name: string; code?: string; phases?: { name: string }[] }[]>([]);
+  const [projectId, setProjectId] = useState("");
+  const [projectPhase, setProjectPhase] = useState("");
+  useEffect(() => {
+    fetch("/api/projects")
+      .then((r) => (r.ok ? r.json() : { projects: [] }))
+      .then((d) => setProjects(d.projects ?? []))
+      .catch(() => {});
+  }, []);
+
   /* ── Reporter (mandatory) — who reported this matter ─────────────── */
   const [reporterName,  setReporterName]  = useState("");
   const [reporterPhone, setReporterPhone] = useState("");
@@ -289,6 +300,8 @@ export default function CreateLitigationCaseForm() {
         // Point of contact + reporter — mandatory on every case.
         pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
         enquiry: { filerName: reporterName.trim(), filerPhone: reporterPhone.trim() },
+        // Project attribution — keeps each programme's finances separate.
+        ...(projectId ? { project: projectId, ...(projectPhase ? { projectPhase } : {}) } : {}),
         // Sharing
         ...(shareWith.length ? { litigationMemberIds: shareWith.map(l => l._id) } : {}),
       };
@@ -516,6 +529,29 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── 4. Case type (workflow path) ────────────────────────── */}
+      <Section title="Project" subtitle="Which programme / grant is this case taken under (e.g. GBV — Gender Based Violence, Fellowship)? Keeps each project's cases and finances separate.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Project">
+            <Select value={projectId} onChange={e => { setProjectId(e.target.value); setProjectPhase(""); }}>
+              <option value="">Not linked to a project</option>
+              {projects.map(pr => (
+                <option key={pr._id} value={pr._id}>{pr.code ? `${pr.code} — ` : ""}{pr.name}</option>
+              ))}
+            </Select>
+          </Field>
+          {(projects.find(pr => pr._id === projectId)?.phases?.length ?? 0) > 0 && (
+            <Field label="Funding phase">
+              <Select value={projectPhase} onChange={e => setProjectPhase(e.target.value)}>
+                <option value="">Choose phase…</option>
+                {(projects.find(pr => pr._id === projectId)?.phases ?? []).map(ph => (
+                  <option key={ph.name} value={ph.name}>{ph.name}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+        </div>
+      </Section>
+
       <Section title="4. Type of case" subtitle="Case types shown match the court selected above (eCourts catalog). Picks which workflow graph drives the case page.">
         <Select value={caseType} onChange={e => setCaseType(e.target.value)} required>
           <option value="" disabled>Choose a case type…</option>
