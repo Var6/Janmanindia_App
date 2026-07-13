@@ -77,6 +77,7 @@ export default async function LitigationCasesPage() {
     hearingISO: c.nextHearingDate ? new Date(c.nextHearingDate).toISOString() : undefined,
     docs: c.documents?.length ?? 0,
     diary: c.caseDiary?.length ?? 0,
+    isPrivate: !!c.isPrivate,
   }));
 
   return (

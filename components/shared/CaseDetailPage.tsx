@@ -111,6 +111,8 @@ type PopulatedCase = {
   nextHearingDate?: string;
   documents: DocMeta[];
   caseDiary: Array<{ _id: string; date: string; findings: string; writtenBy: string }>;
+  /** Private case — creator-only visibility (badge in the header). */
+  isPrivate?: boolean;
   enquiry?: Enquiry;
   courtAppearances?: CourtAppearance[];
   auditLog?: Array<{
@@ -2701,6 +2703,13 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
               ⚖ {c.courtCaseNumber}
             </span>
           )}
+          {c.isPrivate && (
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full uppercase"
+              data-tip={t("Only you can see this case")}
+              style={{ background: "var(--accent-3-bg)", color: "var(--accent-3)" }}>
+              🔒 {t("Private")}
+            </span>
+          )}
           <StatusEditor caseId={c._id} value={c.status} canEdit={canEdit} onChanged={fetchCase} />
           <span className="text-xs px-2.5 py-1 rounded-full"
             style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
@@ -2721,16 +2730,37 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
             <p className="text-xs text-(--muted) mt-1">{t("Filed")} {fmtDate(c.createdAt)} · {t("Last updated")} {fmtDate(c.updatedAt)}</p>
           </div>
 
-          {hearingDate && (
-            <div className="shrink-0 text-right rounded-xl p-3 border"
-              style={{ background: "color-mix(in srgb,var(--accent) 8%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 25%,transparent)" }}>
-              <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
-              <p className="text-base font-bold mt-0.5" style={{ color: "var(--accent)" }}>
-                {new Date(hearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              </p>
-              <p className="text-[11px] text-(--muted)">{new Date(hearingDate).getFullYear()}</p>
-            </div>
-          )}
+          {(() => {
+            // Last hearing = most recent logged court appearance in the past.
+            const past = (c.courtAppearances ?? [])
+              .map((a) => (a?.date ? new Date(a.date).getTime() : 0))
+              .filter((ts) => ts > 0 && ts <= Date.now());
+            const lastHearing = past.length ? new Date(Math.max(...past)) : null;
+            return (
+              <div className="shrink-0 flex gap-2">
+                {lastHearing && (
+                  <div className="text-right rounded-xl p-3 border"
+                    style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
+                    <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Last Hearing")}</p>
+                    <p className="text-base font-bold mt-0.5 text-(--text)">
+                      {lastHearing.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
+                    <p className="text-[11px] text-(--muted)">{lastHearing.getFullYear()}</p>
+                  </div>
+                )}
+                {hearingDate && (
+                  <div className="text-right rounded-xl p-3 border"
+                    style={{ background: "color-mix(in srgb,var(--accent) 8%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 25%,transparent)" }}>
+                    <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Next Hearing")}</p>
+                    <p className="text-base font-bold mt-0.5" style={{ color: "var(--accent)" }}>
+                      {new Date(hearingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
+                    <p className="text-[11px] text-(--muted)">{new Date(hearingDate).getFullYear()}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Parties row. Social workers (and director/superadmin viewing this

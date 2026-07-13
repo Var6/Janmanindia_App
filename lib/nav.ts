@@ -40,7 +40,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
     { href: "/socialworker/cases",           label: "Cases",          icon: "scale"       },
     { href: "/socialworker/care-plans",      label: "Care Plans",     icon: "user-circle" },
-    { href: "/socialworker/daily-reports",   label: "Daily Reports",  icon: "document"    },
+    { href: "/socialworker/daily-reports",   label: "Weekly Report",  icon: "document"    },
     { href: "/socialworker/queries",         label: "Queries",        icon: "search"      },
     { href: "/socialworker/plv-requests",    label: "PLV Requests",   icon: "users"       },
     { href: "/schemes",                       label: "Schemes",        icon: "scroll"      },
@@ -66,9 +66,10 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   hr: [
     { href: "/hr",                       label: "Dashboard",       icon: "home"       },
     { href: "/reports/daily/review",     label: "Report Review",   icon: "bar-chart"  },
+    { href: "/reports/expenses",         label: "Expense Report",  icon: "receipt"    },
     { href: "/hr/invoices",              label: "Invoices",        icon: "receipt"    },
     { href: "/hr/expense-verification",  label: "Expense Verify",  icon: "currency"   },
-    { href: "/hr/daily-reports",         label: "Daily Reports",   icon: "document"   },
+    { href: "/hr/daily-reports",         label: "Weekly Reports",  icon: "document"   },
     { href: "/hr/attendance",            label: "Attendance",      icon: "clock"      },
     { href: "/hr/onboarding",            label: "Onboarding",      icon: "user-plus"  },
     { href: "/hr/offboarding",           label: "Offboarding",     icon: "user-minus" },
@@ -77,12 +78,14 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   finance: [
     { href: "/finance",          label: "Dashboard",   icon: "home"        },
+    { href: "/reports/expenses", label: "Expense Report", icon: "receipt"  },
     { href: "/finance/expenses", label: "Expenses",    icon: "currency"    },
     { href: "/finance/salaries", label: "Salaries",    icon: "credit-card" },
   ],
   administrator: [
     { href: "/administrator",          label: "Dashboard",     icon: "home"       },
     { href: "/reports/daily/review",   label: "Report Review", icon: "bar-chart"  },
+    { href: "/reports/expenses",       label: "Expense Report", icon: "receipt"   },
     { href: "/administrator/calendar", label: "Team Calendar", icon: "users-team" },
     { href: "/administrator/assign",   label: "Assign Tasks",  icon: "refresh"    },
     { href: "/administrator/expenses", label: "My Expenses",   icon: "currency"   },
@@ -92,6 +95,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
     { href: "/reports/daily/review",        label: "Report Review",     icon: "bar-chart"   },
+    { href: "/reports/expenses",            label: "Expense Report",    icon: "receipt"     },
     { href: "/director/projects",           label: "Projects",          icon: "folder"      },
     { href: "/director/hearings",           label: "Hearings",          icon: "calendar"    },
     { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
@@ -108,6 +112,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   superadmin: [
     { href: "/superadmin",            label: "Overview",       icon: "compass"     },
     { href: "/reports/daily/review",  label: "Report Review",  icon: "bar-chart"   },
+    { href: "/reports/expenses",      label: "Expense Report", icon: "receipt"     },
     { href: "/superadmin/projects",   label: "Projects",       icon: "folder"      },
     { href: "/director/calendar",     label: "Team Calendar",  icon: "users-team"  },
     { href: "/director/users",        label: "Users",          icon: "users"       },

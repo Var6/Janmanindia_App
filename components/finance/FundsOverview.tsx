@@ -46,8 +46,11 @@ export default function FundsOverview({ href }: { href?: string }) {
 
       <div className="space-y-2">
         {projects.map((p) => {
-          const pct = p.totalBudget > 0 ? Math.min(100, Math.round((p.spent / p.totalBudget) * 100)) : 0;
-          const over = p.spent > p.totalBudget && p.totalBudget > 0;
+          // Committed = paid + director-approved: approval already reserves
+          // the money, so the bar reflects it immediately.
+          const committed = p.spent + (p.owed ?? 0);
+          const pct = p.totalBudget > 0 ? Math.min(100, Math.round((committed / p.totalBudget) * 100)) : 0;
+          const over = committed > p.totalBudget && p.totalBudget > 0;
           return (
             <div key={p._id} className="text-xs">
               <div className="flex items-center justify-between gap-2 mb-0.5">

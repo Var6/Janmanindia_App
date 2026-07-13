@@ -35,7 +35,7 @@ export default async function HrDailyReportsPage() {
     <div className="space-y-6">
       {!dbOk && <NoDBBanner />}
       <div>
-        <h1 className="text-2xl font-bold text-(--text)">{t("Daily Reports — Supervisor Review")}</h1>
+        <h1 className="text-2xl font-bold text-(--text)">{t("Weekly Reports — Supervisor Review")}</h1>
         <p className="text-sm text-(--muted) mt-1 max-w-3xl">
           {t("Read social workers' submitted daily reports, add remarks, and mark them reviewed. Click a row to open the full report (printable / downloadable as PDF).")}
         </p>

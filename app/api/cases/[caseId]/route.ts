@@ -39,13 +39,15 @@ export async function GET(_request: NextRequest, { params }: Params) {
     // The person who filed the case always retains access, whatever their role.
     const isCreator = creatorId !== "" && creatorId === session.id;
 
-    const allowed =
-      session.role === "superadmin" ||
-      session.role === "director" ||
-      isCreator ||
-      (session.role === "community" && communityId === session.id) ||
-      isAssignedLitigation ||
-      (session.role === "socialworker" && swId === session.id);
+    const allowed = caseDoc.isPrivate
+      // A private case is its creator's alone — nobody else, directors included.
+      ? isCreator
+      : (session.role === "superadmin" ||
+         session.role === "director" ||
+         isCreator ||
+         (session.role === "community" && communityId === session.id) ||
+         isAssignedLitigation ||
+         (session.role === "socialworker" && swId === session.id));
 
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -72,6 +74,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // superadmin can edit any case. A litigation member can edit a case they're
     // the lead on OR a shared member of. Everyone else is forbidden.
     const isCreator = String(caseDoc.createdBy ?? "") !== "" && String(caseDoc.createdBy) === session.id;
+    if (caseDoc.isPrivate && !isCreator) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const isPrivileged = session.role === "director" || session.role === "superadmin" || session.role === "administrator";
     let isAssignedLitigation = false;
     if (session.role === "litigation") {

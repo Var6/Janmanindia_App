@@ -384,30 +384,5 @@ input::placeholder, textarea::placeholder {
   .card-lift, .btn-gradient { transition: none; }
 }
 
-/* ── Content protection ──────────────────────────────────────────────────── */
-/*  Disable text selection app-wide as a second layer behind the JS clipboard
- *  guard (components/security/SecurityGuard.tsx). This cannot stop OS-level
- *  screenshots (no web API can). */
-* {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none; /* suppress iOS long-press copy/save menu */
-}
-
-/* …but typing fields MUST stay selectable — without this users can't select
- * text inside their own inputs to correct it, which made forms feel broken. */
-input, textarea, [contenteditable="true"] {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-}
-
-img,
-svg {
-  -webkit-user-drag: none;
-  user-drag: none;
-  pointer-events: auto;
-}
+/* Content protection removed by request — text selection, copy/paste and
+ * right-click work normally everywhere. */

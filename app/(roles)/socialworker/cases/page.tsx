@@ -33,6 +33,7 @@ export default async function SWCasesPage() {
           { socialWorker: new mongoose.Types.ObjectId(session.id) },
           { createdBy:    new mongoose.Types.ObjectId(session.id) },
         ],
+        isPrivate: { $ne: true },
       })
         .populate("community", "name email")
         .populate("litigationMember", "name")

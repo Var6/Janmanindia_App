@@ -62,15 +62,15 @@ export default function DailyReportsIndex() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-(--text)">{t("Daily Reports")}</h1>
+          <h1 className="text-2xl font-bold text-(--text)">{t("Weekly Report")}</h1>
           <p className="text-sm text-(--muted) mt-1 max-w-3xl">
-            {t("One daily report per working day — covers cases handled, scheme linkages, counselling, legal-aid follow-ups, urgent escalations and supervisor review. Auto-derived counters keep filling minimal.")}
+            {t("One structured report per week — covers cases handled, scheme linkages, counselling, legal-aid follow-ups, urgent escalations and supervisor review. (Your quick daily note lives under Daily Report in the sidebar.)")}
           </p>
         </div>
         <button onClick={() => setShowFormForDate(new Date().toISOString().slice(0, 10))}
           className="px-4 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
           style={{ background: "var(--accent)", color: "var(--accent-contrast)", boxShadow: "0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent)" }}>
-          {todayReport ? t("📝 Continue Today's Report") : t("+ Today's Report")}
+          {todayReport ? t("📝 Continue This Week's Report") : t("+ New Weekly Report")}
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export default function DailyReportsIndex() {
       ) : reports.length === 0 ? (
         <div className="py-12 text-center rounded-2xl border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-3xl mb-2">📒</p>
-          <p className="text-sm text-(--muted)">{t("No daily reports yet. Click + Today's Report to start.")}</p>
+          <p className="text-sm text-(--muted)">{t("No weekly reports yet. Click + New Report to start.")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -117,7 +117,7 @@ export default function DailyReportsIndex() {
       )}
 
       <p className="text-xs text-(--muted)">
-        {t("Supervisors (HR / Director) can review submitted reports from")} <Link className="underline hover:text-(--text)" href="/hr/daily-reports">{t("HR > Daily Reports")}</Link>.
+        {t("Supervisors (HR / Director) can review submitted reports from")} <Link className="underline hover:text-(--text)" href="/hr/daily-reports">{t("HR > Weekly Reports")}</Link>.
       </p>
     </div>
   );

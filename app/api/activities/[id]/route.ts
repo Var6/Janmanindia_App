@@ -214,9 +214,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ activity });
     }
 
+    const isCreator = String(activity.createdBy) === session.id;
+
     if (title?.trim()) activity.title = title.trim();
     if (description !== undefined) activity.description = description.trim();
     if (priority) activity.priority = priority;
+    // Rescheduling is the CREATOR's call — nobody else moves the slot.
+    if (dueDate !== undefined || endsAt !== undefined) {
+      if (!isCreator) {
+        return NextResponse.json({ error: "Only the activity's creator can reschedule it." }, { status: 403 });
+      }
+    }
     if (dueDate !== undefined) activity.dueDate = dueDate ? new Date(dueDate) : undefined;
     if (endsAt !== undefined) {
       const candidate = endsAt ? new Date(endsAt) : undefined;
@@ -230,6 +238,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (notes !== undefined) activity.notes = notes;
 
     if (status) {
+      // Concluding is only possible once the scheduled slot has passed —
+      // an activity planned for tomorrow can't be marked done today.
+      if (status === "done") {
+        const schedEnd = activity.endsAt ?? activity.dueDate;
+        if (schedEnd && new Date(schedEnd).getTime() > Date.now()) {
+          return NextResponse.json(
+            { error: "This activity can only be concluded after its scheduled time has passed." },
+            { status: 400 }
+          );
+        }
+      }
+      // Cancelling is creator-only (the UI no longer offers it broadly).
+      if (status === "cancelled" && !isCreator) {
+        return NextResponse.json({ error: "Only the activity's creator can cancel it." }, { status: 403 });
+      }
       activity.status = status;
       if (status === "in_progress" && !activity.startedAt) activity.startedAt = new Date();
       if (status === "done")        activity.completedAt = new Date();
@@ -311,10 +334,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const activity = await Activity.findById(id);
     if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // Removing an activity is the creator's call alone.
     const isCreator = String(activity.createdBy) === session.id;
-    const isPrivileged = ASSIGN_ROLES.includes(session.role);
-    if (!isCreator && !isPrivileged) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!isCreator) {
+      return NextResponse.json({ error: "Only the activity's creator can delete it." }, { status: 403 });
     }
 
     // Delete the calendar event first (uses the saved owner+eventId), then the activity.

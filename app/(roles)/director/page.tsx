@@ -28,7 +28,7 @@ export default async function AdminDashboard() {
 
   const [allCases, litigationMembers, totalUsers, unassignedCount] = dbOk
     ? await Promise.all([
-        Case.find({}).sort({ updatedAt: -1 }).limit(15)
+        Case.find({ isPrivate: { $ne: true } }).sort({ updatedAt: -1 }).limit(15)
           .populate("litigationMember", "name")
           .populate("community", "name")
           .lean(),
@@ -36,7 +36,7 @@ export default async function AdminDashboard() {
           .select("name litigationProfile.activeCaseCount litigationProfile.location")
           .lean(),
         User.countDocuments({}),
-        Case.countDocuments({ litigationMember: { $exists: false }, status: "Open" }),
+        Case.countDocuments({ litigationMember: { $exists: false }, status: "Open", isPrivate: { $ne: true } }),
       ])
     : [[], [], 0, 0] as const;
 

@@ -48,7 +48,10 @@ export async function GET() {
       const id = String(p._id);
       const spent = paid.get(id) ?? 0;
       const owedAmt = owed.get(id) ?? 0;
-      const remaining = Math.max(0, (p.totalBudget ?? 0) - spent);
+      // Director approval COMMITS the money: remaining drops as soon as an
+      // expense is approved (owed), not only when it's eventually paid out —
+      // so every fund view agrees with the approval queue.
+      const remaining = Math.max(0, (p.totalBudget ?? 0) - spent - owedAmt);
       return { ...p, spent, owed: owedAmt, remaining };
     });
     return NextResponse.json({ projects: enriched });

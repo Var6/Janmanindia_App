@@ -264,7 +264,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       {/* Top bar */}
       <div className="dr-controls flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[12px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>{t("Daily Social Worker Report")}</p>
+          <p className="text-[12px] uppercase tracking-widest font-semibold" style={{ color: "var(--accent)" }}>{t("Weekly Social Worker Report")}</p>
           <p className="text-xs text-(--muted) mt-1">
             {t("Status:")} <span className="capitalize">{report.status}</span>
             {report.submittedAt && ` · ${t("submitted")} ${new Date(report.submittedAt).toLocaleString("en-IN")}`}
@@ -299,7 +299,7 @@ export default function DailyReportForm({ initialReport, canEdit, isSupervisor, 
       {/* Header banner — reads as the printed cover */}
       <header className="dr-section rounded-2xl border p-5"
         style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}>
-        <h1 className="text-base font-bold text-(--text)">{t("Daily Social Worker Report — Survivor / Victim legal aid, rehabilitation and follow-up")}</h1>
+        <h1 className="text-base font-bold text-(--text)">{t("Weekly Social Worker Report — Survivor / Victim legal aid, rehabilitation and follow-up")}</h1>
         <p className="text-[12px] text-(--muted) italic mt-1">
           {t("Confidential. Use Case ID / Client Code wherever possible. Avoid unnecessary disclosure of survivor/victim identity.")}
         </p>

@@ -18,6 +18,7 @@ export interface LitCaseRow {
   hearingISO?: string;
   docs: number;
   diary: number;
+  isPrivate?: boolean;
 }
 
 const STATUS_STYLE: Record<string, { background: string; color: string }> = {
@@ -147,6 +148,13 @@ export default function LitigationCasesList({ rows }: { rows: LitCaseRow[] }) {
                         <span className="text-[12px] font-mono px-1.5 py-0.5 rounded" title="Janman tracker no."
                           style={{ background: "var(--bg-secondary)", color: "var(--muted)" }}>
                           {c.caseNumber}
+                        </span>
+                      )}
+                      {c.isPrivate && (
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded uppercase"
+                          data-tip="Visible only to you"
+                          style={{ background: "var(--accent-3-bg)", color: "var(--accent-3)" }}>
+                          🔒 Private
                         </span>
                       )}
                       <span className="text-xs text-(--muted)">{c.courtLabel}</span>

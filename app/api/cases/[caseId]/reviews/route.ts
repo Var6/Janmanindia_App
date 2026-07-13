@@ -12,8 +12,12 @@ const PRIVILEGED = ["director", "superadmin", "administrator"];
 /** Privileged roles see every review; an assigned litigation member or the
  *  case creator can see (and the litigation member write) reviews. */
 async function resolveAccess(caseId: string, session: { id: string; role: string }) {
-  const c = await Case.findById(caseId).select("litigationMember litigationMembers createdBy").lean();
+  const c = await Case.findById(caseId).select("litigationMember litigationMembers createdBy isPrivate").lean();
   if (!c) return null;
+  // Private case → only its creator has any access.
+  if ((c as { isPrivate?: boolean }).isPrivate && String(c.createdBy ?? "") !== session.id) {
+    return { canView: false, isAssignedLitigation: false, isPrivileged: false };
+  }
   const lead = String(c.litigationMember ?? "");
   const shared = (c.litigationMembers ?? []).map(String);
   const isCreator = String(c.createdBy ?? "") === session.id;

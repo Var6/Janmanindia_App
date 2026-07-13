@@ -116,6 +116,33 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
   // creating them, and a folded form keeps the layout calm.
   const [formOpen, setFormOpen] = useState(false);
   const canAssign = ASSIGNABLE_ROLES.includes(currentRole);
+  // Creator-only reschedule panel state.
+  const [reschedId, setReschedId] = useState<string | null>(null);
+  const [reDate, setReDate] = useState("");
+  const [reTime, setReTime] = useState("");
+  const [reEndDate, setReEndDate] = useState("");
+  const [reEndTime, setReEndTime] = useState("");
+
+  function openReschedule(a: Activity) {
+    if (reschedId === a._id) { setReschedId(null); return; }
+    setReschedId(a._id);
+    const s = a.dueDate ? new Date(a.dueDate) : null;
+    const e = a.endsAt ? new Date(a.endsAt) : null;
+    const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
+    setReDate(s ? `${s.getFullYear()}-${pad(s.getMonth() + 1)}-${pad(s.getDate())}` : "");
+    setReTime(s ? `${pad(s.getHours())}:${pad(s.getMinutes())}` : "");
+    setReEndDate(e ? `${e.getFullYear()}-${pad(e.getMonth() + 1)}-${pad(e.getDate())}` : "");
+    setReEndTime(e ? `${pad(e.getHours())}:${pad(e.getMinutes())}` : "");
+  }
+
+  async function saveReschedule(id: string) {
+    if (!reDate) return;
+    const dueDate = localInputToISO(`${reDate}T${reTime || "00:00"}`);
+    const effEnd = reEndDate || (reEndTime ? reDate : "");
+    const endsAt = effEnd ? localInputToISO(`${effEnd}T${reEndTime || "23:59"}`) : undefined;
+    await patch(id, { dueDate, ...(endsAt ? { endsAt } : {}) });
+    setReschedId(null);
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -583,35 +610,83 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   onChanged={load}
                 />
 
-                <div className="flex flex-wrap gap-1.5 pt-3 mt-1 border-t border-(--border)/70">
-                  {a.status !== "in_progress" && a.status !== "done" && (
-                    <button onClick={() => patch(a._id, { status: "in_progress" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-50"
-                      style={{ background: "var(--warning, #f59e0b)" }}>
-                      {t("Start")}
-                    </button>
-                  )}
-                  {a.status !== "done" && (
-                    <button onClick={() => patch(a._id, { status: "done" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-50"
-                      style={{ background: "var(--success, #16a34a)" }}>
-                      {t("Done")}
-                    </button>
-                  )}
-                  {a.status !== "cancelled" && (
-                    <button onClick={() => patch(a._id, { status: "cancelled" })} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[12px] font-semibold rounded border border-(--border) text-(--muted) disabled:opacity-50">
-                      {t("Cancel")}
-                    </button>
-                  )}
-                  {(a.createdBy?._id === currentUserId || canAssign) && (
-                    <button onClick={() => remove(a._id)} disabled={busyId === a._id}
-                      className="px-2.5 py-1 text-[12px] font-semibold rounded ml-auto disabled:opacity-50"
-                      style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
-                      {t("Delete")}
-                    </button>
-                  )}
-                </div>
+                {(() => {
+                  const isCreator = a.createdBy?._id === currentUserId;
+                  // "Conclude" only unlocks once the scheduled slot has passed
+                  // (unscheduled activities can conclude anytime).
+                  const schedEnd = a.endsAt ?? a.dueDate;
+                  const canConclude = !schedEnd || new Date(schedEnd).getTime() <= Date.now();
+                  const resched = reschedId === a._id;
+                  return (
+                    <>
+                      <div className="flex flex-wrap gap-1.5 pt-3 mt-1 border-t border-(--border)/70">
+                        {a.status !== "in_progress" && a.status !== "done" && (
+                          <button onClick={() => patch(a._id, { status: "in_progress" })} disabled={busyId === a._id}
+                            className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-50"
+                            style={{ background: "var(--warning, #f59e0b)" }}>
+                            {t("Start")}
+                          </button>
+                        )}
+                        {a.status !== "done" && a.status !== "cancelled" && (
+                          <span data-tip={canConclude ? undefined : t("Unlocks after the scheduled time has passed")}>
+                            <button onClick={() => patch(a._id, { status: "done" })} disabled={busyId === a._id || !canConclude}
+                              className="px-2.5 py-1 text-[12px] font-semibold rounded text-white disabled:opacity-40"
+                              style={{ background: "var(--success, #16a34a)" }}>
+                              {canConclude ? t("Conclude") : `🔒 ${t("Conclude")}`}
+                            </button>
+                          </span>
+                        )}
+                        {isCreator && a.status !== "done" && a.status !== "cancelled" && (
+                          <button onClick={() => openReschedule(a)} disabled={busyId === a._id}
+                            className="px-2.5 py-1 text-[12px] font-semibold rounded border disabled:opacity-50"
+                            style={{ borderColor: "var(--border)", color: resched ? "var(--accent)" : "var(--text)" }}>
+                            🗓 {resched ? t("Close") : t("Reschedule")}
+                          </button>
+                        )}
+                        {isCreator && (
+                          <button onClick={() => remove(a._id)} disabled={busyId === a._id}
+                            className="px-2.5 py-1 text-[12px] font-semibold rounded ml-auto disabled:opacity-50"
+                            style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                            {t("Delete")}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Creator-only reschedule panel */}
+                      {resched && isCreator && (
+                        <div className="mt-2 rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <label className="block">
+                              <span className="block text-[11px] font-semibold text-(--muted) mb-0.5">{t("Start date")}</span>
+                              <input type="date" value={reDate} onChange={(e) => setReDate(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[11px] font-semibold text-(--muted) mb-0.5">{t("Start time")}</span>
+                              <input type="time" value={reTime} onChange={(e) => setReTime(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[11px] font-semibold text-(--muted) mb-0.5">{t("End date")}</span>
+                              <input type="date" value={reEndDate} onChange={(e) => setReEndDate(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[11px] font-semibold text-(--muted) mb-0.5">{t("End time")}</span>
+                              <input type="time" value={reEndTime} onChange={(e) => setReEndTime(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                            </label>
+                          </div>
+                          <button onClick={() => saveReschedule(a._id)} disabled={busyId === a._id || !reDate}
+                            className="px-3 py-1.5 text-[12px] font-bold rounded-lg disabled:opacity-50"
+                            style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                            {t("Save new schedule")}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </article>
             );
           })}

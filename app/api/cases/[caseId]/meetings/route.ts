@@ -14,9 +14,13 @@ const PRIVILEGED = ["director", "superadmin", "administrator"];
  *  all see and log meetings. A community owner can view their own case's log. */
 async function resolveAccess(caseId: string, session: { id: string; role: string }) {
   const c = await Case.findById(caseId)
-    .select("litigationMember litigationMembers socialWorker createdBy community")
+    .select("litigationMember litigationMembers socialWorker createdBy community isPrivate")
     .lean();
   if (!c) return null;
+  // Private case → only its creator has any access.
+  if ((c as { isPrivate?: boolean }).isPrivate && String(c.createdBy ?? "") !== session.id) {
+    return { canView: false, canWrite: false };
+  }
   const lead = String(c.litigationMember ?? "");
   const shared = (c.litigationMembers ?? []).map(String);
   const swId = String(c.socialWorker ?? "");

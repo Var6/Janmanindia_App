@@ -35,7 +35,10 @@ export async function GET() {
       return NextResponse.json({ hearings: [] });
     }
 
-    const cases = await Case.find(filter)
+    // Private cases stay off shared hearing lists — only their creator sees
+    // them (litigation's own $or already includes createdBy, so wrap with $and).
+    const finalFilter = { $and: [filter, { $or: [{ isPrivate: { $ne: true } }, { createdBy: session.id }] }] };
+    const cases = await Case.find(finalFilter)
       .select("caseTitle caseNumber courtCaseNumber nextHearingDate courtName district status path litigationMember")
       .populate("litigationMember", "name")
       .sort({ nextHearingDate: 1 })

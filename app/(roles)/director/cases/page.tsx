@@ -26,7 +26,7 @@ export default async function AdminCasesPage() {
   const t = await getServerT();
   const dbOk  = await tryConnectDB();
   const cases = dbOk
-    ? await Case.find({})
+    ? await Case.find({ isPrivate: { $ne: true } })
         .populate("community", "name")
         .populate("litigationMember", "name")
         .populate("socialWorker", "name")

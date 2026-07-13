@@ -25,6 +25,7 @@ export async function runReviewOverdueCheck(): Promise<number> {
 
   // Candidate cases: active, old enough, and actually assigned to a lawyer.
   const cases = await Case.find({
+    isPrivate: { $ne: true },
     status: { $nin: FINAL_STATUSES },
     createdAt: { $lte: cutoff },
     $or: [

@@ -180,7 +180,25 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
   const [url, setUrl] = useState("");
   const [docLabel, setDocLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState("");
+
+  // Upload straight from the device — fills the URL field with the stored
+  // file's link, so both "pick a file" and "paste a link" work in one place.
+  async function uploadFile(file: File) {
+    setUploading(true); setErr("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.url) { setErr((d as { error?: string }).error ?? t("Upload failed.")); return; }
+      setUrl(d.url);
+      if (!docLabel.trim()) setDocLabel(file.name.replace(/\.[a-z0-9]+$/i, ""));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function add() {
     if (!url.trim()) { setErr(t("Paste the file URL first.")); return; }
@@ -250,7 +268,7 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
           {err && <div className="p-2 rounded-lg text-xs" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input value={url} onChange={e => setUrl(e.target.value)}
-              placeholder={t("File URL (uploaded to S3 / drive)")}
+              placeholder={t("Paste a file URL — or upload below")}
               className="sm:col-span-2 px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
             <input value={docLabel} onChange={e => setDocLabel(e.target.value)}
@@ -258,8 +276,14 @@ function SlotRow({ caseId, label, category, multi, docs, canEdit, onChanged }: {
               className="px-3 py-2 rounded-lg border text-xs focus:outline-none"
               style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <button type="button" disabled={busy || !url.trim()} onClick={add}
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium cursor-pointer hover:border-(--accent)"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
+              <input type="file" accept="image/*,application/pdf,.doc,.docx" className="hidden" disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ""; }} />
+              {uploading ? t("Uploading…") : `📤 ${t("Upload from device")}`}
+            </label>
+            <button type="button" disabled={busy || uploading || !url.trim()} onClick={add}
               className="px-3 py-1.5 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
               {busy ? t("Attaching…") : t("Attach")}

@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import ThemeProvider from "@/components/ui/ThemeProvider";
 import LanguageProvider from "@/components/i18n/LanguageProvider";
-import SecurityGuard from "@/components/security/SecurityGuard";
 import ToastProvider from "@/components/ui/ToastProvider";
 import { isLang, DEFAULT_LANG } from "@/lib/i18n";
 
@@ -75,7 +74,6 @@ export default async function RootLayout({
         <ThemeProvider>
           <LanguageProvider initialLang={lang}>
             <ToastProvider>
-              <SecurityGuard />
               {children}
             </ToastProvider>
           </LanguageProvider>

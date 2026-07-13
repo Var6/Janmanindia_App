@@ -66,6 +66,9 @@ export default function CreateLitigationCaseForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  /* ── Private case — visible ONLY to me (the creating lawyer) ─────── */
+  const [isPrivate, setIsPrivate] = useState(false);
+
   /* ── Court selection ─────────────────────────────────────────────── */
   const [courtType, setCourtType]     = useState<CourtType>("highcourt");
   const [highCourt, setHighCourt]     = useState("");
@@ -243,8 +246,11 @@ export default function CreateLitigationCaseForm() {
 
     if (!finalTitle.trim()) { setError("Add at least one petitioner and one respondent — the case title is built from these."); return; }
     if (!caseType) { setError("Pick a case type so we can route the workflow (criminal vs civil/HC)."); return; }
-    if (!reporterName.trim() || !reporterPhone.trim()) { setError("Reporter name and mobile number are required."); return; }
-    if (!pocName.trim() || !pocPhone.trim()) { setError("A point of contact (name and phone) is required."); return; }
+    // Private cases skip the intake gate — no reporter / point of contact.
+    if (!isPrivate) {
+      if (!reporterName.trim() || !reporterPhone.trim()) { setError("Reporter name and mobile number are required."); return; }
+      if (!pocName.trim() || !pocPhone.trim()) { setError("A point of contact (name and phone) is required."); return; }
+    }
 
     if (courtType === "highcourt" && !highCourt) { setError("Select the High Court."); return; }
     if (courtType === "district") {
@@ -297,9 +303,11 @@ export default function CreateLitigationCaseForm() {
         ...(eCourtLink.trim() ? { eCourtLink: eCourtLink.trim() } : {}),
         // Janman district (where filed)
         ...(district.trim() ? { district: district.trim() } : {}),
-        // Point of contact + reporter — mandatory on every case.
-        pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
-        enquiry: { filerName: reporterName.trim(), filerPhone: reporterPhone.trim() },
+        // Point of contact + reporter — mandatory on every non-private case.
+        ...(isPrivate ? { isPrivate: true } : {
+          pointOfContact: { name: pocName.trim(), phone: pocPhone.trim(), address: pocAddress.trim() || undefined },
+          enquiry: { filerName: reporterName.trim(), filerPhone: reporterPhone.trim() },
+        }),
         // Project attribution — keeps each programme's finances separate.
         ...(projectId ? { project: projectId, ...(projectPhase ? { projectPhase } : {}) } : {}),
         // Sharing
@@ -315,7 +323,8 @@ export default function CreateLitigationCaseForm() {
         const extra: Record<string, string> = {};
         if (firNumber.trim())     extra.firNumber     = firNumber.trim();
         if (policeStation.trim()) extra.policeStation = policeStation.trim();
-        Object.assign(body.enquiry as Record<string, string>, extra);
+        if (body.enquiry) Object.assign(body.enquiry as Record<string, string>, extra);
+        else if (Object.keys(extra).length) body.enquiry = extra;
       } else {
         body.filingStatus = filingStatus;
         body.reportingStatus = {
@@ -382,6 +391,19 @@ export default function CreateLitigationCaseForm() {
       )}
 
       {/* ─── 1. Court ────────────────────────────────────────────── */}
+      {/* Private-case toggle — the lawyer's own confidential matter. */}
+      <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border px-3.5 py-2.5"
+        style={{ borderColor: isPrivate ? "var(--accent)" : "var(--border)", background: isPrivate ? "var(--accent-subtle)" : "var(--bg)" }}>
+        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)}
+          className="mt-0.5 accent-(--accent) cursor-pointer" />
+        <span>
+          <p className="text-sm font-semibold text-(--text)">🔒 {t("Private case — visible only to me")}</p>
+          <p className="text-[12px] text-(--muted) mt-0.5">
+            {t("Nobody else — not even directors — can see this case. The intake form (reporter / point of contact) is skipped since it's your own confidential matter.")}
+          </p>
+        </span>
+      </label>
+
       <Section title="1. Court" subtitle="Where the matter is registered.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {COURT_TYPES.map(opt => {
@@ -499,6 +521,7 @@ export default function CreateLitigationCaseForm() {
       </Section>
 
       {/* ─── Reporter (mandatory) ─────────────────────────────────── */}
+      {!isPrivate && (
       <Section title="Reporter" subtitle="Who reported this matter — required on every case." required>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Reporter name" required>
@@ -509,8 +532,10 @@ export default function CreateLitigationCaseForm() {
           </Field>
         </div>
       </Section>
+      )}
 
       {/* ─── Point of contact ─────────────────────────────────────── */}
+      {!isPrivate && (
       <Section title="Point of contact" subtitle="Who we call about this case — the litigant, a relative, or a paralegal." required>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Contact name" required>
@@ -527,8 +552,8 @@ export default function CreateLitigationCaseForm() {
           </div>
         </div>
       </Section>
+      )}
 
-      {/* ─── 4. Case type (workflow path) ────────────────────────── */}
       <Section title="Project" subtitle="Which programme / grant is this case taken under (e.g. GBV — Gender Based Violence, Fellowship)? Keeps each project's cases and finances separate.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Project">

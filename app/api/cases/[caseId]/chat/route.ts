@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     await connectDB();
 
     const caseDoc = await Case.findById(caseId)
-      .select("community litigationMember litigationMembers socialWorker createdBy")
+      .select("community litigationMember litigationMembers socialWorker createdBy isPrivate")
       .lean();
     if (!caseDoc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -34,8 +34,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
       && (lmId === session.id || sharedIds.includes(session.id));
     const isCreator = creatorId !== "" && creatorId === session.id;
 
-    const allowed =
-      session.role === "superadmin" ||
+    const allowed = (caseDoc as { isPrivate?: boolean }).isPrivate
+      ? isCreator
+      : session.role === "superadmin" ||
       session.role === "director" ||
       session.role === "administrator" ||
       isCreator ||

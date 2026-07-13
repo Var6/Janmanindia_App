@@ -34,9 +34,14 @@ type Params = { params: Promise<{ caseId: string }> };
 async function checkCaseAccess(caseId: string, session: { id: string; role: string }) {
   if (!mongoose.Types.ObjectId.isValid(caseId)) return null;
   const c = await Case.findById(caseId)
-    .select("community litigationMember litigationMembers socialWorker")
+    .select("community litigationMember litigationMembers socialWorker createdBy isPrivate")
     .lean();
   if (!c) return null;
+
+  // Private case → only its creator may read/write notes.
+  if ((c as { isPrivate?: boolean }).isPrivate) {
+    return String((c as { createdBy?: unknown }).createdBy ?? "") === session.id ? c : null;
+  }
 
   const communityId = String(c.community ?? "");
   const lmId = String(c.litigationMember ?? "");

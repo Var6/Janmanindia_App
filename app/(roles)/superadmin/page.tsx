@@ -24,8 +24,8 @@ export default async function SuperAdminDashboard() {
     recentCases, recentUsers,
   ] = dbOk
     ? await Promise.all([
-        Case.countDocuments({}),
-        Case.countDocuments({ status: "Open" }),
+        Case.countDocuments({ isPrivate: { $ne: true } }),
+        Case.countDocuments({ status: "Open", isPrivate: { $ne: true } }),
         User.countDocuments({}),
         User.countDocuments({ isActive: true }),
         EodReport.countDocuments({ invoiceStatus: "pending" }),
@@ -35,7 +35,7 @@ export default async function SuperAdminDashboard() {
           { $group: { _id: "$role", count: { $sum: 1 } } },
           { $sort: { _id: 1 } },
         ]),
-        Case.find({}).sort({ createdAt: -1 }).limit(5)
+        Case.find({ isPrivate: { $ne: true } }).sort({ createdAt: -1 }).limit(5)
           .populate("community", "name").populate("litigationMember", "name").lean(),
         User.find({}).sort({ createdAt: -1 }).limit(5)
           .select("name email role isActive createdAt").lean(),

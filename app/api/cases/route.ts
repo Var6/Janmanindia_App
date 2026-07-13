@@ -70,8 +70,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Private cases are visible ONLY to their creator — whatever the role,
+    // including directors. Composed as an outer $and so it holds regardless
+    // of how the role/search filters were combined above.
+    const finalFilter = {
+      $and: [filter, { $or: [{ isPrivate: { $ne: true } }, { createdBy: session.id }] }],
+    };
+
     const [cases, total] = await Promise.all([
-      Case.find(filter)
+      Case.find(finalFilter)
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -80,7 +87,7 @@ export async function GET(request: NextRequest) {
         .populate("litigationMembers", "name email")
         .populate("socialWorker", "name")
         .lean(),
-      Case.countDocuments(filter),
+      Case.countDocuments(finalFilter),
     ]);
 
     return NextResponse.json({ cases, total, limit, skip });
@@ -116,6 +123,7 @@ export async function POST(request: NextRequest) {
             attachments: attachmentsRaw,
             project: projectRaw,
             projectPhase: projectPhaseRaw,
+            isPrivate: isPrivateRaw,
             voiceAttachment } = body as {
       caseTitle: string;
       path?: "criminal" | "highcourt";
@@ -197,6 +205,8 @@ export async function POST(request: NextRequest) {
        *  the case page's Project card. */
       project?: string;
       projectPhase?: string;
+      /** Litigation-only: a private case visible solely to its creator. */
+      isPrivate?: boolean;
     };
 
     // caseTitle is optional on the community intake form — when absent we
@@ -290,6 +300,11 @@ export async function POST(request: NextRequest) {
       if (!Object.values(enquiryDoc).some(v => v !== undefined)) enquiryDoc = undefined;
     }
 
+    // Private cases are a litigation member's own confidential matters —
+    // only that role may create them, and the intake gate below is skipped
+    // (there is no reporter/point-of-contact for a lawyer's private file).
+    const isPrivate = Boolean(isPrivateRaw) && session.role === "litigation";
+
     // ── Mandatory intake gate ──────────────────────────────────────────────
     // A case can only be opened once the enquiry captures who is reporting
     // (name + mobile) and who to call about it (point of contact). This holds
@@ -298,7 +313,7 @@ export async function POST(request: NextRequest) {
     const reporterPhone = (enquiryRaw?.filerPhone ?? "").trim();
     const pocName  = (pocRaw?.name  ?? "").trim();
     const pocPhone = (pocRaw?.phone ?? "").trim();
-    if (!reporterName || !reporterPhone || !pocName || !pocPhone) {
+    if (!isPrivate && (!reporterName || !reporterPhone || !pocName || !pocPhone)) {
       return NextResponse.json(
         { error: "Name, mobile number, and a point of contact (name and phone) are required to open a case." },
         { status: 400 }
@@ -308,7 +323,7 @@ export async function POST(request: NextRequest) {
     // Synthesise a readable title when the intake form doesn't ask for one —
     // built from the victim (or reporter) plus the first selected issue.
     const firstIssue = Array.isArray(enquiryDoc?.issues) ? (enquiryDoc!.issues as string[])[0] : undefined;
-    const victimOrReporter = (enquiryRaw?.victimName ?? "").trim() || reporterName;
+    const victimOrReporter = (enquiryRaw?.victimName ?? "").trim() || reporterName || "Private matter";
     const resolvedTitle = caseTitle?.trim()
       || [`Enquiry — ${victimOrReporter}`, firstIssue].filter(Boolean).join(" · ");
 
@@ -381,6 +396,7 @@ export async function POST(request: NextRequest) {
       stage: stage?.trim() || undefined,
       compensationStatus: compensationStatus?.trim() || undefined,
       community: communityRef,
+      ...(isPrivate ? { isPrivate: true } : {}),
       ...(projectRaw && mongoose.Types.ObjectId.isValid(projectRaw) ? { project: projectRaw } : {}),
       ...(typeof projectPhaseRaw === "string" && projectPhaseRaw.trim() ? { projectPhase: projectPhaseRaw.trim() } : {}),
       // Litigation members on the case. Lead is the first id (session lawyer

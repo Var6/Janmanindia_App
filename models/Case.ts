@@ -142,6 +142,10 @@ export interface ICase extends Document {
   caseNumber: string;
   status: CaseStatus;
   path: CasePath;
+  /** PRIVATE case — visible ONLY to the litigation member who created it.
+   *  No intake gate applies (it's the lawyer's own confidential matter) and it
+   *  never appears in any other user's lists, calendars or reports. */
+  isPrivate?: boolean;
   /** The NGO project/grant this case is filed under (e.g. DLF, GBV). Drives
    *  which fund expenses on the case draw down. */
   project?: mongoose.Types.ObjectId;
@@ -602,6 +606,7 @@ const caseSchema = new Schema<ICase>(
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
     flow: { type: String, enum: ["criminal", "family", "civil", "writ"] },
+    isPrivate: { type: Boolean, default: false, index: true },
     project: { type: Schema.Types.ObjectId, ref: "Project", index: true },
     projectPhase: { type: String, trim: true },
     caseType: { type: String, trim: true, index: true },

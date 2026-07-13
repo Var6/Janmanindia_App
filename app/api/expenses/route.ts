@@ -11,6 +11,8 @@ import mongoose from "mongoose";
 // social workers / litigation can also flag a cost they've personally incurred.
 const SUBMITTER_ROLES = ["administrator", "hr", "director", "superadmin", "socialworker", "litigation", "finance"];
 
+const LIST_VIEWER_ROLES = ["director", "superadmin", "administrator", "hr", "finance"];
+
 export async function GET(request: NextRequest) {
   try {
     const session = await requireSession();
@@ -20,6 +22,13 @@ export async function GET(request: NextRequest) {
     const project  = searchParams.get("project");
     const caseId   = searchParams.get("case");
     const mine     = searchParams.get("mine") === "true";
+
+    // Privacy: the org-wide list is for the finance-viewer group only. Other
+    // staff can read their own submissions (?mine) or a specific case's
+    // expenses (?case=, shown on case pages they already have access to).
+    if (!mine && !caseId && !LIST_VIEWER_ROLES.includes(session.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const filter: Record<string, unknown> = {};
     if (status)  filter.status  = status;

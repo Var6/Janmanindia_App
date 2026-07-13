@@ -158,6 +158,7 @@ export default async function TeamCalendar({
     Case.find({
       nextHearingDate: { $gte: start, $lte: end },
       status: { $nin: ["Closed", "Dismissed", "Disposal", "Withdrawn"] },
+      isPrivate: { $ne: true },
     })
       .sort({ nextHearingDate: 1 })
       .select("caseTitle caseNumber nextHearingDate courtName status litigationMember")
