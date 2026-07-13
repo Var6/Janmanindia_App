@@ -142,6 +142,10 @@ export interface ICase extends Document {
   caseNumber: string;
   status: CaseStatus;
   path: CasePath;
+  /** The real-world FILING date of the matter — editable, distinct from
+   *  createdAt (when the record was entered into Janman). Shown as "Filed" on
+   *  the case page and used as the workflow tree's root date. */
+  filedDate?: Date;
   /** PRIVATE case — visible ONLY to the litigation member who created it.
    *  No intake gate applies (it's the lawyer's own confidential matter) and it
    *  never appears in any other user's lists, calendars or reports. */
@@ -606,6 +610,7 @@ const caseSchema = new Schema<ICase>(
     },
     path: { type: String, enum: ["criminal", "highcourt"], required: true },
     flow: { type: String, enum: ["criminal", "family", "civil", "writ"] },
+    filedDate: Date,
     isPrivate: { type: Boolean, default: false, index: true },
     project: { type: Schema.Types.ObjectId, ref: "Project", index: true },
     projectPhase: { type: String, trim: true },

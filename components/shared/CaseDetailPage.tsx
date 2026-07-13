@@ -113,6 +113,8 @@ type PopulatedCase = {
   caseDiary: Array<{ _id: string; date: string; findings: string; writtenBy: string }>;
   /** Private case — creator-only visibility (badge in the header). */
   isPrivate?: boolean;
+  /** Real-world filing date (editable) — falls back to createdAt. */
+  filedDate?: string;
   enquiry?: Enquiry;
   courtAppearances?: CourtAppearance[];
   auditLog?: Array<{
@@ -1093,6 +1095,54 @@ function AddCourtAppearanceForm({ caseId, onSuccess }: { caseId: string; onSucce
         {saving ? t("Saving…") : t("Save Appearance")}
       </button>
     </form>
+  );
+}
+
+/* ── Filing-date inline editor ──────────────────────────────────────────────
+ * "Filed <date>" in the header — click ✎ to correct the real-world filing
+ * date (distinct from when the record was entered into Janman). */
+function FiledDateEditor({ caseId, filedDate, createdAt, canEdit, onChanged }: {
+  caseId: string; filedDate?: string; createdAt: string; canEdit: boolean; onChanged: () => void;
+}) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+  const effective = filedDate ?? createdAt;
+
+  async function save() {
+    if (!val) { setEditing(false); return; }
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filedDate: val }),
+      });
+      if (r.ok) { setEditing(false); onChanged(); }
+      else { const d = await r.json().catch(() => ({})); alert((d as { error?: string }).error ?? t("Failed to update filing date.")); }
+    } finally { setBusy(false); }
+  }
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <input type="date" value={val} onChange={(e) => setVal(e.target.value)}
+          className="px-1.5 py-0.5 text-xs rounded border" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }} />
+        <button type="button" onClick={save} disabled={busy || !val} className="text-xs font-bold px-1" style={{ color: "var(--accent)" }}>✓</button>
+        <button type="button" onClick={() => setEditing(false)} className="text-xs px-1 text-(--muted)">✕</button>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      {t("Filed")} {fmtDate(effective)}
+      {canEdit && (
+        <button type="button" data-tip={t("Change filing date")}
+          onClick={() => { setEditing(true); setVal(new Date(effective).toISOString().slice(0, 10)); }}
+          className="text-[11px] px-0.5 text-(--muted) hover:text-(--accent)">✎</button>
+      )}
+    </span>
   );
 }
 
@@ -2727,27 +2777,42 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0 flex-1">
             <TitleEditor caseId={c._id} value={c.caseTitle} canEdit={canEdit} onChanged={fetchCase} />
-            <p className="text-xs text-(--muted) mt-1">{t("Filed")} {fmtDate(c.createdAt)} · {t("Last updated")} {fmtDate(c.updatedAt)}</p>
+            <p className="text-xs text-(--muted) mt-1">
+              <FiledDateEditor caseId={c._id} filedDate={c.filedDate} createdAt={c.createdAt} canEdit={canEdit} onChanged={fetchCase} />
+              {" · "}{t("Last updated")} {fmtDate(c.updatedAt)}
+            </p>
           </div>
 
           {(() => {
-            // Last hearing = most recent logged court appearance in the past.
-            const past = (c.courtAppearances ?? [])
-              .map((a) => (a?.date ? new Date(a.date).getTime() : 0))
-              .filter((ts) => ts > 0 && ts <= Date.now());
-            const lastHearing = past.length ? new Date(Math.max(...past)) : null;
+            // Last hearing = the most recent hearing that has already happened.
+            // Sources: every logged appearance's own date, its "last hearing"
+            // field, its "next hearing" if that date has since passed, and the
+            // case-level next-hearing when it's already in the past.
+            const now = Date.now();
+            const candidates: number[] = [];
+            for (const a of (c.courtAppearances ?? []) as Array<{ date?: string; lastHearingDate?: string; nextHearingDate?: string }>) {
+              for (const v of [a?.date, a?.lastHearingDate, a?.nextHearingDate]) {
+                if (!v) continue;
+                const ts = new Date(v).getTime();
+                if (!isNaN(ts) && ts <= now) candidates.push(ts);
+              }
+            }
+            if (hearingDate) {
+              const ts = new Date(hearingDate).getTime();
+              if (!isNaN(ts) && ts <= now) candidates.push(ts);
+            }
+            const lastHearing = candidates.length ? new Date(Math.max(...candidates)) : null;
             return (
               <div className="shrink-0 flex gap-2">
-                {lastHearing && (
-                  <div className="text-right rounded-xl p-3 border"
-                    style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}>
-                    <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Last Hearing")}</p>
-                    <p className="text-base font-bold mt-0.5 text-(--text)">
-                      {lastHearing.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </p>
-                    <p className="text-[11px] text-(--muted)">{lastHearing.getFullYear()}</p>
-                  </div>
-                )}
+                <div className="text-right rounded-xl p-3 border"
+                  style={{ background: "var(--bg-secondary)", borderColor: "var(--border)" }}
+                  data-tip={lastHearing ? undefined : t("Log a court appearance to record past hearings")}>
+                  <p className="text-[11px] font-semibold text-(--muted) uppercase tracking-wide">{t("Last Hearing")}</p>
+                  <p className="text-base font-bold mt-0.5 text-(--text)">
+                    {lastHearing ? lastHearing.toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
+                  </p>
+                  <p className="text-[11px] text-(--muted)">{lastHearing ? lastHearing.getFullYear() : t("none logged")}</p>
+                </div>
                 {hearingDate && (
                   <div className="text-right rounded-xl p-3 border"
                     style={{ background: "color-mix(in srgb,var(--accent) 8%,transparent)", borderColor: "color-mix(in srgb,var(--accent) 25%,transparent)" }}>
@@ -2976,7 +3041,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                 criminalPath={crimProp}
                 highCourtPath={c.highCourtPath as unknown as React.ComponentProps<typeof CaseWorkflowGraph>["highCourtPath"]}
                 firFiled={c.criminalPath?.firFiled}
-                createdAt={c.createdAt}
+                createdAt={c.filedDate ?? c.createdAt}
                 canEdit={canEdit}
                 caseId={c._id}
                 stageMarks={(c as { stageMarks?: Record<string, string> }).stageMarks}
@@ -2990,7 +3055,7 @@ export default function CaseDetailPage({ caseId, canEdit: canEditProp, canManage
                   bailMatter
                   criminalPath={crimProp}
                   firFiled={c.criminalPath?.firFiled}
-                  createdAt={c.createdAt}
+                  createdAt={c.filedDate ?? c.createdAt}
                   canEdit={canEdit}
                   caseId={c._id}
                   stageMarks={(c as { stageMarks?: Record<string, string> }).stageMarks}

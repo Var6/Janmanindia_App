@@ -99,6 +99,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const allowedFields = [
       "status", "nextHearingDate", "caseTitle", "criminalPath", "highCourtPath",
+      "filedDate",
       "district", "causeTitle",
       // District Legal Fellow Case Management form — lawyer-managed metadata.
       "courtCaseNumber", "courtName", "relevantSections",
@@ -131,6 +132,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (body.caseTitle !== undefined && body.caseTitle !== caseDoc.caseTitle) {
       logAudit("metadata_updated", `Renamed case to "${body.caseTitle}"`);
+    }
+    if (body.filedDate !== undefined) {
+      const fd = body.filedDate ? new Date(body.filedDate) : null;
+      update.filedDate = fd && !isNaN(fd.getTime()) ? fd : undefined;
+      logAudit("metadata_updated", fd ? `Filing date set to ${fd.toLocaleDateString("en-IN")}` : "Filing date cleared");
     }
     if (body.subject !== undefined) {
       logAudit("metadata_updated", "Updated case subject");

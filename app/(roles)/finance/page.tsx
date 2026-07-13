@@ -141,7 +141,7 @@ export default async function FinanceDashboard() {
                       style={{
                         background: p.status === "active" ? "var(--success-bg)" : p.status === "on_hold" ? "var(--warning-bg)" : "var(--bg-secondary)",
                         color:      p.status === "active" ? "var(--success-text)" : p.status === "on_hold" ? "var(--warning-text)" : "var(--muted)",
-                      }}>{p.status.replace("_", " ")}</span>
+                      }}>{(p.status ?? "active").replace("_", " ")}</span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
