@@ -38,6 +38,9 @@ export interface IExpense extends Document {
   project?: mongoose.Types.ObjectId;
   /** Case this expense belongs to, when entered from the case Finance tab. */
   case?: mongoose.Types.ObjectId;
+  /** Activity this bill belongs to (fieldwork travel, event costs, …), when
+   *  entered from the Activity Planner's Bills section. */
+  activity?: mongoose.Types.ObjectId;
   /** True  → the organisation pays directly (a *requisition* / advance).
    *  False → the worker paid out of pocket and claims it back (a
    *  *reimbursement*). Drives the two sub-tabs on the case Finance view. */
@@ -80,9 +83,10 @@ const expenseSchema = new Schema<IExpense>(
     // only when the expense isn't case-scoped (case finance has no budget line).
     project:    {
       type: Schema.Types.ObjectId, ref: "Project", index: true,
-      required: function (this: IExpense) { return !this.case; },
+      required: function (this: IExpense) { return !this.case && !this.activity; },
     },
     case:       { type: Schema.Types.ObjectId, ref: "Case", index: true },
+    activity:   { type: Schema.Types.ObjectId, ref: "Activity", index: true },
     paidByOrg:  { type: Boolean, default: false },
     category:   {
       type: String,

@@ -23,6 +23,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
  *  of the legacy EOD-report rows. Surfaces the total approved + paid spend
  *  per project against its allocated budget so a finance member can see
  *  budget headroom at a glance and clear the payment queue. */
+/** Human label for a non-project scope: the case number or activity title. */
+function scopeOf(e: { case?: unknown; activity?: unknown }): string {
+  const kase = e.case as { caseNumber?: string } | null | undefined;
+  const act = e.activity as { title?: string } | null | undefined;
+  if (kase?.caseNumber) return `⚖️ ${kase.caseNumber}`;
+  if (act?.title) return `🎯 ${act.title.slice(0, 24)}`;
+  return "—";
+}
+
 export default async function FinanceExpensesPage() {
   const session = await getSessionFromCookies();
   // The proxy already gates /finance/* to finance + superadmin role prefixes,
@@ -39,6 +48,8 @@ export default async function FinanceExpensesPage() {
         Expense.find({})
           .sort({ submittedAt: -1 })
           .populate("project",       "code name totalBudget")
+          .populate("case",          "caseNumber caseTitle project")
+          .populate("activity",      "title")
           .populate("submittedBy",   "name role")
           .populate("hrVerification.by",   "name")
           .populate("directorApproval.by", "name")
@@ -63,8 +74,10 @@ export default async function FinanceExpensesPage() {
   }
   for (const e of expenses) {
     const projRef = e.project as unknown as { _id?: unknown } | null;
-    const pid = projRef && projRef._id ? String(projRef._id) : null;
-    if (!pid) continue;
+    // Case bills draw from their case's project when one is linked.
+    const caseProj = (e.case as unknown as { project?: unknown } | null)?.project;
+    const pid = projRef && projRef._id ? String(projRef._id) : caseProj ? String(caseProj) : null;
+    if (!pid) continue; // unlinked case/activity bills — shown in the queue + totals below
     let row = byProject.get(pid);
     if (!row) {
       const proj = e.project as unknown as { _id: unknown; code?: string; name?: string; totalBudget?: number } | null;
@@ -192,7 +205,7 @@ export default async function FinanceExpensesPage() {
                         {e.title}
                       </p>
                       <p className="text-xs text-(--muted) mt-0.5">
-                        {proj?.code ?? "—"} · {proj?.name ?? "—"} · {t("by")} {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
+                        {proj?.code ?? scopeOf(e)} · {proj?.name ?? ""} · {t("by")} {sub?.name ?? "—"}{sub?.role ? ` (${sub.role})` : ""}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -229,7 +242,7 @@ export default async function FinanceExpensesPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-(--text) truncate">{e.title}</p>
                       <p className="text-xs text-(--muted) truncate">
-                        {proj?.code ?? "—"} · {sub?.name ?? "—"} · {new Date(e.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        {proj?.code ?? scopeOf(e)} · {sub?.name ?? "—"} · {new Date(e.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-(--text) whitespace-nowrap">₹{e.amount.toLocaleString("en-IN")}</p>

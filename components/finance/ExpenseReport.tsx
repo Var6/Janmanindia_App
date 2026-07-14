@@ -14,6 +14,7 @@ interface ExpenseRow {
   submittedBy?: { _id: string; name: string; role?: string } | null;
   project?: { _id: string; name: string; code?: string } | null;
   case?: { _id: string; caseNumber?: string; caseTitle?: string } | null;
+  activity?: { _id: string; title?: string } | null;
 }
 
 const STATUS_META: Record<ExpenseRow["status"], { label: string; bg: string; text: string }> = {
@@ -37,7 +38,7 @@ export default function ExpenseReport({ role }: { role: string }) {
   const [rows, setRows] = useState<ExpenseRow[] | null>(null);
   const [type, setType] = useState<"all" | "requisition" | "reimbursement">("all");
   const [status, setStatus] = useState<string>("all");
-  const [scope, setScope] = useState<"all" | "project" | "case">("all");
+  const [scope, setScope] = useState<"all" | "project" | "case" | "activity">("all");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const canApprove = ["director", "superadmin"].includes(role);
@@ -75,6 +76,7 @@ export default function ExpenseReport({ role }: { role: string }) {
       if (status !== "all" && e.status !== status) return false;
       if (scope === "project" && !e.project) return false;
       if (scope === "case" && !e.case) return false;
+      if (scope === "activity" && !e.activity) return false;
       return true;
     });
   }, [rows, type, status, scope]);
@@ -122,9 +124,10 @@ export default function ExpenseReport({ role }: { role: string }) {
         </select>
         <select value={scope} onChange={(e) => setScope(e.target.value as never)}
           className="px-2.5 py-1.5 rounded-xl border text-xs" style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--text)" }}>
-          <option value="all">{t("Projects + cases")}</option>
+          <option value="all">{t("Projects + cases + activities")}</option>
           <option value="project">{t("Project expenses")}</option>
           <option value="case">{t("Case expenses")}</option>
+          <option value="activity">{t("Activity bills")}</option>
         </select>
         <p className="text-xs text-(--muted) ml-auto">{view.length} {t("of")} {(rows ?? []).length}</p>
       </div>
@@ -161,6 +164,12 @@ export default function ExpenseReport({ role }: { role: string }) {
                       <span className="text-[11px] font-mono px-1.5 py-0.5 rounded"
                         style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
                         ⚖️ {e.case.caseNumber ?? t("Case")}
+                      </span>
+                    )}
+                    {e.activity && (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded"
+                        style={{ background: "var(--accent-2-bg)", color: "var(--accent-2)" }}>
+                        🎯 {(e.activity.title ?? t("Activity")).slice(0, 30)}
                       </span>
                     )}
                     <span className="text-[11px] text-(--muted)">

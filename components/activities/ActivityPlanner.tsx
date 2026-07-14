@@ -610,6 +610,13 @@ export default function ActivityPlanner({ currentUserId, currentRole }: Props) {
                   onChanged={load}
                 />
 
+                {/* Bills / expenses attached to this activity — they flow into
+                    the finance section (Expense Report + dashboards). */}
+                <ActivityBills
+                  activityId={a._id}
+                  canAdd={isMine(a) || a.createdBy?._id === currentUserId || canAssign}
+                />
+
                 {(() => {
                   const isCreator = a.createdBy?._id === currentUserId;
                   // "Conclude" only unlocks once the scheduled slot has passed
@@ -983,4 +990,183 @@ function formatActivityWhen(startISO: string, endISO?: string): string {
     && start.getDate() === end.getDate();
   if (sameDay) return `${startStr} – ${end.toLocaleTimeString("en-IN", timeOpts)}`;
   return `${startStr} → ${end.toLocaleDateString("en-IN", dateOpts)} ${end.toLocaleTimeString("en-IN", timeOpts)}`;
+}
+
+/* ── Bills on an activity ─────────────────────────────────────────────────
+ * Lazy section: expand to list this activity's bills and add new ones
+ * (requisition = org pays; reimbursement = claim back). Bills enter the same
+ * approval pipeline as every other expense and appear in the finance report. */
+const BILL_STATUS: Record<string, { label: string; bg: string; color: string }> = {
+  submitted:         { label: "Submitted",   bg: "var(--info-bg)",     color: "var(--info-text)" },
+  hr_verified:       { label: "HR verified", bg: "var(--warning-bg)",  color: "var(--warning-text)" },
+  director_approved: { label: "Approved",    bg: "var(--accent-3-bg, var(--accent-subtle))", color: "var(--accent-3, var(--accent))" },
+  paid:              { label: "Paid",        bg: "var(--success-bg)",  color: "var(--success-text)" },
+  rejected:          { label: "Rejected",    bg: "var(--error-bg)",    color: "var(--error-text)" },
+};
+
+interface BillRow {
+  _id: string;
+  title: string;
+  amount: number;
+  status: string;
+  paidByOrg?: boolean;
+  category?: string;
+}
+
+function ActivityBills({ activityId, canAdd }: { activityId: string; canAdd: boolean }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [bills, setBills] = useState<BillRow[] | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("travel");
+  const [paidByOrg, setPaidByOrg] = useState(false);
+  const [receiptUrl, setReceiptUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  function loadBills() {
+    fetch(`/api/expenses?activity=${activityId}`)
+      .then((r) => (r.ok ? r.json() : { expenses: [] }))
+      .then((d) => setBills(d.expenses ?? []))
+      .catch(() => setBills([]));
+  }
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    if (next && bills === null) loadBills();
+  }
+
+  async function uploadReceipt(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.url) setReceiptUrl(d.url);
+      else setErr((d as { error?: string }).error ?? t("Receipt upload failed."));
+    } finally { setUploading(false); }
+  }
+
+  async function submitBill() {
+    setErr("");
+    const amt = Number(amount);
+    if (!title.trim()) { setErr(t("What was this bill for?")); return; }
+    if (!Number.isFinite(amt) || amt <= 0) { setErr(t("Enter a valid amount.")); return; }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          activityId, title: title.trim(), amount: amt, category,
+          paidByOrg, receiptUrl: receiptUrl || undefined,
+        }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setErr((d as { error?: string }).error ?? t("Could not save the bill."));
+        return;
+      }
+      setTitle(""); setAmount(""); setReceiptUrl(""); setAdding(false);
+      loadBills();
+    } finally { setBusy(false); }
+  }
+
+  const total = (bills ?? []).filter((b) => b.status !== "rejected").reduce((s, b) => s + (b.amount ?? 0), 0);
+
+  return (
+    <div className="mt-2">
+      <button type="button" onClick={toggle}
+        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-(--muted) hover:text-(--accent) transition-colors">
+        💸 {t("Bills")}{bills !== null && bills.length > 0 && ` · ${bills.length} (₹${total.toLocaleString("en-IN")})`}
+        <span className="text-[10px]">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-1.5 rounded-lg border px-3 py-2 space-y-1.5" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
+          {bills === null ? (
+            <p className="text-[12px] text-(--muted)">{t("Loading…")}</p>
+          ) : bills.length === 0 ? (
+            <p className="text-[12px] text-(--muted) italic">{t("No bills yet.")}</p>
+          ) : (
+            <ul className="space-y-1">
+              {bills.map((b) => {
+                const st = BILL_STATUS[b.status] ?? BILL_STATUS.submitted;
+                return (
+                  <li key={b._id} className="flex items-center gap-2 text-[12px]">
+                    <span className="flex-1 min-w-0 truncate text-(--text)">{b.title}</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded shrink-0"
+                      style={{ background: b.paidByOrg === false ? "var(--accent-2-bg, var(--bg-secondary))" : "var(--accent-subtle)", color: b.paidByOrg === false ? "var(--accent-2, var(--muted))" : "var(--accent)" }}>
+                      {b.paidByOrg === false ? t("Reimburse") : t("Org pays")}
+                    </span>
+                    <span className="font-bold tabular-nums shrink-0">₹{(b.amount ?? 0).toLocaleString("en-IN")}</span>
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: st.bg, color: st.color }}>
+                      {t(st.label)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {canAdd && !adding && (
+            <button type="button" onClick={() => setAdding(true)}
+              className="text-[12px] font-medium" style={{ color: "var(--accent)" }}>
+              + {t("Add bill")}
+            </button>
+          )}
+
+          {adding && (
+            <div className="pt-1.5 border-t space-y-2" style={{ borderColor: "var(--border)" }}>
+              {err && <p className="text-[12px] p-1.5 rounded" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>{err}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("What for? e.g. Travel to Purnia")}
+                  className="sm:col-span-2 px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="₹" type="number" min={1}
+                  className="px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }} />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={category} onChange={(e) => setCategory(e.target.value)}
+                  className="px-2 py-1.5 text-xs rounded-lg border bg-(--surface)" style={{ borderColor: "var(--border)", color: "var(--text)" }}>
+                  {["travel", "admin", "training", "exploration", "staff", "legal", "other"].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+                  <button type="button" onClick={() => setPaidByOrg(true)}
+                    className="px-2 py-1.5 text-[11px] font-bold"
+                    style={{ background: paidByOrg ? "var(--accent)" : "var(--surface)", color: paidByOrg ? "var(--accent-contrast)" : "var(--muted)" }}>
+                    🏢 {t("Org pays")}
+                  </button>
+                  <button type="button" onClick={() => setPaidByOrg(false)}
+                    className="px-2 py-1.5 text-[11px] font-bold"
+                    style={{ background: !paidByOrg ? "var(--accent)" : "var(--surface)", color: !paidByOrg ? "var(--accent-contrast)" : "var(--muted)" }}>
+                    👤 {t("I paid — reimburse")}
+                  </button>
+                </div>
+                <label className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium rounded-lg border cursor-pointer"
+                  style={{ borderColor: "var(--border)", color: receiptUrl ? "var(--success-text)" : "var(--text)", background: "var(--surface)" }}>
+                  <input type="file" accept="image/*,application/pdf" className="hidden" disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadReceipt(f); e.target.value = ""; }} />
+                  {uploading ? t("Uploading…") : receiptUrl ? `✓ ${t("Receipt attached")}` : `📎 ${t("Receipt")}`}
+                </label>
+                <button type="button" onClick={submitBill} disabled={busy}
+                  className="px-3 py-1.5 text-[12px] font-bold rounded-lg disabled:opacity-50 ml-auto"
+                  style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                  {busy ? t("Saving…") : t("Submit bill")}
+                </button>
+                <button type="button" onClick={() => { setAdding(false); setErr(""); }}
+                  className="text-[12px] text-(--muted)">{t("Cancel")}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -29,17 +29,17 @@ export default async function FinanceDashboard() {
   const dbOk = await tryConnectDB();
   if (!dbOk) return <div className="space-y-6"><NoDBBanner /></div>;
 
-  const [projects, paidAgg, paidExpenses, pendingPay, eodApproved] = await Promise.all([
+  const [projects, paidAll, paidExpenses, pendingPay, eodApproved] = await Promise.all([
     Project.find({}).sort({ createdAt: -1 }).lean(),
-    Expense.aggregate([
-      { $match: { status: "paid" } },
-      { $group: { _id: { project: "$project", category: "$category" }, spent: { $sum: "$amount" } } },
-    ]),
+    // Every paid expense with its scope — case & activity bills included, so
+    // finance sees ALL money, not just project-line spend.
+    Expense.find({ status: "paid" }).select("project case activity amount category").lean(),
     Expense.find({ status: "paid" })
       .sort({ updatedAt: -1 })
       .limit(20)
       .populate("project", "code name")
       .populate("case", "caseNumber caseTitle")
+      .populate("activity", "title")
       .populate("submittedBy", "name email role")
       .populate("payment.by", "name")
       .lean(),
@@ -47,6 +47,7 @@ export default async function FinanceDashboard() {
       .sort({ submittedAt: 1 })
       .populate("project", "code name")
       .populate("case", "caseNumber caseTitle")
+      .populate("activity", "title")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .populate("directorApproval.by", "name")
@@ -58,14 +59,30 @@ export default async function FinanceDashboard() {
       .lean(),
   ]);
 
-  // Per-project: total / spent / remaining + breakdown by category
+  // Per-project: total / spent / remaining + breakdown by category.
+  // Case bills roll into their case's project; case/activity bills with no
+  // project land in an explicit "unallocated" bucket so nothing disappears.
   type Cat = string;
+  const caseIds = [...new Set(paidAll.filter((e) => !e.project && e.case).map((e) => String(e.case)))];
+  const caseProject = new Map<string, string>();
+  if (caseIds.length > 0) {
+    const CaseModel = (await import("@/models/Case")).default;
+    const kases = await CaseModel.find({ _id: { $in: caseIds } }).select("project").lean();
+    for (const k of kases) if (k.project) caseProject.set(String(k._id), String(k.project));
+  }
   const spentByProject = new Map<string, number>();
   const breakdownByProject = new Map<string, Record<Cat, number>>();
-  for (const row of paidAgg) {
-    const pid = String((row as { _id: { project: unknown } })._id.project);
-    const cat = String((row as { _id: { category: string } })._id.category);
-    const amt = (row as { spent: number }).spent;
+  let unallocated = 0;
+  const unallocatedByCat: Record<string, number> = {};
+  for (const e of paidAll) {
+    const pid = e.project ? String(e.project) : (e.case ? caseProject.get(String(e.case)) : undefined);
+    const cat = String(e.category ?? "other");
+    const amt = e.amount ?? 0;
+    if (!pid) {
+      unallocated += amt;
+      unallocatedByCat[cat] = (unallocatedByCat[cat] ?? 0) + amt;
+      continue;
+    }
     spentByProject.set(pid, (spentByProject.get(pid) ?? 0) + amt);
     const map = breakdownByProject.get(pid) ?? {};
     map[cat] = (map[cat] ?? 0) + amt;
@@ -74,11 +91,11 @@ export default async function FinanceDashboard() {
 
   // Org-wide totals
   const totalBudget = projects.reduce((s, p) => s + (p.totalBudget ?? 0), 0);
-  const totalSpent  = [...spentByProject.values()].reduce((s, v) => s + v, 0);
+  const totalSpent  = [...spentByProject.values()].reduce((s, v) => s + v, 0) + unallocated;
   const totalRemaining = Math.max(0, totalBudget - totalSpent);
 
   // Org-wide category mix
-  const orgCategory: Record<string, number> = {};
+  const orgCategory: Record<string, number> = { ...unallocatedByCat };
   for (const map of breakdownByProject.values()) {
     for (const [k, v] of Object.entries(map)) orgCategory[k] = (orgCategory[k] ?? 0) + (v as number);
   }
@@ -174,6 +191,22 @@ export default async function FinanceDashboard() {
         )}
       </section>
 
+      {/* Case & activity bills that aren't linked to any project */}
+      {unallocated > 0 && (
+        <section className="rounded-2xl border p-5"
+          style={{ background: "var(--warning-bg)", borderColor: "color-mix(in srgb, var(--warning) 30%, transparent)" }}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="font-semibold" style={{ color: "var(--warning-text)" }}>⚖️ {t("Case & activity bills (no project)")}</h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--warning-text)", opacity: .85 }}>
+                {t("Paid bills on cases/activities that aren't linked to a project. Link the case to a project so this money draws from the right budget.")}
+              </p>
+            </div>
+            <p className="text-2xl font-bold" style={{ color: "var(--warning-text)" }}>₹{unallocated.toLocaleString("en-IN")}</p>
+          </div>
+        </section>
+      )}
+
       {/* Org-wide category mix */}
       {Object.keys(orgCategory).length > 0 && (
         <section className="rounded-2xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -207,12 +240,15 @@ export default async function FinanceDashboard() {
           <div className="divide-y" style={{ borderColor: "var(--border)" }}>
             {paidExpenses.map(x => {
               const proj = (x.project as unknown as { code?: string; name?: string } | null);
+              const kase = (x.case as unknown as { caseNumber?: string } | null);
+              const act  = (x.activity as unknown as { title?: string } | null);
               const sub  = (x.submittedBy as unknown as { name?: string; role?: string } | null);
+              const scopeLabel = proj?.code ?? (kase?.caseNumber ? `⚖️ ${kase.caseNumber}` : act?.title ? `🎯 ${act.title.slice(0, 24)}` : "—");
               return (
                 <div key={String(x._id)} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-(--text)">
-                      <span className="font-mono text-[12px] mr-2 px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--accent)" }}>{proj?.code ?? "—"}</span>
+                      <span className="font-mono text-[12px] mr-2 px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--accent)" }}>{scopeLabel}</span>
                       {x.title}
                     </p>
                     <p className="text-xs text-(--muted)">

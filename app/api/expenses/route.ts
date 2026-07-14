@@ -21,12 +21,13 @@ export async function GET(request: NextRequest) {
     const status   = searchParams.get("status");
     const project  = searchParams.get("project");
     const caseId   = searchParams.get("case");
+    const activityId = searchParams.get("activity");
     const mine     = searchParams.get("mine") === "true";
 
     // Privacy: the org-wide list is for the finance-viewer group only. Other
     // staff can read their own submissions (?mine) or a specific case's
     // expenses (?case=, shown on case pages they already have access to).
-    if (!mine && !caseId && !LIST_VIEWER_ROLES.includes(session.role)) {
+    if (!mine && !caseId && !activityId && !LIST_VIEWER_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -34,12 +35,14 @@ export async function GET(request: NextRequest) {
     if (status)  filter.status  = status;
     if (project && mongoose.Types.ObjectId.isValid(project)) filter.project = project;
     if (caseId  && mongoose.Types.ObjectId.isValid(caseId))  filter.case = caseId;
+    if (activityId && mongoose.Types.ObjectId.isValid(activityId)) filter.activity = activityId;
     if (mine) filter.submittedBy = session.id;
 
     const expenses = await Expense.find(filter)
       .sort({ submittedAt: -1 })
       .populate("project", "code name totalBudget")
       .populate("case", "caseNumber caseTitle")
+      .populate("activity", "title")
       .populate("submittedBy", "name email role")
       .populate("hrVerification.by", "name")
       .populate("directorApproval.by", "name")
@@ -64,9 +67,10 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { projectId, caseId, paidByOrg, category, title, description, amount, vendor, receiptUrl, incurredAt } = body as {
+    const { projectId, caseId, activityId, paidByOrg, category, title, description, amount, vendor, receiptUrl, incurredAt } = body as {
       projectId?: string;
       caseId?: string;
+      activityId?: string;
       paidByOrg?: boolean;
       category: string;
       title: string;
@@ -86,8 +90,11 @@ export async function POST(request: NextRequest) {
     if (caseId && !mongoose.Types.ObjectId.isValid(caseId)) {
       return NextResponse.json({ error: "Invalid caseId" }, { status: 400 });
     }
-    if (!projectId && !caseId) {
-      return NextResponse.json({ error: "A projectId or caseId is required" }, { status: 400 });
+    if (activityId && !mongoose.Types.ObjectId.isValid(activityId)) {
+      return NextResponse.json({ error: "Invalid activityId" }, { status: 400 });
+    }
+    if (!projectId && !caseId && !activityId) {
+      return NextResponse.json({ error: "A projectId, caseId or activityId is required" }, { status: 400 });
     }
     if (!title?.trim()) return NextResponse.json({ error: "title is required" }, { status: 400 });
     const numericAmount = Number(amount);
@@ -107,11 +114,24 @@ export async function POST(request: NextRequest) {
       const kase = await Case.findById(caseId).select("_id").lean();
       if (!kase) return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
+    if (activityId) {
+      const Activity = (await import("@/models/Activity")).default;
+      const act = await Activity.findById(activityId).select("assignee coAssignees createdBy").lean();
+      if (!act) return NextResponse.json({ error: "Activity not found" }, { status: 404 });
+      // Only people ON the activity (or the approver group) can attach bills.
+      const onActivity = [String(act.assignee), String(act.createdBy), ...(act.coAssignees ?? []).map(String)]
+        .includes(session.id);
+      const privileged = ["director", "superadmin", "administrator", "hr", "finance"].includes(session.role);
+      if (!onActivity && !privileged) {
+        return NextResponse.json({ error: "You can only add bills to activities you're part of." }, { status: 403 });
+      }
+    }
 
     const expense = await Expense.create({
       project: projectId || undefined,
       case: caseId || undefined,
-      paidByOrg: caseId ? Boolean(paidByOrg) : undefined,
+      activity: activityId || undefined,
+      paidByOrg: (caseId || activityId) ? Boolean(paidByOrg) : undefined,
       category,
       title: title.trim(),
       description: description?.trim(),
