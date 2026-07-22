@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { signToken, comparePassword, COOKIE_NAME, safeNextPath } from "@/lib/auth";
+import { looksLikePhone, phoneLoginFilter } from "@/lib/phone";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, next } = body as { email: string; password: string; next?: string };
+    // `identifier` may be an email OR a mobile number. `email` is kept for
+    // backward compatibility with existing clients (web + older app builds).
+    const { email, identifier, password, next } = body as {
+      email?: string;
+      identifier?: string;
+      password?: string;
+      next?: string;
+    };
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    const loginId = (identifier ?? email ?? "").trim();
+    if (!loginId || !password) {
+      return NextResponse.json({ error: "Email or mobile number and password are required" }, { status: 400 });
     }
 
     await connectDB();
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Community members often have no email — let them sign in with the mobile
+    // number they registered with (matched on the trailing 10 digits).
+    const user = looksLikePhone(loginId)
+      ? await User.findOne(phoneLoginFilter(loginId) ?? { _id: null })
+      : await User.findOne({ email: loginId.toLowerCase() });
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }

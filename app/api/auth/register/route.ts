@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { COOKIE_NAME, hashPassword, signToken } from "@/lib/auth";
 import { filterValidIssues } from "@/lib/case-issues";
+import { phoneLoginFilter } from "@/lib/phone";
 import User from "@/models/User";
 
 type EnquiryInput = {
@@ -69,13 +70,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Mobile number is required." }, { status: 400 });
     }
 
-    // Email + password are optional, but if either is given both must be valid.
-    const wantsLogin = Boolean(email?.trim()) || Boolean(password);
-    if (wantsLogin) {
-      if (!email?.trim()) return NextResponse.json({ error: "Enter an email to create a login." }, { status: 400 });
-      if (!password || password.length < 8) {
-        return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
-      }
+    // A password creates a login account (sign in later with mobile OR email).
+    // Email is optional — community members who only have a phone can still get
+    // an account. If a password is set it must be strong enough.
+    const wantsLogin = Boolean(password) || Boolean(email?.trim());
+    if (wantsLogin && (!password || password.length < 8)) {
+      return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
     }
 
     await connectDB();
@@ -87,6 +87,18 @@ export async function POST(request: NextRequest) {
     if (realEmail) {
       const existing = await User.findOne({ email: realEmail });
       if (existing) return NextResponse.json({ error: "Email already registered." }, { status: 409 });
+    }
+
+    // For login accounts, the mobile number must resolve to a single account so
+    // phone sign-in is unambiguous. (Passwordless intake stubs don't reserve it.)
+    if (wantsLogin) {
+      const phoneClash = await User.findOne(phoneLoginFilter(memberPhone!) ?? { _id: null });
+      if (phoneClash) {
+        return NextResponse.json(
+          { error: "This mobile number already has an account. Please sign in instead." },
+          { status: 409 }
+        );
+      }
     }
     const stubEmail = realEmail
       || `community-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}@noreply.janmanindia.local`;
