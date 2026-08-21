@@ -131,6 +131,7 @@ const STAFF_ITEMS: NavItem[] = [
   { href: "/cases/new",     label: "New Case",     icon: "file-plus" },
   { href: "/activities",    label: "Activities",   icon: "target"    },
   { href: "/reports/daily", label: "Daily Report", icon: "document"  },
+  { href: "/expenditure",   label: "Expenditure",  icon: "currency"  },
 ];
 
 /** Logistics is an admin-only function — fulfilling tickets, raising office
