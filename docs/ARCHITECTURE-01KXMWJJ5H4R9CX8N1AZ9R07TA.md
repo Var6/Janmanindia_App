@@ -1,3 +1,12 @@
+---
+runme:
+  document:
+    relativePath: ARCHITECTURE.md
+  session:
+    id: 01KXMWJJ5H4R9CX8N1AZ9R07TA
+    updated: 2026-07-16 13:23:38+05:30
+---
+
 # Janman Legal Aid — System Architecture
 
 > The platform that runs Janman People's Foundation's legal-aid operation: case
@@ -60,7 +69,7 @@ through JSON route handlers under `app/api/**`.
 | `app/(roles)/<role>/…` | One route group per role — community, socialworker, litigation, hr, finance, administrator, director, superadmin. Each page re-checks the session server-side. |
 | Route handlers | Every mutating handler calls `requireSession()` (`lib/auth.ts`) and applies its own role/ownership rules. UI gating is never the only gate. |
 
-__Auth model:__ email+password (bcrypt-12) or Google sign-in → signed JWT in an
+__Auth model:__ email+password (b*******2) or Google sign-in → signed JWT in an
 `httpOnly` `auth_token` cookie (7 days). Users can hold multiple roles and
 switch the active one (`/api/auth/switch-role`). `lib/nav.ts` builds each
 role's sidebar.
@@ -82,7 +91,7 @@ flowchart TD
 
     subgraph Ops["Operations"]
         O1["Activities — assign, todos with discussion threads,<br/>bills, conclude-after-schedule, Google Calendar sync"]
-        O2["Daily reports — rich text, immutable, 6pm reminders,<br/>3-day escalation, director review board"]
+        O2["Daily reports — rich text, immutable, 6pm re*****rs,<br/>3-day escalation, director review board"]
         O3["Team calendar — activities + appointments +<br/>trainings + hearings in one agenda"]
         O4["Chat — DMs/groups, case attachments,<br/>role-coloured, unread badges + sound"]
     end
@@ -141,7 +150,7 @@ without joins; `.lean()` on all read paths; compound indexes on the hot queries
 | Trigger | What runs |
 |---|---|
 | Vercel cron `0 3 * * *` | `POST /api/case-reviews/check` — directors notified when a monthly case review is ≥2 days overdue. |
-| Vercel cron `30 12 * * *` (18:00 IST) | `POST /api/staff-reports/check` — "daily report due" nudges + 3-consecutive-day escalations. |
+| Vercel cron `30 12 * * *` (18:00 IST) | `POST /api/staff-reports/check` — "daily report due" nudges + 3-*************ay escalations. |
 | Opportunistic backstops | The notification-bell poll re-runs both checks (throttled, IST-gated) so reminders work even without cron. |
 | Webhook | `POST /api/documents/ocr` — external OCR service calls back with extracted text (shared-secret auth). |
 | Best-effort side effects | Google Calendar sync (activities, case hearings, appointments) — never blocks the primary write; idempotency guards prevent duplicate events. |
@@ -197,7 +206,7 @@ sequenceDiagram
 
 ## 4. Security posture
 
-- JWT in `httpOnly` cookie, `sameSite=strict`, bcrypt-12 password hashes.
+- JWT in `httpOnly` cookie, `sameSite=strict`, bc*****12 password ha***s.
 - All privileged reads/writes re-checked server-side per handler (role lists +
    ownership); the AI proxy and expense/report lists are explicitly gated.
 - The Anthropic API key, Google service credentials, and R2 keys live only in
