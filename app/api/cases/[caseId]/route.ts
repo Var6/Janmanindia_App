@@ -317,6 +317,33 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       logAudit("case_unshared", `Removed ${target?.name ?? "lawyer"}`);
     }
 
+    /* Multi-select assignment — set the FULL list of advocates on the case in
+       one operation (the checkbox picker on the director cases + reassign
+       screens). The first id becomes the lead (`litigationMember`) for
+       back-compat; the whole set is stored in `litigationMembers[]`, which is
+       what the lawyer's own case list queries — so everyone ticked can see the
+       case. An empty array unassigns everyone. Director / administrator /
+       superadmin only. */
+    if (Array.isArray(body.setLitigationMembers)) {
+      if (!isPrivileged) {
+        return NextResponse.json({ error: "Only a director or administrator can assign advocates." }, { status: 403 });
+      }
+      const wantIds = [...new Set(
+        (body.setLitigationMembers as unknown[]).map((x) => String(x ?? "").trim()).filter(Boolean)
+      )];
+      const validMembers = wantIds.length
+        ? await User.find({ _id: { $in: wantIds }, role: "litigation", isActive: true }).select("name").lean()
+        : [];
+      if (validMembers.length !== wantIds.length) {
+        return NextResponse.json({ error: "Every selected advocate must be an active litigation member." }, { status: 400 });
+      }
+      const nameById = new Map(validMembers.map((u) => [String(u._id), u.name]));
+      update.litigationMembers = wantIds;
+      update.litigationMember  = wantIds[0] ?? null;
+      const label = wantIds.length ? wantIds.map((id) => nameById.get(id) ?? "advocate").join(", ") : "none";
+      logAudit("metadata_updated", `Advocates assigned: ${label}`);
+    }
+
     /* (Re)assign the beneficiary community member and/or the social worker.
        Either can be set AFTER registration — the community member or social
        worker is often created/linked later. Pass a user id to assign, or

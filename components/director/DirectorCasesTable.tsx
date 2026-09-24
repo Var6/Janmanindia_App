@@ -18,7 +18,12 @@ export interface CaseRow {
   district: string;   // "where the case was filed"
   court: string;
   community: string;
+  /** Lead advocate name (litigationMembers[0]) — kept for sort/back-compat. */
   lawyer: string;
+  /** Every assigned advocate's id (lead + shared). */
+  lawyerIds: string[];
+  /** Every assigned advocate's name, for the filter + display. */
+  lawyers: string[];
   isExisting: boolean;
   /** Most recent past hearing (ISO) and the upcoming hearing (ISO). */
   lastHearingISO?: string;
@@ -52,18 +57,28 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
   const [lawyer, setLawyer] = useState("all");
   const [sort, setSort] = useState<SortKey>("lawyer");
   const [shown, setShown] = useState(BATCH);   // how many rows to render (display batching)
-  const [assigning, setAssigning] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [openPicker, setOpenPicker] = useState<string | null>(null);
+  // Optimistic per-case assignment overrides so a tick/untick shows instantly.
+  const [override, setOverride] = useState<Record<string, string[]>>({});
 
-  async function assignAdvocate(caseId: string, advocateId: string) {
-    setAssigning(caseId);
+  const assignedFor = (c: CaseRow) => override[c.id] ?? c.lawyerIds;
+
+  async function setAdvocates(caseId: string, ids: string[]) {
+    setOverride((o) => ({ ...o, [caseId]: ids }));   // optimistic
+    setSaving(caseId);
     try {
       const res = await fetch(`/api/cases/${caseId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ litigationMember: advocateId || null }),
+        body: JSON.stringify({ setLitigationMembers: ids }),
       });
       if (res.ok) router.refresh();
-      else { const d = await res.json().catch(() => ({})); alert(d.error ?? t("Failed.")); }
-    } finally { setAssigning(null); }
+      else {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error ?? t("Failed."));
+        setOverride((o) => { const n = { ...o }; delete n[caseId]; return n; }); // roll back
+      }
+    } finally { setSaving(null); }
   }
 
   // Distinct values present in the data (for the dropdowns).
@@ -76,7 +91,7 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
     [cases]
   );
   const lawyers = useMemo(
-    () => Array.from(new Set(cases.map((c) => c.lawyer).filter(Boolean))).sort(),
+    () => Array.from(new Set(cases.flatMap((c) => c.lawyers).filter(Boolean))).sort(),
     [cases]
   );
   const courts = useMemo(
@@ -90,9 +105,9 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
       if (status !== "all" && c.status !== status) return false;
       if (place !== "all" && c.district !== place) return false;
       if (court !== "all" && c.court !== court) return false;
-      if (lawyer !== "all" && c.lawyer !== lawyer) return false;
+      if (lawyer !== "all" && !c.lawyers.includes(lawyer)) return false;
       if (needle) {
-        const hay = `${c.caseNumber} ${c.courtNumber} ${c.title} ${c.community} ${c.lawyer} ${c.court} ${c.district}`.toLowerCase();
+        const hay = `${c.caseNumber} ${c.courtNumber} ${c.title} ${c.community} ${c.lawyers.join(" ")} ${c.court} ${c.district}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
@@ -286,19 +301,19 @@ export default function DirectorCasesTable({ cases, advocates }: { cases: CaseRo
 
                   <span className="px-3 text-xs text-(--muted)">{c.path === "criminal" ? t("Criminal") : t("HC")}</span>
                   {advocates && advocates.length > 0 ? (
-                    <select
-                      value={advocates.find((a) => a.name === c.lawyer)?.id ?? ""}
-                      disabled={assigning === c.id}
-                      onChange={(e) => assignAdvocate(c.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mx-3 px-2 py-1 rounded-lg border text-xs max-w-36 disabled:opacity-50"
-                      style={{ background: "var(--bg)", borderColor: "var(--border)", color: c.lawyer ? "var(--text)" : "var(--muted)" }}
-                      title={t("Assign advocate")}>
-                      <option value="">{assigning === c.id ? t("Saving…") : t("Unassigned")}</option>
-                      {advocates.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
+                    <div className="mx-3" onClick={(e) => e.stopPropagation()}>
+                      <AdvocatePicker
+                        advocates={advocates}
+                        value={assignedFor(c)}
+                        open={openPicker === c.id}
+                        saving={saving === c.id}
+                        onToggleOpen={() => setOpenPicker((p) => (p === c.id ? null : c.id))}
+                        onClose={() => setOpenPicker(null)}
+                        onChange={(ids) => setAdvocates(c.id, ids)}
+                      />
+                    </div>
                   ) : (
-                    <span className="px-3 text-xs text-(--text)">{c.lawyer || <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
+                    <span className="px-3 text-xs text-(--text)">{c.lawyers.join(", ") || <span className="text-(--muted) italic">{t("Unassigned")}</span>}</span>
                   )}
                   <span className="mx-3 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: st.bg, color: st.text }}>{c.status}</span>
 
@@ -347,6 +362,59 @@ function Filter({ label, value, onChange, allLabel, options, cls, style, transla
         <option value="all">{allLabel}</option>
         {options.map((o) => <option key={o} value={o}>{translateOpts ? t(o) : o}</option>)}
       </select>
+    </div>
+  );
+}
+
+/** Multi-select advocate picker — a button + checkbox popover. Ticking assigns
+ *  a lawyer to the case, unticking removes them. The whole set is saved in one
+ *  call, and everyone ticked can see the case in their own list. */
+function AdvocatePicker({ advocates, value, open, saving, onToggleOpen, onClose, onChange }: {
+  advocates: { id: string; name: string }[];
+  value: string[];
+  open: boolean;
+  saving: boolean;
+  onToggleOpen: () => void;
+  onClose: () => void;
+  onChange: (ids: string[]) => void;
+}) {
+  const t = useT();
+  const nameById = useMemo(() => new Map(advocates.map((a) => [a.id, a.name])), [advocates]);
+  const names = value.map((id) => nameById.get(id)).filter(Boolean) as string[];
+  const label = names.length === 0
+    ? t("Unassigned")
+    : names.length <= 2 ? names.join(", ") : `${names.length} ${t("advocates")}`;
+
+  function toggle(id: string) {
+    onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  }
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={onToggleOpen} disabled={saving}
+        className="px-2.5 py-1 rounded-lg border text-xs w-40 truncate disabled:opacity-50 flex items-center justify-between gap-1"
+        style={{ background: "var(--bg)", borderColor: "var(--border)", color: names.length ? "var(--text)" : "var(--muted)" }}
+        title={t("Assign advocates")}>
+        <span className="truncate">{saving ? t("Saving…") : label}</span>
+        <span className="text-(--muted) shrink-0">▾</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
+          <div className="absolute right-0 z-50 mt-1 w-56 max-h-72 overflow-auto rounded-xl border p-1"
+            style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "0 8px 24px rgba(0,0,0,.25)" }}>
+            {advocates.length === 0 ? (
+              <p className="px-2.5 py-2 text-xs text-(--muted)">{t("No advocates")}</p>
+            ) : advocates.map((a) => (
+              <label key={a.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer text-xs hover:bg-(--bg-secondary)"
+                style={{ color: "var(--text)" }}>
+                <input type="checkbox" checked={value.includes(a.id)} onChange={() => toggle(a.id)} />
+                <span className="truncate">{a.name}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

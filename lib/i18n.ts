@@ -2590,6 +2590,14 @@ const hi: Record<string, string> = {
   "Volunteer": "स्वयंसेवक",
   "Consultant": "सलाहकार",
 
+  // ── Multi-advocate assignment ──
+  "advocates": "अधिवक्ता",
+  "Assign advocates": "अधिवक्ता नियुक्त करें",
+  "No advocates": "कोई अधिवक्ता नहीं",
+  "Advocates updated.": "अधिवक्ता अद्यतन किए गए।",
+  "advocate(s) assigned": "अधिवक्ता नियुक्त",
+  "Select a case above, then tick every advocate to assign. Untick to remove — the case shows up for everyone ticked.": "ऊपर एक मामला चुनें, फिर नियुक्त करने हेतु प्रत्येक अधिवक्ता को टिक करें। हटाने हेतु अनटिक करें — टिक किए गए सभी को मामला दिखेगा।",
+
 };
 
 const TABLES: Record<Lang, Record<string, string>> = { en: {}, hi };

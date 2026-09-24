@@ -29,6 +29,7 @@ export default async function AdminCasesPage() {
     ? await Case.find({ isPrivate: { $ne: true } })
         .populate("community", "name")
         .populate("litigationMember", "name")
+        .populate("litigationMembers", "name")
         .populate("socialWorker", "name")
         .sort({ updatedAt: -1 })
         .lean()
@@ -68,6 +69,16 @@ export default async function AdminCasesPage() {
     court: c.courtName || "",
     community: (c.community as unknown as { name?: string } | null)?.name ?? "",
     lawyer: (c.litigationMember as unknown as { name?: string } | null)?.name ?? "",
+    // Full advocate set (lead + shared), de-duplicated — powers the multi-select
+    // checkbox picker and the advocate filter.
+    ...(() => {
+      const members = (c.litigationMembers as unknown as { _id?: unknown; name?: string }[] | undefined) ?? [];
+      const lead = c.litigationMember as unknown as { _id?: unknown; name?: string } | null;
+      const byId = new Map<string, string>();
+      if (lead?._id) byId.set(String(lead._id), lead.name ?? "");
+      for (const m of members) if (m?._id) byId.set(String(m._id), m.name ?? "");
+      return { lawyerIds: [...byId.keys()], lawyers: [...byId.values()].filter(Boolean) };
+    })(),
     isExisting: !!c.isExistingCase,
     nextHearingISO: c.nextHearingDate ? new Date(c.nextHearingDate).toISOString() : undefined,
     lastHearingISO: (() => {

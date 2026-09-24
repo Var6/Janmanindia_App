@@ -19,7 +19,8 @@ type CaseItem = {
   state?: string;
   courtName?: string;
   nextHearingDate?: string;
-  litigationMember?: { name?: string };
+  litigationMember?: { _id?: string; name?: string };
+  litigationMembers?: { _id?: string; name?: string }[];
 };
 
 function AssignContent() {
@@ -34,13 +35,36 @@ function AssignContent() {
   const [result, setResult] = useState<{ message?: string; assignedTo?: string; note?: string; error?: string } | null>(null);
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [cases, setCases] = useState<CaseItem[]>([]);
+  // The advocates currently assigned to the selected case (lead + shared).
+  const [members, setMembers] = useState<string[]>([]);
+  const [savingMembers, setSavingMembers] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     fetch("/api/users?role=litigation").then((r) => r.json()).then((d) => setLawyers(d.users ?? [])).catch(() => {});
-    fetch("/api/cases?limit=50").then((r) => r.json()).then((d) => setCases(d.cases ?? [])).catch(() => {});
+    fetch("/api/cases?limit=2000").then((r) => r.json()).then((d) => setCases(d.cases ?? [])).catch(() => {});
   }, []);
 
   const selectedCase = cases.find((c) => c._id === caseId);
+
+  // Load the authoritative assigned-advocate set whenever the case changes
+  // (fetched fresh so it's correct even for cases beyond the list page).
+  useEffect(() => {
+    if (!caseId) { setMembers([]); return; }
+    let cancelled = false;
+    fetch(`/api/cases/${caseId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        const c = d.case ?? {};
+        const ids = new Set<string>();
+        if (c.litigationMember?._id) ids.add(String(c.litigationMember._id));
+        for (const m of (c.litigationMembers ?? [])) if (m?._id) ids.add(String(m._id));
+        setMembers([...ids]);
+      })
+      .catch(() => { if (!cancelled) setMembers([]); });
+    return () => { cancelled = true; };
+  }, [caseId, refreshTick]);
 
   // When a case is picked, auto-fill the location (where it's filed) and the
   // next hearing date FROM THE CASE. The director can still override either.
@@ -66,6 +90,7 @@ function AssignContent() {
       setResult(res.ok
         ? { message: t("Assigned to") + ` ${d.assignedTo?.name ?? ""}.`, note: d.note }
         : { error: d.error });
+      if (res.ok) setRefreshTick((n) => n + 1);   // reflect the auto-pick in the checkboxes
     } catch {
       setResult({ error: t("Network error.") });
     } finally {
@@ -73,22 +98,26 @@ function AssignContent() {
     }
   }
 
-  async function handleManual(lawyerId: string) {
+  async function toggleMember(lawyerId: string) {
     if (!caseId) { setResult({ error: t("Select a case first.") }); return; }
-    setLoading(true);
+    const prev = members;
+    const next = prev.includes(lawyerId) ? prev.filter((x) => x !== lawyerId) : [...prev, lawyerId];
+    setMembers(next);           // optimistic
+    setSavingMembers(true);
     setResult(null);
     try {
       const res = await fetch(`/api/cases/${caseId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ litigationMember: lawyerId }),
+        body: JSON.stringify({ setLitigationMembers: next }),
       });
       const d = await res.json();
-      setResult(res.ok ? { message: t("Lawyer manually assigned.") } : { error: d.error });
+      if (res.ok) setResult({ message: t("Advocates updated.") });
+      else { setResult({ error: d.error }); setMembers(prev); }   // rollback
     } catch {
-      setResult({ error: t("Network error.") });
+      setResult({ error: t("Network error.") }); setMembers(prev);
     } finally {
-      setLoading(false);
+      setSavingMembers(false);
     }
   }
 
@@ -166,29 +195,47 @@ function AssignContent() {
       <section className="bg-(--surface) rounded-2xl border border-(--border) overflow-hidden">
         <div className="px-5 py-4 border-b border-(--border)">
           <h2 className="font-semibold text-(--text)">{t("Manual Assignment")}</h2>
-          <p className="text-xs text-(--muted) mt-0.5">{t("Select a case above first, then pick a lawyer.")}</p>
+          <p className="text-xs text-(--muted) mt-0.5">
+            {t("Select a case above, then tick every advocate to assign. Untick to remove — the case shows up for everyone ticked.")}
+          </p>
+          {caseId && (
+            <p className="text-xs mt-1 font-medium" style={{ color: "var(--accent)" }}>
+              {members.length} {t("advocate(s) assigned")}{savingMembers ? ` · ${t("Saving…")}` : ""}
+            </p>
+          )}
         </div>
         {lawyers.length === 0 ? (
           <div className="py-8 text-center text-sm text-(--muted)">{t("No lawyers found.")}</div>
         ) : (
           <div className="divide-y divide-(--border)">
-            {lawyers.map((l) => (
-              <div key={l._id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-(--text)">{l.name}</p>
-                  <p className="text-xs text-(--muted)">
-                    {l.litigationProfile?.location?.district || "—"} · {l.litigationProfile?.activeCaseCount ?? 0} {t("active case(s)")}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleManual(l._id)}
-                  disabled={loading || !caseId}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-(--accent)/10 text-(--accent) hover:bg-(--accent)/20 disabled:opacity-40 transition-colors"
-                >
-                  {t("Assign")}
-                </button>
-              </div>
-            ))}
+            {lawyers.map((l) => {
+              const checked = members.includes(l._id);
+              return (
+                <label key={l._id}
+                  className={`flex items-center justify-between px-5 py-3 cursor-pointer transition-colors hover:bg-(--bg) ${!caseId ? "opacity-50 pointer-events-none" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={savingMembers || !caseId}
+                      onChange={() => toggleMember(l._id)}
+                      className="h-4 w-4 accent-(--accent)"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-(--text)">{l.name}</p>
+                      <p className="text-xs text-(--muted)">
+                        {l.litigationProfile?.location?.district || "—"} · {l.litigationProfile?.activeCaseCount ?? 0} {t("active case(s)")}
+                      </p>
+                    </div>
+                  </div>
+                  {checked && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
+                      {t("Assigned")}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
           </div>
         )}
       </section>
