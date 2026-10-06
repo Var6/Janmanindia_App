@@ -17,7 +17,14 @@ const STAT_COLORS: Record<string, { card: string; num: string; label: string }> 
   Escalated: { card: "var(--error-bg)",     num: "var(--error-text)",   label: "var(--error-text)"   },
   Closed:    { card: "var(--bg-secondary)", num: "var(--muted)",        label: "var(--muted)"        },
   Dismissed: { card: "var(--error-bg)",     num: "var(--error-text)",   label: "var(--error-text)"   },
+  Disposal:  { card: "var(--success-bg)",   num: "var(--success-text)", label: "var(--success-text)" },
+  Withdrawn: { card: "var(--bg-secondary)", num: "var(--muted)",        label: "var(--muted)"        },
 };
+
+/** Live statuses always show; finished ones show only when some case has them,
+ *  so the cards always add up to the total (Disposal / Withdrawn used to be
+ *  missing, leaving 60 cases out of the summary). */
+const ALWAYS_SHOWN = ["Open", "Pending", "Escalated"];
 
 export default async function AdminCasesPage() {
   const session = await getSessionFromCookies();
@@ -100,8 +107,8 @@ export default async function AdminCasesPage() {
       </PageHeader>
 
       {/* Status summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {["Open", "Pending", "Escalated", "Closed", "Dismissed"].map((s) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {Object.keys(STAT_COLORS).filter((s) => ALWAYS_SHOWN.includes(s) || (byStatus[s] ?? 0) > 0).map((s) => {
           const sc = STAT_COLORS[s];
           return (
             <div key={s} className="p-3.5 rounded-2xl border text-center"

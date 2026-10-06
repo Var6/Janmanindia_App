@@ -10,6 +10,7 @@ import QueriesBox from "@/components/shared/QueriesBox";
 import ActivityAssignmentBanner from "@/components/shared/ActivityAssignmentBanner";
 import FundsOverview from "@/components/finance/FundsOverview";
 import { getServerT } from "@/lib/i18n-server";
+import { LIVE_CASE_STATUSES, liveCaseCountsByMember } from "@/lib/case-workload";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Open:      { bg: "var(--info-bg)",    text: "var(--info-text)"    },
@@ -17,7 +18,10 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   Escalated: { bg: "var(--error-bg)",   text: "var(--error-text)"   },
   Pending:   { bg: "var(--warning-bg)", text: "var(--warning-text)" },
   Dismissed: { bg: "var(--bg)",         text: "var(--muted)"        },
+  Disposal:  { bg: "var(--bg)",         text: "var(--muted)"        },
+  Withdrawn: { bg: "var(--bg)",         text: "var(--muted)"        },
 };
+
 
 export default async function AdminDashboard() {
   const session = await getSessionFromCookies();
@@ -26,25 +30,44 @@ export default async function AdminDashboard() {
 
   const dbOk = await tryConnectDB();
 
-  const [allCases, litigationMembers, totalUsers, unassignedCount] = dbOk
+  // Counts come from countDocuments / an aggregation over ALL cases. They used
+  // to be taken from the 15-row "recent cases" list (so Total Cases was capped
+  // at 15) and from litigationProfile.activeCaseCount, a stored counter that
+  // nothing keeps up to date (so every lawyer showed 0).
+  const visible = { isPrivate: { $ne: true } };
+  const [allCases, litigationMembersRaw, totalUsers, totalCases, liveCases, unassignedCount, workload] = dbOk
     ? await Promise.all([
-        Case.find({ isPrivate: { $ne: true } }).sort({ updatedAt: -1 }).limit(15)
+        Case.find(visible).sort({ updatedAt: -1 }).limit(15)
           .populate("litigationMember", "name")
+          .populate("litigationMembers", "name")
           .populate("community", "name")
           .lean(),
         User.find({ role: "litigation", isActive: true })
-          .select("name litigationProfile.activeCaseCount litigationProfile.location")
+          .select("name litigationProfile.location")
           .lean(),
-        User.countDocuments({}),
-        Case.countDocuments({ litigationMember: { $exists: false }, status: "Open", isPrivate: { $ne: true } }),
+        User.countDocuments({ isActive: true }),
+        Case.countDocuments(visible),
+        Case.countDocuments({ ...visible, status: { $in: [...LIVE_CASE_STATUSES] } }),
+        Case.countDocuments({
+          ...visible,
+          status: { $in: [...LIVE_CASE_STATUSES] },
+          $and: [
+            { $or: [{ litigationMember: { $exists: false } }, { litigationMember: null }] },
+            { $or: [{ litigationMembers: { $exists: false } }, { litigationMembers: { $size: 0 } }] },
+          ],
+        }),
+        liveCaseCountsByMember(),
       ])
-    : [[], [], 0, 0] as const;
+    : [[], [], 0, 0, 0, 0, new Map<string, number>()] as const;
 
-  const openCases = allCases.filter((c) => c.status === "Open").length;
+  const litigationMembers = [...litigationMembersRaw]
+    .map((lm) => ({ ...lm, liveCount: workload.get(String(lm._id)) ?? 0 }))
+    .sort((a, b) => b.liveCount - a.liveCount);
+  const openCases = liveCases;
 
   const kpis = [
     {
-      label: "Total Users",
+      label: "Active Users",
       value: totalUsers,
       icon: "👥",
       bg: "var(--info-bg)",
@@ -52,13 +75,13 @@ export default async function AdminDashboard() {
     },
     {
       label: "Total Cases",
-      value: allCases.length,
+      value: totalCases,
       icon: "📋",
       bg: "var(--accent-subtle)",
       accent: "var(--accent)",
     },
     {
-      label: "Open Cases",
+      label: "Live Cases",
       value: openCases,
       icon: "🟢",
       bg: "var(--success-bg)",
@@ -142,7 +165,11 @@ export default async function AdminDashboard() {
           ) : (
             <div className="divide-y divide-(--border)">
               {allCases.slice(0, 8).map((c) => {
-                const lm = c.litigationMember as unknown as { name: string } | null;
+                const members = (c.litigationMembers as unknown as { name: string }[] | undefined) ?? [];
+                const lead = c.litigationMember as unknown as { name: string } | null;
+                const lm = members.length > 0
+                  ? { name: members.length > 1 ? `${members[0].name} +${members.length - 1}` : members[0].name }
+                  : lead;
                 const community = c.community as unknown as { name: string } | null;
                 const sc = STATUS_STYLES[c.status] ?? { bg: "var(--bg)", text: "var(--muted)" };
                 return (
@@ -182,7 +209,7 @@ export default async function AdminDashboard() {
           ) : (
             <div className="divide-y divide-(--border)">
               {litigationMembers.map((lm) => {
-                const count = lm.litigationProfile?.activeCaseCount ?? 0;
+                const count = lm.liveCount;
                 const pct = Math.min(100, (count / 15) * 100);
                 return (
                   <div key={String(lm._id)} className="px-5 py-3.5">
@@ -192,7 +219,7 @@ export default async function AdminDashboard() {
                         <p className="text-xs text-(--muted)">{lm.litigationProfile?.location?.district ?? "—"}</p>
                       </div>
                       <span className="text-sm font-bold" style={{ color: count > 10 ? "var(--error)" : "var(--success)" }}>
-                        {count} cases
+                        {count} live {count === 1 ? "case" : "cases"}
                       </span>
                     </div>
                     <div className="w-full rounded-full overflow-hidden" style={{ height: "4px", background: "var(--border)" }}>

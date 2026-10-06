@@ -239,13 +239,13 @@ export default function ProjectsPage() {
                   {pct}{t("% utilised")}{overrun && t(" — overrunning budget")}
                 </p>
 
-                {p.allocations.length > 0 && (
+                {(p.allocations ?? []).length > 0 && (
                   <details className="rounded-xl border" style={{ borderColor: "var(--border)" }}>
                     <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-(--muted) uppercase tracking-wide">
-                      {t("Allocations")} ({p.allocations.length})
+                      {t("Allocations")} ({(p.allocations ?? []).length})
                     </summary>
                     <ul className="px-3 pb-3 space-y-1">
-                      {p.allocations.map(a => (
+                      {(p.allocations ?? []).map(a => (
                         <li key={a._id} className="text-xs flex items-center justify-between gap-3">
                           <span className="text-(--text)">{a.source}</span>
                           <span className="text-(--muted)">₹{a.amount.toLocaleString("en-IN")}{a.receivedAt && ` · ${new Date(a.receivedAt).toLocaleDateString("en-IN")}`}</span>
