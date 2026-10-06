@@ -386,3 +386,34 @@ input::placeholder, textarea::placeholder {
 
 /* Content protection removed by request — text selection, copy/paste and
  * right-click work normally everywhere. */
+
+/* ── Insights module ───────────────────────────────────────────────────── */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter .15s ease, background-color .15s ease, border-color .15s ease;
+}
+.btn-primary { background: var(--accent); color: var(--accent-contrast); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; filter: none; }
+.btn-secondary { border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+.btn-secondary:hover { background: var(--bg-secondary); }
+
+/* Printing a report (Save as PDF): show only the report, let it flow over
+   several pages instead of being clipped by the app's fixed-height shell. */
+@media print {
+  body:has(#insights-print) * { visibility: hidden; }
+  #insights-print, #insights-print * { visibility: visible; }
+  #insights-print { position: absolute; inset: 0 auto auto 0; width: 100%; }
+  body:has(#insights-print) .h-screen,
+  body:has(#insights-print) main { height: auto !important; overflow: visible !important; }
+  .break-inside-avoid { break-inside: avoid; }
+}

@@ -86,6 +86,9 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   ],
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
+    // Insights: Impact page, KPIs, charts, dashboards, reports, alerts, data
+    // health and imports, and Copilot on aggregate figures.
+    { href: "/director/insights",           label: "Impact & Insights", icon: "pie-chart"   },
     { href: "/director/projects",           label: "Projects",          icon: "folder"      },
     { href: "/director/hearings",           label: "Hearings",          icon: "calendar"    },
     { href: "/director/calendar",           label: "Team Calendar",     icon: "users-team"  },
@@ -102,6 +105,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   superadmin: [
     { href: "/superadmin",            label: "Overview",       icon: "compass"     },
     { href: "/superadmin/projects",   label: "Projects",       icon: "folder"      },
+    { href: "/director/insights",     label: "Impact & Insights", icon: "pie-chart" },
     { href: "/director/calendar",     label: "Team Calendar",  icon: "users-team"  },
     { href: "/director/users",        label: "Users",          icon: "users"       },
     { href: "/director/cases",        label: "All Cases",      icon: "scale"       },

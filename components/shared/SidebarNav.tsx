@@ -143,6 +143,12 @@ const ICONS = {
       <rect x="14" y="3" width="3" height="15"/>
     </svg>
   ),
+  "pie-chart": (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M17.5 12.5A8 8 0 117.5 2.5"/>
+      <path d="M18 10A8 8 0 0010 2v8z"/>
+    </svg>
+  ),
   settings: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
       <circle cx="10" cy="10" r="3"/>
