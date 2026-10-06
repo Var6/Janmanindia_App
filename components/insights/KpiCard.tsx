@@ -42,7 +42,7 @@ export default function KpiCard({ data, onOpen, compact = false }: { data: KpiTi
         </p>
         {change !== null && (
           <p className="text-xs font-medium mt-0.5" style={{ color: good ? "var(--success-text)" : "var(--error-text)" }}>
-            {change > 0 ? "↑" : change < 0 ? "↓" : "→"} {change > 0 ? "+" : ""}{change}% on the previous {kpi.grain}
+            {change > 0 ? "↑" : change < 0 ? "↓" : "→"} {Math.abs(change)}% on the previous {kpi.grain}
           </p>
         )}
       </div>

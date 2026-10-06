@@ -105,7 +105,7 @@ function HealthTab({ focus }: { focus: string | null }) {
           <p className="text-xs text-(--muted)">records to look at</p>
         </div>
         <p className="text-sm text-(--muted) flex-1 min-w-60">
-          {clean} of {data.checks.length} checks are clear. Every figure in Insights is only as good as these records, so the
+          {`${clean} of ${data.checks.length} checks are clear.`} Every figure in Insights is only as good as these records, so the
           checks marked &ldquo;Fix first&rdquo; skew the dashboards most. Items show case numbers only, never party names.
         </p>
         <button className="btn-secondary" onClick={reload} disabled={loading}>{loading ? "Checking…" : "Run again"}</button>
@@ -363,7 +363,7 @@ function MetricsTab() {
                     {m.usedBy.length === 0 ? "Nothing yet" : m.usedBy.map((u) => `${u.kind === "kpi" ? "KPI" : "Alert"}: ${u.name}`).join("; ")}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button className="text-xs text-(--muted) hover:text-(--error)" disabled={m.usedBy.length > 0}
+                    <button className="text-xs text-(--muted) hover:text-(--error) disabled:opacity-40 disabled:hover:text-(--muted)" disabled={m.usedBy.length > 0}
                       title={m.usedBy.length ? "Delete the KPIs and alerts that use it first" : "Delete"} onClick={() => remove(m)}>
                       Delete
                     </button>
