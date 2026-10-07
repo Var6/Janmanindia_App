@@ -20,7 +20,12 @@ export interface IInsightReport extends Document {
     by: mongoose.Types.ObjectId;
     byName: string;
     at: Date;
+    mentions?: mongoose.Types.ObjectId[];
   }[];
+  /** Staff roles that can open it read-only (directors always can). */
+  visibleTo: string[];
+  /** Named staff who can open it: shared directly, emailed, or @mentioned. */
+  sharedWith: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -33,6 +38,7 @@ const commentSchema = new Schema(
     by: { type: Schema.Types.ObjectId, ref: "User", required: true },
     byName: { type: String, trim: true },
     at: { type: Date, default: Date.now },
+    mentions: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: undefined },
   },
   { _id: true }
 );
@@ -47,6 +53,8 @@ const insightReportSchema = new Schema<IInsightReport>(
     summary: { type: String, trim: true, maxlength: 5000 },
     snapshot: { type: Schema.Types.Mixed, required: true },
     comments: { type: [commentSchema], default: [] },
+    visibleTo: { type: [String], default: [], index: true },
+    sharedWith: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true, minimize: false }

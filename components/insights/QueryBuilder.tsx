@@ -11,8 +11,8 @@ export const inputCls =
   "w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text) focus:outline-none focus:border-(--accent)";
 export const labelCls = "block text-xs font-medium text-(--muted) mb-1";
 
-export function useDatasets() {
-  const { data, error, loading } = useApi<{ datasets: PublicDataset[] }>("/api/insights/datasets");
+export function useDatasets(enabled = true) {
+  const { data, error, loading } = useApi<{ datasets: PublicDataset[] }>(enabled ? "/api/insights/datasets" : null);
   return { datasets: data?.datasets ?? [], error, loading };
 }
 
@@ -220,17 +220,19 @@ function FilterValueInput({ dataset, field, value, onChange }: {
 }
 
 /** Tick-list of the values present in the data (or the field's known values). */
-export function MultiPick({ dataset, field, selected, onChange }: {
+export function MultiPick({ dataset, field, selected, onChange, valuesUrl }: {
   dataset: string; field: PublicField; selected: string[]; onChange: (v: string[]) => void;
+  /** Where to load the pick-list from (shared dashboards use their own route). */
+  valuesUrl?: string;
 }) {
   const [options, setOptions] = useState<{ id: string | null; label: string }[] | null>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open || options) return;
-    api<{ values: { id: string | null; label: string }[] }>(`/api/insights/datasets/values?dataset=${encodeURIComponent(dataset)}&field=${encodeURIComponent(field.key)}`)
+    api<{ values: { id: string | null; label: string }[] }>(valuesUrl ?? `/api/insights/datasets/values?dataset=${encodeURIComponent(dataset)}&field=${encodeURIComponent(field.key)}`)
       .then((d) => setOptions(d.values))
       .catch(() => setOptions((field.values ?? []).map((v) => ({ id: v, label: v }))));
-  }, [open, options, dataset, field]);
+  }, [open, options, dataset, field, valuesUrl]);
 
   // For lookup fields the stored value is the id; for the rest it is the raw value.
   const valueOf = (o: { id: string | null; label: string }) => (field.lookup ? o.id ?? "" : rawValue(field, o));

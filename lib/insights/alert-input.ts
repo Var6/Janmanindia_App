@@ -4,6 +4,7 @@ import InsightKpi from "@/models/InsightKpi";
 import InsightMetric from "@/models/InsightMetric";
 import User from "@/models/User";
 import { QUALITY_CHECKS } from "@/lib/insights/quality";
+import { isSlackWebhook } from "@/lib/slack";
 
 const RAGS = ["on_track", "attention", "off_track", "no_data"];
 const PRESETS = ["all", "last_30_days", "last_90_days", "last_6_months", "last_12_months", "this_month", "this_fy", "last_fy"];
@@ -45,5 +46,16 @@ export async function cleanAlertInput(body: Record<string, unknown>) {
   const found = await User.countDocuments({ _id: { $in: recipients }, isActive: true });
   if (found !== recipients.length) throw new BadRequest("One of the recipients is not an active user");
   out.recipients = recipients.slice(0, 30);
+  out.emailRecipients = body.emailRecipients === true;
+
+  // Slack: a new URL replaces the stored one; removeSlack clears it; leaving
+  // both out keeps whatever is stored (the URL is never sent to the browser).
+  if (typeof body.slackWebhookUrl === "string" && body.slackWebhookUrl.trim()) {
+    const url = body.slackWebhookUrl.trim();
+    if (!isSlackWebhook(url)) throw new BadRequest("The Slack link must be an incoming webhook starting https://hooks.slack.com/services/");
+    out.slackWebhookUrl = url;
+  } else if (body.removeSlack === true) {
+    out.slackWebhookUrl = undefined;
+  }
   return out;
 }

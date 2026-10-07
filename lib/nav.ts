@@ -36,6 +36,8 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/livelihood",               label: "Livelihood",           icon: "currency"  },
     { href: "/activities",               label: "Campaigns",            icon: "target"    },
   ],
+  // "Insights" (/insights) lists the dashboards and reports a director has
+  // shared with the person's role or with them by name; read-only.
   socialworker: [
     { href: "/socialworker",                 label: "Dashboard",      icon: "home"        },
     { href: "/socialworker/cases",           label: "Cases",          icon: "scale"       },
@@ -48,12 +50,14 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/socialworker/voice-messages",  label: "Voice Messages", icon: "mic"         },
     { href: "/socialworker/media-scanning",  label: "Media Scanning", icon: "upload"      },
     { href: "/socialworker/aangan",          label: "Aangan (Child)", icon: "shield"      },
+    { href: "/insights",                 label: "Insights",       icon: "pie-chart"   },
   ],
   litigation: [
     { href: "/litigation",              label: "Dashboard",    icon: "home"      },
     { href: "/litigation/cases",        label: "Cases",        icon: "scale"     },
     { href: "/litigation/sos",          label: "SOS Alerts",   icon: "flame"     },
     { href: "/litigation/tools",        label: "Legal Tools",  icon: "gavel"     },
+    { href: "/insights",                 label: "Insights",       icon: "pie-chart"   },
     // Invoice / expense approval is finance / director / HR's responsibility,
     // not litigation's. The /litigation/invoices route still exists for the
     // head-lawyer escrow flow, but we don't surface it in the sidebar so
@@ -70,11 +74,13 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/hr/offboarding",           label: "Offboarding",     icon: "user-minus" },
     { href: "/hr/grievances",            label: "Grievances",      icon: "inbox"      },
     { href: "/hr/helplines",             label: "Helplines",       icon: "bell"       },
+    { href: "/insights",                 label: "Insights",       icon: "pie-chart"   },
   ],
   finance: [
     { href: "/finance",          label: "Dashboard",   icon: "home"        },
     { href: "/finance/expenses", label: "Expenses",    icon: "currency"    },
     { href: "/finance/salaries", label: "Salaries",    icon: "credit-card" },
+    { href: "/insights",                 label: "Insights",       icon: "pie-chart"   },
   ],
   administrator: [
     { href: "/administrator",          label: "Dashboard",     icon: "home"       },
@@ -83,6 +89,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/administrator/expenses", label: "My Expenses",   icon: "currency"   },
     { href: "/administrator/tickets",  label: "Ticket Inbox",  icon: "inbox"      },
     { href: "/administrator/offices",  label: "Offices",       icon: "building"   },
+    { href: "/insights",                 label: "Insights",       icon: "pie-chart"   },
   ],
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },

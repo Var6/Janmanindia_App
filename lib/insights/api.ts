@@ -4,8 +4,12 @@ import { requireRole, type JWTPayload } from "@/lib/auth";
 import { connectDB } from "@/lib/mongoose";
 import { InsightQueryError } from "@/lib/insights/query";
 
-/** Roles that can use Insights. Everything in the module is behind this. */
+/** Roles that run Insights. Everything except the shared read-only views
+ *  is behind this. */
 export const INSIGHTS_ROLES = ["director", "superadmin"];
+/** Staff who can open dashboards and reports shared with them. Kept here
+ *  (not imported from access.ts) to avoid a circular import. */
+const VIEWER_ROLES = ["socialworker", "litigation", "hr", "finance", "administrator", "director", "superadmin"];
 
 /**
  * Wraps an Insights route handler: checks the session role, connects to the
@@ -15,9 +19,10 @@ export const INSIGHTS_ROLES = ["director", "superadmin"];
 export async function insightsRoute(
   label: string,
   handler: (session: JWTPayload) => Promise<Response>,
+  roles: string[] = INSIGHTS_ROLES,
 ): Promise<Response> {
   try {
-    const session = await requireRole(...INSIGHTS_ROLES);
+    const session = await requireRole(...roles);
     await connectDB();
     return await handler(session);
   } catch (e) {
@@ -31,6 +36,12 @@ export async function insightsRoute(
     console.error(label, e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+/** Read-only routes for staff a dashboard or report has been shared with.
+ *  The handler must still check access to the specific item (canSee). */
+export function viewerRoute(label: string, handler: (session: JWTPayload) => Promise<Response>): Promise<Response> {
+  return insightsRoute(label, handler, VIEWER_ROLES);
 }
 
 export class BadRequest extends Error {}

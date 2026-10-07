@@ -8,7 +8,8 @@ import type { ChartType, FilterSpec, MeasureSpec, QueryResult, QuerySpec } from 
 import type { QualityResult } from "@/lib/insights/quality";
 import PageHeader from "@/components/ui/PageHeader";
 import ChartView from "@/components/insights/charts/ChartView";
-import { Modal } from "@/components/insights/DashboardView";
+import Modal from "@/components/insights/Modal";
+import { downloadCsv } from "@/lib/insights/export";
 import QueryBuilder, { inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
 import { useNotify } from "@/components/insights/useNotify";
 
@@ -166,15 +167,6 @@ const VIEWS: { key: ChartType; label: string }[] = [
   { key: "pivot", label: "Pivot" },
 ];
 
-function toCsv(res: QueryResult): string {
-  const esc = (v: unknown) => {
-    const s = v === null || v === undefined ? "" : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const head = [...res.groupLabels, ...(res.rows.some((r) => r.period) ? ["Period"] : []), res.measureLabel];
-  const lines = res.rows.map((r) => [...r.keys, ...(r.period ? [r.period.slice(0, 10)] : []), r.value].map(esc).join(","));
-  return [head.map(esc).join(","), ...lines].join("\n");
-}
 
 function ExploreTab() {
   const router = useRouter();
@@ -200,13 +192,7 @@ function ExploreTab() {
   }, [queryKey, query.dataset]);
 
   function download() {
-    if (!result) return;
-    const blob = new Blob([toCsv(result)], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `janman-${query.dataset.replace(/[^a-z0-9]+/gi, "-")}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    if (result) downloadCsv(result, `janman-${query.dataset}`);
   }
 
   async function save() {

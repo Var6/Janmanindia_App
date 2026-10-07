@@ -106,7 +106,7 @@ function Legend({ names }: { names: string[] }) {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-(--muted) mb-2">
       {names.map((n, i) => (
-        <span key={n} className="inline-flex items-center gap-1.5">
+        <span key={n} className="inline-flex items-center gap-1.5" data-legend={n} data-colour={SERIES_COLOURS[i % SERIES_COLOURS.length]}>
           <span className="w-2.5 h-2.5 rounded-sm" style={{ background: SERIES_COLOURS[i % SERIES_COLOURS.length] }} />
           {n}
         </span>
@@ -329,7 +329,7 @@ function PieView({ result, fmt, topN }: { result: QueryResult; fmt: (n: number) 
       </svg>
       <ul className="text-sm space-y-1 min-w-40">
         {slices.map(([name, v], i) => (
-          <li key={name} className="flex items-center gap-2">
+          <li key={name} className="flex items-center gap-2" data-legend={`${name}: ${fmt(v)} (${Math.round((v / total) * 100)}%)`} data-colour={SERIES_COLOURS[i % SERIES_COLOURS.length]}>
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: SERIES_COLOURS[i % SERIES_COLOURS.length] }} />
             <span className="text-(--text) truncate">{name}</span>
             <span className="ml-auto pl-3 tabular-nums text-(--muted)">{fmt(v)} · {Math.round((v / total) * 100)}%</span>

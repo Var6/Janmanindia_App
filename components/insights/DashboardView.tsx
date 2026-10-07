@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, useApi, type PublicDataset } from "@/lib/insights/client";
+import { api, useApi, type PublicDataset, type PublicField } from "@/lib/insights/client";
 import type { FilterSpec, RangePreset, RangeSpec } from "@/lib/insights/types";
 import type { TileData } from "@/lib/insights/tiles";
 import ChartView, { type ChartDisplay } from "@/components/insights/charts/ChartView";
+import ChartExport from "@/components/insights/charts/ChartExport";
+import ShareDialog, { sharingSummary } from "@/components/insights/ShareDialog";
+import Modal from "@/components/insights/Modal";
 import KpiCard from "@/components/insights/KpiCard";
 import KpiDrawer from "@/components/insights/KpiDrawer";
 import { MultiPick, inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
@@ -17,7 +20,9 @@ type Tab = { id: string; title: string; tiles: Tile[] };
 type Dashboard = {
   _id: string; title: string; description?: string; tabs: Tab[];
   filters: { field: string; label: string }[]; isOrgDefault: boolean; pinnedByMe: boolean;
+  visibleTo?: string[]; sharedWith?: string[];
 };
+type FilterDef = { field: string; label: string; dataset: string; def: PublicField };
 
 const ROW_PX = 110;
 
@@ -31,10 +36,19 @@ const PERIODS: { key: RangePreset | "own"; label: string }[] = [
   { key: "all", label: "All time" },
 ];
 
-export default function DashboardView({ id, landing = false }: { id: string; landing?: boolean }) {
+/**
+ * A dashboard. `mode="viewer"` is the read-only view for staff it has been
+ * shared with: tiles load through the shared route (which uses the saved
+ * tiles only), there is no editing, and KPI and chart links are hidden.
+ */
+export default function DashboardView({ id, landing = false, mode = "admin" }: { id: string; landing?: boolean; mode?: "admin" | "viewer" }) {
   const toast = useNotify();
-  const { data, error, reload } = useApi<{ dashboard: Dashboard }>(`/api/insights/dashboards/${id}`);
-  const { datasets } = useDatasets();
+  const viewer = mode === "viewer";
+  const { data, error, reload } = useApi<{ dashboard: Dashboard; filterDefs?: FilterDef[] }>(
+    viewer ? `/api/insights/shared/dashboards/${id}` : `/api/insights/dashboards/${id}`,
+  );
+  const { datasets } = useDatasets(!viewer);
+  const [sharing, setSharing] = useState(false);
   const [tabId, setTabId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Dashboard | null>(null);
@@ -58,9 +72,9 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
     if (!tab) return;
     setLoadingTiles(true);
     try {
-      const res = await api<{ tiles: Record<string, TileData> }>("/api/insights/tiles", {
-        body: { tiles: tab.tiles, filters, range },
-      });
+      const res = viewer
+        ? await api<{ tiles: Record<string, TileData> }>(`/api/insights/shared/dashboards/${id}/tiles`, { body: { tabId: tab.id, filters, range } })
+        : await api<{ tiles: Record<string, TileData> }>("/api/insights/tiles", { body: { tiles: tab.tiles, filters, range } });
       setTiles((prev) => ({ ...prev, ...res.tiles }));
     } catch (e) {
       toast.error((e as Error).message);
@@ -68,7 +82,7 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
       setLoadingTiles(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(tab?.tiles.map((t) => [t.id, t.refId, t.text])), JSON.stringify(filters), period]);
+  }, [JSON.stringify(tab?.tiles.map((t) => [t.id, t.refId, t.text])), tab?.id, JSON.stringify(filters), period, viewer, id]);
 
   useEffect(() => { loadTiles(); }, [loadTiles]);
 
@@ -113,6 +127,8 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
                 {dash.isOrgDefault ? "Organisation default Impact page" : ""}
                 {dash.isOrgDefault && dash.pinnedByMe ? " · " : ""}
                 {dash.pinnedByMe ? "Pinned as your Impact page" : ""}
+                {!viewer && ((dash.isOrgDefault || dash.pinnedByMe) ? " · " : "")}
+                {!viewer && sharingSummary(dash.visibleTo ?? [], dash.sharedWith ?? [])}
               </p>
             </>
           )}
@@ -125,8 +141,8 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
             </>
           ) : (
             <>
-              {landing && <Link href={`/director/insights/dashboards/${id}`} className="btn-secondary">Open dashboard</Link>}
-              {!landing && (
+              {landing && !viewer && <Link href={`/director/insights/dashboards/${id}`} className="btn-secondary">Open dashboard</Link>}
+              {!landing && !viewer && (
                 <>
                   <button className="btn-secondary" onClick={() => act("pin", dash.pinnedByMe ? "DELETE" : "POST", dash.pinnedByMe ? "Unpinned" : "Pinned as your Impact page")}>
                     {dash.pinnedByMe ? "Unpin from my Impact page" : "Pin as my Impact page"}
@@ -135,6 +151,7 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
                     {dash.isOrgDefault ? "Remove as org default" : "Make org default"}
                   </button>
                   <Link href={`/director/insights/reports?new=${id}`} className="btn-secondary">Create report</Link>
+                  <button className="btn-secondary" onClick={() => setSharing(true)}>Share</button>
                   <button className="btn-primary" onClick={() => { setDraft(structuredClone(dash)); setEditing(true); }}>Edit</button>
                 </>
               )}
@@ -146,13 +163,16 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
       {/* Filters + period */}
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-(--border) p-3 print:hidden" style={{ background: "var(--surface)" }}>
         {dash.filters.map((f) => {
-          const ds = datasets.find((d) => d.fields.some((x) => x.key === f.field && x.dimension));
-          const field = ds?.fields.find((x) => x.key === f.field);
-          if (!ds || !field) return null;
+          const shared = data?.filterDefs?.find((x) => x.field === f.field);
+          const ds = viewer ? undefined : datasets.find((d) => d.fields.some((x) => x.key === f.field && x.dimension));
+          const field = viewer ? shared?.def : ds?.fields.find((x) => x.key === f.field);
+          const dsKey = viewer ? shared?.dataset : ds?.key;
+          if (!dsKey || !field) return null;
           return (
             <div key={f.field} className="w-56">
               <label className={labelCls}>{f.label}</label>
-              <MultiPick dataset={ds.key} field={field} selected={filterValues[f.field] ?? []}
+              <MultiPick dataset={dsKey} field={field} selected={filterValues[f.field] ?? []}
+                valuesUrl={viewer ? `/api/insights/shared/dashboards/${id}/values?field=${encodeURIComponent(f.field)}` : undefined}
                 onChange={(v) => setFilterValues((p) => ({ ...p, [f.field]: v }))} />
             </div>
           );
@@ -205,7 +225,7 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
       )}
       <div className="grid grid-cols-12 gap-4">
         {tab.tiles.map((tile, i) => (
-          <div key={tile.id}
+          <div key={tile.id} data-tile={tile.id}
             className="col-span-12 rounded-2xl border border-(--border) p-4 flex flex-col overflow-hidden break-inside-avoid"
             style={{ gridColumn: `span ${tile.w} / span ${tile.w}`, minHeight: tile.h * ROW_PX, background: "var(--surface)", boxShadow: "var(--shadow-sm)" }}
             draggable={editing}
@@ -220,7 +240,7 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
                 onChange={(patch) => setTab((t) => ({ ...t, tiles: t.tiles.map((x) => (x.id === tile.id ? { ...x, ...patch } : x)) }))}
                 onRemove={() => setTab((t) => ({ ...t, tiles: t.tiles.filter((x) => x.id !== tile.id) }))} />
             )}
-            <TileBody tile={tile} data={tiles[tile.id]} editing={editing}
+            <TileBody tile={tile} data={tiles[tile.id]} editing={editing} viewer={viewer}
               onText={(text) => setTab((t) => ({ ...t, tiles: t.tiles.map((x) => (x.id === tile.id ? { ...x, text } : x)) }))}
               onOpenKpi={(kid) => setOpenKpi(kid)} />
           </div>
@@ -235,12 +255,16 @@ export default function DashboardView({ id, landing = false }: { id: string; lan
           onAdd={(t) => { setTab((x) => ({ ...x, tiles: [...x.tiles, t] })); setAdding(false); }} />
       )}
       {openKpi && <KpiDrawer id={openKpi} onClose={() => setOpenKpi(null)} onChanged={loadTiles} />}
+      {sharing && (
+        <ShareDialog kind="dashboard" id={id} title={dash.title} initial={{ visibleTo: dash.visibleTo ?? [], sharedWith: (dash.sharedWith ?? []).map(String) }}
+          onClose={() => setSharing(false)} onSaved={() => { setSharing(false); reload(); }} />
+      )}
     </div>
   );
 }
 
-function TileBody({ tile, data, editing, onText, onOpenKpi }: {
-  tile: Tile; data?: TileData; editing: boolean; onText: (t: string) => void; onOpenKpi: (id: string) => void;
+function TileBody({ tile, data, editing, viewer, onText, onOpenKpi }: {
+  tile: Tile; data?: TileData; editing: boolean; viewer: boolean; onText: (t: string) => void; onOpenKpi: (id: string) => void;
 }) {
   if (tile.kind === "text") {
     return editing
@@ -250,7 +274,7 @@ function TileBody({ tile, data, editing, onText, onOpenKpi }: {
   }
   if (!data) return <div className="flex-1 animate-pulse rounded-lg" style={{ background: "var(--bg-secondary)" }} />;
   if (data.kind === "error") return <p className="text-sm text-(--error-text)">{data.error}</p>;
-  if (data.kind === "kpi") return <KpiCard data={data} onOpen={editing ? undefined : () => onOpenKpi(data.kpi.id)} />;
+  if (data.kind === "kpi") return <KpiCard data={data} onOpen={editing || viewer ? undefined : () => onOpenKpi(data.kpi.id)} />;
   if (data.kind === "chart") {
     return (
       <div className="flex-1 flex flex-col">
@@ -259,7 +283,13 @@ function TileBody({ tile, data, editing, onText, onOpenKpi }: {
             <h3 className="text-sm font-semibold text-(--text)">{data.chart.title}</h3>
             {data.chart.description && <p className="text-xs text-(--muted)">{data.chart.description}</p>}
           </div>
-          {!editing && <Link href={`/director/insights/charts/${data.chart.id}`} className="text-[11px] text-(--muted) hover:text-(--accent) print:hidden">Open</Link>}
+          {!editing && (
+            <div className="flex items-center gap-3 print:hidden">
+              <ChartExport title={data.chart.title} subtitle={data.chart.description} result={data.result}
+                target={() => document.querySelector<HTMLElement>(`[data-tile="${tile.id}"]`)} />
+              {!viewer && <Link href={`/director/insights/charts/${data.chart.id}`} className="text-[11px] text-(--muted) hover:text-(--accent)">Open</Link>}
+            </div>
+          )}
         </div>
         <div className="flex-1">
           <ChartView type={data.chart.chartType as never} result={data.result} grain={data.chart.grain}
@@ -359,22 +389,4 @@ function DashboardFilterEditor({ datasets, value, onChange }: {
   );
 }
 
-export function Modal({ title, onClose, children, wide = false }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-auto" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
-      <div className={`w-full ${wide ? "max-w-4xl" : "max-w-lg"} rounded-2xl border border-(--border) p-5 my-8`} style={{ background: "var(--surface)", boxShadow: "var(--shadow-xl)" }}
-        onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-(--text)">{title}</h2>
-          <button className="text-(--muted) hover:text-(--text) text-xl leading-none" onClick={onClose} aria-label="Close">×</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
+export { Modal };

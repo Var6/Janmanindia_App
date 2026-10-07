@@ -417,3 +417,19 @@ input::placeholder, textarea::placeholder {
   body:has(#insights-print) main { height: auto !important; overflow: visible !important; }
   .break-inside-avoid { break-inside: avoid; }
 }
+
+/* Print a single Insights chart (Export › PDF). */
+@media print {
+  body.insights-printing-solo *,
+  body.insights-printing-solo #insights-print * { visibility: hidden; }
+  body.insights-printing-solo .insights-print-solo,
+  body.insights-printing-solo .insights-print-solo *,
+  body.insights-printing-solo #insights-print .insights-print-solo,
+  body.insights-printing-solo #insights-print .insights-print-solo * { visibility: visible; }
+  body.insights-printing-solo .insights-print-solo {
+    position: absolute; left: 0; top: 0; width: 100% !important; min-height: 0 !important;
+    border: none !important; box-shadow: none !important;
+  }
+  body.insights-printing-solo .h-screen,
+  body.insights-printing-solo main { height: auto !important; overflow: visible !important; }
+}

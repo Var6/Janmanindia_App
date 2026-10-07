@@ -13,6 +13,7 @@ type Alert = {
   _id: string; name: string; kind: "kpi_rag" | "metric_threshold" | "data_quality"; enabled: boolean;
   kpi?: Ref; ragStates?: string[]; metric?: Ref; comparator?: string; threshold?: number; rangePreset?: string; qualityCheck?: string;
   frequency: "daily" | "weekly" | "monthly"; dayOf?: number; recipients: { _id: string; name: string }[];
+  emailRecipients?: boolean; hasSlack?: boolean;
   lastRunAt?: string; lastFiredAt?: string; fireStreak: number; log: { at: string; fired: boolean; message: string }[];
 };
 
@@ -32,7 +33,7 @@ function schedule(a: Pick<Alert, "frequency" | "dayOf">) {
 
 export default function AlertsPage() {
   const toast = useNotify();
-  const { data, loading, error, reload } = useApi<{ alerts: Alert[] }>("/api/insights/alerts");
+  const { data, loading, error, reload } = useApi<{ alerts: Alert[]; mailEnabled: boolean }>("/api/insights/alerts");
   const [editing, setEditing] = useState<Alert | "new" | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; fired: boolean; message: string } | null>(null);
 
@@ -54,7 +55,7 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader icon="🔔" title="Alerts" subtitle="Checks that run on a schedule and notify people in the app when something needs attention">
+      <PageHeader icon="🔔" title="Alerts" subtitle="Checks that run on a schedule and tell people (in the app, by email or on Slack) when something needs attention">
         <button className="btn-primary" onClick={() => setEditing("new")}>+ New alert</button>
       </PageHeader>
       {loading && <p className="text-sm text-(--muted)">Loading…</p>}
@@ -70,6 +71,7 @@ export default function AlertsPage() {
                   {a.kind === "metric_threshold" && `“${a.metric?.name ?? "deleted"}” over ${PRESETS.find((p) => p.k === a.rangePreset)?.l ?? "all time"} is ${CMPS.find((c) => c.k === a.comparator)?.l} ${a.threshold}`}
                   {a.kind === "data_quality" && `Data health: ${a.qualityCheck?.replace(/_/g, " ")} finds anything`}
                   {" · "}{schedule(a)} · to {a.recipients.map((r) => r.name).join(", ")}
+                  {" "}({["app", a.emailRecipients ? "email" : "", a.hasSlack ? "Slack" : ""].filter(Boolean).join(", ")})
                 </p>
                 <p className="text-xs text-(--muted) mt-0.5">
                   {a.lastRunAt ? `Last checked ${new Date(a.lastRunAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}` : "Not run yet"}
@@ -96,17 +98,17 @@ export default function AlertsPage() {
           </div>
         )}
       </div>
-      {editing && <AlertForm alert={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
+      {editing && <AlertForm alert={editing === "new" ? undefined : editing} mailEnabled={!!data?.mailEnabled} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
     </div>
   );
 }
 
-function AlertForm({ alert, onClose, onSaved }: { alert?: Alert; onClose: () => void; onSaved: () => void }) {
+function AlertForm({ alert, mailEnabled, onClose, onSaved }: { alert?: Alert; mailEnabled: boolean; onClose: () => void; onSaved: () => void }) {
   const toast = useNotify();
   const kpis = useApi<{ kpis: TileData[] }>("/api/insights/kpis");
   const metrics = useApi<{ metrics: { _id: string; name: string }[] }>("/api/insights/metrics");
   const checks = useApi<{ checks: { key: string; label: string }[] }>("/api/insights/quality?list=1");
-  const users = useApi<{ users: { _id: string; name: string; role: string; isActive?: boolean }[] }>("/api/users");
+  const users = useApi<{ people: { _id: string; name: string; role: string }[] }>("/api/insights/people");
   const [f, setF] = useState({
     name: alert?.name ?? "",
     kind: alert?.kind ?? "data_quality",
@@ -120,9 +122,12 @@ function AlertForm({ alert, onClose, onSaved }: { alert?: Alert; onClose: () => 
     frequency: alert?.frequency ?? "weekly",
     dayOf: alert?.dayOf ?? 1,
     recipients: alert?.recipients.map((r) => r._id) ?? [],
+    emailRecipients: alert?.emailRecipients ?? false,
+    slackWebhookUrl: "",
+    removeSlack: false,
   });
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
-  const staff = (users.data?.users ?? []).filter((u) => u.role !== "community" && u.isActive !== false);
+  const staff = users.data?.people ?? [];
 
   async function save() {
     try {
@@ -207,7 +212,7 @@ function AlertForm({ alert, onClose, onSaved }: { alert?: Alert; onClose: () => 
           <div><label className={labelCls}>Day of the month</label>
             <input type="number" min={1} max={31} className={inputCls} value={f.dayOf} onChange={(e) => set({ dayOf: Number(e.target.value) })} /></div>
         )}
-        <div className="sm:col-span-2"><label className={labelCls}>Notify (in the app&apos;s notification bell)</label>
+        <div className="sm:col-span-2"><label className={labelCls}>Notify (always in the app&apos;s notification bell)</label>
           <div className="max-h-48 overflow-auto rounded-lg border border-(--border) p-2 grid sm:grid-cols-2 gap-1">
             {staff.map((u) => (
               <label key={u._id} className="inline-flex items-center gap-1.5 text-sm text-(--text)">
@@ -217,6 +222,28 @@ function AlertForm({ alert, onClose, onSaved }: { alert?: Alert; onClose: () => 
               </label>
             ))}
           </div></div>
+        <div className="sm:col-span-2 space-y-1">
+          <label className="inline-flex items-center gap-1.5 text-sm text-(--text)">
+            <input type="checkbox" checked={f.emailRecipients} disabled={!mailEnabled} onChange={(e) => set({ emailRecipients: e.target.checked })} />
+            Also email them
+          </label>
+          {!mailEnabled && <p className="text-[11px] text-(--muted)">Email is not set up for this app yet (SMTP settings). The bell still works.</p>}
+        </div>
+        <div className="sm:col-span-2">
+          <label className={labelCls}>Slack channel (optional)</label>
+          {alert?.hasSlack && !f.removeSlack && !f.slackWebhookUrl ? (
+            <div className="flex items-center gap-3 text-sm text-(--text)">
+              Posting to a Slack channel.
+              <button className="text-xs text-(--accent)" onClick={() => set({ removeSlack: true })}>Stop posting to Slack</button>
+            </div>
+          ) : (
+            <>
+              <input className={inputCls} value={f.slackWebhookUrl} onChange={(e) => set({ slackWebhookUrl: e.target.value, removeSlack: false })}
+                placeholder="https://hooks.slack.com/services/…" />
+              <p className="text-[11px] text-(--muted) mt-1">Paste an incoming-webhook link for the channel (Slack › Apps › Incoming Webhooks). The message gives the alert and its figure, never names.</p>
+            </>
+          )}
+        </div>
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <button className="btn-secondary" onClick={onClose}>Cancel</button>

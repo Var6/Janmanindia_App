@@ -27,8 +27,10 @@ export interface IInsightDashboard extends Document {
   isOrgDefault: boolean;
   /** Users who pinned this as their own Impact page (overrides the org default). */
   pinnedBy: mongoose.Types.ObjectId[];
-  /** Roles that can view it. Directors and superadmins always can. */
+  /** Staff roles that can view it read-only. Directors and superadmins always can. */
   visibleTo: string[];
+  /** Named staff who can view it read-only. */
+  sharedWith: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -42,7 +44,8 @@ const insightDashboardSchema = new Schema<IInsightDashboard>(
     filters: { type: Schema.Types.Mixed, default: [] },
     isOrgDefault: { type: Boolean, default: false, index: true },
     pinnedBy: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
-    visibleTo: { type: [String], default: [] },
+    visibleTo: { type: [String], default: [], index: true },
+    sharedWith: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [], index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true, minimize: false }

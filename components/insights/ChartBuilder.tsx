@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/insights/client";
 import type { ChartType, QueryResult, QuerySpec } from "@/lib/insights/types";
 import ChartView, { type ChartDisplay } from "@/components/insights/charts/ChartView";
+import ChartExport from "@/components/insights/charts/ChartExport";
 import QueryBuilder, { inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
 import { useNotify } from "@/components/insights/useNotify";
 
@@ -132,8 +133,14 @@ export default function ChartBuilder({ initial }: { initial?: Initial }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-(--border) p-5 min-h-80" style={{ background: "var(--surface)" }}>
-        <h2 className="text-base font-semibold text-(--text) mb-1">{title || "Preview"}</h2>
+      <div id="chart-builder-preview" className="rounded-2xl border border-(--border) p-5 min-h-80" style={{ background: "var(--surface)" }}>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h2 className="text-base font-semibold text-(--text)">{title || "Preview"}</h2>
+          {preview && !previewError && (
+            <ChartExport title={title || "Chart"} subtitle={description || undefined} result={preview}
+              target={() => document.getElementById("chart-builder-preview")} />
+          )}
+        </div>
         {description && <p className="text-xs text-(--muted) mb-3">{description}</p>}
         {previewError && <p className="text-sm text-(--error-text)">{previewError}</p>}
         {!previewError && preview && (

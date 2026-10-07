@@ -2,6 +2,9 @@ import InsightAlert, { type IInsightAlert } from "@/models/InsightAlert";
 import InsightKpi from "@/models/InsightKpi";
 import InsightMetric from "@/models/InsightMetric";
 import Notification from "@/models/Notification";
+import User from "@/models/User";
+import { appUrl, escapeHtml, mailHtml, sendMail } from "@/lib/mailer";
+import { postToSlack } from "@/lib/slack";
 import { computeKpi } from "@/lib/insights/kpi";
 import { runQuery } from "@/lib/insights/query";
 import { runQualityCheck } from "@/lib/insights/quality";
@@ -11,7 +14,8 @@ import type { RangePreset } from "@/lib/insights/types";
 /**
  * Alert evaluation and the daily run. A fired alert sends an in-app
  * notification (the bell in the top bar) to each recipient, linking to the
- * KPI, the data-health list or the alerts page.
+ * KPI, the data-health list or the alerts page; and, if set, an email to the
+ * same people and a message to a Slack channel. Messages carry totals only.
  */
 
 const RAG_LABEL: Record<string, string> = { on_track: "on track", attention: "needs attention", off_track: "off track", no_data: "has no data" };
@@ -87,7 +91,7 @@ export function isDue(alert: Pick<IInsightAlert, "frequency" | "dayOf" | "lastRu
 
 /** Evaluate one alert, record the result, notify if it fired. */
 export async function runAlert(alertId: string, opts: { notify?: boolean } = {}): Promise<Evaluation> {
-  const alert = await InsightAlert.findById(alertId);
+  const alert = await InsightAlert.findById(alertId).select("+slackWebhookUrl");
   if (!alert) throw new Error("Alert not found");
   const ev = await evaluateAlert(alert);
   alert.lastRunAt = new Date();
@@ -109,6 +113,18 @@ export async function runAlert(alertId: string, opts: { notify?: boolean } = {})
       link: ev.link,
       meta: { alertId: String(alert._id) },
     })));
+    if (alert.emailRecipients) {
+      const people = await User.find({ _id: { $in: alert.recipients }, isActive: true }).select("email").lean();
+      await sendMail({
+        to: people.map((p) => p.email).filter((e): e is string => !!e),
+        subject: `Janman alert: ${alert.name}`,
+        text: `${ev.message}\n\nOpen in the Janman app: ${appUrl(ev.link)}`,
+        html: mailHtml(alert.name, `<p style="font-size:15px;line-height:1.5">${escapeHtml(ev.message)}</p>`, { href: appUrl(ev.link), label: "Open in the app" }),
+      });
+    }
+  }
+  if (ev.fired && opts.notify !== false && alert.slackWebhookUrl) {
+    await postToSlack(alert.slackWebhookUrl, `*${alert.name}*\n${ev.message}\n<${appUrl(ev.link)}|Open in the Janman app>`);
   }
   return ev;
 }
