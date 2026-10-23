@@ -106,7 +106,7 @@ export default function DailyReportComposer({ isViewer }: { isViewer: boolean })
               style={{ color: submittedToday ? "var(--success-text)" : "var(--warning-text)" }}>
               {submittedToday
                 ? t("Today's report is in — see you tomorrow!")
-                : t("Today's report is due — submit before 6pm to skip the reminder.")}
+                : t("Today's report hasn't been submitted yet.")}
             </p>
           </div>
         </div>

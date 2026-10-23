@@ -41,6 +41,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/socialworker/cases",           label: "Cases",          icon: "scale"       },
     { href: "/socialworker/care-plans",      label: "Care Plans",     icon: "user-circle" },
     { href: "/socialworker/daily-reports",   label: "Weekly Report",  icon: "document"    },
+    { href: "/reports/monthly",              label: "Monthly Report", icon: "document"    },
     { href: "/socialworker/queries",         label: "Queries",        icon: "search"      },
     { href: "/socialworker/plv-requests",    label: "PLV Requests",   icon: "users"       },
     { href: "/schemes",                       label: "Schemes",        icon: "scroll"      },
@@ -56,6 +57,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/litigation/sos",          label: "SOS Alerts",   icon: "flame"     },
     { href: "/litigation/tools",        label: "Legal Tools",  icon: "gavel"     },
     { href: "/litigation/reports",      label: "EOD & Invoice", icon: "receipt"  },
+    { href: "/reports/monthly",         label: "Monthly Report", icon: "document" },
     // Invoice / expense approval is finance / director / HR's responsibility,
     // not litigation's. The /litigation/invoices route still exists for the
     // head-lawyer escrow flow, but we don't surface it in the sidebar so
@@ -70,6 +72,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
     { href: "/hr/invoices",              label: "Invoices",        icon: "receipt"    },
     { href: "/hr/expense-verification",  label: "Expense Verify",  icon: "currency"   },
     { href: "/hr/daily-reports",         label: "Weekly Reports",  icon: "document"   },
+    { href: "/reports/monthly",          label: "Monthly Reports", icon: "document"   },
     { href: "/hr/attendance",            label: "Attendance",      icon: "clock"      },
     { href: "/hr/onboarding",            label: "Onboarding",      icon: "user-plus"  },
     { href: "/hr/offboarding",           label: "Offboarding",     icon: "user-minus" },
@@ -85,6 +88,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   administrator: [
     { href: "/administrator",          label: "Dashboard",     icon: "home"       },
     { href: "/reports/daily/review",   label: "Report Review", icon: "bar-chart"  },
+    { href: "/reports/monthly",        label: "Monthly Reports", icon: "document" },
     { href: "/reports/expenses",       label: "Expense Report", icon: "receipt"   },
     { href: "/administrator/calendar", label: "Team Calendar", icon: "users-team" },
     { href: "/administrator/assign",   label: "Assign Tasks",  icon: "refresh"    },
@@ -95,6 +99,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   director: [
     { href: "/director",                    label: "Dashboard",         icon: "home"        },
     { href: "/reports/daily/review",        label: "Report Review",     icon: "bar-chart"   },
+    { href: "/reports/monthly",             label: "Monthly Reports",   icon: "document"    },
     { href: "/reports/expenses",            label: "Expense Report",    icon: "receipt"     },
     { href: "/director/projects",           label: "Projects",          icon: "folder"      },
     { href: "/director/hearings",           label: "Hearings",          icon: "calendar"    },
@@ -112,6 +117,7 @@ const ROLE_ITEMS: Record<string, NavItem[]> = {
   superadmin: [
     { href: "/superadmin",            label: "Overview",       icon: "compass"     },
     { href: "/reports/daily/review",  label: "Report Review",  icon: "bar-chart"   },
+    { href: "/reports/monthly",       label: "Monthly Reports", icon: "document"   },
     { href: "/reports/expenses",      label: "Expense Report", icon: "receipt"     },
     { href: "/superadmin/projects",   label: "Projects",       icon: "folder"      },
     { href: "/director/calendar",     label: "Team Calendar",  icon: "users-team"  },
