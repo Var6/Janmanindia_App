@@ -6,10 +6,12 @@ import User from "@/models/User";
 import { appUrl, escapeHtml, mailHtml, sendMail } from "@/lib/mailer";
 import { postToSlack } from "@/lib/slack";
 import { computeKpi } from "@/lib/insights/kpi";
-import { runQuery } from "@/lib/insights/query";
+import { runQuery, IMPORT_PREFIX } from "@/lib/insights/query";
+import { describeQuery } from "@/lib/insights/describe";
+import { ADMIN_ROLES } from "@/lib/insights/access";
 import { runQualityCheck } from "@/lib/insights/quality";
 import { formatNumber } from "@/lib/insights/format";
-import type { RangePreset } from "@/lib/insights/types";
+import type { QuerySpec, RangePreset } from "@/lib/insights/types";
 
 /**
  * Alert evaluation and the daily run. A fired alert sends an in-app
@@ -26,7 +28,7 @@ const CMP_WORD: Record<string, string> = { gt: "above", gte: "at or above", lt: 
 
 export type Evaluation = { fired: boolean; message: string; link: string };
 
-export async function evaluateAlert(alert: Pick<IInsightAlert, "kind" | "kpi" | "ragStates" | "metric" | "rangePreset" | "comparator" | "threshold" | "qualityCheck" | "name">): Promise<Evaluation> {
+export async function evaluateAlert(alert: Pick<IInsightAlert, "kind" | "kpi" | "ragStates" | "metric" | "rangePreset" | "comparator" | "threshold" | "qualityCheck" | "query" | "queryMode" | "name">): Promise<Evaluation> {
   if (alert.kind === "kpi_rag") {
     const kpi = await InsightKpi.findById(alert.kpi).lean();
     if (!kpi) return { fired: false, message: "The KPI for this alert was deleted.", link: "/director/insights/alerts" };
@@ -61,6 +63,32 @@ export async function evaluateAlert(alert: Pick<IInsightAlert, "kind" | "kpi" | 
       message: `${metric.name} is ${formatNumber(value)} (${fired ? "" : "not "}${CMP_WORD[cmp]} ${formatNumber(threshold)}).`,
       link: "/director/insights/data",
     };
+  }
+
+  if (alert.kind === "query_threshold") {
+    const spec = alert.query as QuerySpec | undefined;
+    if (!spec?.dataset) return { fired: false, message: "This alert has no query.", link: "/director/insights/alerts" };
+    const res = await runQuery({ ...spec, limit: 200 });
+    const cmp = alert.comparator ?? "gt";
+    const threshold = alert.threshold ?? 0;
+    const what = await describeQuery(spec);
+    if (alert.queryMode === "any_group" && (spec.groupBy?.length ?? 0) > 0) {
+      const hits = res.rows.filter((r) => CMP[cmp](r.value, threshold)).sort((a, b) => (cmp.startsWith("g") ? b.value - a.value : a.value - b.value));
+      // Group labels from the app's own data are places, statuses and staff.
+      // Labels from an imported table are not vetted, so only the count goes out.
+      const named = !spec.dataset.startsWith(IMPORT_PREFIX);
+      const list = named ? `: ${hits.slice(0, 5).map((r) => `${r.keys[0] ?? "—"} (${formatNumber(r.value)})`).join(", ")}${hits.length > 5 ? ` and ${hits.length - 5} more` : ""}` : "";
+      return {
+        fired: hits.length > 0,
+        message: hits.length
+          ? `${what}: ${hits.length} of ${res.rows.length} group${res.rows.length === 1 ? "" : "s"} ${hits.length === 1 ? "is" : "are"} ${CMP_WORD[cmp]} ${formatNumber(threshold)}${list}.`
+          : `${what}: no group is ${CMP_WORD[cmp]} ${formatNumber(threshold)}.`,
+        link: "/director/insights/alerts",
+      };
+    }
+    const value = res.rows.reduce((s, r) => s + r.value, 0);
+    const fired = CMP[cmp](value, threshold);
+    return { fired, message: `${what}: ${formatNumber(value)} (${fired ? "" : "not "}${CMP_WORD[cmp]} ${formatNumber(threshold)}).`, link: "/director/insights/alerts" };
   }
 
   const q = await runQualityCheck(alert.qualityCheck ?? "");
@@ -105,22 +133,30 @@ export async function runAlert(alertId: string, opts: { notify?: boolean } = {})
   await alert.save();
 
   if (ev.fired && opts.notify !== false && alert.recipients.length) {
+    // The KPI, data-health and alerts pages are for directors. Other staff
+    // get the same message with a link to the Insights shared with them.
+    const people = await User.find({ _id: { $in: alert.recipients }, isActive: true }).select("email role").lean();
+    const linkFor = (role?: string) => (role && ADMIN_ROLES.includes(role) ? ev.link : "/insights");
+    const roleOf = new Map(people.map((p) => [String(p._id), p.role as string]));
     await Notification.insertMany(alert.recipients.map((r) => ({
       recipient: r,
       type: "insights_alert",
       title: alert.name,
       body: ev.message,
-      link: ev.link,
+      link: linkFor(roleOf.get(String(r))),
       meta: { alertId: String(alert._id) },
     })));
     if (alert.emailRecipients) {
-      const people = await User.find({ _id: { $in: alert.recipients }, isActive: true }).select("email").lean();
-      await sendMail({
-        to: people.map((p) => p.email).filter((e): e is string => !!e),
-        subject: `Janman alert: ${alert.name}`,
-        text: `${ev.message}\n\nOpen in the Janman app: ${appUrl(ev.link)}`,
-        html: mailHtml(alert.name, `<p style="font-size:15px;line-height:1.5">${escapeHtml(ev.message)}</p>`, { href: appUrl(ev.link), label: "Open in the app" }),
-      });
+      for (const admin of [true, false]) {
+        const group = people.filter((p) => ADMIN_ROLES.includes(p.role as string) === admin);
+        const link = appUrl(admin ? ev.link : "/insights");
+        await sendMail({
+          to: group.map((p) => p.email).filter((e): e is string => !!e),
+          subject: `Janman alert: ${alert.name}`,
+          text: `${ev.message}\n\nOpen in the Janman app: ${link}`,
+          html: mailHtml(alert.name, `<p style="font-size:15px;line-height:1.5">${escapeHtml(ev.message)}</p>`, { href: link, label: "Open in the app" }),
+        });
+      }
     }
   }
   if (ev.fired && opts.notify !== false && alert.slackWebhookUrl) {

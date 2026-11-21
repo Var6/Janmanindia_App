@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insightsRoute, oid, notFound, BadRequest } from "@/lib/insights/api";
+import { insightsRoute, oid, notFound } from "@/lib/insights/api";
 import InsightImport from "@/models/InsightImport";
-import { describeColumns } from "@/lib/insights/csv";
-import { loadTable, replaceRows } from "@/lib/insights/imports";
+import { syncImport } from "@/lib/insights/imports";
+
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** POST — re-read a Google Sheet or Kobo form and replace the rows. Columns
- *  are matched by their key; new columns in the source are ignored. */
+/** POST — re-read a connected source now and replace the rows. */
 export async function POST(_req: NextRequest, ctx: Ctx) {
   return insightsRoute("POST /api/insights/imports/[id]/sync", async () => {
     const imp = await InsightImport.findById(oid((await ctx.params).id)).lean();
     if (!imp) return notFound();
-    if (imp.source === "csv") throw new BadRequest("A CSV upload cannot be refreshed; upload the new file as a new dataset");
-    const table = await loadTable(imp.source, imp.sourceRef, undefined);
-    const fresh = describeColumns(table.headers, table.rows);
-    const columns = imp.columns
-      .map((c) => {
-        const f = fresh.find((x) => x.key === c.key);
-        return f ? { ...f, type: c.type, label: c.label } : null;
-      })
-      .filter((c): c is NonNullable<typeof c> => c !== null);
-    if (!columns.length) throw new BadRequest("None of this dataset's columns are in the source any more");
-    const rows = await replaceRows(String(imp._id), columns, table);
-    return NextResponse.json({ ok: true, rows, missingColumns: imp.columns.length - columns.length });
+    try {
+      const r = await syncImport(imp);
+      return NextResponse.json({ ok: true, ...r });
+    } catch (e) {
+      await InsightImport.updateOne({ _id: imp._id }, { $set: { lastSyncError: (e instanceof Error ? e.message : "Refresh failed").slice(0, 500) } });
+      throw e;
+    }
   });
 }

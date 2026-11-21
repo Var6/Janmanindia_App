@@ -7,6 +7,7 @@ import type { TileData } from "@/lib/insights/tiles";
 import ChartView, { type ChartDisplay } from "@/components/insights/charts/ChartView";
 import ChartExport from "@/components/insights/charts/ChartExport";
 import KpiCard from "@/components/insights/KpiCard";
+import ImageTile from "@/components/insights/ImageTile";
 import Modal from "@/components/insights/Modal";
 import RichText from "@/components/insights/RichText";
 import ShareDialog, { sharingSummary, type Person } from "@/components/insights/ShareDialog";
@@ -130,7 +131,7 @@ export default function ReportView({ id, mode = "admin" }: { id: string; mode?: 
                 <div key={t.id} data-tile={t.id} className="col-span-12 rounded-2xl border border-(--border) p-4 break-inside-avoid"
                   style={{ gridColumn: `span ${t.w} / span ${t.w}`, background: "var(--surface)" }}>
                   <SnapshotTile tile={t} period={`${fmtDay(r.periodStart)} to ${fmtDay(r.periodEnd)}`} />
-                  {t.kind !== "text" && commentBox(t.id)}
+                  {t.kind !== "text" && t.kind !== "image" && commentBox(t.id)}
                 </div>
               ))}
             </div>
@@ -154,6 +155,7 @@ function SnapshotTile({ tile, period }: { tile: SnapTile; period: string }) {
   if (d.kind === "text") return <RichText text={d.text} />;
   if (d.kind === "error") return <p className="text-sm text-(--error-text)">{d.error}</p>;
   if (d.kind === "kpi") return <KpiCard data={d} />;
+  if (d.kind === "image") return <ImageTile url={d.url} caption={d.caption} />;
   return (
     <div>
       <div className="flex items-start justify-between gap-2">

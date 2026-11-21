@@ -13,16 +13,20 @@ import KpiCard from "@/components/insights/KpiCard";
 import KpiDrawer from "@/components/insights/KpiDrawer";
 import { MultiPick, inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
 import RichText from "@/components/insights/RichText";
+import ImageTile from "@/components/insights/ImageTile";
+import { uploadFileWithProgress } from "@/lib/upload-client";
 import { useNotify } from "@/components/insights/useNotify";
 
-type Tile = { id: string; kind: "chart" | "kpi" | "text"; refId?: string; text?: string; w: number; h: number };
+type Tile = { id: string; kind: "chart" | "kpi" | "text" | "image"; refId?: string; text?: string; imageUrl?: string; caption?: string; w: number; h: number };
+type FilterType = "value" | "number" | "date";
+type DashFilter = { field: string; label: string; type?: FilterType };
 type Tab = { id: string; title: string; tiles: Tile[] };
 type Dashboard = {
   _id: string; title: string; description?: string; tabs: Tab[];
-  filters: { field: string; label: string }[]; isOrgDefault: boolean; pinnedByMe: boolean;
+  filters: DashFilter[]; isOrgDefault: boolean; pinnedByMe: boolean;
   visibleTo?: string[]; sharedWith?: string[];
 };
-type FilterDef = { field: string; label: string; dataset: string; def: PublicField };
+type FilterDef = { field: string; label: string; type?: FilterType; dataset?: string; def?: PublicField };
 
 const ROW_PX = 110;
 
@@ -53,6 +57,7 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Dashboard | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string[]>>({});
+  const [ranges, setRanges] = useState<Record<string, { from?: string; to?: string }>>({});
   const [period, setPeriod] = useState<RangePreset | "own">("own");
   const [tiles, setTiles] = useState<Record<string, TileData>>({});
   const [loadingTiles, setLoadingTiles] = useState(false);
@@ -62,10 +67,23 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
   const dash = editing ? draft : data?.dashboard ?? null;
   const tab = dash?.tabs.find((t) => t.id === tabId) ?? dash?.tabs[0];
 
-  const filters: FilterSpec[] = useMemo(
-    () => Object.entries(filterValues).filter(([, v]) => v.length).map(([field, value]) => ({ field, op: "in", value })),
-    [filterValues],
-  );
+  const filterTypes = JSON.stringify((dash?.filters ?? []).map((f) => [f.field, f.type ?? "value"]));
+  const filters: FilterSpec[] = useMemo(() => {
+    const types = new Map(JSON.parse(filterTypes) as [string, FilterType][]);
+    const picked: FilterSpec[] = Object.entries(filterValues)
+      .filter(([field, v]) => v.length && types.get(field) === "value")
+      .map(([field, value]) => ({ field, op: "in", value }));
+    // Dates run from the start of the first day to the end of the last, in IST.
+    const ranged: FilterSpec[] = Object.entries(ranges).flatMap(([field, r]) => {
+      const type = types.get(field);
+      if (type !== "number" && type !== "date") return [];
+      const out: FilterSpec[] = [];
+      if (r.from) out.push({ field, op: "gte", value: type === "date" ? `${r.from}T00:00:00+05:30` : Number(r.from) });
+      if (r.to) out.push({ field, op: "lte", value: type === "date" ? `${r.to}T23:59:59.999+05:30` : Number(r.to) });
+      return out;
+    });
+    return [...picked, ...ranged];
+  }, [filterValues, ranges, filterTypes]);
   const range: RangeSpec | undefined = period === "own" ? undefined : { preset: period };
 
   const loadTiles = useCallback(async () => {
@@ -82,7 +100,7 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
       setLoadingTiles(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(tab?.tiles.map((t) => [t.id, t.refId, t.text])), tab?.id, JSON.stringify(filters), period, viewer, id]);
+  }, [JSON.stringify(tab?.tiles.map((t) => [t.id, t.refId, t.text, t.imageUrl, t.caption])), tab?.id, JSON.stringify(filters), period, viewer, id]);
 
   useEffect(() => { loadTiles(); }, [loadTiles]);
 
@@ -163,6 +181,24 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
       {/* Filters + period */}
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-(--border) p-3 print:hidden" style={{ background: "var(--surface)" }}>
         {dash.filters.map((f) => {
+          const type = f.type ?? "value";
+          if (type !== "value") {
+            const r = ranges[f.field] ?? {};
+            const set = (patch: { from?: string; to?: string }) => setRanges((p) => ({ ...p, [f.field]: { ...p[f.field], ...patch } }));
+            const input = type === "date" ? "date" : "number";
+            return (
+              <div key={f.field}>
+                <label className={labelCls}>{f.label}</label>
+                <div className="flex items-center gap-1.5">
+                  <input type={input} className={`${inputCls} ${type === "date" ? "w-40" : "w-24"}`} value={r.from ?? ""} placeholder="From"
+                    aria-label={`${f.label} from`} onChange={(e) => set({ from: e.target.value })} />
+                  <span className="text-xs text-(--muted)">to</span>
+                  <input type={input} className={`${inputCls} ${type === "date" ? "w-40" : "w-24"}`} value={r.to ?? ""} placeholder="To"
+                    aria-label={`${f.label} to`} onChange={(e) => set({ to: e.target.value })} />
+                </div>
+              </div>
+            );
+          }
           const shared = data?.filterDefs?.find((x) => x.field === f.field);
           const ds = viewer ? undefined : datasets.find((d) => d.fields.some((x) => x.key === f.field && x.dimension));
           const field = viewer ? shared?.def : ds?.fields.find((x) => x.key === f.field);
@@ -184,7 +220,7 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
           </select>
         </div>
         {(filters.length > 0 || period !== "own") && (
-          <button className="text-xs text-(--accent) hover:underline pb-2" onClick={() => { setFilterValues({}); setPeriod("own"); }}>Clear</button>
+          <button className="text-xs text-(--accent) hover:underline pb-2" onClick={() => { setFilterValues({}); setRanges({}); setPeriod("own"); }}>Clear</button>
         )}
         {editing && <DashboardFilterEditor datasets={datasets} value={draft!.filters} onChange={(f) => setDraft({ ...draft!, filters: f })} />}
         {loadingTiles && <span className="text-xs text-(--muted) pb-2 ml-auto">Updating…</span>}
@@ -242,12 +278,13 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
             )}
             <TileBody tile={tile} data={tiles[tile.id]} editing={editing} viewer={viewer}
               onText={(text) => setTab((t) => ({ ...t, tiles: t.tiles.map((x) => (x.id === tile.id ? { ...x, text } : x)) }))}
+              onPatch={(patch) => setTab((t) => ({ ...t, tiles: t.tiles.map((x) => (x.id === tile.id ? { ...x, ...patch } : x)) }))}
               onOpenKpi={(kid) => setOpenKpi(kid)} />
           </div>
         ))}
       </div>
       {editing && (
-        <button className="btn-secondary w-full" onClick={() => setAdding(true)}>+ Add a chart, KPI or text block</button>
+        <button className="btn-secondary w-full" onClick={() => setAdding(true)}>+ Add a chart, KPI, text block or image</button>
       )}
 
       {adding && (
@@ -263,9 +300,20 @@ export default function DashboardView({ id, landing = false, mode = "admin" }: {
   );
 }
 
-function TileBody({ tile, data, editing, viewer, onText, onOpenKpi }: {
-  tile: Tile; data?: TileData; editing: boolean; viewer: boolean; onText: (t: string) => void; onOpenKpi: (id: string) => void;
+function TileBody({ tile, data, editing, viewer, onText, onPatch, onOpenKpi }: {
+  tile: Tile; data?: TileData; editing: boolean; viewer: boolean; onText: (t: string) => void; onPatch: (p: Partial<Tile>) => void; onOpenKpi: (id: string) => void;
 }) {
+  if (tile.kind === "image") {
+    return (
+      <div className="flex-1 flex flex-col gap-2 min-h-0">
+        {tile.imageUrl && <ImageTile url={tile.imageUrl} caption={editing ? undefined : tile.caption} />}
+        {editing && (
+          <input className={inputCls} value={tile.caption ?? ""} onChange={(e) => onPatch({ caption: e.target.value })}
+            placeholder="Caption (optional). Do not name clients or children." />
+        )}
+      </div>
+    );
+  }
   if (tile.kind === "text") {
     return editing
       ? <textarea className={`${inputCls} flex-1 min-h-20`} value={tile.text ?? ""} onChange={(e) => onText(e.target.value)}
@@ -322,13 +370,27 @@ function TileControls({ tile, onChange, onRemove }: { tile: Tile; onChange: (p: 
 function AddTileDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Tile) => void }) {
   const charts = useApi<{ charts: { _id: string; title: string; chartType: string; datasetLabel: string }[] }>("/api/insights/charts");
   const kpis = useApi<{ kpis: TileData[] }>("/api/insights/kpis");
-  const [kind, setKind] = useState<"chart" | "kpi" | "text">("chart");
+  const toast = useNotify();
+  const [kind, setKind] = useState<"chart" | "kpi" | "text" | "image">("chart");
+  const [uploading, setUploading] = useState<number | null>(null);
+
+  async function addImage(f: File | undefined) {
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(f.type)) { toast.error("Choose a JPEG, PNG, WebP or GIF picture"); return; }
+    if (f.size > 8 * 1024 * 1024) { toast.error("Pictures can be up to 8 MB"); return; }
+    setUploading(0);
+    try {
+      const url = await uploadFileWithProgress(f, (p) => setUploading(p.percent ?? 0));
+      onAdd({ id: crypto.randomUUID(), kind: "image", imageUrl: url, caption: "", w: 6, h: 3 });
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setUploading(null); }
+  }
   return (
     <Modal title="Add to dashboard" onClose={onClose}>
       <div className="flex gap-2 mb-3">
-        {(["chart", "kpi", "text"] as const).map((k) => (
+        {(["chart", "kpi", "text", "image"] as const).map((k) => (
           <button key={k} className={kind === k ? "btn-primary" : "btn-secondary"} onClick={() => setKind(k)}>
-            {k === "kpi" ? "KPI" : k === "chart" ? "Chart" : "Text"}
+            {k === "kpi" ? "KPI" : k === "chart" ? "Chart" : k === "text" ? "Text" : "Image"}
           </button>
         ))}
       </div>
@@ -359,34 +421,61 @@ function AddTileDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (t: Til
           Add a text block
         </button>
       )}
+      {kind === "image" && (
+        <div className="space-y-2">
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="text-sm text-(--text)" disabled={uploading !== null}
+            onChange={(e) => addImage(e.target.files?.[0])} />
+          {uploading !== null && <p className="text-xs text-(--muted)">Uploading… {uploading}%</p>}
+          <p className="text-xs text-(--muted)">
+            A photo from a camp, a logo or a diagram, up to 8 MB. Everyone the dashboard is shared with will see it, so leave out
+            pictures that show clients, children or survivors.
+          </p>
+        </div>
+      )}
     </Modal>
   );
 }
 
 function DashboardFilterEditor({ datasets, value, onChange }: {
-  datasets: PublicDataset[]; value: { field: string; label: string }[]; onChange: (v: { field: string; label: string }[]) => void;
+  datasets: PublicDataset[]; value: DashFilter[]; onChange: (v: DashFilter[]) => void;
 }) {
-  // Offer the dimensions that exist on the case data (they also apply to
-  // hearings and any other dataset with the same field key).
-  const cases = datasets.find((d) => d.key === "cases");
-  const options = (cases?.fields ?? []).filter((f) => f.dimension && f.type === "string");
+  // Pick-a-value filters are the dimensions of the case data (they also apply
+  // to hearings and any other dataset with the same field). Number and date
+  // ranges can use a field from any of the app's own datasets; each applies
+  // to the charts whose data has that field.
+  const own = datasets.filter((d) => !d.key.startsWith("import:"));
+  const cases = own.find((d) => d.key === "cases");
+  const pick = (type: "number" | "date") => {
+    const seen = new Map<string, { key: string; label: string }>();
+    for (const d of own) for (const f of d.fields) {
+      if (f.type === type && !seen.has(f.key)) seen.set(f.key, { key: f.key, label: d.key === "cases" ? f.label : `${f.label} (${d.label.toLowerCase()})` });
+    }
+    return [...seen.values()];
+  };
+  const groups: { type: FilterType; title: string; options: { key: string; label: string }[] }[] = [
+    { type: "value", title: "Pick values", options: (cases?.fields ?? []).filter((f) => f.dimension && f.type === "string").map((f) => ({ key: f.key, label: f.label })) },
+    { type: "number", title: "Number range", options: pick("number") },
+    { type: "date", title: "Date range", options: pick("date") },
+  ];
   return (
-    <div className="w-full border-t border-(--border) pt-3 mt-1">
-      <p className={labelCls}>Dashboard filters (shown above every tab)</p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((f) => {
-          const on = value.some((v) => v.field === f.key);
-          return (
-            <label key={f.key} className="inline-flex items-center gap-1.5 text-sm text-(--text)">
-              <input type="checkbox" checked={on}
-                onChange={() => onChange(on ? value.filter((v) => v.field !== f.key) : [...value, { field: f.key, label: f.label }])} />
-              {f.label}
-            </label>
-          );
-        })}
-      </div>
+    <div className="w-full border-t border-(--border) pt-3 mt-1 space-y-2">
+      <p className={labelCls}>Dashboard filters (shown above every tab; up to 6)</p>
+      {groups.map((g) => (
+        <div key={g.type} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-xs text-(--muted) w-24">{g.title}</span>
+          {g.options.map((f) => {
+            const on = value.some((v) => v.field === f.key && (v.type ?? "value") === g.type);
+            return (
+              <label key={f.key} className="inline-flex items-center gap-1.5 text-sm text-(--text)">
+                <input type="checkbox" checked={on} disabled={!on && value.length >= 6}
+                  onChange={() => onChange(on ? value.filter((v) => v.field !== f.key) : [...value.filter((v) => v.field !== f.key), { field: f.key, label: f.label, type: g.type }])} />
+                {f.label}
+              </label>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
 
-export { Modal };

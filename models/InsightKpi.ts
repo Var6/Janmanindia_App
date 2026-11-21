@@ -17,6 +17,8 @@ export interface IInsightKpi extends Document {
   /** Count running totals instead of per-period values. */
   cumulative: boolean;
   target: number;
+  /** False while the target is a starter placeholder nobody has confirmed. */
+  targetConfirmed: boolean;
   direction: Direction;
   /** % of target at or above which the KPI is on track / needs attention. */
   onTrackPct: number;
@@ -53,6 +55,7 @@ const insightKpiSchema = new Schema<IInsightKpi>(
     grain: { type: String, enum: ["day", "week", "month", "quarter", "year"], default: "month" },
     cumulative: { type: Boolean, default: false },
     target: { type: Number, required: true },
+    targetConfirmed: { type: Boolean, default: true, index: true },
     direction: { type: String, enum: ["higher", "lower"], default: "higher" },
     onTrackPct: { type: Number, default: 90, min: 0, max: 1000 },
     attentionPct: { type: Number, default: 70, min: 0, max: 1000 },

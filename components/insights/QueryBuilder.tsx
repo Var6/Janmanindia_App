@@ -37,9 +37,11 @@ type Props = {
   /** Hide grouping / time controls (metric form only needs measure + filters). */
   measureOnly?: boolean;
   maxGroups?: number;
+  /** Hide the "over time" control (alerts watch one number, not a trend). */
+  noTime?: boolean;
 };
 
-export default function QueryBuilder({ value, onChange, datasets, measureOnly, maxGroups = 2 }: Props) {
+export default function QueryBuilder({ value, onChange, datasets, measureOnly, maxGroups = 2, noTime = false }: Props) {
   const ds = datasets.find((d) => d.key === value.dataset);
   const dims = ds?.fields.filter((f) => f.dimension) ?? [];
   const nums = ds?.fields.filter((f) => f.measurable) ?? [];
@@ -99,6 +101,7 @@ export default function QueryBuilder({ value, onChange, datasets, measureOnly, m
               </select>
             </div>
           ))}
+          {!noTime && (
           <div>
             <label className={labelCls}>Over time</label>
             <div className="flex gap-2">
@@ -115,6 +118,7 @@ export default function QueryBuilder({ value, onChange, datasets, measureOnly, m
               )}
             </div>
           </div>
+          )}
           <div>
             <label className={labelCls}>Period</label>
             <div className="flex gap-2">

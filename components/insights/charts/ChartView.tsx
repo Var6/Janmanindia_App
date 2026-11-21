@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import type { ChartType, NumberFormat, QueryResult, QueryRow } from "@/lib/insights/types";
 import { formatNumber, periodLabel } from "@/lib/insights/format";
-import { BIHAR_DISTRICTS } from "@/lib/insights/districts";
+import { BIHAR_DISTRICTS, OUTSIDE_BIHAR, UNSPECIFIED, canonicalDistrict, isCanonicalDistrict } from "@/lib/insights/districts";
+import { INDIA_GRID, INDIA_STATES, STATE_OTHER, STATE_UNSPECIFIED, canonicalState } from "@/lib/insights/states";
 import { SERIES_COLOURS } from "@/components/insights/charts/palette";
 
 /**
@@ -17,6 +18,8 @@ export type ChartDisplay = {
   showValues?: boolean;
   numberFormat?: NumberFormat;
   topN?: number;
+  /** For the map chart: Bihar's districts (default) or India's states. */
+  mapArea?: "bihar" | "india";
 };
 
 type Props = {
@@ -39,7 +42,7 @@ export default function ChartView({ type, result, grain, display = {}, height = 
     case "table": return <TableView result={result} grain={grain} fmt={fmt} />;
     case "pivot": return <PivotView result={result} grain={grain} fmt={fmt} />;
     case "pie": return <PieView result={result} fmt={fmt} topN={display.topN ?? 8} />;
-    case "map": return <MapView result={result} fmt={fmt} />;
+    case "map": return <MapView result={result} fmt={fmt} area={display.mapArea === "india" ? "india" : "bihar"} />;
     case "line": return <LineView result={result} grain={grain} fmt={fmt} height={height} />;
     default: return <BarView result={result} grain={grain} fmt={fmt} display={display} height={height} />;
   }
@@ -418,23 +421,37 @@ function PivotView({ result, grain, fmt }: { result: QueryResult; grain?: string
 
 /* ---------------------------------- map -------------------------------- */
 
-/** Bihar as a grid of district tiles, shaded by value. Schematic: each tile
- *  is one district placed roughly where it sits on the map. */
-function MapView({ result, fmt }: { result: QueryResult; fmt: (n: number) => string }) {
+/** A grid of tiles shaded by value: Bihar's districts or India's states and
+ *  union territories. Schematic: each tile sits roughly where the place is
+ *  on the map. Group labels are matched to the standard names here as well,
+ *  so an imported sheet that says "Purnea" or "Orissa" still lands on the
+ *  right tile. */
+function MapView({ result, fmt, area }: { result: QueryResult; fmt: (n: number) => string; area: "bihar" | "india" }) {
+  const india = area === "india";
+  const tiles = india
+    ? INDIA_STATES.map((s) => ({ name: s.name, short: s.code, col: s.col, row: s.row }))
+    : BIHAR_DISTRICTS.map((d) => ({ name: d.name, short: truncate(d.name, 12), col: d.col, row: d.row }));
+  const known = new Set(tiles.map((t) => t.name));
+  const place = (k: string) => {
+    if (known.has(k)) return k;
+    if (india) return k === STATE_OTHER || k === STATE_UNSPECIFIED ? k : canonicalState(k);
+    return isCanonicalDistrict(k) || k === UNSPECIFIED || k === OUTSIDE_BIHAR ? k : canonicalDistrict(k);
+  };
   const values = new Map<string, number>();
   for (const r of result.rows) {
-    const k = r.keys[0] ?? "";
+    const k = place(r.keys[0] ?? "");
     values.set(k, (values.get(k) ?? 0) + r.value);
   }
-  const inBihar = BIHAR_DISTRICTS.map((d) => values.get(d.name) ?? 0);
-  const max = Math.max(...inBihar, 0);
-  const extras = [...values.entries()].filter(([k]) => !BIHAR_DISTRICTS.some((d) => d.name === k));
-  const cw = 62, ch = 44;
+  const max = Math.max(...tiles.map((t) => values.get(t.name) ?? 0), 0);
+  const extras = [...values.entries()].filter(([k]) => !known.has(k));
+  const cw = india ? 64 : 62, ch = 44;
+  const cols = india ? INDIA_GRID.cols : 10, rows = india ? INDIA_GRID.rows : 6;
 
   return (
     <div>
-      <svg viewBox={`0 0 ${10 * cw} ${6 * ch + 4}`} width="100%" role="img" aria-label={`${result.measureLabel} by district`}>
-        {BIHAR_DISTRICTS.map((d) => {
+      <svg viewBox={`0 0 ${cols * cw} ${rows * ch + 4}`} width="100%" style={india ? { maxWidth: 620 } : undefined} role="img"
+        aria-label={`${result.measureLabel} by ${india ? "state" : "district"}`}>
+        {tiles.map((d) => {
           const v = values.get(d.name) ?? 0;
           const t = max > 0 ? v / max : 0;
           return (
@@ -444,15 +461,18 @@ function MapView({ result, fmt }: { result: QueryResult; fmt: (n: number) => str
                 stroke="var(--border)">
                 <title>{`${d.name}: ${fmt(v)}`}</title>
               </rect>
-              <text x={d.col * cw + cw / 2} y={d.row * ch + 18} textAnchor="middle" fontSize="8.5"
-                fill={t > 0.55 ? "var(--accent-contrast)" : "var(--text)"}>{truncate(d.name, 12)}</text>
+              <text x={d.col * cw + cw / 2} y={d.row * ch + 18} textAnchor="middle" fontSize={india ? 10 : 8.5} fontWeight={india ? 600 : 400}
+                fill={t > 0.55 ? "var(--accent-contrast)" : "var(--text)"}>{d.short}</text>
               <text x={d.col * cw + cw / 2} y={d.row * ch + 32} textAnchor="middle" fontSize="11" fontWeight="700"
                 fill={t > 0.55 ? "var(--accent-contrast)" : "var(--text)"}>{v ? fmt(v) : ""}</text>
             </g>
           );
         })}
       </svg>
-      <p className="text-[11px] text-(--muted) mt-1">Schematic district grid, north at the top; not to scale.</p>
+      <p className="text-[11px] text-(--muted) mt-1">
+        Schematic {india ? "grid of states and union territories" : "district grid"}, north at the top; not to scale.
+        {india ? " Hover over a tile for the full name." : ""}
+      </p>
       {extras.length > 0 && (
         <p className="text-xs text-(--muted) mt-1">
           {extras.map(([k, v]) => `${k}: ${fmt(v)}`).join(" · ")}

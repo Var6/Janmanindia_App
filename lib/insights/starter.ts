@@ -7,7 +7,8 @@ import type { ChartType, FilterSpec, Grain, KpiType, MeasureSpec, QuerySpec } fr
 
 /**
  * The Janman starter set: metrics, KPIs, charts and a five-tab dashboard
- * built on data the app already holds. Targets are placeholders to edit.
+ * built on data the app already holds. Targets are placeholders, marked as
+ * unconfirmed until a director sets the real ones (KPIs › Set targets).
  */
 
 export const STARTER_TITLE = "Janman Impact";
@@ -77,7 +78,7 @@ export async function buildStarter(userId: string, makeDefault: boolean) {
     });
     const kpi = await InsightKpi.create({
       name: k.name, description: k.description, metric: metric._id, timeField: k.timeField, grain: k.grain,
-      target: k.target, direction: k.direction ?? "higher", kpiType: k.kpiType, programTags: k.tags,
+      target: k.target, targetConfirmed: false, direction: k.direction ?? "higher", kpiType: k.kpiType, programTags: k.tags,
       numberFormat: k.numberFormat ?? "indian", onTrackPct: 90, attentionPct: 70, createdBy: userId,
     });
     kpiIds.push(String(kpi._id));

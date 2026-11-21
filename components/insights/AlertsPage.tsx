@@ -4,13 +4,15 @@ import { useState } from "react";
 import { api, useApi } from "@/lib/insights/client";
 import type { TileData } from "@/lib/insights/tiles";
 import PageHeader from "@/components/ui/PageHeader";
-import { Modal } from "@/components/insights/DashboardView";
-import { inputCls, labelCls } from "@/components/insights/QueryBuilder";
+import Modal from "@/components/insights/Modal";
+import QueryBuilder, { inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
+import type { QuerySpec } from "@/lib/insights/types";
 import { useNotify } from "@/components/insights/useNotify";
 
 type Ref = { _id: string; name: string } | null;
 type Alert = {
-  _id: string; name: string; kind: "kpi_rag" | "metric_threshold" | "data_quality"; enabled: boolean;
+  _id: string; name: string; kind: "kpi_rag" | "metric_threshold" | "data_quality" | "query_threshold"; enabled: boolean;
+  query?: QuerySpec; queryMode?: "total" | "any_group";
   kpi?: Ref; ragStates?: string[]; metric?: Ref; comparator?: string; threshold?: number; rangePreset?: string; qualityCheck?: string;
   frequency: "daily" | "weekly" | "monthly"; dayOf?: number; recipients: { _id: string; name: string }[];
   emailRecipients?: boolean; hasSlack?: boolean;
@@ -36,6 +38,12 @@ export default function AlertsPage() {
   const { data, loading, error, reload } = useApi<{ alerts: Alert[]; mailEnabled: boolean }>("/api/insights/alerts");
   const [editing, setEditing] = useState<Alert | "new" | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; fired: boolean; message: string } | null>(null);
+  const { datasets } = useDatasets();
+
+  async function slackTest(a: Alert) {
+    try { await api(`/api/insights/alerts/${a._id}/slack-test`, { method: "POST" }); toast.success("Test message posted to Slack"); }
+    catch (e) { toast.error((e as Error).message); }
+  }
 
   async function toggle(a: Alert) {
     try { await api(`/api/insights/alerts/${a._id}`, { method: "PATCH", body: { enabled: !a.enabled } }); reload(); }
@@ -70,6 +78,7 @@ export default function AlertsPage() {
                   {a.kind === "kpi_rag" && `KPI “${a.kpi?.name ?? "deleted"}” is ${(a.ragStates ?? []).map((s) => RAGS.find((r) => r.k === s)?.l.toLowerCase()).join(" or ")}`}
                   {a.kind === "metric_threshold" && `“${a.metric?.name ?? "deleted"}” over ${PRESETS.find((p) => p.k === a.rangePreset)?.l ?? "all time"} is ${CMPS.find((c) => c.k === a.comparator)?.l} ${a.threshold}`}
                   {a.kind === "data_quality" && `Data health: ${a.qualityCheck?.replace(/_/g, " ")} finds anything`}
+                  {a.kind === "query_threshold" && `A custom query on ${datasets.find((d) => d.key === a.query?.dataset)?.label.toLowerCase() ?? "data"}: ${a.queryMode === "any_group" ? "any group" : "the total"} is ${CMPS.find((c) => c.k === a.comparator)?.l} ${a.threshold}`}
                   {" · "}{schedule(a)} · to {a.recipients.map((r) => r.name).join(", ")}
                   {" "}({["app", a.emailRecipients ? "email" : "", a.hasSlack ? "Slack" : ""].filter(Boolean).join(", ")})
                 </p>
@@ -86,6 +95,7 @@ export default function AlertsPage() {
               <div className="flex items-center gap-2">
                 <label className="inline-flex items-center gap-1.5 text-xs text-(--text)"><input type="checkbox" checked={a.enabled} onChange={() => toggle(a)} /> On</label>
                 <button className="btn-secondary" onClick={() => test(a)}>Test now</button>
+                {a.hasSlack && <button className="btn-secondary" onClick={() => slackTest(a)}>Send a test to Slack</button>}
                 <button className="btn-secondary" onClick={() => setEditing(a)}>Edit</button>
                 <button className="text-xs text-(--muted) hover:text-(--error)" onClick={() => remove(a)}>Delete</button>
               </div>
@@ -119,6 +129,8 @@ function AlertForm({ alert, mailEnabled, onClose, onSaved }: { alert?: Alert; ma
     threshold: alert?.threshold ?? 0,
     rangePreset: alert?.rangePreset ?? "all",
     qualityCheck: alert?.qualityCheck ?? "stale_hearings",
+    query: (alert?.query ?? { dataset: "cases", measure: { agg: "count" }, groupBy: [], filters: [], range: { preset: "all" } }) as QuerySpec,
+    queryMode: alert?.queryMode ?? "total",
     frequency: alert?.frequency ?? "weekly",
     dayOf: alert?.dayOf ?? 1,
     recipients: alert?.recipients.map((r) => r._id) ?? [],
@@ -128,6 +140,7 @@ function AlertForm({ alert, mailEnabled, onClose, onSaved }: { alert?: Alert; ma
   });
   const set = (p: Partial<typeof f>) => setF((x) => ({ ...x, ...p }));
   const staff = users.data?.people ?? [];
+  const { datasets } = useDatasets();
 
   async function save() {
     try {
@@ -145,7 +158,7 @@ function AlertForm({ alert, mailEnabled, onClose, onSaved }: { alert?: Alert; ma
         <div className="sm:col-span-2">
           <label className={labelCls}>Watch</label>
           <div className="flex flex-wrap gap-2">
-            {([["data_quality", "A data-health check"], ["kpi_rag", "A KPI's status"], ["metric_threshold", "A metric crossing a number"]] as const).map(([k, l]) => (
+            {([["data_quality", "A data-health check"], ["kpi_rag", "A KPI's status"], ["metric_threshold", "A metric crossing a number"], ["query_threshold", "A custom query"]] as const).map(([k, l]) => (
               <button key={k} className={f.kind === k ? "btn-primary" : "btn-secondary"} onClick={() => set({ kind: k })}>{l}</button>
             ))}
           </div>
@@ -195,6 +208,30 @@ function AlertForm({ alert, mailEnabled, onClose, onSaved }: { alert?: Alert; ma
               </select></div>
             <div><label className={labelCls}>This number</label>
               <input type="number" className={inputCls} value={f.threshold} onChange={(e) => set({ threshold: Number(e.target.value) })} /></div>
+          </>
+        )}
+
+        {f.kind === "query_threshold" && (
+          <>
+            <div className="sm:col-span-2 rounded-lg border border-(--border) p-3">
+              <QueryBuilder value={f.query} onChange={(query) => set({ query, queryMode: query.groupBy?.length ? f.queryMode : "total" })} datasets={datasets} maxGroups={1} noTime />
+            </div>
+            <div><label className={labelCls}>Alert when</label>
+              <select className={inputCls} value={f.query.groupBy?.length ? f.queryMode : "total"} disabled={!f.query.groupBy?.length}
+                onChange={(e) => set({ queryMode: e.target.value as "total" | "any_group" })}>
+                <option value="total">the total is</option>
+                <option value="any_group">any one group is</option>
+              </select>
+              {!f.query.groupBy?.length && <p className="text-[11px] text-(--muted) mt-1">Choose a &ldquo;Group by&rdquo; field to alert on single groups, e.g. any lawyer with more than 40 live cases.</p>}
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1"><label className={labelCls}>&nbsp;</label>
+                <select className={inputCls} value={f.comparator} onChange={(e) => set({ comparator: e.target.value })}>
+                  {CMPS.map((c) => <option key={c.k} value={c.k}>{c.l}</option>)}
+                </select></div>
+              <div className="w-32"><label className={labelCls}>This number</label>
+                <input type="number" className={inputCls} value={f.threshold} onChange={(e) => set({ threshold: Number(e.target.value) })} /></div>
+            </div>
           </>
         )}
 

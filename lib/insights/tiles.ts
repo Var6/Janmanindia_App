@@ -5,13 +5,14 @@ import InsightMetric from "@/models/InsightMetric";
 import { runQuery } from "@/lib/insights/query";
 import { computeKpi, type KpiResult } from "@/lib/insights/kpi";
 import type { FilterSpec, QueryResult, RangeSpec } from "@/lib/insights/types";
+import { isOwnFileUrl } from "@/lib/storage";
 
 /**
  * Computes the data behind dashboard tiles in one go. Used live by the
  * dashboard view and once, at creation, by reports (which freeze the result).
  */
 
-export type TileRequest = { id: string; kind: "chart" | "kpi" | "text"; refId?: string; text?: string };
+export type TileRequest = { id: string; kind: "chart" | "kpi" | "text" | "image"; refId?: string; text?: string; imageUrl?: string; caption?: string };
 
 export type ChartTileData = {
   kind: "chart";
@@ -22,7 +23,7 @@ export type ChartTileData = {
 export type KpiTileData = {
   kind: "kpi";
   kpi: {
-    id: string; name: string; description?: string; target: number; direction: string;
+    id: string; name: string; description?: string; target: number; targetConfirmed: boolean; direction: string;
     kpiType: string; programTags: string[]; grain: string; cumulative: boolean;
     numberFormat: string; decimals: number; prefix?: string; suffix?: string;
     notes: { period?: string; text: string; byName: string; at: string }[];
@@ -30,7 +31,7 @@ export type KpiTileData = {
   result: KpiResult;
 };
 
-export type TileData = ChartTileData | KpiTileData | { kind: "text"; text: string } | { kind: "error"; error: string };
+export type TileData = ChartTileData | KpiTileData | { kind: "text"; text: string } | { kind: "image"; url: string; caption?: string } | { kind: "error"; error: string };
 
 export async function computeTiles(
   tiles: TileRequest[],
@@ -56,6 +57,10 @@ export async function computeTiles(
       try {
         if (t.kind === "text") {
           out[t.id] = { kind: "text", text: t.text ?? "" };
+          return;
+        }
+        if (t.kind === "image") {
+          out[t.id] = isOwnFileUrl(t.imageUrl) ? { kind: "image", url: t.imageUrl!, caption: t.caption } : { kind: "error", error: "This image is not available." };
           return;
         }
         if (t.kind === "chart") {
@@ -92,14 +97,14 @@ export async function computeTiles(
 }
 
 type KpiDoc = {
-  _id: unknown; name: string; description?: string; target: number; direction: string; kpiType: string;
+  _id: unknown; name: string; description?: string; target: number; targetConfirmed?: boolean; direction: string; kpiType: string;
   programTags?: string[]; grain: string; cumulative?: boolean; numberFormat?: string; decimals?: number;
   prefix?: string; suffix?: string; notes?: { period?: Date; text: string; byName?: string; at?: Date }[];
 };
 
 export function kpiPublic(k: KpiDoc): KpiTileData["kpi"] {
   return {
-    id: String(k._id), name: k.name, description: k.description, target: k.target, direction: k.direction,
+    id: String(k._id), name: k.name, description: k.description, target: k.target, targetConfirmed: k.targetConfirmed !== false, direction: k.direction,
     kpiType: k.kpiType, programTags: k.programTags ?? [], grain: k.grain, cumulative: !!k.cumulative,
     numberFormat: k.numberFormat ?? "indian", decimals: k.decimals ?? 0, prefix: k.prefix, suffix: k.suffix,
     notes: (k.notes ?? []).map((n) => ({

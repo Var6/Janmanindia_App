@@ -39,6 +39,7 @@ export default function KpiCard({ data, onOpen, compact = false }: { data: KpiTi
         <p className="text-3xl font-bold tabular-nums text-(--text)">{fmt(result.latest)}</p>
         <p className="text-xs text-(--muted)">
           Target: {fmt(kpi.target)} {kpi.direction === "lower" ? "(lower is better)" : ""}
+          {kpi.targetConfirmed === false && <span className="ml-1" style={{ color: "var(--warning-text)" }}>· placeholder, not yet set</span>}
         </p>
         {change !== null && (
           <p className="text-xs font-medium mt-0.5" style={{ color: good ? "var(--success-text)" : "var(--error-text)" }}>

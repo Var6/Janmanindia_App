@@ -391,33 +391,47 @@ function MetricsTab() {
 
 /* -------------------------------- imports ------------------------------- */
 
+type Schedule = "none" | "daily" | "weekly";
 type ImportRow = {
-  _id: string; name: string; description?: string; source: "csv" | "sheets" | "kobo"; sourceRef?: string;
+  _id: string; name: string; description?: string; source: string; sourceRef?: string;
   columns: { key: string; label: string; type: string }[]; rowCount: number; lastSyncedAt?: string; createdAt: string;
+  syncSchedule?: Schedule; lastSyncError?: string;
   createdBy?: { name?: string };
+};
+type ConnectorInfo = {
+  key: string; label: string; blurb: string; refLabel: string; refPlaceholder: string; refHelp: string;
+  configured: boolean; missing: string[];
 };
 type PreviewColumn = { key: string; label: string; type: "string" | "number" | "date" | "boolean"; source: string };
 type Preview = { columns: PreviewColumn[]; rowCount: number; sample: Record<string, unknown>[] };
 type Pick = { on: boolean; label: string; type: PreviewColumn["type"] };
 
-const SOURCE_LABEL = { csv: "CSV upload", sheets: "Google Sheet", kobo: "KoboToolbox" } as const;
+const SCHEDULE_LABEL: Record<Schedule, string> = { none: "Only when I click refresh", daily: "Every day at 9 am", weekly: "Every Monday at 9 am" };
 /** Columns that usually identify a person; unticked by default. */
 const PERSONAL = /(name|naam|father|husband|mother|phone|mobile|contact|aadha?ar|address|email|village|gps|location|photo|signature|_id$|^id$)/i;
 
 function ImportTab() {
   const toast = useNotify();
-  const { data, error, loading, reload } = useApi<{ imports: ImportRow[] }>("/api/insights/imports");
+  const { data, error, loading, reload } = useApi<{ imports: ImportRow[]; connectors: ConnectorInfo[] }>("/api/insights/imports");
   const [wizard, setWizard] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const connectors = data?.connectors ?? [];
+  const sourceLabel = (key: string) => (key === "csv" ? "Uploaded file" : connectors.find((c) => c.key === key)?.label ?? key);
 
   async function sync(i: ImportRow) {
     setBusy(i._id);
     try {
       const r = await api<{ rows: number; missingColumns: number }>(`/api/insights/imports/${i._id}/sync`, { method: "POST" });
       toast.success(`${r.rows.toLocaleString("en-IN")} rows loaded${r.missingColumns ? `; ${r.missingColumns} column(s) no longer in the source` : ""}`);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(null); reload(); }
+  }
+
+  async function setSchedule(i: ImportRow, syncSchedule: Schedule) {
+    try {
+      await api(`/api/insights/imports/${i._id}`, { method: "PATCH", body: { syncSchedule } });
       reload();
     } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(null); }
   }
 
   async function remove(i: ImportRow) {
@@ -434,7 +448,8 @@ function ImportTab() {
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-sm text-(--muted) flex-1 min-w-60">
           Bring in survey results, training attendance or any other table kept outside the app. Imported data shows up as its own
-          dataset in Explore, charts, metrics and KPIs. Copilot does not read imported data.
+          dataset in Explore, charts, metrics and KPIs. Connected sources can refresh themselves every day or every week. Copilot does
+          not read imported data.
         </p>
         <button className="btn-primary" onClick={() => setWizard(true)}>+ Import data</button>
       </div>
@@ -442,25 +457,34 @@ function ImportTab() {
       <div className="grid gap-3 md:grid-cols-2">
         {(data?.imports ?? []).map((i) => (
           <div key={i._id} className="rounded-2xl border border-(--border) p-4 space-y-2" style={{ background: "var(--surface)" }}>
-            <div className="flex items-start gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-(--text) truncate">{i.name}</p>
-                <p className="text-xs text-(--muted)">
-                  {SOURCE_LABEL[i.source]} · {i.rowCount.toLocaleString("en-IN")} rows · {i.columns.length} columns
-                </p>
-              </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-(--text) truncate">{i.name}</p>
+              <p className="text-xs text-(--muted)">
+                {sourceLabel(i.source)} · {i.rowCount.toLocaleString("en-IN")} rows · {i.columns.length} columns
+              </p>
             </div>
             {i.description && <p className="text-sm text-(--text)">{i.description}</p>}
             <p className="text-xs text-(--muted)">
               {i.lastSyncedAt ? `Last loaded ${new Date(i.lastSyncedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}` : "Not loaded yet"}
               {i.createdBy?.name ? ` · added by ${i.createdBy.name}` : ""}
             </p>
+            {i.lastSyncError && (
+              <p className="text-xs rounded-lg px-2 py-1.5" style={{ background: "var(--error-bg)", color: "var(--error-text)" }}>
+                The last refresh failed: {i.lastSyncError}
+              </p>
+            )}
             <p className="text-xs text-(--muted) truncate" title={i.columns.map((c) => c.label).join(", ")}>
               {i.columns.map((c) => c.label).join(", ")}
             </p>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               {i.source !== "csv" && (
-                <button className="btn-secondary" disabled={busy === i._id} onClick={() => sync(i)}>{busy === i._id ? "Refreshing…" : "Refresh now"}</button>
+                <>
+                  <button className="btn-secondary" disabled={busy === i._id} onClick={() => sync(i)}>{busy === i._id ? "Refreshing…" : "Refresh now"}</button>
+                  <select className={`${inputCls} w-auto`} value={i.syncSchedule ?? "none"} aria-label={`How often to refresh ${i.name}`}
+                    onChange={(e) => setSchedule(i, e.target.value as Schedule)}>
+                    {(Object.keys(SCHEDULE_LABEL) as Schedule[]).map((k) => <option key={k} value={k}>{SCHEDULE_LABEL[k]}</option>)}
+                  </select>
+                </>
               )}
               <button className="btn-secondary" style={{ color: "var(--error-text)" }} onClick={() => remove(i)}>Delete</button>
             </div>
@@ -470,14 +494,14 @@ function ImportTab() {
       {!loading && (data?.imports ?? []).length === 0 && (
         <p className="text-sm text-(--muted) rounded-2xl border border-dashed border-(--border) p-8 text-center">No imported data yet.</p>
       )}
-      {wizard && <ImportWizard onClose={() => setWizard(false)} onDone={() => { setWizard(false); reload(); }} />}
+      {wizard && <ImportWizard connectors={connectors} onClose={() => setWizard(false)} onDone={() => { setWizard(false); reload(); }} />}
     </div>
   );
 }
 
-function ImportWizard({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+function ImportWizard({ connectors, onClose, onDone }: { connectors: ConnectorInfo[]; onClose: () => void; onDone: () => void }) {
   const toast = useNotify();
-  const [source, setSource] = useState<"csv" | "sheets" | "kobo">("csv");
+  const [source, setSource] = useState("csv");
   const [ref, setRef] = useState("");
   const [csv, setCsv] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
@@ -485,15 +509,27 @@ function ImportWizard({ onClose, onDone }: { onClose: () => void; onDone: () => 
   const [picks, setPicks] = useState<Record<string, Pick>>({});
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [schedule, setSchedule] = useState<Schedule>("none");
   const [busy, setBusy] = useState(false);
+  const connector = connectors.find((c) => c.key === source);
 
   async function readFile(f: File | undefined) {
     if (!f) return;
     if (f.size > 15_000_000) { toast.error("That file is too large (15 MB limit)"); return; }
-    setFileName(f.name);
-    setCsv(await f.text());
     setPreview(null);
-    if (!name) setName(f.name.replace(/\.csv$/i, ""));
+    try {
+      if (/\.xlsx$/i.test(f.name)) {
+        const { readXlsx, rowsToCsv } = await import("@/lib/insights/xlsx");
+        setCsv(rowsToCsv(await readXlsx(await f.arrayBuffer())));
+      } else if (/\.xls$/i.test(f.name)) {
+        toast.error("Older .xls files cannot be read. Open it in Excel and save it as .xlsx or CSV.");
+        return;
+      } else {
+        setCsv(await f.text());
+      }
+      setFileName(f.name);
+      if (!name) setName(f.name.replace(/\.(csv|xlsx)$/i, ""));
+    } catch (e) { toast.error((e as Error).message); }
   }
 
   async function load() {
@@ -511,7 +547,7 @@ function ImportWizard({ onClose, onDone }: { onClose: () => void; onDone: () => 
     try {
       const columns = Object.entries(picks).filter(([, p]) => p.on).map(([src, p]) => ({ source: src, label: p.label, type: p.type }));
       const r = await api<{ import: { rows: number } }>("/api/insights/imports", {
-        body: { name, description, source, ref: source === "csv" ? undefined : ref, csv: source === "csv" ? csv : undefined, columns },
+        body: { name, description, source, ref: source === "csv" ? undefined : ref, csv: source === "csv" ? csv : undefined, columns, syncSchedule: schedule },
       });
       toast.success(`${r.import.rows.toLocaleString("en-IN")} rows imported`);
       onDone();
@@ -520,40 +556,43 @@ function ImportWizard({ onClose, onDone }: { onClose: () => void; onDone: () => 
   }
 
   const chosen = Object.values(picks).filter((p) => p.on).length;
-  const ready = source === "csv" ? !!csv : !!ref.trim();
+  const ready = source === "csv" ? !!csv : !!ref.trim() && !!connector?.configured;
 
   return (
     <Modal title="Import data" onClose={onClose} wide>
       <div className="space-y-4">
-        <div className="flex gap-2">
-          {(["csv", "sheets", "kobo"] as const).map((s) => (
-            <button key={s} onClick={() => { setSource(s); setPreview(null); }} className="rounded-lg border px-3 py-2 text-sm font-medium"
-              style={{ borderColor: source === s ? "var(--accent)" : "var(--border)", color: source === s ? "var(--accent)" : "var(--text)" }}>
-              {SOURCE_LABEL[s]}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[{ key: "csv", label: "CSV or Excel file", blurb: "Upload from this computer", configured: true }, ...connectors].map((s) => (
+            <button key={s.key} onClick={() => { setSource(s.key); setPreview(null); setRef(""); }} className="rounded-lg border px-3 py-2 text-left"
+              style={{ borderColor: source === s.key ? "var(--accent)" : "var(--border)", opacity: s.configured ? 1 : 0.6 }}>
+              <span className="block text-sm font-medium" style={{ color: source === s.key ? "var(--accent)" : "var(--text)" }}>{s.label}</span>
+              <span className="block text-[11px] text-(--muted)">{s.configured ? s.blurb : "Not connected yet"}</span>
             </button>
           ))}
         </div>
 
         {source === "csv" && (
           <div>
-            <label className={labelCls}>CSV file</label>
-            <input type="file" accept=".csv,text/csv" className="text-sm text-(--text)" onChange={(e) => readFile(e.target.files?.[0])} />
+            <label className={labelCls}>CSV or Excel (.xlsx) file</label>
+            <input type="file" accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="text-sm text-(--text)"
+              onChange={(e) => readFile(e.target.files?.[0])} />
             {fileName && <p className="text-xs text-(--muted) mt-1">{fileName}</p>}
-            <p className="text-xs text-(--muted) mt-1">From Excel, use File › Save As › CSV. Dates are read as day/month/year.</p>
+            <p className="text-xs text-(--muted) mt-1">
+              The first row must be the column headings. From Excel, the first sheet is read. In a CSV, dates are read as day/month/year.
+              The file is read in your browser; only the columns you keep are stored.
+            </p>
           </div>
         )}
-        {source === "sheets" && (
+        {connector && (
           <div>
-            <label className={labelCls}>Google Sheet link</label>
-            <input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…/edit#gid=0" />
-            <p className="text-xs text-(--muted) mt-1">The sheet must be shared as &ldquo;Anyone with the link can view&rdquo;. The tab in the link is the one imported.</p>
-          </div>
-        )}
-        {source === "kobo" && (
-          <div>
-            <label className={labelCls}>Kobo form ID (asset UID)</label>
-            <input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. aBcD12eFgH34iJkL56" />
-            <p className="text-xs text-(--muted) mt-1">Found in the form&rsquo;s URL in KoboToolbox. The app&rsquo;s Kobo token is set by whoever runs the server.</p>
+            {!connector.configured && (
+              <p className="text-sm rounded-lg p-3 mb-3" style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
+                {connector.label} is not connected yet. Whoever runs the server needs to add {connector.missing.join(", ")} to the app&rsquo;s settings.
+              </p>
+            )}
+            <label className={labelCls}>{connector.refLabel}</label>
+            <input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder={connector.refPlaceholder} disabled={!connector.configured} />
+            <p className="text-xs text-(--muted) mt-1">{connector.refHelp}</p>
           </div>
         )}
 
@@ -611,6 +650,14 @@ function ImportWizard({ onClose, onDone }: { onClose: () => void; onDone: () => 
                 <label className={labelCls}>Description (optional)</label>
                 <input className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
+              {source !== "csv" && (
+                <div>
+                  <label className={labelCls}>Refresh from the source</label>
+                  <select className={inputCls} value={schedule} onChange={(e) => setSchedule(e.target.value as Schedule)}>
+                    {(Object.keys(SCHEDULE_LABEL) as Schedule[]).map((k) => <option key={k} value={k}>{SCHEDULE_LABEL[k]}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <button className="btn-secondary" onClick={onClose}>Cancel</button>

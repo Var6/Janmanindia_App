@@ -5,9 +5,12 @@ import mongoose, { Schema, Document, Model } from "mongoose";
  * attention (bell, and optionally email and a Slack channel):
  *  - kpi_rag: a KPI's latest status is in one of the chosen bands;
  *  - metric_threshold: a metric's value over a period crosses a number;
- *  - data_quality: a data-quality check finds problems (e.g. stale hearings).
+ *  - data_quality: a data-quality check finds problems (e.g. stale hearings);
+ *  - query_threshold: any query built in the alert form (a count or total,
+ *    optionally split by one field) crosses a number, either in total or in
+ *    any one group.
  */
-export type AlertKind = "kpi_rag" | "metric_threshold" | "data_quality";
+export type AlertKind = "kpi_rag" | "metric_threshold" | "data_quality" | "query_threshold";
 export type AlertFrequency = "daily" | "weekly" | "monthly";
 
 export interface IInsightAlert extends Document {
@@ -21,6 +24,10 @@ export interface IInsightAlert extends Document {
   comparator?: "gt" | "gte" | "lt" | "lte";
   threshold?: number;
   qualityCheck?: string;
+  /** query_threshold: the query spec, and whether the threshold applies to
+   *  the total or to any single group. */
+  query?: unknown;
+  queryMode?: "total" | "any_group";
   frequency: AlertFrequency;
   /** Day of week (1 = Monday) or day of month, for weekly / monthly. */
   dayOf?: number;
@@ -41,7 +48,7 @@ export interface IInsightAlert extends Document {
 const insightAlertSchema = new Schema<IInsightAlert>(
   {
     name: { type: String, required: true, trim: true, maxlength: 140 },
-    kind: { type: String, enum: ["kpi_rag", "metric_threshold", "data_quality"], required: true },
+    kind: { type: String, enum: ["kpi_rag", "metric_threshold", "data_quality", "query_threshold"], required: true },
     enabled: { type: Boolean, default: true, index: true },
     kpi: { type: Schema.Types.ObjectId, ref: "InsightKpi" },
     ragStates: { type: [String], default: undefined },
@@ -50,6 +57,8 @@ const insightAlertSchema = new Schema<IInsightAlert>(
     comparator: { type: String, enum: ["gt", "gte", "lt", "lte"] },
     threshold: Number,
     qualityCheck: { type: String, trim: true },
+    query: { type: Schema.Types.Mixed },
+    queryMode: { type: String, enum: ["total", "any_group"] },
     frequency: { type: String, enum: ["daily", "weekly", "monthly"], default: "weekly" },
     dayOf: { type: Number, min: 1, max: 31 },
     recipients: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },

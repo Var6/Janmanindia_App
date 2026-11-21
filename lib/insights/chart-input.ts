@@ -28,6 +28,7 @@ export async function cleanChartInput(body: Record<string, unknown>, partial: bo
     if (FORMATS.includes(d.numberFormat as NumberFormat)) display.numberFormat = d.numberFormat;
     const topN = num(d.topN);
     if (topN !== undefined) display.topN = Math.min(50, Math.max(2, Math.round(topN)));
+    if (d.mapArea === "india" || d.mapArea === "bihar") display.mapArea = d.mapArea;
     out.display = display;
   }
   const type = out.chartType as string | undefined;

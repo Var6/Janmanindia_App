@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api, useApi } from "@/lib/insights/client";
 import type { FilterSpec, Grain, KpiType, MeasureSpec, NumberFormat, QuerySpec } from "@/lib/insights/types";
 import QueryBuilder, { FilterEditor, inputCls, labelCls, useDatasets } from "@/components/insights/QueryBuilder";
-import { Modal } from "@/components/insights/DashboardView";
+import Modal from "@/components/insights/Modal";
 import { useNotify } from "@/components/insights/useNotify";
 
 export type KpiFormValue = {

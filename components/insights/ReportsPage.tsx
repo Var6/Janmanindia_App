@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { api, useApi } from "@/lib/insights/client";
 import PageHeader from "@/components/ui/PageHeader";
-import { Modal } from "@/components/insights/DashboardView";
+import Modal from "@/components/insights/Modal";
 import { inputCls, labelCls } from "@/components/insights/QueryBuilder";
 import { useNotify } from "@/components/insights/useNotify";
 

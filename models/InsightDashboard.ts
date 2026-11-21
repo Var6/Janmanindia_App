@@ -1,23 +1,27 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 /**
- * A dashboard: tabs of tiles (charts, KPIs, text) on a 12-column grid, plus
- * dashboard-wide filters that apply to every chart whose dataset has the
- * field. One dashboard can be the organisation default for the Impact page;
+ * A dashboard: tabs of tiles (charts, KPIs, text, images) on a 12-column
+ * grid, plus dashboard-wide filters (pick values, a number range or a date
+ * range) that apply to every chart whose dataset has the field. One dashboard can be the organisation default for the Impact page;
  * each user can also pin their own.
  */
 export type DashboardTile = {
   id: string;
-  kind: "chart" | "kpi" | "text";
+  kind: "chart" | "kpi" | "text" | "image";
   refId?: string;
   text?: string;
+  /** Image tiles: a file uploaded through the app, and its caption. */
+  imageUrl?: string;
+  caption?: string;
   /** Width in grid columns (1–12) and height in rows. */
   w: number;
   h: number;
 };
 
 export type DashboardTab = { id: string; title: string; tiles: DashboardTile[] };
-export type DashboardFilter = { field: string; label: string };
+export type DashboardFilterType = "value" | "number" | "date";
+export type DashboardFilter = { field: string; label: string; type?: DashboardFilterType };
 
 export interface IInsightDashboard extends Document {
   title: string;

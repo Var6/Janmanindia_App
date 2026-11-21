@@ -46,6 +46,8 @@ async function registerAllModelsOnce() {
     import("@/models/InsightDashboard"),
     import("@/models/InsightImport"),
     import("@/models/InsightImportRow"),
+    import("@/models/InsightSettings"),
+    import("@/models/InsightCopilotRun"),
     import("@/models/InsightKpi"),
     import("@/models/InsightMetric"),
     import("@/models/InsightReport"),

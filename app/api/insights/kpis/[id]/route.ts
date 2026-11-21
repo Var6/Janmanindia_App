@@ -47,6 +47,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     delete body.timeField; // fixed after creation
     const fields = await cleanKpiInput(body, metric.dataset, true);
     kpi.set(fields);
+    // Someone has now chosen this target, so it is no longer a placeholder.
+    if (fields.target !== undefined) kpi.targetConfirmed = true;
     await kpi.save();
     if (body.metricFilters !== undefined) {
       metric.filters = cleanFilters(body.metricFilters);

@@ -14,7 +14,7 @@ const TYPES: { key: ChartType; label: string; hint: string }[] = [
   { key: "line", label: "Line", hint: "A trend over time" },
   { key: "pie", label: "Pie", hint: "Shares of a whole (few groups)" },
   { key: "number", label: "Number", hint: "One headline figure" },
-  { key: "map", label: "District map", hint: "Group by district" },
+  { key: "map", label: "Map", hint: "Bihar districts or India states" },
   { key: "table", label: "Table", hint: "Exact figures" },
   { key: "pivot", label: "Pivot", hint: "Two fields, rows by columns" },
 ];
@@ -116,6 +116,16 @@ export default function ChartBuilder({ initial }: { initial?: Initial }) {
                 onChange={(e) => setDisplay({ ...display, topN: Number(e.target.value) })} />
               and group the rest as Other
             </label>
+          </div>
+        )}
+        {chartType === "map" && (
+          <div>
+            <label className={labelCls}>Map of</label>
+            <select className={inputCls} value={display.mapArea ?? "bihar"} onChange={(e) => setDisplay({ ...display, mapArea: e.target.value as ChartDisplay["mapArea"] })}>
+              <option value="bihar">Bihar, by district</option>
+              <option value="india">India, by state</option>
+            </select>
+            <p className="text-[11px] text-(--muted) mt-1">Group by {display.mapArea === "india" ? "a state" : "a district"} field. Spellings such as Purnea or Orissa are matched to the standard name.</p>
           </div>
         )}
         <div>

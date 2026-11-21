@@ -1,37 +1,24 @@
+import type mongoose from "mongoose";
 import InsightImport from "@/models/InsightImport";
 import InsightImportRow from "@/models/InsightImportRow";
 import { BadRequest } from "@/lib/insights/api";
+import Notification from "@/models/Notification";
 import { convert, describeColumns, parseCsv, type ImportColumn } from "@/lib/insights/csv";
+import { getConnector } from "@/lib/insights/connectors";
+
+export { sheetsCsvUrl } from "@/lib/insights/connectors";
 
 /**
- * Bringing outside data into Insights: CSV uploads, Google Sheets shared as
- * "anyone with the link", and KoboToolbox forms (token in KOBO_API_TOKEN).
- * Rows are stored typed, so they can be charted like any other dataset.
+ * Bringing outside data into Insights: CSV or Excel uploads, and the
+ * connected sources in connectors.ts (Google Sheets, KoboToolbox, SurveyCTO,
+ * CommCare, Airtable, Avni, Salesforce, Postgres). Rows are stored typed, so
+ * they can be charted like any other dataset. Connected sources can be
+ * refreshed by hand or on a daily / weekly schedule.
  */
 
 export const MAX_IMPORT_ROWS = 20000;
 
 export type RawTable = { headers: string[]; rows: Record<string, unknown>[] };
-
-/** https://docs.google.com/spreadsheets/d/<id>/edit#gid=<gid> → CSV export URL. */
-export function sheetsCsvUrl(link: string): string {
-  let u: URL;
-  try { u = new URL(link); } catch { throw new BadRequest("That is not a valid link"); }
-  if (u.hostname !== "docs.google.com") throw new BadRequest("Only docs.google.com sheet links are accepted");
-  const m = u.pathname.match(/^\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/);
-  if (!m) throw new BadRequest("Paste the link of a Google Sheet");
-  const gid = (u.hash.match(/gid=(\d+)/) ?? u.search.match(/gid=(\d+)/))?.[1] ?? "0";
-  return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${gid}`;
-}
-
-export async function fetchSheet(link: string): Promise<RawTable> {
-  const res = await fetch(sheetsCsvUrl(link), { redirect: "follow", cache: "no-store" });
-  const type = res.headers.get("content-type") ?? "";
-  if (!res.ok || !type.includes("text/csv")) {
-    throw new BadRequest("Could not read the sheet. Share it as \"Anyone with the link can view\" and try again.");
-  }
-  return tableFromCsv(await res.text());
-}
 
 export function tableFromCsv(text: string): RawTable {
   const grid = parseCsv(text, MAX_IMPORT_ROWS + 1);
@@ -39,39 +26,6 @@ export function tableFromCsv(text: string): RawTable {
   const headers = grid[0].map((h, i) => h.trim() || `Column ${i + 1}`);
   const rows = grid.slice(1, MAX_IMPORT_ROWS + 1).map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
   return { headers, rows };
-}
-
-export async function fetchKobo(assetUid: string): Promise<RawTable> {
-  if (!/^[a-zA-Z0-9]{10,40}$/.test(assetUid)) throw new BadRequest("That does not look like a Kobo form id (asset uid)");
-  const token = process.env.KOBO_API_TOKEN;
-  if (!token) throw new BadRequest("KoboToolbox is not connected: set KOBO_API_TOKEN (and KOBO_SERVER if not kf.kobotoolbox.org) in the app's environment");
-  const server = (process.env.KOBO_SERVER ?? "https://kf.kobotoolbox.org").replace(/\/+$/, "");
-  const rows: Record<string, unknown>[] = [];
-  let next: string | null = `${server}/api/v2/assets/${assetUid}/data.json?limit=1000`;
-  while (next && rows.length < MAX_IMPORT_ROWS) {
-    const res: Response = await fetch(next, { headers: { Authorization: `Token ${token}` }, cache: "no-store" });
-    if (!res.ok) throw new BadRequest(`KoboToolbox said ${res.status}. Check the form id and that the token can see this form.`);
-    const page = (await res.json()) as { results?: Record<string, unknown>[]; next?: string | null };
-    for (const r of page.results ?? []) rows.push(flattenKobo(r));
-    next = page.next ?? null;
-    if (next && !next.startsWith(server)) next = null; // never follow a link off the Kobo server
-  }
-  const headers = [...new Set(rows.flatMap((r) => Object.keys(r)))];
-  return { headers, rows };
-}
-
-/** Kobo rows use "group/question" keys and internal "_" fields. Keep the
- *  answers and the submission time; drop the rest (ids, geolocation,
- *  attachments, submitter). */
-function flattenKobo(r: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(r)) {
-    if (k === "_submission_time") { out["Submitted"] = v; continue; }
-    if (k.startsWith("_") || k.startsWith("formhub") || k.startsWith("meta/") || k === "__version__") continue;
-    if (v !== null && typeof v === "object") continue;
-    out[k.split("/").pop() ?? k] = v;
-  }
-  return out;
 }
 
 export function preview(table: RawTable) {
@@ -108,11 +62,76 @@ export async function replaceRows(importId: string, columns: ImportColumn[], tab
 
 export async function loadTable(source: string, ref: string | undefined, csvText: unknown): Promise<RawTable> {
   if (source === "csv") {
-    if (typeof csvText !== "string" || !csvText.trim()) throw new BadRequest("Upload a CSV file");
+    if (typeof csvText !== "string" || !csvText.trim()) throw new BadRequest("Upload a CSV or Excel file");
     if (csvText.length > 15_000_000) throw new BadRequest("That file is too large (15 MB limit)");
     return tableFromCsv(csvText);
   }
-  if (source === "sheets") return fetchSheet(String(ref ?? ""));
-  if (source === "kobo") return fetchKobo(String(ref ?? ""));
-  throw new BadRequest("Source must be csv, sheets or kobo");
+  const connector = getConnector(source);
+  if (!connector) throw new BadRequest("Unknown source");
+  const t = await connector.fetch(String(ref ?? ""));
+  if (!t.rows.length) throw new BadRequest(`${connector.label} returned no rows for that reference.`);
+  return { headers: t.headers, rows: t.rows.slice(0, MAX_IMPORT_ROWS) };
+}
+
+/* ------------------------------ refreshing ------------------------------ */
+
+type ImportDoc = { _id: mongoose.Types.ObjectId | string; name: string; source: string; sourceRef?: string; columns: { key: string; label: string; type: ImportColumn["type"] }[] };
+
+/** Re-read a connected source and replace the rows. Columns are matched by
+ *  key; new columns in the source are ignored. */
+export async function syncImport(imp: ImportDoc): Promise<{ rows: number; missingColumns: number }> {
+  if (imp.source === "csv") throw new BadRequest("An uploaded file cannot be refreshed; upload the new file as a new dataset");
+  const table = await loadTable(imp.source, imp.sourceRef, undefined);
+  const fresh = describeColumns(table.headers, table.rows);
+  const columns = imp.columns
+    .map((c) => {
+      const f = fresh.find((x) => x.key === c.key);
+      return f ? { ...f, type: c.type, label: c.label } : null;
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+  if (!columns.length) throw new BadRequest("None of this dataset's columns are in the source any more");
+  const rows = await replaceRows(String(imp._id), columns, table);
+  await InsightImport.updateOne({ _id: imp._id }, { $unset: { lastSyncError: 1 } });
+  return { rows, missingColumns: imp.columns.length - columns.length };
+}
+
+const istDay = (d: Date) => new Date(d.getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+
+/** Daily imports are due once per day (IST); weekly ones on Mondays. */
+export function importIsDue(imp: { syncSchedule?: string; lastSyncedAt?: Date; lastSyncTriedAt?: Date }, now = new Date()): boolean {
+  if (imp.syncSchedule !== "daily" && imp.syncSchedule !== "weekly") return false;
+  const last = imp.lastSyncTriedAt ?? imp.lastSyncedAt;
+  if (last && istDay(new Date(last)) === istDay(now)) return false;
+  if (imp.syncSchedule === "daily") return true;
+  return new Date(now.getTime() + 5.5 * 3600 * 1000).getUTCDay() === 1;
+}
+
+/**
+ * Called by the daily Insights cron, before the alerts run so they see fresh
+ * figures. Stops starting new refreshes once `budgetMs` is used up (the
+ * oldest go first, so none is starved); a failure is recorded on the import
+ * and its owner is told through the notification bell.
+ */
+export async function runDueImportSyncs(now = new Date(), budgetMs = 40_000): Promise<{ ran: number; failed: number; skipped: number }> {
+  const started = Date.now();
+  const imports = await InsightImport.find({ syncSchedule: { $in: ["daily", "weekly"] }, source: { $ne: "csv" } }).sort({ lastSyncedAt: 1 }).lean();
+  let ran = 0, failed = 0, skipped = 0;
+  for (const imp of imports) {
+    if (!importIsDue(imp, now)) continue;
+    if (Date.now() - started > budgetMs) { skipped++; continue; }
+    await InsightImport.updateOne({ _id: imp._id }, { $set: { lastSyncTriedAt: now } });
+    try {
+      await syncImport(imp);
+      ran++;
+    } catch (e) {
+      failed++;
+      const message = e instanceof Error ? e.message : "Refresh failed";
+      await InsightImport.updateOne({ _id: imp._id }, { $set: { lastSyncError: message.slice(0, 500) } });
+      await Notification.create({
+        recipient: imp.createdBy, type: "insights_import_failed", title: `Could not refresh "${imp.name}"`,
+        body: message.slice(0, 300), link: "/director/insights/data?tab=import",
+      }).catch(() => undefined);
+    }
+  }
+  return { ran, failed, skipped };
 }

@@ -5,9 +5,11 @@ import Expense from "@/models/Expense";
 import CarePlan from "@/models/CarePlan";
 import TrainingSession from "@/models/TrainingSession";
 import StaffDailyReport from "@/models/StaffDailyReport";
+import MonthlyReport from "@/models/MonthlyReport";
 import Grievance from "@/models/Grievance";
 import User from "@/models/User";
 import { districtExpr } from "@/lib/insights/districts";
+import { stateExpr } from "@/lib/insights/states";
 
 /**
  * The datasets Insights can query, and the fields on each.
@@ -92,6 +94,7 @@ export const DATASETS: DatasetDef[] = [
       { key: "live", label: "Live or finished", type: "string", dimension: true, values: ["Live", "Finished"],
         expr: { $cond: [{ $in: ["$status", LIVE] }, "Live", "Finished"] } },
       { key: "district", label: "District", type: "string", dimension: true, expr: districtExpr("$district", "$courtName") },
+      { key: "state", label: "State", type: "string", dimension: true, expr: stateExpr("$state", districtExpr("$district", "$courtName")) },
       { key: "forum", label: "Forum", type: "string", dimension: true, values: ["Criminal / district", "High Court"],
         expr: { $cond: [{ $eq: ["$path", "highcourt"] }, "High Court", "Criminal / district"] } },
       { key: "flow", label: "Case flow", type: "string", dimension: true, expr: { $ifNull: ["$flow", "Not set"] } },
@@ -130,6 +133,7 @@ export const DATASETS: DatasetDef[] = [
       { key: "date", label: "Hearing date", type: "date", expr: "$courtAppearances.date" },
       { key: "nextDate", label: "Next date given", type: "date", expr: "$courtAppearances.nextHearingDate" },
       { key: "district", label: "District", type: "string", dimension: true, expr: districtExpr("$district", "$courtName") },
+      { key: "state", label: "State", type: "string", dimension: true, expr: stateExpr("$state", districtExpr("$district", "$courtName")) },
       { key: "forum", label: "Forum", type: "string", dimension: true, values: ["Criminal / district", "High Court"],
         expr: { $cond: [{ $eq: ["$path", "highcourt"] }, "High Court", "Criminal / district"] } },
       { key: "caseType", label: "Case type", type: "string", dimension: true, expr: caseKindExpr },
@@ -228,6 +232,23 @@ export const DATASETS: DatasetDef[] = [
       { key: "author", label: "Staff member", type: "string", dimension: true, lookup: "user", expr: "$author" },
       { key: "role", label: "Role", type: "string", dimension: true, expr: { $ifNull: ["$authorRole", "Not set"] } },
       { key: "day", label: "Day", type: "date", expr: { $dateFromString: { dateString: "$dateKey", onError: null, onNull: null } } },
+    ],
+  },
+  {
+    key: "monthlyReports",
+    label: "Monthly reports",
+    unit: "Monthly reports",
+    description: "Monthly programme reports filed by lawyers and social workers, one record per person per month.",
+    model: () => MonthlyReport,
+    defaultDate: "month",
+    fields: [
+      { key: "month", label: "Reporting month", type: "date",
+        expr: { $dateFromString: { dateString: { $concat: [{ $ifNull: ["$month", ""] }, "-01"] }, timezone: "Asia/Kolkata", onError: null, onNull: null } } },
+      { key: "type", label: "Report type", type: "string", dimension: true, values: ["Lawyer", "Social worker"],
+        expr: { $cond: [{ $eq: ["$type", "lawyer"] }, "Lawyer", "Social worker"] } },
+      { key: "author", label: "Filed by", type: "string", dimension: true, lookup: "user", expr: "$submittedBy" },
+      { key: "district", label: "District", type: "string", dimension: true, expr: districtExpr("$header.districtName") },
+      { key: "submittedAt", label: "Submitted", type: "date", expr: "$submissionDate" },
     ],
   },
   {

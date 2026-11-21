@@ -4,6 +4,7 @@ import InsightKpi from "@/models/InsightKpi";
 import InsightMetric from "@/models/InsightMetric";
 import User from "@/models/User";
 import { QUALITY_CHECKS } from "@/lib/insights/quality";
+import { assertRunnable, cleanQuery } from "@/lib/insights/validate";
 import { isSlackWebhook } from "@/lib/slack";
 
 const RAGS = ["on_track", "attention", "off_track", "no_data"];
@@ -13,7 +14,7 @@ export async function cleanAlertInput(body: Record<string, unknown>) {
   const name = str(body.name, 140);
   if (!name) throw new BadRequest("Name is required");
   const kind = body.kind;
-  if (kind !== "kpi_rag" && kind !== "metric_threshold" && kind !== "data_quality") throw new BadRequest("Choose what the alert watches");
+  if (kind !== "kpi_rag" && kind !== "metric_threshold" && kind !== "data_quality" && kind !== "query_threshold") throw new BadRequest("Choose what the alert watches");
   const out: Record<string, unknown> = { name, kind, enabled: body.enabled !== false };
 
   if (kind === "kpi_rag") {
@@ -30,6 +31,18 @@ export async function cleanAlertInput(body: Record<string, unknown>) {
     const comparator = ["gt", "gte", "lt", "lte"].includes(String(body.comparator)) ? body.comparator : "gt";
     const rangePreset = PRESETS.includes(String(body.rangePreset)) ? body.rangePreset : "all";
     Object.assign(out, { metric: id, threshold, comparator, rangePreset });
+  } else if (kind === "query_threshold") {
+    // The same checked query spec the chart builder uses. An alert watches one
+    // number (or one number per group), so the time axis is dropped and at
+    // most one grouping is kept.
+    const q = cleanQuery(body.query);
+    const query = { ...q, time: undefined, groupBy: (q.groupBy ?? []).slice(0, 1), limit: 200 };
+    await assertRunnable(query);
+    const threshold = num(body.threshold);
+    if (threshold === undefined) throw new BadRequest("Threshold must be a number");
+    const comparator = ["gt", "gte", "lt", "lte"].includes(String(body.comparator)) ? body.comparator : "gt";
+    const queryMode = body.queryMode === "any_group" && query.groupBy.length ? "any_group" : "total";
+    Object.assign(out, { query, threshold, comparator, queryMode });
   } else {
     const key = String(body.qualityCheck ?? "");
     if (!QUALITY_CHECKS.some((c) => c.key === key)) throw new BadRequest("Choose a data-health check");

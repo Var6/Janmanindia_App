@@ -12,6 +12,7 @@ const TABS = [
   { href: "/director/insights/alerts", label: "Alerts" },
   { href: "/director/insights/data", label: "Data" },
   { href: "/director/insights/copilot", label: "Copilot" },
+  { href: "/director/insights/settings", label: "Settings" },
 ];
 
 /** Tab strip shared by every Insights page. */

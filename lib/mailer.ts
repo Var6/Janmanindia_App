@@ -55,6 +55,21 @@ export async function sendMail(mail: Mail): Promise<number> {
   return sent;
 }
 
+/** Sends one message and reports why it failed, for the "send a test email"
+ *  button. Returns null when it went out. */
+export async function sendMailChecked(to: string, subject: string, text: string, html?: string): Promise<string | null> {
+  if (!mailEnabled()) return "Email is not set up: SMTP_HOST and MAIL_FROM are needed.";
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(to)) return "Your account has no valid email address.";
+  try {
+    await getTransport().sendMail({ from: process.env.MAIL_FROM, to, subject, text, html, disableFileAccess: true, disableUrlAccess: true });
+    return null;
+  } catch (e) {
+    // The transport is rebuilt next time, in case the settings were wrong.
+    transport = null;
+    return e instanceof Error ? e.message : "The mail server refused the message.";
+  }
+}
+
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }

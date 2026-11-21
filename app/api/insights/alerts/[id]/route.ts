@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     } else {
       const fields = await cleanAlertInput(body);
       // slackWebhookUrl is only in `fields` when it is being set or cleared.
-      alert.set({ kpi: undefined, metric: undefined, ragStates: undefined, threshold: undefined, comparator: undefined, rangePreset: undefined, qualityCheck: undefined, ...fields });
+      alert.set({ kpi: undefined, metric: undefined, ragStates: undefined, threshold: undefined, comparator: undefined, rangePreset: undefined, qualityCheck: undefined, query: undefined, queryMode: undefined, ...fields });
     }
     await alert.save();
     return NextResponse.json({ ok: true });
