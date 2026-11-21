@@ -59,6 +59,13 @@ const SKIP_PREFIXES = [
  *  startsWith("/"), so we whitelist it explicitly here. */
 const PUBLIC_EXACT_PATHS = new Set<string>(["/"]);
 
+/** Routes called by the Vercel scheduler (vercel.json). The scheduler sends
+ *  `Authorization: Bearer <CRON_SECRET>` and no session cookie, so without
+ *  this the call is redirected to /login and the job never runs. Each route
+ *  checks the secret (or a signed-in session) itself and answers 401
+ *  otherwise, so letting them past this gate opens nothing. */
+const CRON_PATHS = new Set<string>(["/api/case-reviews/check", "/api/insights/alerts/run"]);
+
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
@@ -82,7 +89,7 @@ export async function proxy(request: NextRequest) {
   // Skip static assets, public marketing pages, and public auth routes —
   // anonymous visitors (including Google's verification crawler) hit these
   // without a session cookie.
-  if (PUBLIC_EXACT_PATHS.has(pathname) || SKIP_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_EXACT_PATHS.has(pathname) || CRON_PATHS.has(pathname) || SKIP_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
