@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import User from "@/models/User";
-
-/** Map a public R2 URL back to its bucket key, given the configured public
- *  base. Returns null if the URL doesn't live under our R2 — we silently skip
- *  deletion in that case so a stale or external URL can't break the flow. */
-function r2KeyFromPublicUrl(url: string, publicBase: string): string | null {
-  if (!url || !publicBase) return null;
-  const base = publicBase.replace(/\/+$/, "");
-  if (!url.startsWith(base + "/")) return null;
-  return url.slice(base.length + 1);
-}
+import { deleteStoredFile } from "@/lib/storage";
 
 const ID_TYPES = ["Aadhar", "VoterId", "Passport", "DrivingLicense", "RationCard", "Other"];
 
@@ -53,24 +43,13 @@ export async function POST(request: NextRequest) {
     // here so a transient R2 outage doesn't block the user from re-uploading
     // — the user's record is the source of truth and we'll have already moved
     // it forward. The orphan object is recoverable later via the audit log.
-    const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
-    const R2_BUCKET        = process.env.R2_BUCKET;
-    const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-    const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY;
-    const R2_PUBLIC_BASE   = process.env.R2_PUBLIC_URL_BASE;
-    if (oldUrl && oldUrl !== newUrl && R2_ACCOUNT_ID && R2_BUCKET && R2_ACCESS_KEY_ID && R2_SECRET && R2_PUBLIC_BASE) {
-      const key = r2KeyFromPublicUrl(oldUrl, R2_PUBLIC_BASE);
-      if (key) {
-        try {
-          const r2 = new S3Client({
-            region: "auto",
-            endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET },
-          });
-          await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
-        } catch (err) {
-          console.error("R2 delete failed (non-fatal):", err);
-        }
+    if (oldUrl && oldUrl !== newUrl) {
+      try {
+        // Works for both link forms (public R2 link or /api/files/...); a
+        // link that is not ours is skipped.
+        await deleteStoredFile(oldUrl);
+      } catch (err) {
+        console.error("R2 delete failed (non-fatal):", err);
       }
     }
 

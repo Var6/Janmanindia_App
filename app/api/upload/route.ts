@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSessionFromCookies } from "@/lib/auth";
+import { filesPrivate, getR2, r2Bucket, r2Ready, storedUrlForKey } from "@/lib/storage";
 
 // Images for avatars / case photos, PDFs + Office docs for case files / IDs / CVs,
 // audio for voice messages and voice case descriptions (community members who
@@ -23,22 +24,10 @@ const ALLOWED_TYPES = [
 // (avatars, voice notes, receipts).
 const MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
 
-// ── R2 (Cloudflare) — used in production. S3-compatible, zero egress. ────────
-const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
-const R2_BUCKET        = process.env.R2_BUCKET;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY;
-const R2_PUBLIC_BASE   = process.env.R2_PUBLIC_URL_BASE?.replace(/\/+$/, ""); // strip trailing /
-
-const r2Configured = Boolean(R2_ACCOUNT_ID && R2_BUCKET && R2_ACCESS_KEY_ID && R2_SECRET && R2_PUBLIC_BASE);
-
-const r2 = r2Configured
-  ? new S3Client({
-      region: "auto",
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET! },
-    })
-  : null;
+// R2 (Cloudflare) is used in production. S3-compatible, zero egress. The
+// client and the link format (public or private) come from lib/storage.
+const r2 = r2Ready() ? getR2() : null;
+const R2_BUCKET = r2Bucket();
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -68,7 +57,7 @@ export async function POST(request: NextRequest) {
     const filename = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}.${ext}`;
 
     // Production: Cloudflare R2 via S3 SDK.
-    if (r2 && R2_BUCKET && R2_PUBLIC_BASE) {
+    if (r2 && R2_BUCKET) {
       const key = `uploads/${filename}`;
       const bytes = Buffer.from(await file.arrayBuffer());
       await r2.send(new PutObjectCommand({
@@ -79,9 +68,9 @@ export async function POST(request: NextRequest) {
         ContentLength: bytes.length,
         // Cache for a year — uploaded objects are content-addressed by their
         // unguessable filename, so they're effectively immutable.
-        CacheControl: "public, max-age=31536000, immutable",
+        CacheControl: filesPrivate() ? "private, max-age=3600" : "public, max-age=31536000, immutable",
       }));
-      return NextResponse.json({ url: `${R2_PUBLIC_BASE}/${key}` });
+      return NextResponse.json({ url: storedUrlForKey(key) });
     }
 
     // Local dev fallback: write to /public/uploads/ so Next's static handler

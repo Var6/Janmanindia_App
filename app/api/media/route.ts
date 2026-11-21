@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import { getSessionFromCookies } from "@/lib/auth";
+import { filesPrivate, getR2, r2Bucket, r2Ready, storedUrlForKey } from "@/lib/storage";
 
 const ALLOWED_TYPES = [
   "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -12,21 +13,8 @@ const ALLOWED_TYPES = [
 ];
 const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 
-const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
-const R2_BUCKET        = process.env.R2_BUCKET;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY;
-const R2_PUBLIC_BASE   = process.env.R2_PUBLIC_URL_BASE?.replace(/\/+$/, "");
-
-const r2Configured = Boolean(R2_ACCOUNT_ID && R2_BUCKET && R2_ACCESS_KEY_ID && R2_SECRET && R2_PUBLIC_BASE);
-
-const r2 = r2Configured
-  ? new S3Client({
-      region: "auto",
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET! },
-    })
-  : null;
+const r2 = r2Ready() ? getR2() : null;
+const R2_BUCKET = r2Bucket();
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -58,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     let url: string;
 
-    if (r2 && R2_BUCKET && R2_PUBLIC_BASE) {
+    if (r2 && R2_BUCKET) {
       const bytes = Buffer.from(await file.arrayBuffer());
       await r2.send(new PutObjectCommand({
         Bucket: R2_BUCKET,
@@ -66,9 +54,9 @@ export async function POST(request: NextRequest) {
         Body: bytes,
         ContentType: file.type,
         ContentLength: bytes.length,
-        CacheControl: "public, max-age=31536000, immutable",
+        CacheControl: filesPrivate() ? "private, max-age=3600" : "public, max-age=31536000, immutable",
       }));
-      url = `${R2_PUBLIC_BASE}/${filename}`;
+      url = storedUrlForKey(filename);
     } else {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadsDir, { recursive: true });

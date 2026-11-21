@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongoose";
 import { requireSession } from "@/lib/auth";
 import Case from "@/models/Case";
+import { externalUrl } from "@/lib/storage";
 
 export async function POST(request: NextRequest) {
   try {
@@ -124,7 +125,9 @@ async function enqueueOcrJob(
       Authorization: `Bearer ${process.env.OCR_SERVICE_KEY ?? ""}`,
     },
     body: JSON.stringify({
-      documentUrl: docUrl,
+      // The OCR worker is outside the app, so a private file link is swapped
+      // for a signed one that works for an hour.
+      documentUrl: await externalUrl(docUrl, 3600),
       callbackUrl,
       callbackSecret: process.env.OCR_CALLBACK_SECRET,
       metadata: { caseId, documentId },
