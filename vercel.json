@@ -3,6 +3,10 @@
     {
       "path": "/api/case-reviews/check",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/insights/alerts/run",
+      "schedule": "30 3 * * *"
     }
   ]
 }

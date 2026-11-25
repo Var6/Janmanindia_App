@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import Case from "@/models/Case";
 import User from "@/models/User";
 import { syncCaseHearing } from "@/lib/case-calendar-sync";
+import { liveCaseCountsByMember } from "@/lib/case-workload";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,9 +52,15 @@ export async function POST(request: NextRequest) {
     const targetLoc = (locationOverride?.trim() || caseDoc.district || caseDoc.state || swDistrict || "").trim();
 
     // Step 1: all active litigation members, least-loaded first.
-    const allCandidates = await User.find({ role: "litigation", isActive: true })
-      .sort({ "litigationProfile.activeCaseCount": 1 })
-      .lean();
+    // Sorted by the live count computed from cases (the stored
+    // litigationProfile.activeCaseCount counter drifts and mostly reads 0).
+    const [lawyers, workload] = await Promise.all([
+      User.find({ role: "litigation", isActive: true }).lean(),
+      liveCaseCountsByMember(),
+    ]);
+    const allCandidates = lawyers.sort(
+      (x, y) => (workload.get(String(x._id)) ?? 0) - (workload.get(String(y._id)) ?? 0),
+    );
 
     if (allCandidates.length === 0) {
       return NextResponse.json(
@@ -101,7 +108,7 @@ export async function POST(request: NextRequest) {
       endOfDay.setHours(23, 59, 59, 999);
 
       const clash = await Case.exists({
-        litigationMember: candidate._id,
+        $or: [{ litigationMember: candidate._id }, { litigationMembers: candidate._id }],
         status: { $in: ["Open", "Pending", "Escalated"] },
         nextHearingDate: { $gte: startOfDay, $lte: endOfDay },
       });

@@ -41,6 +41,16 @@ async function registerAllModelsOnce() {
     import("@/models/TrainingSession"),
     import("@/models/User"),
     import("@/models/VoiceMessage"),
+    import("@/models/InsightAlert"),
+    import("@/models/InsightChart"),
+    import("@/models/InsightDashboard"),
+    import("@/models/InsightImport"),
+    import("@/models/InsightImportRow"),
+    import("@/models/InsightSettings"),
+    import("@/models/InsightCopilotRun"),
+    import("@/models/InsightKpi"),
+    import("@/models/InsightMetric"),
+    import("@/models/InsightReport"),
   ]);
   cached.modelsRegistered = true;
 }

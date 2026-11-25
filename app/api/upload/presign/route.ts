@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getR2, r2Bucket, r2Ready, storedUrlForKey } from "@/lib/storage";
 
 /**
  * Presigned-upload endpoint.
@@ -31,27 +32,11 @@ const ALLOWED_TYPES = [
 // reject obviously-bad sizes, not to limit ordinary documents.
 const MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
 
-const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID;
-const R2_BUCKET        = process.env.R2_BUCKET;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY;
-const R2_PUBLIC_BASE   = process.env.R2_PUBLIC_URL_BASE?.replace(/\/+$/, "");
-
-const r2Configured = Boolean(R2_ACCOUNT_ID && R2_BUCKET && R2_ACCESS_KEY_ID && R2_SECRET && R2_PUBLIC_BASE);
-
-const r2 = r2Configured
-  ? new S3Client({
-      region: "auto",
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId: R2_ACCESS_KEY_ID!, secretAccessKey: R2_SECRET! },
-      // Newer AWS SDKs add an integrity checksum header (x-amz-checksum-crc32)
-      // by default. For a *presigned browser PUT* the browser can't reproduce
-      // that header, so R2 rejects the upload (500/501). Only add checksums
-      // when the operation actually requires it — the fix for R2 presigned PUTs.
-      requestChecksumCalculation: "WHEN_REQUIRED",
-      responseChecksumValidation: "WHEN_REQUIRED",
-    })
-  : null;
+// The storage client and the link format (public or private) come from
+// lib/storage. Its client already skips the SDK's default checksum header,
+// which a browser cannot reproduce on a presigned PUT.
+const r2 = r2Ready() ? getR2() : null;
+const R2_BUCKET = r2Bucket();
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies();
@@ -80,7 +65,7 @@ export async function POST(request: NextRequest) {
   }
 
   // No R2 in this environment → tell the client to use the server route.
-  if (!r2 || !R2_BUCKET || !R2_PUBLIC_BASE) {
+  if (!r2 || !R2_BUCKET) {
     return NextResponse.json({ mode: "server" });
   }
 
@@ -100,7 +85,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       mode: "r2",
       uploadUrl,
-      publicUrl: `${R2_PUBLIC_BASE}/${key}`,
+      // Named publicUrl for the existing client; in private mode it is the
+      // /api/files link, which only signed-in users can open.
+      publicUrl: storedUrlForKey(key),
       contentType,
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -21,7 +21,10 @@ type CaseItem = {
   nextHearingDate?: string;
   litigationMember?: { _id?: string; name?: string };
   litigationMembers?: { _id?: string; name?: string }[];
+  status?: string;
 };
+
+const LIVE = new Set(["Open", "Pending", "Escalated"]);
 
 function AssignContent() {
   const t = useT();
@@ -46,6 +49,19 @@ function AssignContent() {
   }, []);
 
   const selectedCase = cases.find((c) => c._id === caseId);
+
+  // Live-case count per lawyer, worked out from the cases themselves. The
+  // stored litigationProfile.activeCaseCount is not kept up to date.
+  const liveCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of cases) {
+      if (c.status && !LIVE.has(c.status)) continue;
+      const ids = (c.litigationMembers ?? []).map((x) => x._id).filter(Boolean) as string[];
+      if (ids.length === 0 && c.litigationMember?._id) ids.push(c.litigationMember._id);
+      for (const id of ids) m.set(id, (m.get(id) ?? 0) + 1);
+    }
+    return m;
+  }, [cases]);
 
   // Load the authoritative assigned-advocate set whenever the case changes
   // (fetched fresh so it's correct even for cases beyond the list page).
@@ -224,7 +240,7 @@ function AssignContent() {
                     <div>
                       <p className="text-sm font-medium text-(--text)">{l.name}</p>
                       <p className="text-xs text-(--muted)">
-                        {l.litigationProfile?.location?.district || "—"} · {l.litigationProfile?.activeCaseCount ?? 0} {t("active case(s)")}
+                        {l.litigationProfile?.location?.district || "—"} · {liveCount.get(l._id) ?? 0} {t("active case(s)")}
                       </p>
                     </div>
                   </div>
